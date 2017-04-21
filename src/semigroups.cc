@@ -36,6 +36,7 @@ namespace libsemigroups {
         _elements(new std::vector<Element*>()),
         _final(),
         _first(),
+        _fropin(new SingleThreadFroidurePin()),
         _found_one(false),
         _gens(new std::vector<Element*>()),
         _id(),

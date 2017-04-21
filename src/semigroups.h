@@ -788,13 +788,31 @@ namespace libsemigroups {
       _max_threads = std::min(n, std::thread::hardware_concurrency());
     }
 
+    size_t testing() {
+      return _fropin->testing();
+    }
+
    private:
+    // This is an abstract base class for obsfucating whether or not we are
+    // using a single or multiple threads
+    class FroidurePin {
+     public:
+      size_t testing() {
+        return 0;
+      }
+    };
+
+    class SingleThreadFroidurePin : public FroidurePin {};
+
+    class MultiThreadFroidurePin {};
+
+    FroidurePin* _fropin;
+
     // Initialise the data member _sorted. We store a list of pairs consisting
     // of an Element* and pos_t which is sorted on the first entry using
     // the myless subclass. This is done so that we can both get the elements
     // in sorted order, and find the position of an element in the sorted list
     // of elements.
-
     void sort_elements();
 
     // Find the idempotents and store their positions and their number
@@ -802,7 +820,6 @@ namespace libsemigroups {
 
     // Function for counting idempotents in a thread, changes the parameter nr
     // in place.
-
     void idempotents_thread(size_t&             nr,
                             std::vector<pos_t>& idempotents,
                             std::vector<bool>&  is_idempotent,
@@ -810,7 +827,6 @@ namespace libsemigroups {
                             pos_t               end);
 
     // Expand the data structures in the semigroup with space for nr elements
-
     void inline expand(size_t nr) {
       _left->add_rows(nr);
       _reduced.add_rows(nr);
@@ -820,7 +836,6 @@ namespace libsemigroups {
 
     // Check if an element is the identity, x should be in the position pos
     // of _elements.
-
     void inline is_one(Element const* x, pos_t pos) {
       if (!_found_one && *x == *_id) {
         _pos_one   = pos;
