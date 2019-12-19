@@ -40,6 +40,28 @@
 //
 namespace libsemigroups {
 
+  namespace bmat8_helpers {
+    bool is_group_index(BMat8 const& x, BMat8 const& y) {
+      LIBSEMIGROUPS_ASSERT(x.col_space_basis() == x
+                           && y.row_space_basis() == y);
+      return (y * x).row_space_basis() == x.row_space_basis()
+             && (y * x).col_space_basis() == y.col_space_basis();
+    }
+
+    size_t min_possible_dim(BMat8 const& x) {
+      size_t i = 1;
+      size_t d = x.to_int();
+      size_t y = x.transpose().to_int();
+
+      while ((d >> (8 * i)) << (8 * i) == d && (y >> (8 * i)) << (8 * i) == y
+             && i < 9) {
+        ++i;
+      }
+      return 9 - i;
+    }
+
+  }  // namespace bmat8_helpers
+
   //! Provides a call operator returning a hash value for a pair of size_t.
   //!
   //! This struct provides a call operator for obtaining a hash value for the
@@ -113,7 +135,7 @@ namespace libsemigroups {
         for (auto it = _row_orb.digraph().cbegin_scc(row_scc_id);
              it < _row_orb.digraph().cend_scc(row_scc_id);
              it++) {
-          if (is_group_index(col_space_basis, _row_orb.at(*it))) {
+          if (bmat8_helpers::is_group_index(col_space_basis, _row_orb.at(*it))) {
             _group_indices.emplace(key, *it);
             return *it;
           }
@@ -180,7 +202,7 @@ namespace libsemigroups {
     void compute_min_possible_dim() {
       _dim = 1;
       for (BMat8 x : _gens) {
-        size_t d = min_possible_dim(x);
+        size_t d = bmat8_helpers::min_possible_dim(x);
         if (d > _dim) {
           _dim = d;
         }
@@ -194,24 +216,24 @@ namespace libsemigroups {
       // TODO: this isn't quite right - could be 0 generators etc.
       compute_min_possible_dim();
       for (BMat8 x : _gens) {
-        if (x * x.transpose() == bmat8_sub_one(_dim)) {
+        if (x * x.transpose() == bmat8_helpers::one<BMat8>(_dim)) {
           _perm_in_gens = true;
         }
       }
       if (!_perm_in_gens) {
-        _gens.push_back(bmat8_sub_one(_dim));
+        _gens.push_back(bmat8_helpers::one<BMat8>(_dim));
       }
     }
 
     void compute_orbs() {
-      _row_orb.add_seed(bmat8_sub_one(_dim));
-      _col_orb.add_seed(bmat8_sub_one(_dim));
+      _row_orb.add_seed(bmat8_helpers::one<BMat8>(_dim));
+      _col_orb.add_seed(bmat8_helpers::one<BMat8>(_dim));
       for (BMat8 g : _gens) {
         _row_orb.add_generator(g);
         _col_orb.add_generator(g);
       }
-      _row_orb.enumerate();
-      _col_orb.enumerate();
+      _row_orb.run();
+      _col_orb.run();
       // std::cout << _row_orb.size() << std::endl;
       // std::cout << _col_orb.size() << std::endl;
     }
@@ -449,10 +471,12 @@ namespace libsemigroups {
       return _right_idem_reps.cend();
     }
 
+    /*
     SchreierSims<8, uint8_t, Permutation<uint8_t>> stab_chain() {
       init();
       return _stab_chain;
     }
+    */
 
     // TODO: this is the wrong function! contains shouldn't assume argument is
     //        in semigroup!
@@ -507,7 +531,7 @@ namespace libsemigroups {
           for (auto it2 = _parent->_col_orb.digraph().cbegin_scc(col_scc_id);
                !found && it2 < _parent->_col_orb.digraph().cend_scc(col_scc_id);
                it2++) {
-            if (is_group_index(_parent->_col_orb.at(*it2),
+            if (bmat8_helpers::is_group_index(_parent->_col_orb.at(*it2),
                                _parent->_row_orb.at(*it))) {
               _parent->_group_indices_alt.emplace(key, *it2);
               found = true;
@@ -1039,7 +1063,7 @@ namespace libsemigroups {
     size_t           max_card = 0;
     cards.insert(0);
 
-    RegularDClass* top = new RegularDClass(this, bmat8_sub_one(_dim));
+    RegularDClass* top = new RegularDClass(this, bmat8_helpers::one<BMat8>(_dim));
     add_D_class(top);
     for (BMat8 x : top->covering_reps()) {
       size_t card = x.row_space_size();
@@ -1124,18 +1148,16 @@ namespace libsemigroups {
         }
 
         std::vector<std::pair<BMat8, size_t>> tmp;
-        for (std::pair<BMat8, size_t> x : next_reps) {
+        for (std::pair<BMat8, size_t> &x : next_reps) {
           if (D->contains(std::get<0>(x))) {
             _D_rels[_D_classes.size() - 1].push_back(std::get<1>(x));
           } else {
-            tmp.push_back(x);
+            tmp.push_back(std::move(x));
           }
         }
         next_reps = std::move(tmp);
       }
-#ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(reg_reps[max_card].empty());
-#endif
       if (non_reg_reps[max_card].empty()) {
         cards.erase(max_card);
         max_card = *cards.rbegin();

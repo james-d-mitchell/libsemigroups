@@ -36,7 +36,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
   Konieczny          KS(gens);
   FroidurePin<BMat8> S(gens);
 
-  S.enumerate();
+  S.run();
   REQUIRE(KS.size() == S.size());
   for (auto it = S.cbegin(); it < S.cend(); it++) {
     BMat8 idem = KS.find_idem(*it);
@@ -55,7 +55,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
   Konieczny          KS2(gens2);
   FroidurePin<BMat8> S2(gens2);
 
-  S2.enumerate();
+  S2.run();
   for (auto it = S2.cbegin(); it < S2.cend(); it++) {
     BMat8 idem = KS2.find_idem(*it);
     if (KS2.is_regular_element(*it)) {
@@ -78,7 +78,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
   Konieczny          KS(gens);
   FroidurePin<BMat8> S(gens);
 
-  S.enumerate();
+  S.run();
 
   for (auto it = S.cbegin(); it < S.cend(); it++) {
     if (KS.is_regular_element(*it)) {
@@ -168,7 +168,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
 
   Konieczny          KS(gens);
   FroidurePin<BMat8> S(gens);
-  S.enumerate();
+  S.run();
   BMat8 idem(BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}));
   Konieczny::RegularDClass D = Konieczny::RegularDClass(&KS, idem);
 
