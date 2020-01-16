@@ -1646,4 +1646,26 @@ namespace libsemigroups {
     REQUIRE(C.nr_classes() == 16);
   }
 
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "101",
+                          "EastPartitionMonoid(4, q=0)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard();
+    FpSemigroup S;
+    S.set_alphabet(5);
+    S.set_identity(0);
+
+    Congruence  C(congruence_type::twosided, S);
+    for (relation_type const& rl : EastPartitionMonoid(4, 1)) {
+        C.add_pair(rl.first,rl.second);
+    }
+
+    for (size_t nc = 0; nc < C.nr_classes(); nc++) {
+        std::cout << C.class_index_to_word(nc) << std::endl;
+    }
+    REQUIRE(C.nr_classes() == 131);
+
+  }
+
 }  // namespace libsemigroups
