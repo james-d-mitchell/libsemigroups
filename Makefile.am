@@ -93,6 +93,7 @@ hpcombiinclude_HEADERS += extern/HPCombi/include/bmat8_impl.hpp
 hpcombiinclude_HEADERS += extern/HPCombi/include/epu.hpp
 hpcombiinclude_HEADERS += extern/HPCombi/include/epu_impl.hpp
 hpcombiinclude_HEADERS += extern/HPCombi/include/hpcombi.hpp
+hpcombiinclude_HEADERS += extern/HPCombi/include/hpcombi_exc.hpp
 hpcombiinclude_HEADERS += extern/HPCombi/include/perm16.hpp
 hpcombiinclude_HEADERS += extern/HPCombi/include/perm16_impl.hpp
 hpcombiinclude_HEADERS += extern/HPCombi/include/perm_generic.hpp

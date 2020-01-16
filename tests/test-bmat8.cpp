@@ -31,7 +31,7 @@ namespace libsemigroups {
   constexpr bool REPORT = false;
 
   // Forward decl
-  struct LibsemigroupsException;
+  // struct LibsemigroupsException;
 
   LIBSEMIGROUPS_TEST_CASE("BMat8", "001", "transpose", "[quick]") {
     auto  rg = ReportGuard(REPORT);
@@ -141,8 +141,8 @@ namespace libsemigroups {
         }
       }
     }
-    REQUIRE_THROWS_AS(BMat8::random(9), LibsemigroupsException);
-    REQUIRE_THROWS_AS(BMat8::random(9), LibsemigroupsException);
+    REQUIRE_THROWS_AS(BMat8::random(9), std::runtime_error);
+    REQUIRE_THROWS_AS(BMat8::random(9), std::runtime_error);
   }
 
   LIBSEMIGROUPS_TEST_CASE("BMat8", "005", "call operator", "[quick]") {
@@ -250,9 +250,9 @@ namespace libsemigroups {
     BMat8 zeros(0);
     REQUIRE(bm == zeros);
 
-    REQUIRE_THROWS_AS(zeros.set(0, 8, true), LibsemigroupsException);
-    REQUIRE_THROWS_AS(zeros.set(8, 0, true), LibsemigroupsException);
-    REQUIRE_THROWS_AS(zeros.set(8, 8, true), LibsemigroupsException);
+    REQUIRE_THROWS_AS(zeros.set(0, 8, true), std::runtime_error);
+    REQUIRE_THROWS_AS(zeros.set(8, 0, true), std::runtime_error);
+    REQUIRE_THROWS_AS(zeros.set(8, 8, true), std::runtime_error);
   }
 
   LIBSEMIGROUPS_TEST_CASE("BMat8", "008", "row space basis", "[quick]") {
@@ -591,10 +591,10 @@ namespace libsemigroups {
     REQUIRE(BMat8({{0, 0}, {0, 1}}) != zero);
     REQUIRE(BMat8({{0, 0}, {0, 1}}) == BMat8(uint64_t(1) << 54));
 
-    REQUIRE_THROWS_AS(BMat8({{0, 0}}), LibsemigroupsException);
-    REQUIRE_THROWS_AS(BMat8({{0, 1}}), LibsemigroupsException);
-    REQUIRE_THROWS_AS(BMat8({{0}, {0}}), LibsemigroupsException);
-    REQUIRE_THROWS_AS(BMat8({{1, 0}, {0}}), LibsemigroupsException);
+    REQUIRE_THROWS_AS(BMat8({{0, 0}}), std::runtime_error);
+    REQUIRE_THROWS_AS(BMat8({{0, 1}}), std::runtime_error);
+    REQUIRE_THROWS_AS(BMat8({{0}, {0}}), std::runtime_error);
+    REQUIRE_THROWS_AS(BMat8({{1, 0}, {0}}), std::runtime_error);
     REQUIRE_THROWS_AS(BMat8({{0, 0, 0, 1, 0, 0, 1, 1, 0},
                              {1, 1, 1, 1, 1, 1, 0, 1, 0},
                              {0, 1, 1, 1, 0, 1, 0, 1, 0},
@@ -604,7 +604,7 @@ namespace libsemigroups {
                              {1, 1, 0, 0, 0, 0, 0, 1, 0},
                              {0, 1, 0, 0, 0, 0, 1, 1, 0},
                              {0, 1, 1, 1, 1, 0, 1, 0, 0}}),
-                      LibsemigroupsException);
+                      std::runtime_error);
     REQUIRE_THROWS_AS(BMat8({{0, 0, 0, 1, 0, 0, 1, 1, 0},
                              {1, 1, 1, 1, 1, 1, 0, 1, 0},
                              {0, 1, 1, 1, 0, 1, 0, 1, 0},
@@ -613,7 +613,7 @@ namespace libsemigroups {
                              {1, 1, 0, 0, 0, 0, 0, 1, 0},
                              {0, 1, 0, 0, 0, 0, 1, 1, 0},
                              {0, 1, 1, 1, 1, 0, 1, 0, 0}}),
-                      LibsemigroupsException);
+                      std::runtime_error);
   }
 
   LIBSEMIGROUPS_TEST_CASE("BMat8", "016", "operator<", "[quick]") {

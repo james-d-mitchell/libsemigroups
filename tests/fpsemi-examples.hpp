@@ -38,6 +38,9 @@ namespace libsemigroups {
   std::vector<size_t>        max_elt_B(size_t i);
   std::vector<relation_type> RennerTypeDMonoid(size_t l, int q);
   std::vector<relation_type> Stell(size_t l);
+  std::vector<relation_type> PlanarPartitionMonoid(size_t l);
+  std::vector<relation_type> PartitionMonoid(size_t l, int q);
+  std::vector<relation_type> EastPartitionMonoid(size_t l, int q);
 
 }  // namespace libsemigroups
 #endif  // LIBSEMIGROUPS_TESTS_FPSEMI_EXAMPLES_HPP_

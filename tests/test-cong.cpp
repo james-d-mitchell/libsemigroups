@@ -1620,4 +1620,30 @@ namespace libsemigroups {
   //   }
   // }
 
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "100",
+                          "EastPartitionMonoid(3, q=0)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard();
+    FpSemigroup S;
+    S.set_alphabet(4);
+    S.set_identity(0);
+    Congruence  C(congruence_type::twosided, S);
+    for (relation_type const& rl : EastPartitionMonoid(3, 0)) {
+        C.add_pair(rl.first,rl.second);
+    }
+    C.add_pair({2, 3, 2, 3}, {3, 2, 3});
+    std::cout <<  C.nr_classes() << std::endl;
+    for (size_t nc = 0; nc < C.nr_classes(); nc++) {
+        std::cout << C.class_index_to_word(nc) << std::endl;
+    }
+    std::cout << C.word_to_class_index({2, 3, 2, 3}) << std::endl;
+    //  REQUIRE(!S.is_obviously_infinite());
+    //std::cout << std::vector<std::string>(S.winner().cbegin_normal_forms(),
+    //                                      S.winner().cend_normal_forms()) << std::endl;
+    REQUIRE(C.nr_classes() == 16);
+  }
+
 }  // namespace libsemigroups

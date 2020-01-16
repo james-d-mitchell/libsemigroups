@@ -30,6 +30,7 @@
 #include "test-main.hpp"
 #include "todd-coxeter.hpp"  // for ToddCoxeter
 #include "types.hpp"         // for relation_type
+#include "string.hpp"         // for printing relations
 
 namespace libsemigroups {
 
@@ -924,4 +925,260 @@ namespace libsemigroups {
 
     REQUIRE(S.size() == 3);
   }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "044",
+                          "PlanarPartitionMonoid(1)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(2);
+    S.set_identity(0);
+    std::cout << PlanarPartitionMonoid(1) << std::endl;
+    for (relation_type const& rl : PlanarPartitionMonoid(1)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 2);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "045",
+                          "PlanarPartitionMonoid(2)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(4);
+    S.set_identity(0);
+    for (relation_type const& rl : PlanarPartitionMonoid(2)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 14);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "046",
+                          "PlanarPartitionMonoid(3)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(6);
+    S.set_identity(0);
+    for (relation_type const& rl : PlanarPartitionMonoid(3)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 132);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "047",
+                          "PlanarPartitionMonoid(8)",
+                          "[extreme]") {
+
+    auto        rg = ReportGuard();
+    FpSemigroup S;
+    S.set_alphabet(16);
+    S.set_identity(0);
+    for (relation_type const& rl : PlanarPartitionMonoid(8)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 35357670);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "048",
+                          "PartitionMonoid(2)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(5);
+    S.set_identity(0);
+    // std::cout << PartitionMonoid(2, 1) << std::endl;
+
+    for (relation_type const& rl : PartitionMonoid(2, 1)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 15);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "049",
+                          "PartitionMonoid(3)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(8);
+    S.set_identity(0);
+    // std::cout << PartitionMonoid(3, 1) << std::endl;
+
+    for (relation_type const& rl : PartitionMonoid(3, 1)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 203);
+  }
+
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "050",
+                          "PartitionMonoid(5)",
+                          "[standard]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(14);
+    S.set_identity(0);
+    // std::cout << PartitionMonoid(5, 1) << std::endl;
+
+    for (relation_type const& rl : PartitionMonoid(5, 1)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 115975);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "051",
+                          "EastPartitionMonoid(2)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(3);
+    S.set_identity(0);
+    for (relation_type const& rl : EastPartitionMonoid(2, 1)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 3);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "052",
+                          "EastPartitionMonoid(3)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(4);
+    S.set_identity(0);
+    for (relation_type const& rl : EastPartitionMonoid(3, 1)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 16);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "053",
+                          "EastPartitionMonoid(4)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(5);
+    S.set_identity(0);
+    for (relation_type const& rl : EastPartitionMonoid(4, 1)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 131);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "054",
+                          "EastPartitionMonoid(5)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard(REPORT);
+    FpSemigroup S;
+    S.set_alphabet(6);
+    S.set_identity(0);
+    // std::cout << EastPartitionMonoid(4, 1) << std::endl;
+
+    for (relation_type const& rl : EastPartitionMonoid(5, 1)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 1496);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "055",
+                          "EastPartitionMonoid(2, q=0)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard();
+    FpSemigroup S;
+    S.set_alphabet(3);
+    S.set_identity(0);
+
+    std::cout << EastPartitionMonoid(2, 0) << std::endl;
+
+    for (relation_type const& rl : EastPartitionMonoid(2, 0)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 3);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "056",
+                          "EastPartitionMonoid(3, q=0)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard();
+    FpSemigroup S;
+    S.set_alphabet(4);
+    S.set_identity(0);
+    for (relation_type const& rl : EastPartitionMonoid(3, 1)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 16);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "057",
+                          "EastPartitionMonoid(4, q=0)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard();
+    FpSemigroup S;
+    S.set_alphabet(5);
+    S.set_identity(0);
+    for (relation_type const& rl : EastPartitionMonoid(4, 0)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 131);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FpSemigroup",
+                          "058",
+                          "EastPartitionMonoid(5, q=0)",
+                          "[quick]") {
+
+    auto        rg = ReportGuard();
+    FpSemigroup S;
+    S.set_alphabet(6);
+    S.set_identity(0);
+    // std::cout << EastPartitionMonoid(4, 1) << std::endl;
+
+    for (relation_type const& rl : EastPartitionMonoid(5, 0)) {
+      S.add_rule(rl);
+    }
+    REQUIRE(!S.is_obviously_infinite());
+    REQUIRE(S.size() == 1496);
+  }
+
 }  // namespace libsemigroups
