@@ -507,6 +507,21 @@ namespace libsemigroups {
       return std::make_pair(UNDEFINED, UNDEFINED);
     }
 
+    size_t nr_idempotents() {
+      init();
+      size_t count = 0;
+      for (auto it = cbegin_left_indices(); it < cend_left_indices(); ++it) {
+        for (auto it2 = cbegin_right_indices(); it2 < cend_right_indices(); ++it2) {
+          if(bmat8_helpers::is_group_index(_parent->_col_orb.at(*it2),
+                                           _parent->_row_orb.at(*it))) {
+            count++;
+          }
+        }
+      }
+      LIBSEMIGROUPS_ASSERT(count > 0);
+      return count;
+    }
+
    private:
     // this is annoyingly a bit more complicated than the right indices
     // because the find_group_index method fixes the column basis and loops

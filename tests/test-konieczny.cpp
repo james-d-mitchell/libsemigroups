@@ -930,6 +930,12 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
     reg_elts += D->size();
   }
   REQUIRE(reg_elts == 40408);
+  
+  size_t idems = 0;
+  for (auto D : S.regular_D_classes()) {
+    idems += D->nr_idempotents();
+  }
+  REQUIRE(idems == 2360);
 
   // reg_elts = 0;
   // for (auto D : T.regular_D_classes()) {
@@ -1158,4 +1164,65 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
 
   Konieczny S(gens);
   REQUIRE(S.size() == 597369);
+}
+
+LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                        "015",
+                        "regular generated bmat 6 monoid",
+                        "[quick]") {
+
+  const std::vector<BMat8> reg_bmat6_gens = {BMat8({{0, 1, 0, 0, 0, 0},
+                                                    {1, 0, 0, 0, 0, 0},
+                                                    {0, 0, 1, 0, 0, 0},
+                                                    {0, 0, 0, 1, 0, 0},
+                                                    {0, 0, 0, 0, 1, 0},
+                                                    {0, 0, 0, 0, 0, 1}}),
+                                             BMat8({{0, 1, 0, 0, 0, 0},
+                                                    {0, 0, 1, 0, 0, 0},
+                                                    {0, 0, 0, 1, 0, 0},
+                                                    {0, 0, 0, 0, 1, 0},
+                                                    {0, 0, 0, 0, 0, 1},
+                                                    {1, 0, 0, 0, 0, 0}}),
+                                             BMat8({{1, 0, 0, 0, 0, 0},
+                                                    {0, 1, 0, 0, 0, 0},
+                                                    {0, 0, 1, 0, 0, 0},
+                                                    {0, 0, 0, 1, 0, 0},
+                                                    {0, 0, 0, 0, 1, 0},
+                                                    {1, 0, 0, 0, 0, 1}}),
+                                             BMat8({{1, 0, 0, 0, 0, 0},
+                                                    {0, 1, 0, 0, 0, 0},
+                                                    {0, 0, 1, 0, 0, 0},
+                                                    {0, 0, 0, 1, 0, 0},
+                                                    {0, 0, 0, 0, 1, 0},
+                                                    {0, 0, 0, 0, 0, 0}})};
+  Konieczny                S(reg_bmat6_gens);
+  REQUIRE(S.size() == 65462491216);
+
+  // Konieczny T(reg_bmat5_gens);
+  // REQUIRE(T.size() == 32311832);
+
+  size_t reg_elts = 0;
+  for (auto D : S.regular_D_classes()) {
+    reg_elts += D->size();
+  }
+  std::cout << reg_elts << " many regular elements in B6" << std::endl;
+  //REQUIRE(reg_elts == 4218546016);
+  
+  size_t idems = 0;
+  for (auto D : S.regular_D_classes()) {
+    idems += D->nr_idempotents();
+    std::cout << idems << std::endl;
+  }
+  REQUIRE(idems == 3465357);
+  
+  std::cout << reg_elts << " many regular elements in B6" << std::endl;
+
+  // reg_elts = 0;
+  // for (auto D : T.regular_D_classes()) {
+  //   reg_elts += D->size();
+  // }
+  // REQUIRE(reg_elts == 8683982);
+
+  // Konieczny U(reg_bmat6_gens);
+  // REQUIRE(U.size() == 1);
 }
