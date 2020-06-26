@@ -15,15 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "libsemigroups/froidure-pin.hpp"
+#include "libsemigroups/konieczny.hpp"
+
 #include "catch.hpp"
-#include "froidure-pin.hpp"
-#include "konieczny.hpp"
 #include "test-main.hpp"
 
 using namespace libsemigroups;
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                        "001",
+                        "000",
                         "regular elements and idempotents",
                         "[quick]") {
   const std::vector<BMat8> gens
@@ -67,7 +68,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
 }
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                        "002",
+                        "001",
                         "regular elements and idempotents",
                         "[quick]") {
   const std::vector<BMat8> gens
@@ -88,7 +89,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
   }
 }
 
-LIBSEMIGROUPS_TEST_CASE("Konieczny", "003", "regular D class 01", "[quick]") {
+LIBSEMIGROUPS_TEST_CASE("Konieczny", "002", "regular D class 01", "[quick]") {
   const std::vector<BMat8> gens = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                    BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                    BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
@@ -106,7 +107,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny", "003", "regular D class 01", "[quick]") {
   REQUIRE(D.size() == 18);
 }
 
-LIBSEMIGROUPS_TEST_CASE("Konieczny", "004", "regular D class 02", "[quick]") {
+LIBSEMIGROUPS_TEST_CASE("Konieczny", "003", "regular D class 02", "[quick]") {
   const std::vector<BMat8> gens
       = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
          BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
@@ -122,7 +123,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny", "004", "regular D class 02", "[quick]") {
   REQUIRE(D.size() == 24);
 }
 
-LIBSEMIGROUPS_TEST_CASE("Konieczny", "005", "regular D class 03", "[quick]") {
+LIBSEMIGROUPS_TEST_CASE("Konieczny", "004", "regular D class 03", "[quick]") {
   const std::vector<BMat8> gens = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                    BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                    BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
@@ -155,7 +156,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny", "005", "regular D class 03", "[quick]") {
 }
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                        "006",
+                        "005",
                         "regular D class 04: contains",
                         "[quick]") {
   const std::vector<BMat8> gens
@@ -183,7 +184,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
 }
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                        "007",
+                        "006",
                         "non-regular D classes 01",
                         "[quick]") {
   const std::vector<BMat8> gens = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
@@ -266,7 +267,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
 }
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                        "008",
+                        "007",
                         "non-regular D classes 02",
                         "[quick]") {
   const std::vector<BMat8> gens
@@ -755,7 +756,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
   REQUIRE(X55.cend_right_reps() - X55.cbegin_right_reps() == 2);
 }
 
-LIBSEMIGROUPS_TEST_CASE("Konieczny", "009", "D class containment", "[quick]") {
+LIBSEMIGROUPS_TEST_CASE("Konieczny", "008", "D class containment", "[quick]") {
   const std::vector<BMat8> gens
       = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
          BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
@@ -776,7 +777,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny", "009", "D class containment", "[quick]") {
   }
 }
 
-LIBSEMIGROUPS_TEST_CASE("Konieczny", "010", "full bmat monoids", "[quick]") {
+LIBSEMIGROUPS_TEST_CASE("Konieczny", "009", "full bmat monoid 4", "[quick]") {
   const std::vector<BMat8> bmat4_gens
       = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
          BMat8({{1, 1, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 1}, {0, 0, 1, 1}}),
@@ -787,6 +788,11 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny", "010", "full bmat monoids", "[quick]") {
          BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
          BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}})};
 
+  Konieczny S(bmat4_gens);
+  REQUIRE(S.size() == 65536);
+}
+
+LIBSEMIGROUPS_TEST_CASE("Konieczny", "010", "full bmat monoid 5", "[extreme]") {
   const std::vector<BMat8> bmat5_gens = {BMat8({{1, 0, 0, 0, 0},
                                                 {0, 1, 0, 0, 0},
                                                 {0, 0, 1, 0, 0},
@@ -858,16 +864,13 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny", "010", "full bmat monoids", "[quick]") {
                                                 {0, 1, 0, 0, 1},
                                                 {0, 0, 1, 1, 1}})};
 
-  Konieczny S(bmat4_gens);
-  REQUIRE(S.size() == 65536);
-
-  // Konieczny T(bmat5_gens);
-  // REQUIRE(T.size() == 33554432);
+  Konieczny T(bmat5_gens);
+  REQUIRE(T.size() == 33554432);
 }
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
                         "011",
-                        "regular generated bmat monoids",
+                        "regular generated bmat monoid 4",
                         "[quick]") {
   const std::vector<BMat8> reg_bmat4_gens
       = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
@@ -875,6 +878,26 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
          BMat8({{1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
          BMat8({{0, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}})};
 
+  Konieczny                S(reg_bmat4_gens);
+  REQUIRE(S.size() == 63904);
+
+  size_t reg_elts = 0;
+  for (auto D : S.regular_D_classes()) {
+    reg_elts += D->size();
+  }
+  REQUIRE(reg_elts == 40408);
+  
+  size_t idems = 0;
+  for (auto D : S.regular_D_classes()) {
+    idems += D->nr_idempotents();
+  }
+  REQUIRE(idems == 2360);
+}
+
+LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                        "012",
+                        "regular generated bmat monoid 5",
+                        "[extreme]") {
   const std::vector<BMat8> reg_bmat5_gens = {BMat8({{0, 1, 0, 0, 0},
                                                     {1, 0, 0, 0, 0},
                                                     {0, 0, 1, 0, 0},
@@ -895,62 +918,27 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
                                                     {0, 0, 1, 0, 0},
                                                     {0, 0, 0, 1, 0},
                                                     {0, 0, 0, 0, 1}})};
-  const std::vector<BMat8> reg_bmat6_gens = {BMat8({{0, 1, 0, 0, 0, 0},
-                                                    {1, 0, 0, 0, 0, 0},
-                                                    {0, 0, 1, 0, 0, 0},
-                                                    {0, 0, 0, 1, 0, 0},
-                                                    {0, 0, 0, 0, 1, 0},
-                                                    {0, 0, 0, 0, 0, 1}}),
-                                             BMat8({{0, 1, 0, 0, 0, 0},
-                                                    {0, 0, 1, 0, 0, 0},
-                                                    {0, 0, 0, 1, 0, 0},
-                                                    {0, 0, 0, 0, 1, 0},
-                                                    {0, 0, 0, 0, 0, 1},
-                                                    {1, 0, 0, 0, 0, 0}}),
-                                             BMat8({{1, 0, 0, 0, 0, 0},
-                                                    {0, 1, 0, 0, 0, 0},
-                                                    {0, 0, 1, 0, 0, 0},
-                                                    {0, 0, 0, 1, 0, 0},
-                                                    {0, 0, 0, 0, 1, 0},
-                                                    {1, 0, 0, 0, 0, 1}}),
-                                             BMat8({{1, 0, 0, 0, 0, 0},
-                                                    {0, 1, 0, 0, 0, 0},
-                                                    {0, 0, 1, 0, 0, 0},
-                                                    {0, 0, 0, 1, 0, 0},
-                                                    {0, 0, 0, 0, 1, 0},
-                                                    {0, 0, 0, 0, 0, 0}})};
-  Konieczny                S(reg_bmat4_gens);
-  REQUIRE(S.size() == 63904);
 
-  // Konieczny T(reg_bmat5_gens);
-  // REQUIRE(T.size() == 32311832);
+  Konieczny T(reg_bmat5_gens);
+  REQUIRE(T.size() == 32311832);
 
   size_t reg_elts = 0;
-  for (auto D : S.regular_D_classes()) {
+  for (auto D : T.regular_D_classes()) {
     reg_elts += D->size();
   }
-  REQUIRE(reg_elts == 40408);
+  REQUIRE(reg_elts == 8683982);
   
   size_t idems = 0;
-  for (auto D : S.regular_D_classes()) {
+  for (auto D : T.regular_D_classes()) {
     idems += D->nr_idempotents();
   }
-  REQUIRE(idems == 2360);
-
-  // reg_elts = 0;
-  // for (auto D : T.regular_D_classes()) {
-  //   reg_elts += D->size();
-  // }
-  // REQUIRE(reg_elts == 8683982);
-
-  // Konieczny U(reg_bmat6_gens);
-  // REQUIRE(U.size() == 1);
+  REQUIRE(idems == 73023);
 }
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                        "012",
+                        "013",
                         "my favourite example",
-                        "[standard][finite]") {
+                        "[quick][finite]") {
   const std::vector<BMat8> gens = {BMat8({{0, 1, 0, 0, 0, 0, 0, 0},
                                           {0, 0, 0, 0, 0, 0, 0, 1},
                                           {0, 0, 1, 0, 0, 0, 0, 0},
@@ -1021,7 +1009,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
 }
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                        "013",
+                        "014",
                         "another large example",
                         "[quick]") {
   const std::vector<BMat8> gens = {BMat8({{0, 1, 0, 0, 0, 0, 0, 0},
@@ -1094,7 +1082,7 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
 }
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                        "014",
+                        "015",
                         "my favourite example transposed",
                         "[quick]") {
   const std::vector<BMat8> gens = {BMat8({{0, 0, 0, 0, 1, 0, 0, 0},
@@ -1167,9 +1155,9 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
 }
 
 LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                        "015",
+                        "016",
                         "regular generated bmat 6 monoid",
-                        "[quick]") {
+                        "[extreme]") {
 
   const std::vector<BMat8> reg_bmat6_gens = {BMat8({{0, 1, 0, 0, 0, 0},
                                                     {1, 0, 0, 0, 0, 0},
@@ -1198,15 +1186,11 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
   Konieczny                S(reg_bmat6_gens);
   REQUIRE(S.size() == 65462491216);
 
-  // Konieczny T(reg_bmat5_gens);
-  // REQUIRE(T.size() == 32311832);
-
   size_t reg_elts = 0;
   for (auto D : S.regular_D_classes()) {
     reg_elts += D->size();
   }
-  std::cout << reg_elts << " many regular elements in B6" << std::endl;
-  //REQUIRE(reg_elts == 4218546016);
+  REQUIRE(reg_elts == 4218546016);
   
   size_t idems = 0;
   for (auto D : S.regular_D_classes()) {
@@ -1214,15 +1198,4 @@ LIBSEMIGROUPS_TEST_CASE("Konieczny",
     std::cout << idems << std::endl;
   }
   REQUIRE(idems == 3465357);
-  
-  std::cout << reg_elts << " many regular elements in B6" << std::endl;
-
-  // reg_elts = 0;
-  // for (auto D : T.regular_D_classes()) {
-  //   reg_elts += D->size();
-  // }
-  // REQUIRE(reg_elts == 8683982);
-
-  // Konieczny U(reg_bmat6_gens);
-  // REQUIRE(U.size() == 1);
 }
