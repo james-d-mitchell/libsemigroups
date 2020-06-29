@@ -19,6 +19,8 @@
 // subsemigroups of the boolean matrix monoid.
 
 // TODO: exception safety!
+// 1) FLS to continue reviewing from "HERE" to remove BMat8 specific code.
+// 2)
 
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 #define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
