@@ -746,7 +746,7 @@ namespace libsemigroups {
   struct ImageLeftAction<BMat8, BMat8> {
     //! Changes \p res in place to hold the image of \p pt under the left
     //! action of \p x.
-    void operator()(BMat8& res, BMat8 pt, BMat8 x) const noexcept {
+    void operator()(BMat8& res, BMat8 const& pt, BMat8 const& x) const noexcept {
       res = (x * pt).col_space_basis();
     }
   };

@@ -117,8 +117,14 @@ namespace libsemigroups {
           _gens(gens),
           _group_indices(),
           _group_indices_alt(),
+          _one(),
           _regular_D_classes(),
-          _lambda_orb() {}
+          _lambda_orb() {
+      if (_gens.empty()) {
+        LIBSEMIGROUPS_EXCEPTION("TODo(FLS)");
+      }
+      _one = One()(_gens[0]);
+    }
 
     ~Konieczny();
 
@@ -196,19 +202,12 @@ namespace libsemigroups {
     void add_D_class(Konieczny::RegularDClass* D);
     void add_D_class(Konieczny::NonRegularDClass* D);
 
-    //! Adds the identity element_type (of degree max of the degrees of the
-    //! generators) if there is no permutation already in the generators, and
-    //! sets the value of \c _unit_in_gens.
-    void conditional_add_identity() {
-     // _gens.push_back(One()(_gens[0]));
-    }
-
     void compute_orbs() {
       detail::Timer t;
       REPORT_DEFAULT("Computing orbits . . .\n");
-      _lambda_orb.add_seed(One()(_gens[0]));
-      _rho_orb.add_seed(One()(_gens[0]));
-      for (element_type g : _gens) {
+      _lambda_orb.add_seed(_one);
+      _rho_orb.add_seed(_one);
+      for (element_type const& g : _gens) {
         _lambda_orb.add_generator(g);
         _rho_orb.add_generator(g);
       }
@@ -222,6 +221,15 @@ namespace libsemigroups {
 
     void compute_D_classes();
 
+    typename std::vector<element_type>::const_iterator
+    cbegin_generators() const {
+      return _gens.cbegin();
+    }
+
+    typename std::vector<element_type>::const_iterator cend_generators() const {
+      return _gens.cend();
+    }
+
     rho_orb_type             _rho_orb;
     std::vector<BaseDClass*> _D_classes;
     // contains in _D_rels[i] the indices of the D classes which lie above
@@ -233,18 +241,18 @@ namespace libsemigroups {
         _group_indices;
     std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash>
                                 _group_indices_alt;
+    element_type              _one;
     std::vector<RegularDClass*> _regular_D_classes;
     lambda_orb_type             _lambda_orb;
   };
 
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::BaseDClass {
-    friend class Konieczny<TElementType, TTraits>;
     using element_type = TElementType;
     using Rank         = Konieczny<TElementType, TTraits>::Rank;
 
    public:
-    BaseDClass(Konieczny* parent, element_type rep)
+    BaseDClass(Konieczny* parent, element_type const& rep)
         : _rank(Rank()(rep)),
           _computed(false),
           _H_class(),
@@ -259,7 +267,7 @@ namespace libsemigroups {
 
     virtual ~BaseDClass() {}
 
-    element_type rep() const {
+    const_reference rep() const noexcept {
       return _rep;
     }
 
@@ -335,7 +343,7 @@ namespace libsemigroups {
       return _H_class.cend();
     }
 
-    virtual bool contains(element_type bm) = 0;
+    virtual bool contains(element_type const& bm) = 0;
 
     bool contains(element_type bm, size_t rank) {
       return (rank == _rank && contains(bm));
@@ -351,18 +359,22 @@ namespace libsemigroups {
       std::vector<element_type> out;
       // TODO: how to decide which side to calculate? One is often faster
       if (_parent->_lambda_orb.size() < _parent->_rho_orb.size()) {
-        for (element_type w : _left_reps) {
-          for (element_type g : _parent->_gens) {
-            element_type x = w * g;
+        for (element_type const& w : _left_reps) {
+          for (auto it = _parent->cbegin_generators();
+               it < _parent->cend_generators();
+               ++it) {
+            element_type x = w * (*it);
             if (!contains(x)) {
               out.push_back(x);
             }
           }
         }
       } else {
-        for (element_type z : _right_reps) {
-          for (element_type g : _parent->_gens) {
-            element_type x = g * z;
+        for (element_type const& z : _right_reps) {
+          for (auto it = _parent->cbegin_generators();
+               it < _parent->cend_generators();
+               ++it) {
+            element_type x = (*it) * z;
             if (!contains(x)) {
               out.push_back(x);
             }
@@ -399,7 +411,7 @@ namespace libsemigroups {
     using element_type = TElementType;
 
    public:
-    RegularDClass(Konieczny* parent, element_type idem_rep)
+    RegularDClass(Konieczny* parent, element_type const& idem_rep)
         : Konieczny::BaseDClass(parent, idem_rep),
           _rho_val_positions(),
           _H_gens(),
@@ -411,7 +423,7 @@ namespace libsemigroups {
           _stab_chain() {
       if (idem_rep * idem_rep != idem_rep) {
         LIBSEMIGROUPS_EXCEPTION(
-            "RegularDClass: the representative given should be idempotent");
+            "the representative given should be idempotent");
       }
     }
 
@@ -459,20 +471,13 @@ namespace libsemigroups {
       return _right_idem_reps.cend();
     }
 
-    /*
-    SchreierSims<8, uint8_t, Permutation<uint8_t>> stab_chain() {
-      init();
-      return _stab_chain;
-    }
-    */
-
     // TODO: this is the wrong function! contains shouldn't assume argument is
     //        in semigroup!
     //! Tests whether an element \p bm of the semigroup is in this D class
     //!
     //! Watch out! The element \bm must be known to be in the semigroup for this
     //! to be valid!
-    bool contains(element_type bm) override {
+    bool contains(element_type const& bm) override {
       init();
       std::pair<size_t, size_t> x = index_positions(bm);
       return x.first != UNDEFINED;
@@ -483,17 +488,17 @@ namespace libsemigroups {
     // UNDEFINED)
     std::pair<size_t, size_t> index_positions(element_type bm) {
       init();
-      auto l_it = _lambda_val_positions.find(
-          ToInt<lambda_value_type>()(Lambda()(bm)));
+      auto l_it = _lambda_val_positions.find(Lambda()(bm));
       if (l_it != _lambda_val_positions.end()) {
-        auto r_it = _rho_val_positions.find(ToInt<rho_value_type>()(Rho()(bm)));
+        auto r_it = _rho_val_positions.find(Rho()(bm));
         if (r_it != _rho_val_positions.end()) {
-          return std::make_pair((*l_it).second, (*r_it).second);
+          return std::make_pair(l_it->second, r_it->second);
         }
       }
       return std::make_pair(UNDEFINED, UNDEFINED);
     }
 
+    // HERE
     size_t nr_idempotents() {
       init();
       size_t count = 0;
@@ -552,9 +557,8 @@ namespace libsemigroups {
           }
         }
         if (this->_parent->_group_indices_alt.at(key) != UNDEFINED) {
-          _lambda_val_positions.emplace(
-              ToInt<lambda_value_type>()(this->_parent->_lambda_orb.at(*it)),
-              _left_indices.size());
+          _lambda_val_positions.emplace(this->_parent->_lambda_orb.at(*it),
+                                        _left_indices.size());
           _left_indices.push_back(*it);
         }
       }
@@ -579,9 +583,8 @@ namespace libsemigroups {
               * this->_parent->_rho_orb.multiplier_to_scc_root(rval_pos)
               * this->_rep;
         if (this->_parent->find_group_index(x) != UNDEFINED) {
-          _rho_val_positions.emplace(
-              ToInt<rho_value_type>()(this->_parent->_rho_orb.at(*it)),
-              _right_indices.size());
+          _rho_val_positions.emplace(this->_parent->_rho_orb.at(*it),
+                                     _right_indices.size());
           _right_indices.push_back(*it);
         }
       }
@@ -658,8 +661,7 @@ namespace libsemigroups {
             = std::make_pair(rval_scc_id, _left_indices[i]);
 
         size_t k = this->_parent->_group_indices_alt.at(key);
-        size_t j = _rho_val_positions.at(
-            ToInt<rho_value_type>()(this->_parent->_rho_orb.at(k)));
+        size_t j = _rho_val_positions.at(this->_parent->_rho_orb.at(k));
         element_type q = this->_right_reps[j];
         // find the inverse of pq in H_rep
         element_type y = group_inverse<element_type>(this->_rep, p * q);
@@ -777,13 +779,13 @@ namespace libsemigroups {
       this->_computed = true;
     }
 
-    std::unordered_map<size_t, size_t>             _rho_val_positions;
+    std::unordered_map<rho_value_type, size_t>     _rho_val_positions;
     std::vector<element_type>                      _H_gens;
     std::vector<element_type>                      _left_idem_reps;
     std::vector<size_t>                            _left_indices;
     std::vector<element_type>                      _right_idem_reps;
     std::vector<size_t>                            _right_indices;
-    std::unordered_map<size_t, size_t>             _lambda_val_positions;
+    std::unordered_map<lambda_value_type, size_t>  _lambda_val_positions;
     SchreierSims<8, uint8_t, Permutation<uint8_t>> _stab_chain;
   };
 
@@ -808,7 +810,7 @@ namespace libsemigroups {
       }
     }
 
-    bool contains(element_type bm) override {
+    bool contains(element_type const& bm) override {
       init();
       size_t x = ToInt<lambda_value_type>()(Lambda()(bm));
       if (_lambda_val_positions[x].size() == 0) {
@@ -1092,20 +1094,20 @@ namespace libsemigroups {
 
   template <typename TElementType, typename TTraits>
   void Konieczny<TElementType, TTraits>::compute_D_classes() {
-    conditional_add_identity();
     compute_orbs();
 
+    // TODO remove magic numbers
     std::vector<std::vector<std::pair<element_type, size_t>>> reg_reps(
-        257, std::vector<std::pair<element_type, size_t>>());
+        Rank()(_one) + 1, std::vector<std::pair<element_type, size_t>>());
     std::vector<std::vector<std::pair<element_type, size_t>>> non_reg_reps(
-        257, std::vector<std::pair<element_type, size_t>>());
+        Rank()(_one) + 1, std::vector<std::pair<element_type, size_t>>());
     // TODO: reserve?
     std::set<size_t> ranks;
     size_t           max_rank = 0;
     ranks.insert(0);
 
     RegularDClass* top
-        = new RegularDClass(this, bmat8_helpers::one<BMat8>(_dim));
+        = new RegularDClass(this, _one);
     add_D_class(top);
     for (element_type x : top->covering_reps()) {
       size_t rank = Rank()(x);
@@ -1189,7 +1191,7 @@ namespace libsemigroups {
         std::vector<std::pair<element_type, size_t>> tmp;
         for (std::pair<element_type, size_t>& x : next_reps) {
           if (D->contains(std::get<0>(x))) {
-            _D_rels[_D_classes.size() - 1].push_back(std::get<1>(x));
+            _D_rels[_D_classes.size() - 1].push_back(x.second);
           } else {
             tmp.push_back(std::move(x));
           }
