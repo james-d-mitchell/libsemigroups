@@ -763,6 +763,101 @@ namespace libsemigroups {
       return x.transpose();
     }
   };
+  
+  
+  //! Specialization of the adapter Lambda for instances of
+  //! BMat8.
+  //!
+  //! \sa Lambda.
+  template <>
+  struct Lambda<BMat8> {
+    //! Returns the lambda value of \p x as used in the Konieczny algorithm; for BMat8
+    //! this is the row space basis.
+    inline BMat8 operator()(BMat8 const& x) const noexcept {
+      return x.row_space_basis();
+    }
+  };
+  
+  //! Specialization of the adapter Rho for instances of
+  //! BMat8.
+  //!
+  //! \sa Rho.
+  template <>
+  struct Rho<BMat8> {
+    //! Returns the rho value of \p x as used in the Konieczny algorithm; for BMat8
+    //! this is the column space basis.
+    inline BMat8 operator()(BMat8 const& x) const noexcept {
+      return x.col_space_basis();
+    }
+  };
+  
+  //! Specialization of the adapter InverseLambda for instances of
+  //! BMat8.
+  //!
+  //! \sa InverseLambda.
+  template <>
+  struct InverseLambda<BMat8, BMat8> {
+    //! Returns a BMat8 with row basis \p pt.
+    BMat8 operator()(BMat8 const& pt) const
+        noexcept {
+      return pt;
+    }
+  };
+  
+  //! Specialization of the adapter InverseRho for instances of
+  //! BMat8.
+  //!
+  //! \sa InverseRho.
+  template <>
+  struct InverseRho<BMat8, BMat8> {
+    //! Returns a BMat8 with column basis \p pt.
+    BMat8 operator()(BMat8 const& pt) const
+        noexcept {
+      return pt;
+    }
+  };
+  
+  //! Specialization of the adapter KonRank for instances of
+  //! BMat8.
+  //!
+  //! \sa KonRank.
+  template <>
+  struct KonRank<BMat8> {
+    //! Returns the rank of \p x as used in the Konieczny algorithm; for BMat8
+    //! this is the size of the row space.
+    inline size_t operator()(BMat8 const& x) const noexcept {
+      return x.row_space_size();
+    }
+  };
+  
+  //! Specialization of the adapter ToInt for instances of
+  //! BMat8.
+  //!
+  //! \sa ToInt.
+  template <>
+  struct ToInt<BMat8> {
+    //! Returns an integer representation of \p x as used in the Konieczny
+    //! algorithm; for BMat8 this is simply the the value of \c to_int().
+    inline size_t operator()(BMat8 const& x) const noexcept {
+      return x.to_int();
+    }
+  };
+  
+  //! Provides a call operator returning a hash value for a vector of BMat8s.
+  //!
+  //! This struct provides a call operator for obtaining a hash value for the
+  //! vector.
+  template <>
+  struct VecHash<BMat8> {
+    //! Hashes a vector of BMat8s.
+    size_t operator()(std::vector<BMat8> const& vec) const {
+      size_t hash = 0;
+      for (BMat8 x : vec) {
+        hash ^= x.to_int() + 0x9e3779b97f4a7c16 + (hash << 6) + (hash >> 2);
+      }
+      return hash;
+    }
+  };
 }  // namespace libsemigroups
 
 #endif  // LIBSEMIGROUPS_BMAT8_HPP_
