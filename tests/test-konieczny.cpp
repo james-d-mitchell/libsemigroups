@@ -71,6 +71,7 @@ namespace libsemigroups {
                           "001",
                           "regular elements and idempotents",
                           "[quick]") {
+    ReportGuard rg(true);
     const std::vector<BMat8> gens
         = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}),
