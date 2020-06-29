@@ -518,29 +518,31 @@ namespace libsemigroups {
   /////////////////////////////////////////////////////////////////////
   // KONIECZNY THINGS
   /////////////////////////////////////////////////////////////////////
-  
+
   template <typename TElementType, typename = void>
   struct Lambda;
-  
+
   template <typename TElementType, typename = void>
   struct Rho;
 
-  template <typename TElementType, typename TPointType, typename = void>
-  struct InverseLambda;
-  
-  template <typename TElementType, typename TPointType, typename = void>
-  struct InverseRho;
-  
   template <typename TElementType, typename = void>
-  struct KonRank;
+  struct Rank;
 
   //TODO: not sure this is strictly necessary
   template <typename TPointType, typename = void>
   struct ToInt;
-  
+
   //TODO: or this?
   template <typename TElementType, typename = void>
   struct VecHash;
+
+  //TODO: not sure this is strictly necessary
+  template <typename TElementType, typename TPointType, typename = void>
+  struct InverseLambda;
+
+  //TODO: not sure this is strictly necessary
+  template <typename TElementType, typename TPointType, typename = void>
+  struct InverseRho;
 
   // #ifdef LIBSEMIGROUPS_DENSEHASHMAP
   //   template <typename TElementType, typename = void>

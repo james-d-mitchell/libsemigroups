@@ -763,8 +763,8 @@ namespace libsemigroups {
       return x.transpose();
     }
   };
-  
-  
+
+
   //! Specialization of the adapter Lambda for instances of
   //! BMat8.
   //!
@@ -777,7 +777,7 @@ namespace libsemigroups {
       return x.row_space_basis();
     }
   };
-  
+
   //! Specialization of the adapter Rho for instances of
   //! BMat8.
   //!
@@ -790,7 +790,7 @@ namespace libsemigroups {
       return x.col_space_basis();
     }
   };
-  
+
   //! Specialization of the adapter InverseLambda for instances of
   //! BMat8.
   //!
@@ -803,7 +803,7 @@ namespace libsemigroups {
       return pt;
     }
   };
-  
+
   //! Specialization of the adapter InverseRho for instances of
   //! BMat8.
   //!
@@ -816,20 +816,20 @@ namespace libsemigroups {
       return pt;
     }
   };
-  
+
   //! Specialization of the adapter KonRank for instances of
   //! BMat8.
   //!
   //! \sa KonRank.
   template <>
-  struct KonRank<BMat8> {
+  struct Rank<BMat8> {
     //! Returns the rank of \p x as used in the Konieczny algorithm; for BMat8
     //! this is the size of the row space.
     inline size_t operator()(BMat8 const& x) const noexcept {
       return x.row_space_size();
     }
   };
-  
+
   //! Specialization of the adapter ToInt for instances of
   //! BMat8.
   //!
@@ -842,7 +842,7 @@ namespace libsemigroups {
       return x.to_int();
     }
   };
-  
+
   //! Provides a call operator returning a hash value for a vector of BMat8s.
   //!
   //! This struct provides a call operator for obtaining a hash value for the
