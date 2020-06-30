@@ -782,6 +782,7 @@ namespace libsemigroups {
       REQUIRE(D.contains(*it));
     }
   }
+  */
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny", "009", "full bmat monoid 4", "[quick]") {
     const std::vector<BMat8> bmat4_gens
@@ -794,10 +795,11 @@ namespace libsemigroups {
            BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}})};
 
-    Konieczny S(bmat4_gens);
+    Konieczny<BMat8> S(bmat4_gens);
     REQUIRE(S.size() == 65536);
   }
 
+  /*
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "010",
                           "full bmat monoid 5",
