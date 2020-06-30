@@ -132,7 +132,7 @@ namespace libsemigroups {
 
   template <typename TElementType,
             typename TTraits = KoniecznyTraits<TElementType>>
-  class Konieczny {  // TODO subclass runner
+  class Konieczny : public Runner {  // TODO subclass runner
    public:
     using element_type    = typename TTraits::element_type;
     using const_reference = element_type const&;
@@ -162,7 +162,8 @@ namespace libsemigroups {
           _one(),
           _regular_D_classes(),
           _lambda_orb(),
-          _adjoined_identity_contained(false) {
+          _adjoined_identity_contained(false),
+          _computed_all_classes(false) {
       if (_gens.empty()) {
         LIBSEMIGROUPS_EXCEPTION(
             "expected a positive number of generators, but got 0");
@@ -172,6 +173,9 @@ namespace libsemigroups {
     }
 
     ~Konieczny();
+
+    void run_impl() override;
+    bool finished_impl() const override;
 
     //! Finds a group index of a H class in the R class of \p bm
     size_t find_group_index(element_type const& bm) {
@@ -257,8 +261,6 @@ namespace libsemigroups {
                      t.string());
     }
 
-    void compute_D_classes();
-
     typename std::vector<element_type>::const_iterator
     cbegin_generators() const {
       return _gens.cbegin();
@@ -283,6 +285,7 @@ namespace libsemigroups {
     std::vector<RegularDClass*> _regular_D_classes;
     lambda_orb_type             _lambda_orb;
     bool                        _adjoined_identity_contained;
+    bool                        _computed_all_classes;
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1439,7 +1442,7 @@ namespace libsemigroups {
 
   template <typename TElementType, typename TTraits>
   size_t Konieczny<TElementType, TTraits>::size() {
-    compute_D_classes();
+    run();
     size_t out = 0;
     auto   it  = _D_classes.begin();
     if (!_adjoined_identity_contained) {
@@ -1452,7 +1455,12 @@ namespace libsemigroups {
   }
 
   template <typename TElementType, typename TTraits>
-  void Konieczny<TElementType, TTraits>::compute_D_classes() {
+  bool Konieczny<TElementType, TTraits>::finished_impl() const {
+    return _computed_all_classes;
+  }
+
+  template <typename TElementType, typename TTraits>
+  void Konieczny<TElementType, TTraits>::run_impl() {
     compute_orbs();
 
     std::vector<std::vector<std::pair<element_type, size_t>>> reg_reps(
@@ -1507,6 +1515,11 @@ namespace libsemigroups {
       next_reps = std::move(tmp_next);
 
       while (!next_reps.empty()) {
+
+        if (report()) {
+          REPORT_DEFAULT("computed %d D classes, so far\n", _D_classes.size());
+        }
+
         BaseDClass*                      D;
         std::tuple<element_type, size_t> tup;
 
@@ -1575,6 +1588,7 @@ namespace libsemigroups {
         }
       }
     }
+    _computed_all_classes = true;
   }
 }  // namespace libsemigroups
 #endif  // LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
