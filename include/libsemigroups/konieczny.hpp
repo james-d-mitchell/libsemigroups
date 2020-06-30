@@ -106,14 +106,25 @@ namespace libsemigroups {
   template <typename TElementType>
   struct KoniecznyTraits {
     using element_type = TElementType;
-    using lambda_orb_type
-        = RightAction<BMat8, BMat8, ImageRightAction<BMat8, BMat8>>;
-    using rho_orb_type
-        = LeftAction<BMat8, BMat8, ImageLeftAction<BMat8, BMat8>>;
 
-    using Product = ::libsemigroups::Product<element_type>;
+
     using Lambda  = ::libsemigroups::Lambda<element_type>;
     using Rho     = ::libsemigroups::Rho<element_type>;
+
+    using lambda_value_type =
+        typename std::result_of<Lambda(element_type)>::type;
+    using rho_value_type = typename std::result_of<Rho(element_type)>::type;
+
+    using lambda_orb_type
+        = RightAction<element_type,
+                      lambda_value_type,
+                      ImageRightAction<element_type, lambda_value_type>>;
+    using rho_orb_type
+        = LeftAction<element_type,
+                     rho_value_type,
+                     ImageLeftAction<element_type, rho_value_type>>;
+
+    using Product = ::libsemigroups::Product<element_type>;
     using Rank    = ::libsemigroups::Rank<element_type>;
     using One     = ::libsemigroups::One<element_type>;
     using VecHash = ::libsemigroups::konieczny_helpers::VecHash<element_type>;
@@ -126,7 +137,9 @@ namespace libsemigroups {
     using element_type    = typename TTraits::element_type;
     using const_reference = element_type const&;
 
-    // TODO: move these into Traits
+    using lambda_value_type = typename TTraits::lambda_value_type;
+    using rho_value_type    = typename TTraits::rho_value_type;
+
     using lambda_orb_type = typename TTraits::lambda_orb_type;
     using rho_orb_type    = typename TTraits::rho_orb_type;
 
@@ -137,9 +150,6 @@ namespace libsemigroups {
     using One     = typename TTraits::One;
     using VecHash = typename TTraits::VecHash;
 
-    using lambda_value_type =
-        typename std::result_of<Lambda(element_type)>::type;
-    using rho_value_type = typename std::result_of<Rho(element_type)>::type;
 
     explicit Konieczny(std::vector<element_type> const& gens)
         : _rho_orb(),
@@ -287,10 +297,9 @@ namespace libsemigroups {
    public:
     BaseDClass(Konieczny* parent, element_type const& rep)
         : _rank(Rank()(rep)),
-          _class_computed(false),
-          _H_class(),
           _parent(parent),
           _rep(rep),
+          _class_computed(false),
           _mults_computed(false),
           _reps_computed(false),
           _H_class_computed(false),
@@ -299,8 +308,8 @@ namespace libsemigroups {
           _right_mults(),
           _right_mults_inv(),
           _left_reps(),
-          _right_reps()
-    {}
+          _right_reps(),
+          _H_class() {}
 
     virtual ~BaseDClass() {}
 
@@ -425,17 +434,16 @@ namespace libsemigroups {
     }
 
    protected:
-    virtual void compute_left_mults() = 0;
+    virtual void compute_left_mults()     = 0;
     virtual void compute_left_mults_inv() = 0;
-    virtual void compute_left_reps() = 0;
-    
-    
-    virtual void compute_right_mults() = 0;
+    virtual void compute_left_reps()      = 0;
+
+    virtual void compute_right_mults()     = 0;
     virtual void compute_right_mults_inv() = 0;
-    virtual void compute_right_reps() = 0;
+    virtual void compute_right_reps()      = 0;
 
     virtual void compute_H_class() = 0;
-   protected:
+
     // TODO: these will all copy the element
     void push_left_mult(element_type x) {
       _left_mults.push_back(x);
@@ -451,7 +459,7 @@ namespace libsemigroups {
       }
 #endif
     }
-    
+
     void push_left_mult_inv(element_type x) {
       _left_mults_inv.push_back(x);
 #ifdef LIBSEMIGROUPS_DEBUG
@@ -496,7 +504,7 @@ namespace libsemigroups {
       }
 #endif
     }
-    
+
     void push_left_rep(element_type x) {
       _left_reps.push_back(x);
 #ifdef LIBSEMIGROUPS_DEBUG
@@ -506,12 +514,11 @@ namespace libsemigroups {
       }
       if (_left_mults_inv.size() >= _left_reps.size()) {
         LIBSEMIGROUPS_ASSERT(
-            Lambda()(_rep)
-            == Lambda()(x * _left_mults_inv[_left_reps.size()]));
+            Lambda()(_rep) == Lambda()(x * _left_mults_inv[_left_reps.size()]));
       }
 #endif
     }
-    
+
     void push_right_rep(element_type x) {
       _right_reps.push_back(x);
 #ifdef LIBSEMIGROUPS_DEBUG
@@ -526,24 +533,24 @@ namespace libsemigroups {
       }
 #endif
     }
-    
+
     void push_H_class_elm(element_type x) {
       _H_class.push_back(x);
       // TODO: sensible assertions here
     }
 
-    std::back_insert_iterator<std::vector<element_type>> _H_back_inserter () {
+    std::back_insert_iterator<std::vector<element_type>> _H_back_inserter() {
       return std::back_inserter(_H_class);
     }
 
     size_t left_reps_size() {
       return _left_reps.size();
     }
-    
+
     size_t right_reps_size() {
       return _right_reps.size();
     }
-    
+
     bool class_computed() const {
       return _class_computed;
     }
@@ -555,15 +562,15 @@ namespace libsemigroups {
     bool reps_computed() const {
       return _reps_computed;
     }
-    
+
     bool H_class_computed() const {
       return _H_class_computed;
     }
-    
+
     void set_class_computed(bool x) {
       _class_computed = x;
     }
-    
+
     void set_mults_computed(bool x) {
       _mults_computed = x;
     }
@@ -571,27 +578,27 @@ namespace libsemigroups {
     void set_reps_computed(bool x) {
       _reps_computed = x;
     }
-    
+
     void set_H_class_computed(bool x) {
       _H_class_computed = x;
     }
 
+    Konieczny* parent() const {
+      return _parent;
+    }
+
     // TODO: Once again I have deeply confused myself with move semantics
     void set_H_class(std::vector<element_type> vec) {
+      // TODO: assertions
       _H_class = vec;
     }
 
-    // TODO(FLS): protected -> private
-   protected:
     virtual void init() = 0;
 
-    // TODO(FLS): member functions providing access to these
-    // change these as if DClasses aren't accessible from the outside
+   private:
     size_t                    _rank;
     Konieczny*                _parent;
     element_type              _rep;
-
-   private:
     bool                      _class_computed;
     bool                      _mults_computed;
     bool                      _reps_computed;
@@ -712,8 +719,8 @@ namespace libsemigroups {
         for (auto it2 = cbegin_right_indices(); it2 < cend_right_indices();
              ++it2) {
           if (konieczny_helpers::is_group_index(
-                  this->_parent->_rho_orb.at(*it2),
-                  this->_parent->_lambda_orb.at(*it))) {
+                  this->parent()->_rho_orb.at(*it2),
+                  this->parent()->_lambda_orb.at(*it))) {
             count++;
           }
         }
@@ -732,46 +739,47 @@ namespace libsemigroups {
       }
       _left_indices.clear();
       size_t lval_pos
-          = this->_parent->_lambda_orb.position(Lambda()(this->_rep));
-      size_t rval_pos = this->_parent->_rho_orb.position(Rho()(this->_rep));
+          = this->parent()->_lambda_orb.position(Lambda()(this->rep()));
+      size_t rval_pos = this->parent()->_rho_orb.position(Rho()(this->rep()));
       size_t lval_scc_id
-          = this->_parent->_lambda_orb.digraph().scc_id(lval_pos);
-      size_t rval_scc_id = this->_parent->_rho_orb.digraph().scc_id(rval_pos);
+          = this->parent()->_lambda_orb.digraph().scc_id(lval_pos);
+      size_t rval_scc_id = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
 
       std::pair<size_t, size_t> key = std::make_pair(rval_scc_id, 0);
       for (auto it
-           = this->_parent->_lambda_orb.digraph().cbegin_scc(lval_scc_id);
-           it < this->_parent->_lambda_orb.digraph().cend_scc(lval_scc_id);
+           = this->parent()->_lambda_orb.digraph().cbegin_scc(lval_scc_id);
+           it < this->parent()->_lambda_orb.digraph().cend_scc(lval_scc_id);
            it++) {
         key.second = *it;
-        if (this->_parent->_group_indices_alt.find(key)
-            == this->_parent->_group_indices_alt.end()) {
+        if (this->parent()->_group_indices_alt.find(key)
+            == this->parent()->_group_indices_alt.end()) {
           bool found = false;
           for (auto it2
-               = this->_parent->_rho_orb.digraph().cbegin_scc(rval_scc_id);
+               = this->parent()->_rho_orb.digraph().cbegin_scc(rval_scc_id);
                !found
-               && it2 < this->_parent->_rho_orb.digraph().cend_scc(rval_scc_id);
+               && it2 < this->parent()->_rho_orb.digraph().cend_scc(
+                            rval_scc_id);
                it2++) {
             if (konieczny_helpers::is_group_index(
-                    this->_parent->_rho_orb.at(*it2),
-                    this->_parent->_lambda_orb.at(*it))) {
-              this->_parent->_group_indices_alt.emplace(key, *it2);
+                    this->parent()->_rho_orb.at(*it2),
+                    this->parent()->_lambda_orb.at(*it))) {
+              this->parent()->_group_indices_alt.emplace(key, *it2);
               found = true;
             }
           }
           if (!found) {
-            this->_parent->_group_indices_alt.emplace(key, UNDEFINED);
+            this->parent()->_group_indices_alt.emplace(key, UNDEFINED);
           }
         }
-        if (this->_parent->_group_indices_alt.at(key) != UNDEFINED) {
-          _lambda_val_positions.emplace(this->_parent->_lambda_orb.at(*it),
+        if (this->parent()->_group_indices_alt.at(key) != UNDEFINED) {
+          _lambda_val_positions.emplace(this->parent()->_lambda_orb.at(*it),
                                         _left_indices.size());
           _left_indices.push_back(*it);
         }
       }
 #ifdef LIBSEMIGROUPS_DEBUG
       for (size_t i : _left_indices) {
-        LIBSEMIGROUPS_ASSERT(i < this->_parent->_lambda_orb.size());
+        LIBSEMIGROUPS_ASSERT(i < this->parent()->_lambda_orb.size());
       }
 #endif
       this->_left_indices_computed = true;
@@ -782,25 +790,25 @@ namespace libsemigroups {
         return;
       }
       this->_right_indices.clear();
-      size_t rval_pos    = this->_parent->_rho_orb.position(Rho()(this->_rep));
-      size_t rval_scc_id = this->_parent->_rho_orb.digraph().scc_id(rval_pos);
-      for (auto it = this->_parent->_rho_orb.digraph().cbegin_scc(rval_scc_id);
-           it < this->_parent->_rho_orb.digraph().cend_scc(rval_scc_id);
+      size_t rval_pos = this->parent()->_rho_orb.position(Rho()(this->rep()));
+      size_t rval_scc_id = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
+      for (auto it = this->parent()->_rho_orb.digraph().cbegin_scc(rval_scc_id);
+           it < this->parent()->_rho_orb.digraph().cend_scc(rval_scc_id);
            it++) {
         // TODO: will need two temporary elements for this product etc.
         element_type x
-            = this->_parent->_rho_orb.multiplier_from_scc_root(*it)
-              * this->_parent->_rho_orb.multiplier_to_scc_root(rval_pos)
-              * this->_rep;
-        if (this->_parent->find_group_index(x) != UNDEFINED) {
-          _rho_val_positions.emplace(this->_parent->_rho_orb.at(*it),
+            = this->parent()->_rho_orb.multiplier_from_scc_root(*it)
+              * this->parent()->_rho_orb.multiplier_to_scc_root(rval_pos)
+              * this->rep();
+        if (this->parent()->find_group_index(x) != UNDEFINED) {
+          _rho_val_positions.emplace(this->parent()->_rho_orb.at(*it),
                                      _right_indices.size());
           _right_indices.push_back(*it);
         }
       }
 #ifdef LIBSEMIGROUPS_DEBUG
       for (size_t i : _right_indices) {
-        LIBSEMIGROUPS_ASSERT(i < this->_parent->_rho_orb.size());
+        LIBSEMIGROUPS_ASSERT(i < this->parent()->_rho_orb.size());
       }
 #endif
       this->_right_indices_computed = true;
@@ -809,23 +817,23 @@ namespace libsemigroups {
     void compute_left_mults() {
       compute_mults();
     }
-    
+
     void compute_left_mults_inv() {
       compute_mults();
     }
-    
+
     void compute_left_reps() {
       compute_reps();
     }
-    
+
     void compute_right_mults() {
       compute_mults();
     }
-    
+
     void compute_right_mults_inv() {
       compute_reps();
     }
-    
+
     void compute_right_reps() {
       compute_reps();
     }
@@ -837,20 +845,20 @@ namespace libsemigroups {
       compute_left_indices();
       compute_right_indices();
 
-      lambda_value_type lval     = Lambda()(this->_rep);
-      size_t            lval_pos = this->_parent->_lambda_orb.position(lval);
-      rho_value_type    rval     = Rho()(this->_rep);
-      size_t            rval_pos = this->_parent->_rho_orb.position(rval);
+      lambda_value_type lval     = Lambda()(this->rep());
+      size_t            lval_pos = this->parent()->_lambda_orb.position(lval);
+      rho_value_type    rval     = Rho()(this->rep());
+      size_t            rval_pos = this->parent()->_rho_orb.position(rval);
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         element_type b
-            = this->_parent->_lambda_orb.multiplier_to_scc_root(lval_pos)
-              * this->_parent->_lambda_orb.multiplier_from_scc_root(
+            = this->parent()->_lambda_orb.multiplier_to_scc_root(lval_pos)
+              * this->parent()->_lambda_orb.multiplier_from_scc_root(
                     _left_indices[i]);
         element_type c
-            = this->_parent->_lambda_orb.multiplier_to_scc_root(
+            = this->parent()->_lambda_orb.multiplier_to_scc_root(
                   _left_indices[i])
-              * this->_parent->_lambda_orb.multiplier_from_scc_root(lval_pos);
+              * this->parent()->_lambda_orb.multiplier_from_scc_root(lval_pos);
 
         this->push_left_mult(b);
         this->push_left_mult_inv(c);
@@ -858,12 +866,12 @@ namespace libsemigroups {
 
       for (size_t i = 0; i < _right_indices.size(); ++i) {
         element_type c
-            = this->_parent->_rho_orb.multiplier_from_scc_root(
+            = this->parent()->_rho_orb.multiplier_from_scc_root(
                   _right_indices[i])
-              * this->_parent->_rho_orb.multiplier_to_scc_root(rval_pos);
+              * this->parent()->_rho_orb.multiplier_to_scc_root(rval_pos);
         element_type d
-            = this->_parent->_rho_orb.multiplier_from_scc_root(rval_pos)
-              * this->_parent->_rho_orb.multiplier_to_scc_root(
+            = this->parent()->_rho_orb.multiplier_from_scc_root(rval_pos)
+              * this->parent()->_rho_orb.multiplier_to_scc_root(
                     _right_indices[i]);
 
         this->push_right_mult(c);
@@ -881,12 +889,14 @@ namespace libsemigroups {
 
       // TODO: these (and everything else like them) should be const references
       // to avoid copying
-      for(auto it = this->cbegin_left_mults(); it < this->cend_left_mults(); ++it) {
-        this->push_left_rep(this->_rep * (*it));
+      for (auto it = this->cbegin_left_mults(); it < this->cend_left_mults();
+           ++it) {
+        this->push_left_rep(this->rep() * (*it));
       }
 
-      for(auto it = this->cbegin_right_mults(); it < this->cend_right_mults(); ++it) {
-        this->push_right_rep((*it) * this->_rep);
+      for (auto it = this->cbegin_right_mults(); it < this->cend_right_mults();
+           ++it) {
+        this->push_right_rep((*it) * this->rep());
       }
       this->set_reps_computed(true);
     }
@@ -901,9 +911,9 @@ namespace libsemigroups {
       compute_mults();
       compute_reps();
 
-      rho_value_type rval     = Rho()(this->_rep);
-      size_t         rval_pos = this->_parent->_rho_orb.position(rval);
-      size_t rval_scc_id = this->_parent->_rho_orb.digraph().scc_id(rval_pos);
+      rho_value_type rval     = Rho()(this->rep());
+      size_t         rval_pos = this->parent()->_rho_orb.position(rval);
+      size_t rval_scc_id = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
       std::vector<element_type> right_invs;
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
@@ -911,22 +921,22 @@ namespace libsemigroups {
         std::pair<size_t, size_t> key
             = std::make_pair(rval_scc_id, _left_indices[i]);
 
-        size_t       k = this->_parent->_group_indices_alt.at(key);
-        size_t       j = _rho_val_positions.at(this->_parent->_rho_orb.at(k));
+        size_t       k = this->parent()->_group_indices_alt.at(key);
+        size_t       j = _rho_val_positions.at(this->parent()->_rho_orb.at(k));
         element_type q = this->cbegin_right_reps()[j];
         // find the inverse of pq in H_rep
-        element_type y
-            = konieczny_helpers::group_inverse<element_type>(this->_rep, p * q);
+        element_type y = konieczny_helpers::group_inverse<element_type>(
+            this->rep(), p * q);
         right_invs.push_back(q * y);
       }
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         element_type p = this->cbegin_left_reps()[i];
-        for (element_type g : this->_parent->_gens) {
+        for (element_type g : this->parent()->_gens) {
           element_type      x = p * g;
           lambda_value_type s = Lambda()(x);
           for (size_t j = 0; j < _left_indices.size(); ++j) {
-            if (this->_parent->_lambda_orb.at(_left_indices[j]) == s) {
+            if (this->parent()->_lambda_orb.at(_left_indices[j]) == s) {
               _H_gens.push_back(x * right_invs[j]);
               break;
             }
@@ -948,13 +958,13 @@ namespace libsemigroups {
       compute_right_indices();
       compute_mults();
 
-      lambda_value_type lval     = Lambda()(this->_rep);
-      rho_value_type    rval     = Rho()(this->_rep);
-      size_t            lval_pos = this->_parent->_lambda_orb.position(lval);
-      size_t            rval_pos = this->_parent->_rho_orb.position(rval);
+      lambda_value_type lval     = Lambda()(this->rep());
+      rho_value_type    rval     = Rho()(this->rep());
+      size_t            lval_pos = this->parent()->_lambda_orb.position(lval);
+      size_t            rval_pos = this->parent()->_rho_orb.position(rval);
       size_t            lval_scc_id
-          = this->_parent->_lambda_orb.digraph().scc_id(lval_pos);
-      size_t rval_scc_id = this->_parent->_rho_orb.digraph().scc_id(rval_pos);
+          = this->parent()->_lambda_orb.digraph().scc_id(lval_pos);
+      size_t rval_scc_id = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
 
       // this all relies on the indices having been computed already
 
@@ -963,30 +973,30 @@ namespace libsemigroups {
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         std::pair<size_t, size_t> key
             = std::make_pair(rval_scc_id, _left_indices[i]);
-        size_t k = this->_parent->_group_indices_alt.at(key);
+        size_t k = this->parent()->_group_indices_alt.at(key);
         size_t j = 0;
         while (_right_indices[j] != k) {
           ++j;
         }
-        element_type x
-            = this->cbegin_right_mults()[j] * this->_rep * this->cbegin_left_mults()[i];
+        element_type x = this->cbegin_right_mults()[j] * this->rep()
+                         * this->cbegin_left_mults()[i];
         _left_idem_reps.push_back(
             konieczny_helpers::idem_in_H_class<element_type>(x));
       }
 
       for (size_t j = 0; j < _right_indices.size(); ++j) {
         // TODO: make comprehensible
-        std::pair<size_t, size_t> key
-            = std::make_pair(ToInt<rho_value_type>()(
-                                 this->_parent->_rho_orb.at(_right_indices[j])),
-                             lval_scc_id);
-        size_t k = this->_parent->_group_indices.at(key);
+        std::pair<size_t, size_t> key = std::make_pair(
+            ToInt<rho_value_type>()(
+                this->parent()->_rho_orb.at(_right_indices[j])),
+            lval_scc_id);
+        size_t k = this->parent()->_group_indices.at(key);
         size_t i = 0;
         while (_left_indices[i] != k) {
           ++i;
         }
-        element_type x
-            = this->cbegin_right_mults()[j] * this->_rep * this->cbegin_left_mults()[i];
+        element_type x = this->cbegin_right_mults()[j] * this->rep()
+                         * this->cbegin_left_mults()[i];
         _right_idem_reps.push_back(
             konieczny_helpers::idem_in_H_class<element_type>(x));
       }
@@ -1001,8 +1011,7 @@ namespace libsemigroups {
       compute_H_gens();
       std::vector<element_type> vec(_H_gens.begin(), _H_gens.end());
 
-      std::unordered_set<element_type> set(vec.begin(),
-                                           vec.end());
+      std::unordered_set<element_type> set(vec.begin(), vec.end());
       for (size_t i = 0; i < vec.size(); ++i) {
         for (element_type g : _H_gens) {
           element_type y = vec[i] * g;
@@ -1103,16 +1112,16 @@ namespace libsemigroups {
       // assumes that all D classes above this have already been calculated!
       bool left_found  = false;
       bool right_found = false;
-      for (auto it = this->_parent->_regular_D_classes.rbegin();
+      for (auto it = this->parent()->_regular_D_classes.rbegin();
            (!left_found || !right_found)
-           && it != this->_parent->_regular_D_classes.rend();
+           && it != this->parent()->_regular_D_classes.rend();
            it++) {
         RegularDClass* D = *it;
         if (!left_found) {
           for (auto idem_it = D->cbegin_left_idem_reps();
                idem_it < D->cend_left_idem_reps();
                idem_it++) {
-            if (this->_rep * (*idem_it) == this->_rep) {
+            if (this->rep() * (*idem_it) == this->rep()) {
               _left_idem_above = *idem_it;
               _left_idem_class = D;
               left_found       = true;
@@ -1125,7 +1134,7 @@ namespace libsemigroups {
           for (auto idem_it = D->cbegin_right_idem_reps();
                idem_it < D->cend_right_idem_reps();
                idem_it++) {
-            if ((*idem_it) * this->_rep == this->_rep) {
+            if ((*idem_it) * this->rep() == this->rep()) {
               _right_idem_above = (*idem_it);
               _right_idem_class = D;
               right_found       = true;
@@ -1139,8 +1148,8 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(_left_idem_class->contains(_left_idem_above));
       LIBSEMIGROUPS_ASSERT(_right_idem_class->contains(_right_idem_above));
       LIBSEMIGROUPS_ASSERT(left_found && right_found);
-      LIBSEMIGROUPS_ASSERT(this->_rep * _left_idem_above == this->_rep);
-      LIBSEMIGROUPS_ASSERT(_right_idem_above * this->_rep == this->_rep);
+      LIBSEMIGROUPS_ASSERT(this->rep() * _left_idem_above == this->rep());
+      LIBSEMIGROUPS_ASSERT(_right_idem_above * this->rep() == this->rep());
 #endif
     }
 
@@ -1174,14 +1183,14 @@ namespace libsemigroups {
            it < _left_idem_class->cend_H_class();
            it++) {
         left_idem_H_class.push_back(left_idem_right_mult * (*it)
-                                     * left_idem_left_mult);
+                                    * left_idem_left_mult);
       }
 
       for (auto it = _right_idem_class->cbegin_H_class();
            it < _right_idem_class->cend_H_class();
            it++) {
         right_idem_H_class.push_back(right_idem_right_mult * (*it)
-                                      * right_idem_left_mult);
+                                     * right_idem_left_mult);
       }
 
       std::vector<element_type> left_idem_left_reps;
@@ -1205,11 +1214,11 @@ namespace libsemigroups {
       std::vector<element_type> xHf;
 
       for (element_type s : left_idem_H_class) {
-        xHf.push_back(this->_rep * s);
+        xHf.push_back(this->rep() * s);
       }
 
       for (element_type t : right_idem_H_class) {
-        Hex.push_back(t * this->_rep);
+        Hex.push_back(t * this->rep());
       }
 
       std::unordered_set<element_type> s(Hex.begin(), Hex.end());
@@ -1271,7 +1280,7 @@ namespace libsemigroups {
         right_idem_right_reps.push_back((*it) * _right_idem_class->rep()
                                         * right_idem_left_mult);
       }
-      
+
       std::vector<element_type> left_idem_H_class;
       std::vector<element_type> right_idem_H_class;
 
@@ -1279,14 +1288,14 @@ namespace libsemigroups {
            it < _left_idem_class->cend_H_class();
            it++) {
         left_idem_H_class.push_back(left_idem_right_mult * (*it)
-                                     * left_idem_left_mult);
+                                    * left_idem_left_mult);
       }
 
       for (auto it = _right_idem_class->cbegin_H_class();
            it < _right_idem_class->cend_H_class();
            it++) {
         right_idem_H_class.push_back(right_idem_right_mult * (*it)
-                                      * right_idem_left_mult);
+                                     * right_idem_left_mult);
       }
 
       std::unordered_set<std::vector<element_type>, VecHash> Hxhw_set;
@@ -1305,7 +1314,7 @@ namespace libsemigroups {
           std::sort(Hxhw.begin(), Hxhw.end());
           if (Hxhw_set.find(Hxhw) == Hxhw_set.end()) {
             Hxhw_set.insert(Hxhw);
-            element_type A = this->_rep * h * w;
+            element_type A = this->rep() * h * w;
             element_type inv
                 = konieczny_helpers::group_inverse<element_type>(
                       _left_idem_above,
@@ -1340,7 +1349,7 @@ namespace libsemigroups {
           std::sort(zhHx.begin(), zhHx.end());
           if (zhHx_set.find(zhHx) == zhHx_set.end()) {
             zhHx_set.insert(zhHx);
-            element_type B = z * h * this->_rep;
+            element_type B = z * h * this->rep();
             element_type inv
                 = konieczny_helpers::group_inverse<element_type>(
                       _right_idem_above, h)
@@ -1367,9 +1376,8 @@ namespace libsemigroups {
       this->set_mults_computed(true);
     }
 
-
     // TODO: more copying... can this be avoided?
-    void construct_H_set () {
+    void construct_H_set() {
       _H_set = std::unordered_set<element_type>(this->cbegin_H_class(),
                                                 this->cend_H_class());
     }
@@ -1377,23 +1385,23 @@ namespace libsemigroups {
     void compute_left_mults() {
       compute_mults();
     }
-    
+
     void compute_left_mults_inv() {
       compute_mults();
     }
-    
+
     void compute_left_reps() {
       compute_mults();
     }
-    
+
     void compute_right_mults() {
       compute_mults();
     }
-    
+
     void compute_right_mults_inv() {
       compute_mults();
     }
-    
+
     void compute_right_reps() {
       compute_mults();
     }
