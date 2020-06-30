@@ -67,6 +67,7 @@ namespace libsemigroups {
     }
   }*/
 
+  /*
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "001",
                           "regular elements and idempotents",
@@ -91,7 +92,7 @@ namespace libsemigroups {
     // }
   }
 
-  /*LIBSEMIGROUPS_TEST_CASE("Konieczny", "002", "regular D class 01", "[quick]") {
+  LIBSEMIGROUPS_TEST_CASE("Konieczny", "002", "regular D class 01", "[quick]") {
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                      BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                      BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
@@ -1088,6 +1089,7 @@ namespace libsemigroups {
     Konieczny S(gens);
     REQUIRE(S.size() == 201750);
   }
+  */
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "015",
@@ -1158,10 +1160,11 @@ namespace libsemigroups {
                                             {0, 0, 0, 0, 1, 0, 0, 0},
                                             {1, 1, 0, 0, 0, 0, 0, 1}})};
 
-    Konieczny S(gens);
+    Konieczny<BMat8> S(gens);
     REQUIRE(S.size() == 597369);
   }
 
+  /*
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "016",
                           "regular generated bmat 6 monoid",

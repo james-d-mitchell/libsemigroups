@@ -49,6 +49,16 @@ namespace libsemigroups {
       return Lambda<TElementType>()(y * x) == Lambda<TElementType>()(x)
              && Rho<TElementType>()(y * x) == Rho<TElementType>()(y);
     }
+    
+    // TODO: it must be possible to do better than this
+    template <typename TElementType>
+    TElementType idem_in_H_class(TElementType const& bm) {
+      TElementType tmp = bm;
+      while (tmp * tmp != tmp) {
+        tmp = tmp * bm;
+      }
+      return tmp;
+    }
 
   }  // namespace konieczny_helpers
 
@@ -161,14 +171,6 @@ namespace libsemigroups {
       return false;
     }
 
-    // TODO: it must be possible to do better than this
-    element_type idem_in_H_class(element_type const& bm) {
-      element_type tmp = bm;
-      while (tmp * tmp != tmp) {
-        tmp = tmp * bm;
-      }
-      return tmp;
-    }
 
     //! Finds an idempotent in the D class of \c bm, if \c bm is regular
     element_type find_idem(element_type const& bm) {
@@ -183,7 +185,7 @@ namespace libsemigroups {
       element_type x   = bm * _lambda_orb.multiplier_to_scc_root(pos)
                        * _lambda_orb.multiplier_from_scc_root(i);
       // BMat8(UNDEFINED) happens to be idempotent...
-      return idem_in_H_class(x);
+      return konieczny_helpers::idem_in_H_class<element_type>(x);
     }
 
     class BaseDClass;
@@ -265,7 +267,12 @@ namespace libsemigroups {
           _rep(rep),
           _right_mults(),
           _right_mults_inv(),
-          _right_reps() {}
+          _right_reps(),
+          _left_indices_computed(false),
+          _right_indices_computed(false),
+          _mults_computed(false),
+          _reps_computed(false),
+          _H_class_computed(false) {}
 
     virtual ~BaseDClass() {}
 
@@ -405,6 +412,11 @@ namespace libsemigroups {
     std::vector<element_type> _right_mults;
     std::vector<element_type> _right_mults_inv;
     std::vector<element_type> _right_reps;
+    bool _left_indices_computed;
+    bool _right_indices_computed;
+    bool _mults_computed;
+    bool _reps_computed;
+    bool _H_class_computed;
   };
 
   template <typename TElementType, typename TTraits>
@@ -422,7 +434,8 @@ namespace libsemigroups {
           _right_idem_reps(),
           _right_indices(),
           _lambda_val_positions(),
-          _stab_chain() {
+          _H_gens_computed(false),
+          _idem_reps_computed(false) {
       if (idem_rep * idem_rep != idem_rep) {
         LIBSEMIGROUPS_EXCEPTION(
             "the representative given should be idempotent");
@@ -500,7 +513,6 @@ namespace libsemigroups {
       return std::make_pair(UNDEFINED, UNDEFINED);
     }
 
-    // HERE
     size_t nr_idempotents() {
       init();
       size_t count = 0;
@@ -518,14 +530,16 @@ namespace libsemigroups {
       return count;
     }
 
+    // HERE
    private:
     // this is annoyingly a bit more complicated than the right indices
     // because the find_group_index method fixes the rval and loops
     // through the scc of the lval
     void compute_left_indices() {
-      if (_left_indices.size() > 0) {
+      if (this->_left_indices_computed) {
         return;
       }
+      _left_indices.clear();
       size_t lval_pos
           = this->_parent->_lambda_orb.position(Lambda()(this->_rep));
       size_t rval_pos = this->_parent->_rho_orb.position(Rho()(this->_rep));
@@ -538,7 +552,7 @@ namespace libsemigroups {
            = this->_parent->_lambda_orb.digraph().cbegin_scc(lval_scc_id);
            it < this->_parent->_lambda_orb.digraph().cend_scc(lval_scc_id);
            it++) {
-        std::get<1>(key) = *it;
+        key.second = *it;
         if (this->_parent->_group_indices_alt.find(key)
             == this->_parent->_group_indices_alt.end()) {
           bool found = false;
@@ -569,12 +583,14 @@ namespace libsemigroups {
         LIBSEMIGROUPS_ASSERT(i < this->_parent->_lambda_orb.size());
       }
 #endif
+      this->_left_indices_computed = true;
     }
 
     void compute_right_indices() {
-      if (_right_indices.size() > 0) {
+      if (this->_right_indices_computed) {
         return;
       }
+      this->_right_indices.clear();
       size_t rval_pos    = this->_parent->_rho_orb.position(Rho()(this->_rep));
       size_t rval_scc_id = this->_parent->_rho_orb.digraph().scc_id(rval_pos);
       for (auto it = this->_parent->_rho_orb.digraph().cbegin_scc(rval_scc_id);
@@ -595,16 +611,22 @@ namespace libsemigroups {
         LIBSEMIGROUPS_ASSERT(i < this->_parent->_rho_orb.size());
       }
 #endif
+      this->_right_indices_computed = true;
     }
 
     void compute_mults() {
-      if (this->_left_mults.size() > 0) {
+      if (this->_mults_computed) {
         return;
       }
-      element_type lval     = Lambda()(this->_rep);
-      size_t       lval_pos = this->_parent->_lambda_orb.position(lval);
-      element_type rval     = Rho()(this->_rep);
-      size_t       rval_pos = this->_parent->_rho_orb.position(rval);
+      this->_left_mults.clear();
+      this->_right_mults.clear();
+      compute_left_indices();
+      compute_right_indices();
+
+      lambda_value_type lval     = Lambda()(this->_rep);
+      size_t            lval_pos = this->_parent->_lambda_orb.position(lval);
+      rho_value_type    rval     = Rho()(this->_rep);
+      size_t            rval_pos = this->_parent->_rho_orb.position(rval);
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         element_type b
@@ -633,13 +655,17 @@ namespace libsemigroups {
         this->_right_mults.push_back(c);
         this->_right_mults_inv.push_back(d);
       }
+      this->_mults_computed = true;
     }
 
     void compute_reps() {
-      compute_mults();
-
+      if (this->_reps_computed) {
+        return;
+      }
+ 
       this->_left_reps.clear();
       this->_right_reps.clear();
+      compute_mults();
 
       for (element_type b : this->_left_mults) {
         this->_left_reps.push_back(this->_rep * b);
@@ -648,11 +674,20 @@ namespace libsemigroups {
       for (element_type c : this->_right_mults) {
         this->_right_reps.push_back(c * this->_rep);
       }
+      this->_reps_computed = true;
     }
 
     void compute_H_gens() {
+      if (_H_gens_computed) {
+        return;
+      }
       _H_gens.clear();
-      element_type rval     = Rho()(this->_rep);
+      compute_left_indices();
+      compute_right_indices();
+      compute_mults();
+      compute_reps();
+
+      rho_value_type rval     = Rho()(this->_rep);
       size_t       rval_pos = this->_parent->_rho_orb.position(rval);
       size_t rval_scc_id = this->_parent->_rho_orb.digraph().scc_id(rval_pos);
       std::vector<element_type> right_invs;
@@ -674,7 +709,7 @@ namespace libsemigroups {
         element_type p = this->_left_reps[i];
         for (element_type g : this->_parent->_gens) {
           element_type x = p * g;
-          element_type s = Lambda()(x);
+          lambda_value_type s = Lambda()(x);
           for (size_t j = 0; j < _left_indices.size(); ++j) {
             if (this->_parent->_lambda_orb.at(_left_indices[j]) == s) {
               _H_gens.push_back(x * right_invs[j]);
@@ -685,23 +720,24 @@ namespace libsemigroups {
       }
       std::unordered_set<element_type> set(_H_gens.begin(), _H_gens.end());
       _H_gens.assign(set.begin(), set.end());
+      this->_H_gens_computed = true;
     }
-
-    /*
-    void compute_stab_chain() {
-      BMat8 row_basis = Lambda()(this->_rep);
-      for (BMat8 x : _H_gens) {
-        _stab_chain.add_generator(BMat8::perm_action_on_basis(row_basis, x));
-      }
-    }
-    */
 
     void compute_idem_reps() {
-      element_type lval     = Lambda()(this->_rep);
-      element_type rval     = Rho()(this->_rep);
-      size_t       lval_pos = this->_parent->_lambda_orb.position(lval);
-      size_t       rval_pos = this->_parent->_rho_orb.position(rval);
-      size_t       lval_scc_id
+      if (_idem_reps_computed) {
+        return;
+      }
+      _left_idem_reps.clear();
+      _right_idem_reps.clear();
+      compute_left_indices();
+      compute_right_indices();
+      compute_mults();
+
+      lambda_value_type lval     = Lambda()(this->_rep);
+      rho_value_type    rval     = Rho()(this->_rep);
+      size_t            lval_pos = this->_parent->_lambda_orb.position(lval);
+      size_t            rval_pos = this->_parent->_rho_orb.position(rval);
+      size_t            lval_scc_id
           = this->_parent->_lambda_orb.digraph().scc_id(lval_pos);
       size_t rval_scc_id = this->_parent->_rho_orb.digraph().scc_id(rval_pos);
 
@@ -719,12 +755,8 @@ namespace libsemigroups {
         }
         element_type x
             = this->_right_mults[j] * this->_rep * this->_left_mults[i];
-        element_type y = x;
-        // TODO: BMat8(UNDEFINED) happens to be idempotent... genericise!
-        while (x * x != x) {
-          x = x * y;
-        }
-        _left_idem_reps.push_back(x);
+        _left_idem_reps.push_back(
+            konieczny_helpers::idem_in_H_class<element_type>(x));
       }
 
       for (size_t j = 0; j < _right_indices.size(); ++j) {
@@ -740,19 +772,21 @@ namespace libsemigroups {
         }
         element_type x
             = this->_right_mults[j] * this->_rep * this->_left_mults[i];
-        element_type y = x;
-        // TODO: BMat8(UNDEFINED) happens to be idempotent... genericise!
-        while (x * x != x) {
-          x = x * y;
-        }
-        _right_idem_reps.push_back(x);
+        _right_idem_reps.push_back(
+            konieczny_helpers::idem_in_H_class<element_type>(x));
       }
+      this->_idem_reps_computed = true;
     }
 
     // there should be some way of getting rid of this
     void compute_H_class() {
+      if (this->_H_class_computed) {
+        return;
+      }
       this->_H_class
           = std::vector<element_type>(_H_gens.begin(), _H_gens.end());
+      compute_H_gens();
+      
       std::unordered_set<element_type> set(this->_H_class.begin(),
                                            this->_H_class.end());
       for (size_t i = 0; i < this->_H_class.size(); ++i) {
@@ -764,6 +798,7 @@ namespace libsemigroups {
           }
         }
       }
+      this->_H_class_computed = true;
     }
 
     void init() override {
@@ -773,11 +808,10 @@ namespace libsemigroups {
       compute_left_indices();
       compute_right_indices();
       compute_mults();
-      compute_reps();
+      compute_reps(); 
       compute_idem_reps();
       compute_H_gens();
       compute_H_class();
-      // compute_stab_chain();
       this->_computed = true;
     }
 
@@ -788,8 +822,9 @@ namespace libsemigroups {
     std::vector<element_type>                      _right_idem_reps;
     std::vector<size_t>                            _right_indices;
     std::unordered_map<lambda_value_type, size_t>  _lambda_val_positions;
-    SchreierSims<8, uint8_t, Permutation<uint8_t>> _stab_chain;
-  };
+    bool                                           _H_gens_computed;
+    bool                                           _idem_reps_computed;
+};
 
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::NonRegularDClass
