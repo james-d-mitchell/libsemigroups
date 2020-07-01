@@ -37,6 +37,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include <iostream> //debugging
+#include "fmt/printf.h"
+
 #include "action.hpp"
 #include "constants.hpp"
 

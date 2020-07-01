@@ -2243,9 +2243,8 @@ namespace libsemigroups {
                     std::vector<TIntType> const&    pt,
                     Transformation<TIntType> const& x) const {
       res.clear();
-      res.resize(x.degree());
       for (auto i : pt) {
-        res[i] = x[i];
+        res.push_back(x[i]);
       }
       std::sort(res.begin(), res.end());
       res.erase(std::unique(res.begin(), res.end()), res.end());
