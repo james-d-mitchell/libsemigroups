@@ -184,7 +184,7 @@ namespace libsemigroups {
       size_t                    pos = _lambda_orb.position(_tmp_lambda_value);
       size_t                    lval_scc_id = _lambda_orb.digraph().scc_id(pos);
       std::pair<size_t, size_t> key         = std::make_pair(
-          ToInt<rho_value_type>()(rv), _lambda_orb.digraph().scc_id(pos));
+         _rho_orb.position(rv), _lambda_orb.digraph().scc_id(pos));
 
       if (_group_indices.find(key) != _group_indices.end()) {
         return _group_indices.at(key);
@@ -279,6 +279,7 @@ namespace libsemigroups {
     std::vector<std::vector<size_t>> _D_rels;
     size_t                           _dim;
     std::vector<element_type>        _gens;
+    // TODO replace size_t with more meaningful alias, rho_orb_index_type etc
     std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash>
         _group_indices;
     std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash>
@@ -1004,11 +1005,7 @@ namespace libsemigroups {
       }
 
       for (size_t j = 0; j < _right_indices.size(); ++j) {
-        // TODO: make comprehensible
-        std::pair<size_t, size_t> key = std::make_pair(
-            ToInt<rho_value_type>()(
-                this->parent()->_rho_orb.at(_right_indices[j])),
-            lval_scc_id);
+        auto key = std::make_pair(_right_indices[j], lval_scc_id);
         size_t k = this->parent()->_group_indices.at(key);
         size_t i = 0;
         while (_left_indices[i] != k) {
