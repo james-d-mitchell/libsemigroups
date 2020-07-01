@@ -272,6 +272,12 @@ namespace libsemigroups {
       return _gens.cend();
     }
 
+    // TODO(now) replace with aliases into lambda_orb_type/rho_orb_type
+    using rho_orb_index_type        = size_t;
+    using rho_orb_scc_index_type    = size_t;
+    using lambda_orb_index_type     = size_t;
+    using lambda_orb_scc_index_type = size_t;
+
     rho_orb_type             _rho_orb;
     std::vector<BaseDClass*> _D_classes;
     // contains in _D_rels[i] the indices of the D classes which lie above
@@ -279,17 +285,20 @@ namespace libsemigroups {
     std::vector<std::vector<size_t>> _D_rels;
     size_t                           _dim;
     std::vector<element_type>        _gens;
-    // TODO replace size_t with more meaningful alias, rho_orb_index_type etc
-    std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash>
+    std::unordered_map<std::pair<rho_orb_index_type, lambda_orb_scc_index_type>,
+                       lambda_orb_index_type,
+                       PairHash>
         _group_indices;
-    std::unordered_map<std::pair<size_t, size_t>, size_t, PairHash>
+    std::unordered_map<std::pair<rho_orb_scc_index_type, lambda_orb_index_type>,
+                       rho_orb_index_type,
+                       PairHash>
                                 _group_indices_alt;
     element_type                _one;
     std::vector<RegularDClass*> _regular_D_classes;
     lambda_orb_type             _lambda_orb;
     bool                        _adjoined_identity_contained;
     bool                        _computed_all_classes;
-    lambda_value_type _tmp_lambda_value;
+    lambda_value_type           _tmp_lambda_value;
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1096,12 +1105,11 @@ namespace libsemigroups {
     bool contains(element_type const& bm) override {
       init();
       Lambda()(this->tmp_lambda_value(), bm);
-      size_t x = ToInt<lambda_value_type>()(this->tmp_lambda_value());
-      if (_lambda_val_positions[x].size() == 0) {
+      if (_lambda_val_positions[this->tmp_lambda_value()].size() == 0) {
         return false;
       }
-      size_t y = ToInt<rho_value_type>()(Rho()(bm));
-      for (size_t i : _lambda_val_positions[x]) {
+      auto y = Rho()(bm);
+      for (size_t i : _lambda_val_positions[this->tmp_lambda_value()]) {
         for (size_t j : _rho_val_positions[y]) {
           if (_H_set.find(this->cbegin_right_mults_inv()[j] * bm
                           * this->cbegin_left_mults_inv()[i])
@@ -1341,12 +1349,13 @@ namespace libsemigroups {
                         _left_idem_above, h);
 
             Lambda()(this->tmp_lambda_value(), A);
-            size_t x  = ToInt<lambda_value_type>()(this->tmp_lambda_value());
-            auto   it = _lambda_val_positions.find(x);
+            auto   it = _lambda_val_positions.find(this->tmp_lambda_value());
             if (it == _lambda_val_positions.end()) {
-              _lambda_val_positions.emplace(x, std::vector<size_t>());
+              _lambda_val_positions.emplace(this->tmp_lambda_value(),
+                                            std::vector<size_t>());
             }
-            _lambda_val_positions[x].push_back(this->left_reps_size());
+            _lambda_val_positions[this->tmp_lambda_value()].push_back(
+                this->left_reps_size());
             this->push_left_rep(A);
             this->push_left_mult(h * w);
             this->push_left_mult_inv(
@@ -1377,7 +1386,7 @@ namespace libsemigroups {
                             * _right_idem_class->cbegin_right_mults_inv()[i]
                             * z);
 
-            size_t x  = ToInt<rho_value_type>()(Rho()(B));
+            auto x  = Rho()(B);
             auto   it = _rho_val_positions.find(x);
             if (it == _rho_val_positions.end()) {
               _rho_val_positions.emplace(x, std::vector<size_t>());
@@ -1424,13 +1433,14 @@ namespace libsemigroups {
       compute_mults();
     }
 
-    std::unordered_map<size_t, std::vector<size_t>> _rho_val_positions;
-    element_type                                    _left_idem_above;
-    RegularDClass*                                  _left_idem_class;
-    std::unordered_set<element_type>                _H_set;
-    element_type                                    _right_idem_above;
-    RegularDClass*                                  _right_idem_class;
-    std::unordered_map<size_t, std::vector<size_t>> _lambda_val_positions;
+    std::unordered_map<rho_value_type, std::vector<size_t>> _rho_val_positions;
+    element_type                                            _left_idem_above;
+    RegularDClass*                                          _left_idem_class;
+    std::unordered_set<element_type>                        _H_set;
+    element_type                                            _right_idem_above;
+    RegularDClass*                                          _right_idem_class;
+    std::unordered_map<lambda_value_type, std::vector<size_t>>
+        _lambda_val_positions;
   };
 
   template <typename TElementType, typename TTraits>
