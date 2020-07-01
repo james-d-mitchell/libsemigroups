@@ -1008,7 +1008,7 @@ namespace libsemigroups {
     }
 
     // there should be some way of getting rid of this
-    void compute_H_class() {
+    void compute_H_class() override {
       if (this->H_class_computed()) {
         return;
       }
@@ -1158,7 +1158,7 @@ namespace libsemigroups {
     }
 
     // TODO: this computes more than just the H class, and should be split
-    void compute_H_class() {
+    void compute_H_class() override {
       if (this->H_class_computed()) {
         return;
       }
