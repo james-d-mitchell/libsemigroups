@@ -812,27 +812,27 @@ namespace libsemigroups {
       this->_right_indices_computed = true;
     }
 
-    void compute_left_mults() {
+    void compute_left_mults() override {
       compute_mults();
     }
 
-    void compute_left_mults_inv() {
+    void compute_left_mults_inv() override {
       compute_mults();
     }
 
-    void compute_left_reps() {
+    void compute_left_reps() override {
       compute_reps();
     }
 
-    void compute_right_mults() {
+    void compute_right_mults() override {
       compute_mults();
     }
 
-    void compute_right_mults_inv() {
+    void compute_right_mults_inv() override {
       compute_reps();
     }
 
-    void compute_right_reps() {
+    void compute_right_reps() override {
       compute_reps();
     }
 
@@ -1380,27 +1380,27 @@ namespace libsemigroups {
                                                 this->cend_H_class());
     }
 
-    void compute_left_mults() {
+    void compute_left_mults() override {
       compute_mults();
     }
 
-    void compute_left_mults_inv() {
+    void compute_left_mults_inv() override {
       compute_mults();
     }
 
-    void compute_left_reps() {
+    void compute_left_reps() override {
       compute_mults();
     }
 
-    void compute_right_mults() {
+    void compute_right_mults() override {
       compute_mults();
     }
 
-    void compute_right_mults_inv() {
+    void compute_right_mults_inv() override {
       compute_mults();
     }
 
-    void compute_right_reps() {
+    void compute_right_reps() override {
       compute_mults();
     }
 
