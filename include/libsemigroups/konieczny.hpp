@@ -18,9 +18,8 @@
 // This file contains an implementation of Konieczny's algorithm for computing
 // subsemigroups of the boolean matrix monoid.
 
-// TODO: exception safety!
-// 1) FLS to continue reviewing from "HERE" to remove BMat8 specific code.
-// 2)
+// TODO(later):
+// 1) exception safety!
 
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 #define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
@@ -33,11 +32,7 @@
 #include <vector>
 
 #include "action.hpp"
-#include "bmat8.hpp"
 #include "constants.hpp"
-#include "digraph.hpp"
-#include "element.hpp"
-#include "schreier-sims.hpp"
 
 namespace libsemigroups {
 

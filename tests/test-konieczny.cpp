@@ -16,6 +16,7 @@
 //
 
 #include "libsemigroups/froidure-pin.hpp"
+#include "libsemigroups/bmat8.hpp"
 #include "libsemigroups/konieczny.hpp"
 
 #include "catch.hpp"
