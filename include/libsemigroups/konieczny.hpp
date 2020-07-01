@@ -108,22 +108,20 @@ namespace libsemigroups {
   struct KoniecznyTraits {
     using element_type = TElementType;
 
-
     using Lambda  = ::libsemigroups::Lambda<element_type>;
     using Rho     = ::libsemigroups::Rho<element_type>;
 
     using lambda_value_type =
-        typename std::result_of<Lambda(element_type)>::type;
+        typename ::libsemigroups::Lambda<element_type>::result_type;
+
     using rho_value_type = typename std::result_of<Rho(element_type)>::type;
 
+    using LambdaAction = ImageRightAction<element_type, lambda_value_type>;
+    using RhoAction = ImageLeftAction<element_type, rho_value_type>;
+
     using lambda_orb_type
-        = RightAction<element_type,
-                      lambda_value_type,
-                      ImageRightAction<element_type, lambda_value_type>>;
-    using rho_orb_type
-        = LeftAction<element_type,
-                     rho_value_type,
-                     ImageLeftAction<element_type, rho_value_type>>;
+        = RightAction<element_type, lambda_value_type, LambdaAction>;
+    using rho_orb_type = LeftAction<element_type, rho_value_type, RhoAction>;
 
     using Product = ::libsemigroups::Product<element_type>;
     using Rank    = ::libsemigroups::Rank<element_type>;
@@ -164,7 +162,8 @@ namespace libsemigroups {
           _regular_D_classes(),
           _lambda_orb(),
           _adjoined_identity_contained(false),
-          _computed_all_classes(false) {
+          _computed_all_classes(false),
+    _tmp_lambda_value() {
       if (_gens.empty()) {
         LIBSEMIGROUPS_EXCEPTION(
             "expected a positive number of generators, but got 0");
@@ -181,7 +180,8 @@ namespace libsemigroups {
     //! Finds a group index of a H class in the R class of \p bm
     size_t find_group_index(element_type const& bm) {
       rho_value_type            rv  = Rho()(bm);
-      size_t                    pos = _lambda_orb.position(Lambda()(bm));
+      Lambda()(_tmp_lambda_value, bm);
+      size_t                    pos = _lambda_orb.position(_tmp_lambda_value);
       size_t                    lval_scc_id = _lambda_orb.digraph().scc_id(pos);
       std::pair<size_t, size_t> key         = std::make_pair(
           ToInt<rho_value_type>()(rv), _lambda_orb.digraph().scc_id(pos));
@@ -218,7 +218,8 @@ namespace libsemigroups {
         // TODO: exception/assertion
       }
       size_t       i   = find_group_index(bm);
-      size_t       pos = _lambda_orb.position(Lambda()(bm));
+      Lambda()(_tmp_lambda_value, bm);
+      size_t       pos = _lambda_orb.position(_tmp_lambda_value);
       element_type x   = bm * _lambda_orb.multiplier_to_scc_root(pos)
                        * _lambda_orb.multiplier_from_scc_root(i);
       // BMat8(UNDEFINED) happens to be idempotent...
@@ -287,6 +288,7 @@ namespace libsemigroups {
     lambda_orb_type             _lambda_orb;
     bool                        _adjoined_identity_contained;
     bool                        _computed_all_classes;
+    lambda_value_type _tmp_lambda_value;
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -295,8 +297,10 @@ namespace libsemigroups {
 
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::BaseDClass {
-    using element_type = TElementType;
-    using Rank         = Konieczny<TElementType, TTraits>::Rank;
+    using konieczny_type    = Konieczny<TElementType, TTraits>;
+    using element_type      = konieczny_type::element_type;
+    using Rank              = konieczny_type::Rank;
+    using lambda_value_type = konieczny_type::lambda_value_type;
 
    public:
     BaseDClass(Konieczny* parent, element_type const& rep)
@@ -313,7 +317,8 @@ namespace libsemigroups {
           _right_mults_inv(),
           _left_reps(),
           _right_reps(),
-          _H_class() {}
+          _H_class(),
+          _tmp_lambda_value() {}
 
     virtual ~BaseDClass() {}
 
@@ -599,6 +604,10 @@ namespace libsemigroups {
 
     virtual void init() = 0;
 
+    lambda_value_type& tmp_lambda_value() {
+      return _tmp_lambda_value;
+    }
+
    private:
     size_t                    _rank;
     Konieczny*                _parent;
@@ -614,6 +623,7 @@ namespace libsemigroups {
     std::vector<element_type> _left_reps;
     std::vector<element_type> _right_reps;
     std::vector<element_type> _H_class;
+    lambda_value_type _tmp_lambda_value;
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -638,7 +648,8 @@ namespace libsemigroups {
           _H_gens_computed(false),
           _idem_reps_computed(false),
           _left_indices_computed(false),
-          _right_indices_computed(false) {
+          _right_indices_computed(false)
+        {
       if (idem_rep * idem_rep != idem_rep) {
         LIBSEMIGROUPS_EXCEPTION(
             "the representative given should be idempotent");
@@ -706,7 +717,8 @@ namespace libsemigroups {
     // UNDEFINED)
     std::pair<size_t, size_t> index_positions(element_type bm) {
       init();
-      auto l_it = _lambda_val_positions.find(Lambda()(bm));
+      Lambda()(this->tmp_lambda_value(), bm);
+      auto l_it = _lambda_val_positions.find(this->tmp_lambda_value());
       if (l_it != _lambda_val_positions.end()) {
         auto r_it = _rho_val_positions.find(Rho()(bm));
         if (r_it != _rho_val_positions.end()) {
@@ -742,8 +754,9 @@ namespace libsemigroups {
         return;
       }
       _left_indices.clear();
+      Lambda()(this->tmp_lambda_value(), this->rep());
       size_t lval_pos
-          = this->parent()->_lambda_orb.position(Lambda()(this->rep()));
+          = this->parent()->_lambda_orb.position(this->tmp_lambda_value());
       size_t rval_pos = this->parent()->_rho_orb.position(Rho()(this->rep()));
       size_t lval_scc_id
           = this->parent()->_lambda_orb.digraph().scc_id(lval_pos);
@@ -849,7 +862,8 @@ namespace libsemigroups {
       compute_left_indices();
       compute_right_indices();
 
-      lambda_value_type lval     = Lambda()(this->rep());
+      Lambda()(this->tmp_lambda_value(), this->rep());
+      lambda_value_type& lval     = this->tmp_lambda_value();
       size_t            lval_pos = this->parent()->_lambda_orb.position(lval);
       rho_value_type    rval     = Rho()(this->rep());
       size_t            rval_pos = this->parent()->_rho_orb.position(rval);
@@ -938,9 +952,10 @@ namespace libsemigroups {
         element_type p = this->cbegin_left_reps()[i];
         for (element_type g : this->parent()->_gens) {
           element_type      x = p * g;
-          lambda_value_type s = Lambda()(x);
+          Lambda()(this->tmp_lambda_value(), x);
           for (size_t j = 0; j < _left_indices.size(); ++j) {
-            if (this->parent()->_lambda_orb.at(_left_indices[j]) == s) {
+            if (this->parent()->_lambda_orb.at(_left_indices[j])
+                == this->tmp_lambda_value()) {
               _H_gens.push_back(x * right_invs[j]);
               break;
             }
@@ -962,9 +977,9 @@ namespace libsemigroups {
       compute_right_indices();
       compute_mults();
 
-      lambda_value_type lval     = Lambda()(this->rep());
+      Lambda()(this->tmp_lambda_value(), this->rep());
       rho_value_type    rval     = Rho()(this->rep());
-      size_t            lval_pos = this->parent()->_lambda_orb.position(lval);
+      size_t lval_pos = this->parent()->_lambda_orb.position(this->tmp_lambda_value());
       size_t            rval_pos = this->parent()->_rho_orb.position(rval);
       size_t            lval_scc_id
           = this->parent()->_lambda_orb.digraph().scc_id(lval_pos);
@@ -1083,7 +1098,8 @@ namespace libsemigroups {
 
     bool contains(element_type const& bm) override {
       init();
-      size_t x = ToInt<lambda_value_type>()(Lambda()(bm));
+      Lambda()(this->tmp_lambda_value(), bm);
+      size_t x = ToInt<lambda_value_type>()(this->tmp_lambda_value());
       if (_lambda_val_positions[x].size() == 0) {
         return false;
       }
@@ -1327,7 +1343,8 @@ namespace libsemigroups {
                   * konieczny_helpers::group_inverse<element_type>(
                         _left_idem_above, h);
 
-            size_t x  = ToInt<lambda_value_type>()(Lambda()(A));
+            Lambda()(this->tmp_lambda_value(), A);
+            size_t x  = ToInt<lambda_value_type>()(this->tmp_lambda_value());
             auto   it = _lambda_val_positions.find(x);
             if (it == _lambda_val_positions.end()) {
               _lambda_val_positions.emplace(x, std::vector<size_t>());

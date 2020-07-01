@@ -764,16 +764,21 @@ namespace libsemigroups {
     }
   };
 
-
   //! Specialization of the adapter Lambda for instances of
   //! BMat8.
   //!
   //! \sa Lambda.
   template <>
   struct Lambda<BMat8> {
-    //! Returns the lambda value of \p x as used in the Konieczny algorithm; for BMat8
-    //! this is the row space basis.
-    inline BMat8 operator()(BMat8 const& x) const noexcept {
+    using result_type = BMat8;
+    //! Returns the lambda value of \p x as used in the Konieczny algorithm; for
+    //! BMat8 this is the row space basis.
+    // TODO check noexcept spec
+    inline void operator()(BMat8& res, BMat8 const& x) const noexcept {
+      res = x.row_space_basis();
+    }
+
+    inline result_type operator()(BMat8 const& x) const noexcept {
       return x.row_space_basis();
     }
   };
