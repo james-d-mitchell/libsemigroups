@@ -516,7 +516,7 @@ namespace libsemigroups {
         LIBSEMIGROUPS_ASSERT(Rho()(_rep)
                              == Rho()(x * _right_reps[_right_mults.size()]));
       }
-      if (_right_mults.size() >= _right_mults.size()) {
+      if (_right_mults.size() >= _right_mults_inv.size()) {
         LIBSEMIGROUPS_ASSERT(
             Rho()(_rep)
             == Rho()(x * _right_mults[_right_mults_inv.size()] * _rep));
@@ -527,7 +527,7 @@ namespace libsemigroups {
     void push_left_rep(element_type x) {
       _left_reps.push_back(x);
 #ifdef LIBSEMIGROUPS_DEBUG
-      if (_left_mults.size() >= _left_mults.size()) {
+      if (_left_mults.size() >= _left_reps.size()) {
         LIBSEMIGROUPS_ASSERT(Lambda()(_rep * _left_mults[_left_reps.size()])
                              == Lambda()(x));
       }
@@ -541,14 +541,14 @@ namespace libsemigroups {
     void push_right_rep(element_type x) {
       _right_reps.push_back(x);
 #ifdef LIBSEMIGROUPS_DEBUG
-      if (_right_mults.size() >= _right_mults.size()) {
-        LIBSEMIGROUPS_ASSERT(Lambda()(_right_mults[_right_reps.size()] * _rep)
-                             == Lambda()(x));
+      if (_right_mults.size() >= _right_reps.size()) {
+        LIBSEMIGROUPS_ASSERT(Rho()(_right_mults[_right_reps.size()] * _rep)
+                             == Rho()(x));
       }
       if (_right_mults_inv.size() >= _right_reps.size()) {
         LIBSEMIGROUPS_ASSERT(
-            Lambda()(_rep)
-            == Lambda()(_right_mults_inv[_right_reps.size()] * x));
+            Rho()(_rep)
+            == Rho()(_right_mults_inv[_right_reps.size()] * x));
       }
 #endif
     }
