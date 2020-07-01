@@ -43,13 +43,6 @@
 namespace libsemigroups {
 
   namespace konieczny_helpers {
-    template <typename TElementType>
-    bool is_group_index(TElementType const& x, TElementType const& y) {
-      LIBSEMIGROUPS_ASSERT(Rho<TElementType>()(x) == x
-                           && Lambda<TElementType>()(y) == y);
-      return Lambda<TElementType>()(y * x) == Lambda<TElementType>()(x)
-             && Rho<TElementType>()(y * x) == Rho<TElementType>()(y);
-    }
 
     // TODO: it must be possible to do better than this
     template <typename TElementType>
@@ -131,7 +124,7 @@ namespace libsemigroups {
 
   template <typename TElementType,
             typename TTraits = KoniecznyTraits<TElementType>>
-  class Konieczny : public Runner {  // TODO subclass runner
+  class Konieczny : public Runner {
    public:
     using element_type    = typename TTraits::element_type;
     using const_reference = element_type const&;
@@ -148,6 +141,12 @@ namespace libsemigroups {
     using Rank    = typename TTraits::Rank;
     using One     = typename TTraits::One;
     using VecHash = typename TTraits::VecHash;
+    
+    // TODO(now) replace with aliases into lambda_orb_type/rho_orb_type
+    using rho_orb_index_type        = size_t;
+    using rho_orb_scc_index_type    = size_t;
+    using lambda_orb_index_type     = size_t;
+    using lambda_orb_scc_index_type = size_t;
 
     explicit Konieczny(std::vector<element_type> const& gens)
         : _rho_orb(),
@@ -181,19 +180,21 @@ namespace libsemigroups {
     size_t find_group_index(element_type const& bm) {
       Rho()(_tmp_rho_value, bm);
       Lambda()(_tmp_lambda_value, bm);
-      size_t                    pos = _lambda_orb.position(_tmp_lambda_value);
-      size_t                    lval_scc_id = _lambda_orb.digraph().scc_id(pos);
-      std::pair<size_t, size_t> key         = std::make_pair(
-          _rho_orb.position(_tmp_rho_value), _lambda_orb.digraph().scc_id(pos));
+      size_t lpos        = _lambda_orb.position(_tmp_lambda_value);
+      size_t lval_scc_id = _lambda_orb.digraph().scc_id(lpos);
+      std::pair<size_t, size_t> key
+          = std::make_pair(_rho_orb.position(_tmp_rho_value),
+                           _lambda_orb.digraph().scc_id(lpos));
 
       if (_group_indices.find(key) != _group_indices.end()) {
         return _group_indices.at(key);
       } else {
+        element_type tmp = bm * _lambda_orb.multiplier_to_scc_root(lpos);
         for (auto it = _lambda_orb.digraph().cbegin_scc(lval_scc_id);
              it < _lambda_orb.digraph().cend_scc(lval_scc_id);
              it++) {
-          if (konieczny_helpers::is_group_index(_tmp_rho_value,
-                                                _lambda_orb.at(*it))) {
+          element_type tmp2 = tmp * _lambda_orb.multiplier_from_scc_root(*it); 
+          if (is_group_index(bm, tmp2)) {
             _group_indices.emplace(key, *it);
             return *it;
           }
@@ -208,6 +209,10 @@ namespace libsemigroups {
         return true;
       }
       return false;
+    }
+
+    bool is_group_index(element_type x, element_type y) {
+      return Lambda()(y * x) == Lambda()(x) && Rho()(y * x) == Rho()(y);
     }
 
     //! Finds an idempotent in the D class of \c bm, if \c bm is regular
@@ -273,12 +278,6 @@ namespace libsemigroups {
     typename std::vector<element_type>::const_iterator cend_generators() const {
       return _gens.cend();
     }
-
-    // TODO(now) replace with aliases into lambda_orb_type/rho_orb_type
-    using rho_orb_index_type        = size_t;
-    using rho_orb_scc_index_type    = size_t;
-    using lambda_orb_index_type     = size_t;
-    using lambda_orb_scc_index_type = size_t;
 
     rho_orb_type             _rho_orb;
     std::vector<BaseDClass*> _D_classes;
@@ -752,9 +751,7 @@ namespace libsemigroups {
       for (auto it = cbegin_left_indices(); it < cend_left_indices(); ++it) {
         for (auto it2 = cbegin_right_indices(); it2 < cend_right_indices();
              ++it2) {
-          if (konieczny_helpers::is_group_index(
-                  this->parent()->_rho_orb.at(*it2),
-                  this->parent()->_lambda_orb.at(*it))) {
+          if (this->parent->is_group_index(*it2, *it)) {
             count++;
           }
         }
@@ -797,9 +794,16 @@ namespace libsemigroups {
                && it2 < this->parent()->_rho_orb.digraph().cend_scc(
                       rval_scc_id);
                it2++) {
-            if (konieczny_helpers::is_group_index(
-                    this->parent()->_rho_orb.at(*it2),
-                    this->parent()->_lambda_orb.at(*it))) {
+            element_type r_rep
+                = this->parent()->_rho_orb.multiplier_from_scc_root(*it2)
+                  * this->parent()->_rho_orb.multiplier_to_scc_root(rval_pos)
+                  * this->rep();
+            element_type l_rep
+                = this->rep()
+                  * this->parent()->_lambda_orb.multiplier_to_scc_root(lval_pos)
+                  * this->parent()->_lambda_orb.multiplier_from_scc_root(*it);
+
+            if (this->parent()->is_group_index(r_rep, l_rep)) {
               this->parent()->_group_indices_alt.emplace(key, *it2);
               found = true;
             }

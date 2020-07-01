@@ -1212,7 +1212,8 @@ namespace libsemigroups {
       std::cout << idems << std::endl;
     }
     REQUIRE(idems == 3465357);
-  }*/
+  }
+  */
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "017",
                           "transformations",
