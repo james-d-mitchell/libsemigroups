@@ -1222,5 +1222,28 @@ namespace libsemigroups {
         {Transformation<uint8_t>({1, 0, 2, 3, 4}),
          Transformation<uint8_t>({1, 2, 3, 4, 0}),
          Transformation<uint8_t>({0, 0, 2, 3, 4})});
+    
+    S.run();
+    REQUIRE(S.size() == 3125);
   }
+
+ 
+  /*
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "018",
+                          "transformations - JDM favourite example",
+                          "[quick]") {
+    Konieczny<Transformation<uint_fast8_t>> S(
+        {Transformation<uint_fast8_t>({1, 7, 2, 6, 0, 4, 1, 5}),
+         Transformation<uint_fast8_t>({2, 4, 6, 1, 4, 5, 2, 7}),
+         Transformation<uint_fast8_t>({3, 0, 7, 2, 4, 6, 2, 4}),
+         Transformation<uint_fast8_t>({3, 2, 3, 4, 5, 3, 0, 1}),
+         Transformation<uint_fast8_t>({4, 3, 7, 7, 4, 5, 0, 4}),
+         Transformation<uint_fast8_t>({5, 6, 3, 0, 3, 0, 5, 1}),
+         Transformation<uint_fast8_t>({6, 0, 1, 1, 1, 6, 3, 4}),
+         Transformation<uint_fast8_t>({7, 7, 4, 0, 6, 4, 1, 7})});
+    REQUIRE(S.size() == 597369);
+  }
+  */
+
 }  // namespace libsemigroups
