@@ -2185,5 +2185,113 @@ namespace libsemigroups {
     }
   };
 
+  // TODO use the final template parameter
+  // TODO remove code duplication, Lambda = ImageRightAction(res, x,
+  // identity_transformation);
+  template <typename TIntType>
+  struct Lambda<Transformation<TIntType>> {
+    using result_type = std::vector<TIntType>;
+    void operator()(std::vector<TIntType>&                    res,
+                    Transformation<TIntType> const& x) const noexcept {
+      res.clear();
+      res.resize(x.degree());
+      for (size_t i = 0; i < res.size(); ++i) {
+        res[i] = x[i];
+      }
+      std::sort(res.begin(), res.end());
+      res.erase(std::unique(res.begin(), res.end()), res.end());
+    }
+    std::vector<TIntType> operator()(Transformation<TIntType> const& x) const {
+      std::vector<TIntType> res;
+      this->                operator()(res, x);
+      return res;
+    }
+  };
+
+  // TODO use the final template parameter
+  // TODO remove code duplication, Rho = ImageLeftAction(res, x,
+  // identity_transformation);
+  template <typename TIntType>
+  struct Rho<Transformation<TIntType>> {
+    using result_type = std::vector<TIntType>;
+    void operator()(std::vector<TIntType>&          res,
+                    Transformation<TIntType> const& x) const noexcept {
+      res.clear();
+      res.resize(x.degree());
+      std::vector<TIntType> buf(x.degree(), TIntType(UNDEFINED));
+      TIntType              next = 0;
+
+      for (size_t i = 0; i < res.size(); ++i) {
+        if (buf[x[i]] == UNDEFINED) {
+          buf[x[i]] = next++;
+        }
+        res[i] = buf[x[i]];
+      }
+    }
+    std::vector<TIntType> operator()(
+                    Transformation<TIntType> const& x) const {
+      std::vector<TIntType> res;
+      this->operator()(res, x);
+      return res;
+    }
+  };
+
+  // OnSets
+  template <typename TIntType>
+  struct ImageRightAction<Transformation<TIntType>, std::vector<TIntType>> {
+    void operator()(std::vector<TIntType>&          res,
+                    std::vector<TIntType> const&    pt,
+                    Transformation<TIntType> const& x) const {
+      res.clear();
+      res.resize(x.degree());
+      for (auto i : pt) {
+        res[i] = x[i];
+      }
+      std::sort(res.begin(), res.end());
+      res.erase(std::unique(res.begin(), res.end()), res.end());
+    }
+    std::vector<TIntType> operator()(
+                    std::vector<TIntType> const&    pt,
+                    Transformation<TIntType> const& x) const {
+      std::vector<TIntType> res;
+      this->operator()(res, pt, x);
+      return res;
+    }
+  };
+
+  // OnKernelAntiAction
+  template <typename TIntType>
+  struct ImageLeftAction<Transformation<TIntType>, std::vector<TIntType>> {
+    void operator()(std::vector<TIntType>&          res,
+                    std::vector<TIntType> const&    pt,
+                    Transformation<TIntType> const& x) const {
+      res.clear();
+      res.resize(x.degree());
+      std::vector<TIntType> buf(x.degree(), TIntType(UNDEFINED));
+      TIntType              next = 0;
+
+      for (size_t i = 0; i < res.size(); ++i) {
+        if (buf[pt[x[i]]] == UNDEFINED) {
+          buf[pt[x[i]]] = next++;
+        }
+        res[i] = buf[pt[x[i]]];
+      }
+    }
+
+    std::vector<TIntType> operator()(
+                    std::vector<TIntType> const&    pt,
+                    Transformation<TIntType> const& x) const {
+      std::vector<TIntType> res;
+      this->operator()(res, pt, x);
+      return res;
+    }
+  };
+
+  template <typename TIntType>
+  struct Rank<Transformation<TIntType>> {
+    size_t  operator()(Transformation<TIntType> const& x) {
+      return x.crank();
+    }
+  };
 }  // namespace libsemigroups
 #endif  // LIBSEMIGROUPS_ELEMENT_HPP_

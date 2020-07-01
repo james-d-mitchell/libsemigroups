@@ -113,8 +113,8 @@ namespace libsemigroups {
 
     using lambda_value_type =
         typename ::libsemigroups::Lambda<element_type>::result_type;
-
-    using rho_value_type = typename std::result_of<Rho(element_type)>::type;
+    using rho_value_type =
+        typename ::libsemigroups::Rho<element_type>::result_type;
 
     using LambdaAction = ImageRightAction<element_type, lambda_value_type>;
     using RhoAction    = ImageLeftAction<element_type, rho_value_type>;
@@ -250,8 +250,9 @@ namespace libsemigroups {
     void compute_orbs() {
       detail::Timer t;
       REPORT_DEFAULT("Computing orbits . . .\n");
-      _lambda_orb.add_seed(_one);
-      _rho_orb.add_seed(_one);
+
+      _lambda_orb.add_seed(Lambda()(_one));
+      _rho_orb.add_seed(Rho()(_one));
       for (element_type const& g : _gens) {
         _lambda_orb.add_generator(g);
         _rho_orb.add_generator(g);

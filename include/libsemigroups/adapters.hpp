@@ -255,6 +255,7 @@ namespace libsemigroups {
   //!
   //! Specialisations of this struct should be stateless trivially default
   //! constructible with a call operator of signature `void
+  //! FIXME(now) the arguments are in the wrong order here
   //! operator()(TPointType& res, TElementType const& x, TPointType const& pt)
   //! const` (possibly `noexcept`, `inline` and/or `constexpr` also).
   //!
@@ -284,6 +285,7 @@ namespace libsemigroups {
   //!
   //! Specialisations of this struct should be stateless trivially default
   //! constructible with a call operator of signature:
+  //! FIXME(now) the arguments are in the wrong order here
   //! 1. `void operator()(TPointType& res, TElementType const& x, TPointType
   //!    const& pt) const` (possibly `noexcept`, `inline` and/or `constexpr`
   //!    also); or

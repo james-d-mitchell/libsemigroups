@@ -15,8 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "libsemigroups/froidure-pin.hpp"
 #include "libsemigroups/bmat8.hpp"
+#include "libsemigroups/element.hpp"
+#include "libsemigroups/froidure-pin.hpp"
 #include "libsemigroups/konieczny.hpp"
 
 #include "catch.hpp"
@@ -1212,4 +1213,13 @@ namespace libsemigroups {
     }
     REQUIRE(idems == 3465357);
   }*/
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "017",
+                          "transformations",
+                          "[quick]") {
+    Konieczny<Transformation<uint8_t>> S(
+        {Transformation<uint8_t>({1, 0, 2, 3, 4}),
+         Transformation<uint8_t>({1, 2, 3, 4, 0}),
+         Transformation<uint8_t>({0, 0, 2, 3, 4})});
+  }
 }  // namespace libsemigroups
