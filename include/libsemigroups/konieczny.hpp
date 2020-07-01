@@ -20,6 +20,12 @@
 
 // TODO(later):
 // 1) exception safety!
+// 2) IWYU
+//
+// TODO(now):
+// 1) subclass Runner
+// 2) more reporting
+// 3) BruidhinnTraits
 
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 #define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
@@ -586,7 +592,7 @@ namespace libsemigroups {
     }
 
     // TODO: Once again I have deeply confused myself with move semantics
-    void set_H_class(std::vector<element_type> vec) {
+    void set_H_class(std::vector<element_type>&& vec) {
       // TODO: assertions
       _H_class = vec;
     }
