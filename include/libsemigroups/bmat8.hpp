@@ -789,6 +789,12 @@ namespace libsemigroups {
   //! \sa Rho.
   template <>
   struct Rho<BMat8> {
+    using result_type = BMat8;
+
+    inline void operator()(BMat8& res, BMat8 const& x) const noexcept {
+      res = x.col_space_basis();
+    }
+
     //! Returns the rho value of \p x as used in the Konieczny algorithm; for BMat8
     //! this is the column space basis.
     inline BMat8 operator()(BMat8 const& x) const noexcept {
