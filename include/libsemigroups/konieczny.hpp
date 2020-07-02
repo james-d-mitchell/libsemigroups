@@ -42,6 +42,8 @@
 
 #include "action.hpp"
 #include "constants.hpp"
+#include "libsemigroups-debug.hpp"      // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups-config.hpp"      // for LIBSEMIGROUPS_ASSERT
 
 
 // TODO: copying?
@@ -174,16 +176,21 @@ namespace libsemigroups {
           _regular_D_classes(),
           _lambda_orb(),
           _adjoined_identity_contained(false),
-          _computed_all_classes(false),
-          _tmp_lambda_value(),
-          _tmp_rho_value(),
-          _tmp_element1(),
-          _tmp_element2() {
+          _computed_all_classes(false)
+          {
       if (_gens.empty()) {
         LIBSEMIGROUPS_EXCEPTION(
             "expected a positive number of generators, but got 0");
       }
+      
       _one = One()(_gens[0]);
+
+      _tmp_lambda_value = Lambda()(_one);
+      _tmp_rho_value = Rho()(_one);
+      
+      _tmp_element1 = _one;
+      _tmp_element2 = _one;
+
       _gens.push_back(_one);  // TODO: maybe not this
     }
 
@@ -235,6 +242,8 @@ namespace libsemigroups {
     // modifies _tmp_element1 and _tmp_element2
     // modifies _tmp_lambda_value
     element_type find_idem(element_type const& bm) {
+      LIBSEMIGROUPS_ASSERT(Degree<element_type<>()(bm) == Degree<element_type>()(_tmp_element1));
+      LIBSEMIGROUPS_ASSERT(Degree<element_type<>()(bm) == Degree<element_type>()(_tmp_element2));
       Product()(_tmp_element1, bm, bm);
       if (_tmp_element1 == bm) {
         return bm;
@@ -252,22 +261,9 @@ namespace libsemigroups {
       element_type x = bm * _lambda_orb.multiplier_to_scc_root(pos)
                        * _lambda_orb.multiplier_from_scc_root(i);
 
-      element_type y = _lambda_orb.multiplier_from_scc_root(i)
-                       * _lambda_orb.multiplier_to_scc_root(pos) * bm;
-
-      
-#ifdef LIBSEMIGROUPS_DEBUG
-      std::cout << "debug???" << std::endl;
       LIBSEMIGROUPS_ASSERT(&_tmp_element1 != &_tmp_element2);
       LIBSEMIGROUPS_ASSERT(x == _tmp_element2);
-#endif
-      std::cout << "&_tmp_element1 is equal to &_tmp_element2: "
-                << (&_tmp_element1 == &_tmp_element2) << std::endl;
-      std::cout << "x is equal to _tmp_element2: " << (x == _tmp_element2)
-                << std::endl;
-      
-      std::cout << "y is equal to _tmp_element2: " << (y == _tmp_element2)
-                << std::endl;
+      LIBSEMIGROUPS_ASSERT(false);
 
       // BMat8(UNDEFINED) happens to be idempotent...
       return konieczny_helpers::idem_in_H_class<element_type>(_tmp_element2);
@@ -520,12 +516,12 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_DEBUG
       if (_left_reps.size() >= _left_mults.size()) {
         LIBSEMIGROUPS_ASSERT(Lambda()(_rep * x)
-                             == Lambda()(_left_reps[_left_mults.size()]));
+                             == Lambda()(_left_reps[_left_mults.size() - 1]));
       }
       if (_left_mults_inv.size() >= _left_mults.size()) {
         LIBSEMIGROUPS_ASSERT(
             Lambda()(_rep)
-            == Lambda()(_rep * x * _left_mults_inv[_left_mults.size()]));
+            == Lambda()(_rep * x * _left_mults_inv[_left_mults.size() - 1]));
       }
 #endif
     }
@@ -535,12 +531,12 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_DEBUG
       if (_left_reps.size() >= _left_mults_inv.size()) {
         LIBSEMIGROUPS_ASSERT(Lambda()(_rep)
-                             == Lambda()(_left_reps[_left_mults.size()] * x));
+                             == Lambda()(_left_reps[_left_mults.size() - 1] * x));
       }
-      if (_left_mults.size() >= _left_mults.size()) {
+      if (_left_mults.size() >= _left_mults_inv.size()) {
         LIBSEMIGROUPS_ASSERT(
             Lambda()(_rep)
-            == Lambda()(_rep * _left_mults[_left_mults_inv.size()] * x));
+            == Lambda()(_rep * _left_mults[_left_mults_inv.size() - 1] * x));
       }
 #endif
     }
@@ -555,7 +551,7 @@ namespace libsemigroups {
       if (_right_mults_inv.size() >= _right_mults.size()) {
         LIBSEMIGROUPS_ASSERT(
             Rho()(_rep)
-            == Rho()(_right_mults_inv[_right_mults.size()] * x * _rep));
+            == Rho()(_right_mults_inv[_right_mults.size() - 1] * x * _rep));
       }
 #endif
     }
@@ -565,12 +561,12 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_DEBUG
       if (_right_reps.size() >= _right_mults_inv.size()) {
         LIBSEMIGROUPS_ASSERT(Rho()(_rep)
-                             == Rho()(x * _right_reps[_right_mults.size()]));
+                             == Rho()(x * _right_reps[_right_mults.size() - 1]));
       }
       if (_right_mults.size() >= _right_mults_inv.size()) {
         LIBSEMIGROUPS_ASSERT(
             Rho()(_rep)
-            == Rho()(x * _right_mults[_right_mults_inv.size()] * _rep));
+            == Rho()(x * _right_mults[_right_mults_inv.size() - 1] * _rep));
       }
 #endif
     }
@@ -579,12 +575,12 @@ namespace libsemigroups {
       _left_reps.push_back(x);
 #ifdef LIBSEMIGROUPS_DEBUG
       if (_left_mults.size() >= _left_reps.size()) {
-        LIBSEMIGROUPS_ASSERT(Lambda()(_rep * _left_mults[_left_reps.size()])
+        LIBSEMIGROUPS_ASSERT(Lambda()(_rep * _left_mults[_left_reps.size() - 1])
                              == Lambda()(x));
       }
       if (_left_mults_inv.size() >= _left_reps.size()) {
         LIBSEMIGROUPS_ASSERT(
-            Lambda()(_rep) == Lambda()(x * _left_mults_inv[_left_reps.size()]));
+            Lambda()(_rep) == Lambda()(x * _left_mults_inv[_left_reps.size() - 1]));
       }
 #endif
     }
@@ -593,12 +589,12 @@ namespace libsemigroups {
       _right_reps.push_back(x);
 #ifdef LIBSEMIGROUPS_DEBUG
       if (_right_mults.size() >= _right_reps.size()) {
-        LIBSEMIGROUPS_ASSERT(Rho()(_right_mults[_right_reps.size()] * _rep)
+        LIBSEMIGROUPS_ASSERT(Rho()(_right_mults[_right_reps.size() - 1] * _rep)
                              == Rho()(x));
       }
       if (_right_mults_inv.size() >= _right_reps.size()) {
         LIBSEMIGROUPS_ASSERT(
-            Rho()(_rep) == Rho()(_right_mults_inv[_right_reps.size()] * x));
+            Rho()(_rep) == Rho()(_right_mults_inv[_right_reps.size() - 1] * x));
       }
 #endif
     }
