@@ -38,6 +38,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <iostream>
+
 #include "action.hpp"
 #include "constants.hpp"
 
@@ -174,7 +176,9 @@ namespace libsemigroups {
           _adjoined_identity_contained(false),
           _computed_all_classes(false),
           _tmp_lambda_value(),
-          _tmp_rho_value() {
+          _tmp_rho_value(),
+          _tmp_element1(),
+          _tmp_element2() {
       if (_gens.empty()) {
         LIBSEMIGROUPS_EXCEPTION(
             "expected a positive number of generators, but got 0");
@@ -228,8 +232,11 @@ namespace libsemigroups {
     }
 
     //! Finds an idempotent in the D class of \c bm, if \c bm is regular
+    // modifies _tmp_element1 and _tmp_element2
+    // modifies _tmp_lambda_value
     element_type find_idem(element_type const& bm) {
-      if (bm * bm == bm) {
+      Product()(_tmp_element1, bm, bm);
+      if (_tmp_element1 == bm) {
         return bm;
       }
       if (!is_regular_element(bm)) {
@@ -238,10 +245,32 @@ namespace libsemigroups {
       lambda_orb_index_type i = find_group_index(bm);
       Lambda()(_tmp_lambda_value, bm);
       lambda_orb_index_type pos = _lambda_orb.position(_tmp_lambda_value);
-      element_type          x   = bm * _lambda_orb.multiplier_to_scc_root(pos)
+
+      Product()(_tmp_element1, bm, _lambda_orb.multiplier_to_scc_root(pos));
+      Product()(_tmp_element2, _tmp_element1, _lambda_orb.multiplier_from_scc_root(i));
+
+      element_type x = bm * _lambda_orb.multiplier_to_scc_root(pos)
                        * _lambda_orb.multiplier_from_scc_root(i);
+
+      element_type y = _lambda_orb.multiplier_from_scc_root(i)
+                       * _lambda_orb.multiplier_to_scc_root(pos) * bm;
+
+      
+#ifdef LIBSEMIGROUPS_DEBUG
+      std::cout << "debug???" << std::endl;
+      LIBSEMIGROUPS_ASSERT(&_tmp_element1 != &_tmp_element2);
+      LIBSEMIGROUPS_ASSERT(x == _tmp_element2);
+#endif
+      std::cout << "&_tmp_element1 is equal to &_tmp_element2: "
+                << (&_tmp_element1 == &_tmp_element2) << std::endl;
+      std::cout << "x is equal to _tmp_element2: " << (x == _tmp_element2)
+                << std::endl;
+      
+      std::cout << "y is equal to _tmp_element2: " << (y == _tmp_element2)
+                << std::endl;
+
       // BMat8(UNDEFINED) happens to be idempotent...
-      return konieczny_helpers::idem_in_H_class<element_type>(x);
+      return konieczny_helpers::idem_in_H_class<element_type>(_tmp_element2);
     }
 
     class BaseDClass;
@@ -313,6 +342,8 @@ namespace libsemigroups {
     bool                        _computed_all_classes;
     lambda_value_type           _tmp_lambda_value;
     rho_value_type              _tmp_rho_value;
+    element_type                _tmp_element1;
+    element_type                _tmp_element2;
   };
 
   /////////////////////////////////////////////////////////////////////////////
