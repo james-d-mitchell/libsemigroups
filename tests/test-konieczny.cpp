@@ -947,6 +947,7 @@ namespace libsemigroups {
     }
     REQUIRE(idems == 73023);
   }
+  */
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "013",
@@ -1017,7 +1018,7 @@ namespace libsemigroups {
                                             {0, 1, 0, 0, 0, 0, 0, 0},
                                             {0, 0, 0, 0, 0, 0, 0, 1}})};
 
-    Konieczny S(gens);
+    Konieczny<BMat8> S(gens);
     REQUIRE(S.size() == 597369);
   }
 
@@ -1090,10 +1091,9 @@ namespace libsemigroups {
                                             {0, 0, 0, 0, 1, 0, 0, 0},
                                             {0, 0, 1, 0, 0, 0, 0, 0}})};
 
-    Konieczny S(gens);
+    Konieczny<BMat8> S(gens);
     REQUIRE(S.size() == 201750);
   }
-  */
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "015",
