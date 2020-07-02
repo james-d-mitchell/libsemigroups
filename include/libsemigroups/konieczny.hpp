@@ -40,10 +40,11 @@
 
 #include <iostream>
 
+#include "libsemigroups-config.hpp"      // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups-debug.hpp"      // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups-exception.hpp"      // for LIBSEMIGROUPS_ASSERT
 #include "action.hpp"
 #include "constants.hpp"
-#include "libsemigroups-debug.hpp"      // for LIBSEMIGROUPS_ASSERT
-#include "libsemigroups-config.hpp"      // for LIBSEMIGROUPS_ASSERT
 
 
 // TODO: copying?
@@ -187,7 +188,8 @@ namespace libsemigroups {
 
       _tmp_lambda_value = Lambda()(_one);
       _tmp_rho_value = Rho()(_one);
-      
+     
+      //TODO: pointer badness
       _tmp_element1 = _one;
       _tmp_element2 = _one;
 
@@ -242,8 +244,8 @@ namespace libsemigroups {
     // modifies _tmp_element1 and _tmp_element2
     // modifies _tmp_lambda_value
     element_type find_idem(element_type const& bm) {
-      LIBSEMIGROUPS_ASSERT(Degree<element_type<>()(bm) == Degree<element_type>()(_tmp_element1));
-      LIBSEMIGROUPS_ASSERT(Degree<element_type<>()(bm) == Degree<element_type>()(_tmp_element2));
+      LIBSEMIGROUPS_ASSERT(Degree<element_type>()(bm) == Degree<element_type>()(_tmp_element1));
+      LIBSEMIGROUPS_ASSERT(Degree<element_type>()(bm) == Degree<element_type>()(_tmp_element2));
       Product()(_tmp_element1, bm, bm);
       if (_tmp_element1 == bm) {
         return bm;
@@ -257,13 +259,6 @@ namespace libsemigroups {
 
       Product()(_tmp_element1, bm, _lambda_orb.multiplier_to_scc_root(pos));
       Product()(_tmp_element2, _tmp_element1, _lambda_orb.multiplier_from_scc_root(i));
-
-      element_type x = bm * _lambda_orb.multiplier_to_scc_root(pos)
-                       * _lambda_orb.multiplier_from_scc_root(i);
-
-      LIBSEMIGROUPS_ASSERT(&_tmp_element1 != &_tmp_element2);
-      LIBSEMIGROUPS_ASSERT(x == _tmp_element2);
-      LIBSEMIGROUPS_ASSERT(false);
 
       // BMat8(UNDEFINED) happens to be idempotent...
       return konieczny_helpers::idem_in_H_class<element_type>(_tmp_element2);
@@ -546,7 +541,7 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_DEBUG
       if (_right_reps.size() >= _right_mults.size()) {
         LIBSEMIGROUPS_ASSERT(Rho()(x * _rep)
-                             == Rho()(_right_reps[_right_mults.size()]));
+                             == Rho()(_right_reps[_right_mults.size() - 1]));
       }
       if (_right_mults_inv.size() >= _right_mults.size()) {
         LIBSEMIGROUPS_ASSERT(
