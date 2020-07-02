@@ -26,7 +26,6 @@
 // 1) more reporting
 // 2) BruidhinnTraits
 // 3) Make sensitive to stopping/starting
-// 4) typedefs
 
 
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
@@ -43,7 +42,6 @@
 #include "constants.hpp"
 
 
-// TODO: make sensitive to being stopped
 // TODO: copying?
 // TODO: profiling
 
@@ -1585,7 +1583,7 @@ namespace libsemigroups {
       }
     }
 
-    while (*ranks.rbegin() > 0) {
+    while (*ranks.rbegin() > 0 && !stopped()) {
       size_t                                       reps_are_reg = false;
       std::vector<std::pair<element_type, D_class_index_type>> next_reps;
 
@@ -1615,7 +1613,7 @@ namespace libsemigroups {
       }
       next_reps = std::move(tmp_next);
 
-      while (!next_reps.empty()) {
+      while (!next_reps.empty() && !stopped()) {
         if (report()) {
           REPORT_DEFAULT("computed %d D classes, so far\n", _D_classes.size());
         }
