@@ -25,7 +25,6 @@
 // TODO(now):
 // 1) more reporting
 // 2) BruidhinnTraits
-// 3) Make sensitive to stopping/starting
 
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 #define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
@@ -61,24 +60,6 @@ namespace libsemigroups {
       }
       return tmp;
     }
-
-    //! Provides a call operator returning a hash value for a vector of
-    //! TElementTypes.
-    //!
-    //! This struct provides a call operator for obtaining a hash value for the
-    //! vector.
-    template <typename TElementType>
-    struct VecHash {
-      //! Hashes a vector of TElementTypes.
-      size_t operator()(std::vector<TElementType> const& vec) const {
-        size_t hash = 0;
-        for (TElementType x : vec) {
-          hash ^= Hash<TElementType>()(x) + 0x9e3779b97f4a7c16 + (hash << 6)
-                  + (hash >> 2);
-        }
-        return hash;
-      }
-    };
   }  // namespace konieczny_helpers
 
   //! Provides a call operator returning a hash value for a pair of size_t.
@@ -115,7 +96,7 @@ namespace libsemigroups {
     using Product = ::libsemigroups::Product<element_type>;
     using Rank    = ::libsemigroups::Rank<element_type>;
     using One     = ::libsemigroups::One<element_type>;
-    using VecHash = ::libsemigroups::konieczny_helpers::VecHash<element_type>;
+    using VecHash = ::libsemigroups::VecHash<element_type>;
     using ElementHash = ::libsemigroups::Hash<element_type>;
     using LambdaHash  = ::libsemigroups::Hash<lambda_value_type>;
     using RhoHash     = ::libsemigroups::Hash<rho_value_type>;
@@ -155,11 +136,9 @@ namespace libsemigroups {
         : _rho_orb(),
           _D_classes(),
           _D_rels(),
-          _dim(1),
           _gens(gens),
           _group_indices(),
           _group_indices_alt(),
-          _one(),
           _regular_D_classes(),
           _lambda_orb(),
           _adjoined_identity_contained(false),
@@ -331,7 +310,6 @@ namespace libsemigroups {
     // contains in _D_rels[i] the indices of the D classes which lie above
     // _D_classes[i]
     std::vector<std::vector<D_class_index_type>> _D_rels;
-    size_t                                       _dim;
     std::vector<element_type>                    _gens;
     std::unordered_map<std::pair<rho_orb_index_type, lambda_orb_scc_index_type>,
                        lambda_orb_index_type,
@@ -1268,7 +1246,7 @@ namespace libsemigroups {
           _right_idem_above(),
           _right_idem_class(),
           _lambda_val_positions() {
-      Product(this->tmp_element(), rep, rep);
+      Product()(this->tmp_element(), rep, rep);
       if (this->tmp_element() == rep) {
         LIBSEMIGROUPS_EXCEPTION("NonRegularDClass: the representative "
                                 "given should not be idempotent");
@@ -1784,13 +1762,13 @@ namespace libsemigroups {
         }
 
         BaseDClass*                                  D;
-        std::tuple<element_type, D_class_index_type> tup;
+        std::tuple<element_type, D_class_index_type> tup(_one, 0);
 
         if (reps_are_reg) {
           tup = next_reps.back();
           D   = new RegularDClass(this, find_idem(std::get<0>(tup)));
           add_D_class(static_cast<RegularDClass*>(D));
-          for (element_type x : D->covering_reps()) {
+          for (const_reference x : D->covering_reps()) {
             size_t rank = Rank()(x);
             ranks.insert(rank);
             if (is_regular_element(x)) {
@@ -1807,7 +1785,7 @@ namespace libsemigroups {
           tup = next_reps.back();
           D   = new NonRegularDClass(this, std::get<0>(tup));
           add_D_class(static_cast<NonRegularDClass*>(D));
-          for (element_type x : D->covering_reps()) {
+          for (const_reference x : D->covering_reps()) {
             size_t rank = Rank()(x);
             ranks.insert(rank);
             if (is_regular_element(x)) {

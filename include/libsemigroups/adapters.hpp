@@ -255,7 +255,6 @@ namespace libsemigroups {
   //!
   //! Specialisations of this struct should be stateless trivially default
   //! constructible with a call operator of signature `void
-  //! FIXME(now) the arguments are in the wrong order here
   //! operator()(TPointType& res, TElementType const& x, TPointType const& pt)
   //! const` (possibly `noexcept`, `inline` and/or `constexpr` also).
   //!
@@ -285,7 +284,6 @@ namespace libsemigroups {
   //!
   //! Specialisations of this struct should be stateless trivially default
   //! constructible with a call operator of signature:
-  //! FIXME(now) the arguments are in the wrong order here
   //! 1. `void operator()(TPointType& res, TElementType const& x, TPointType
   //!    const& pt) const` (possibly `noexcept`, `inline` and/or `constexpr`
   //!    also); or
@@ -534,9 +532,48 @@ namespace libsemigroups {
   template <typename TPointType, typename = void>
   struct ToInt;
 
-  //TODO: or this?
+  // TODO: or this?
+  //! Provides a call operator returning a hash value for a vector of
+  //! TElementTypes.
+  //!
+  //! This struct provides a call operator for obtaining a hash value for the
+  //! vector.
   template <typename TElementType, typename = void>
-  struct VecHash;
+  struct VecHash {
+    //! Hashes a vector of TElementTypes.
+    size_t operator()(std::vector<TElementType> const& vec) const {
+      size_t hash = 0;
+      for (TElementType x : vec) {
+        hash ^= Hash<TElementType>()(x) + 0x9e3779b97f4a7c16 + (hash << 6)
+                + (hash >> 2);
+      }
+      return hash;
+    }
+  };
+  
+  template <>
+  struct Hash<std::vector<bool>> {
+    //! This call operator hashes \p x using std::hash<TValueType>.
+    //!
+    //! \param x the value to hash
+    //!
+    //! \returns A hash value for \p x, a value of type `size_t`.
+    size_t operator()(std::vector<bool> const& x) const {
+      return VecHash<bool>()(x);
+    }
+  };
+  
+  template <>
+  struct Hash<std::vector<std::vector<bool>>> {
+    //! This call operator hashes \p x using std::hash<TValueType>.
+    //!
+    //! \param x the value to hash
+    //!
+    //! \returns A hash value for \p x, a value of type `size_t`.
+    size_t operator()(std::vector<std::vector<bool>> const& x) const {
+      return VecHash<std::vector<bool>>()(x);
+    }
+  };
 
   //TODO: not sure this is strictly necessary
   template <typename TElementType, typename TPointType, typename = void>

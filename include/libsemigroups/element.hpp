@@ -34,6 +34,7 @@
 #include <numeric>      // for iota
 #include <sstream>      // for ostream, ostringstream
 #include <type_traits>  // for is_integral
+#include <unordered_set> // for unordered_set
 #include <vector>       // for vector
 
 #include "adapters.hpp"    // for complexity, degree, IncreaseDegree, . . .
@@ -45,6 +46,7 @@
 #include "stl.hpp"                      // for Hash, EqualTo, Less
 #include "string.hpp"                   // for to_string
 #include "types.hpp"                    // for SmallestInteger
+#include "semiring.hpp"                    // for SmallestInteger
 
 namespace libsemigroups {
   // Forward declarations
@@ -1419,6 +1421,7 @@ namespace libsemigroups {
         return _degree;
       }
 
+
       //! Returns the identity matrix with dimension of \c this.
       //!
       //! This member function returns a new matrix with dimension equal to that
@@ -1670,6 +1673,7 @@ namespace libsemigroups {
       return id;
     }
   };
+  
 
   //! Matrices over the boolean semiring.
   //!
@@ -1721,6 +1725,11 @@ namespace libsemigroups {
     // void cache_hash_value() const override {
     //  this->_hash_value = std::hash<std::vector<bool>>{}(this->_vector);
     // }
+
+    BooleanMat transpose() const;
+    std::vector<std::vector<bool>> rows() const;
+    std::vector<std::vector<bool>> row_space_basis() const;    
+    size_t row_space_size() const;
 
    private:
     // This constructor only exists to make the empty_key member function for
@@ -2184,7 +2193,7 @@ namespace libsemigroups {
       return x[pt];
     }
   };
-
+  
   // TODO use the final template parameter
   // TODO remove code duplication, Lambda = ImageRightAction(res, x,
   // identity_transformation);
@@ -2290,6 +2299,130 @@ namespace libsemigroups {
   struct Rank<Transformation<TIntType>> {
     size_t  operator()(Transformation<TIntType> const& x) {
       return x.crank();
+    }
+  };
+
+  namespace boolmat_helpers {
+    std::vector<std::vector<bool>>
+    rows_basis(std::vector<std::vector<bool>> & rows) {
+      std::vector<std::vector<bool>> out;
+      size_t degree = rows[0].size();
+      std::vector<bool> cup(degree, false);
+      std::sort(rows.begin(), rows.end());
+      auto it = std::unique(rows.begin(), rows.end());
+      rows.erase(it, rows.end());
+      for (auto it = rows.cbegin(); it < rows.cend(); ++it) {
+        cup.assign(degree, false);
+        if (std::find((*it).begin(), (*it).end(), true) != (*it).end()) {
+          for (auto it2 = rows.cbegin(); it < rows.cend(); ++it) {
+            if (it == it2) {
+              continue;
+            }
+            bool contained = true;
+            for (size_t i = 0; i < degree; ++i) {
+              if ((*it2)[i] && !(*it)[i]) {
+                contained = false;
+                break;
+              }
+            }
+            if (contained) {
+              for (size_t i = 0; i < degree; ++i) {
+                cup[i] = cup[i] || (*it2)[i];
+              }
+            }
+          }
+          if (cup != *it) {
+            out.push_back(*it);
+          }
+        }
+      }
+      return out;
+    }
+  }  // namespace boolmat_helpers
+
+
+  // TODO this involves lots of copying
+  template <>
+  struct Lambda<BooleanMat> {
+    using result_type = std::vector<std::vector<bool>>;
+    void operator()(std::vector<std::vector<bool>>& res,
+                    BooleanMat const&               x) const noexcept {
+      res = x.row_space_basis();
+    }
+    std::vector<std::vector<bool>> operator()(BooleanMat const& x) const {
+      std::vector<std::vector<bool>> res;
+      this->                operator()(res, x);
+      return res;
+    }
+  };
+
+  // TODO fix this too
+  template <>
+  struct Rho<BooleanMat> {
+    using result_type = std::vector<std::vector<bool>>;
+    void operator()(std::vector<std::vector<bool>>& res,
+                    BooleanMat const&               x) const noexcept {
+      res = x.transpose().row_space_basis();
+    }
+    std::vector<std::vector<bool>> operator()(BooleanMat const& x) const {
+      std::vector<std::vector<bool>> res;
+      this->                operator()(res, x);
+      return res;
+    }
+  };
+
+  template <>
+  struct ImageRightAction<BooleanMat, std::vector<std::vector<bool>>> {
+    using result_type = std::vector<std::vector<bool>>;
+    void operator()(std::vector<std::vector<bool>>&       res,
+                    std::vector<std::vector<bool>> const& pt,
+                    BooleanMat const&                     x) const noexcept {
+      std::vector<std::vector<bool>> out(pt.size());
+      for (auto it = pt.cbegin(); it < pt.cend(); ++it) {
+        std::vector<bool> cup(x.degree(), false);
+        for (size_t i = 0; i < x.degree(); ++i) {
+          if ((*it)[i]) {
+            for (size_t j = 0; j < x.degree(); ++j) {
+              cup[j] = cup[j] || x[i * x.degree() + j];
+            }
+          }
+        }
+        out.push_back(cup);
+      }
+      res = boolmat_helpers::rows_basis(out);
+    }
+    std::vector<std::vector<bool>>
+    operator()(std::vector<std::vector<bool>> const& pt,
+               BooleanMat const&                     x) const {
+      std::vector<std::vector<bool>> res;
+      this->                operator()(res, x);
+      return res;
+    }
+  };
+
+  template <>
+  struct ImageLeftAction<BooleanMat, std::vector<std::vector<bool>>> {
+    using result_type = std::vector<std::vector<bool>>;
+    void operator()(std::vector<std::vector<bool>>&       res,
+                    std::vector<std::vector<bool>> const& pt,
+                    BooleanMat const&                     x) const noexcept {
+      BooleanMat transpose = x.transpose();
+      ImageRightAction<BooleanMat, std::vector<std::vector<bool>>>()(
+          res, pt, transpose);
+    }
+    std::vector<std::vector<bool>>
+    operator()(std::vector<std::vector<bool>> const& pt,
+               BooleanMat const&                     x) const {
+      std::vector<std::vector<bool>> res;
+      this->                operator()(res, x);
+      return res;
+    }
+  };
+
+  template <>
+  struct Rank<BooleanMat> {
+    size_t operator()(BooleanMat const& x) {
+      return x.row_space_size();
     }
   };
 }  // namespace libsemigroups

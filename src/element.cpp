@@ -74,6 +74,52 @@ namespace libsemigroups {
     this->reset_hash_value();
   }
 
+  BooleanMat BooleanMat::transpose() const {
+    std::vector<bool> vec;
+    vec.resize(this->degree() * this->degree());
+    for (size_t i = 0; i < this->degree(); ++i) {
+      for (size_t j = 0; j < this->degree(); ++j) {
+        vec[i * this->degree() + j] = _vector[j * this->degree() + i];
+      }
+    }
+    return BooleanMat(vec);
+  }
+
+  std::vector<std::vector<bool>> BooleanMat::rows() const {
+    auto                           it = this->_vector.cbegin();
+    std::vector<std::vector<bool>> out;
+    for (size_t i = 0; i < this->degree(); ++i) {
+      std::vector<bool> row(it + (i * this->degree()),
+                            it + ((i + 1) * this->degree()));
+      out.push_back(row);
+    }
+    return out;
+  }
+
+  std::vector<std::vector<bool>> BooleanMat::row_space_basis() const {
+    std::vector<std::vector<bool>> rows = this->rows();
+    return boolmat_helpers::rows_basis(rows);
+  }
+
+  size_t BooleanMat::row_space_size() const {
+    std::vector<std::vector<bool>> rows = row_space_basis();
+    std::unordered_set<std::vector<bool>, VecHash<bool>> set;
+    std::vector<std::vector<bool>> orb(rows.cbegin(), rows.cend());
+    for (size_t i = 0; i < orb.size(); ++i) {
+      for (auto row : rows) {
+        std::vector<bool> cup = orb[i];
+        for (size_t j = 0; j < this->degree(); ++j) {
+          cup[j] = cup[j] || row[j];
+        }
+        if (set.find(cup) == set.end()) {
+          set.insert(cup);
+          orb.push_back(cup);
+        }
+      }
+    }
+    return orb.size();
+  }
+
   // Private
   BooleanMat::BooleanMat(bool x) : MatrixOverSemiringBase(x) {}
 
@@ -108,7 +154,7 @@ namespace libsemigroups {
 
   Bipartition::Bipartition(std::vector<uint32_t>&& blocks)
       : ElementWithVectorDataDefaultHash<uint32_t, Bipartition>(
-          std::move(blocks)),
+            std::move(blocks)),
         _nr_blocks(UNDEFINED),
         _nr_left_blocks(UNDEFINED),
         _trans_blocks_lookup(),
@@ -448,8 +494,8 @@ namespace libsemigroups {
     after();  // this is to put the matrix in normal form
   }
 
-  ProjectiveMaxPlusMatrix
-      ProjectiveMaxPlusMatrix::operator*(ElementWithVectorData const& y) const {
+  ProjectiveMaxPlusMatrix ProjectiveMaxPlusMatrix::
+                          operator*(ElementWithVectorData const& y) const {
     ProjectiveMaxPlusMatrix xy(std::vector<int64_t>(pow(y.degree(), 2)),
                                this->semiring());
     xy.Element::redefine(*this, y);

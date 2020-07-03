@@ -1242,5 +1242,19 @@ namespace libsemigroups {
          Transformation<uint_fast8_t>({7, 7, 4, 0, 6, 4, 1, 7})});
     REQUIRE(S.size() == 597369);
   }
+  
+  LIBSEMIGROUPS_TEST_CASE("FroidurePin",
+                          "019",
+                          "non-pointer BooleanMat",
+                          "[quick][froidure-pin][boolmat][booleanmat]") {
+    std::vector<BooleanMat> gens
+        = {BooleanMat({0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0}),
+           BooleanMat({0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1}),
+           BooleanMat({0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1})};
+
+    Konieczny<BooleanMat> S(gens);
+
+    REQUIRE(S.size() == 26);
+  }
 
 }  // namespace libsemigroups
