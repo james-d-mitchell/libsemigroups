@@ -54,6 +54,7 @@ namespace libsemigroups {
   }
   BooleanMat::BooleanMat()
       : BooleanMat(std::vector<bool>(16)) {
+        assert(false);
     std::cout << "?????" << std::endl;    
   }
 
