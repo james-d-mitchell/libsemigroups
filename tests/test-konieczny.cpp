@@ -25,49 +25,49 @@
 
 namespace libsemigroups {
 
- /* LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                          "000",
-                          "regular elements and idempotents",
-                          "[quick]") {
-    const std::vector<BMat8> gens
-        = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
-           BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
-           BMat8({{0, 1, 0, 1}, {1, 0, 1, 0}, {1, 0, 1, 0}, {0, 0, 1, 1}}),
-           BMat8({{0, 1, 0, 1}, {1, 0, 1, 0}, {1, 0, 1, 0}, {0, 1, 0, 1}}),
-           BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 0}})};
+  /* LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                           "000",
+                           "regular elements and idempotents",
+                           "[quick]") {
+     const std::vector<BMat8> gens
+         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
+            BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
+            BMat8({{0, 1, 0, 1}, {1, 0, 1, 0}, {1, 0, 1, 0}, {0, 0, 1, 1}}),
+            BMat8({{0, 1, 0, 1}, {1, 0, 1, 0}, {1, 0, 1, 0}, {0, 1, 0, 1}}),
+            BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 0}})};
 
-    Konieczny          KS(gens);
-    FroidurePin<BMat8> S(gens);
+     Konieczny          KS(gens);
+     FroidurePin<BMat8> S(gens);
 
-    S.run();
-    REQUIRE(KS.size() == S.size());
-    for (auto it = S.cbegin(); it < S.cend(); it++) {
-      BMat8 idem = KS.find_idem(*it);
-      if (KS.is_regular_element(*it)) {
-        REQUIRE(idem * idem == idem);
-      } else {
-        REQUIRE(idem == BMat8(static_cast<size_t>(UNDEFINED)));
-      }
-    }
-    const std::vector<BMat8> gens2
-        = {BMat8({{1, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 0}}),
-           BMat8({{1, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
-           BMat8({{1, 0, 0, 0}, {0, 1, 0, 1}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
-           BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 1}, {0, 0, 0, 1}})};
+     S.run();
+     REQUIRE(KS.size() == S.size());
+     for (auto it = S.cbegin(); it < S.cend(); it++) {
+       BMat8 idem = KS.find_idem(*it);
+       if (KS.is_regular_element(*it)) {
+         REQUIRE(idem * idem == idem);
+       } else {
+         REQUIRE(idem == BMat8(static_cast<size_t>(UNDEFINED)));
+       }
+     }
+     const std::vector<BMat8> gens2
+         = {BMat8({{1, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 0}}),
+            BMat8({{1, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
+            BMat8({{1, 0, 0, 0}, {0, 1, 0, 1}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
+            BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 1}, {0, 0, 0, 1}})};
 
-    Konieczny          KS2(gens2);
-    FroidurePin<BMat8> S2(gens2);
+     Konieczny          KS2(gens2);
+     FroidurePin<BMat8> S2(gens2);
 
-    S2.run();
-    for (auto it = S2.cbegin(); it < S2.cend(); it++) {
-      BMat8 idem = KS2.find_idem(*it);
-      if (KS2.is_regular_element(*it)) {
-        REQUIRE(idem * idem == idem);
-      } else {
-        REQUIRE(idem == BMat8(static_cast<size_t>(UNDEFINED)));
-      }
-    }
-  }*/
+     S2.run();
+     for (auto it = S2.cbegin(); it < S2.cend(); it++) {
+       BMat8 idem = KS2.find_idem(*it);
+       if (KS2.is_regular_element(*it)) {
+         REQUIRE(idem * idem == idem);
+       } else {
+         REQUIRE(idem == BMat8(static_cast<size_t>(UNDEFINED)));
+       }
+     }
+   }*/
 
   /*
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
@@ -881,6 +881,8 @@ namespace libsemigroups {
     REQUIRE(T.size() == 33554432);
   }
 
+  */
+
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "011",
                           "regular generated bmat monoid 4",
@@ -891,9 +893,10 @@ namespace libsemigroups {
            BMat8({{1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}})};
 
-    Konieczny S(reg_bmat4_gens);
+    Konieczny<BMat8> S(reg_bmat4_gens);
     REQUIRE(S.size() == 63904);
 
+    /*
     size_t reg_elts = 0;
     for (auto D : S.regular_D_classes()) {
       reg_elts += D->size();
@@ -905,8 +908,10 @@ namespace libsemigroups {
       idems += D->nr_idempotents();
     }
     REQUIRE(idems == 2360);
+    */
   }
 
+  /*
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "012",
                           "regular generated bmat monoid 5",
@@ -1214,15 +1219,12 @@ namespace libsemigroups {
     REQUIRE(idems == 3465357);
   }
   */
-  LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                          "017",
-                          "transformations",
-                          "[quick]") {
+  LIBSEMIGROUPS_TEST_CASE("Konieczny", "017", "transformations", "[quick]") {
     Konieczny<Transformation<size_t>> S(
         {Transformation<size_t>({1, 0, 2, 3, 4}),
          Transformation<size_t>({1, 2, 3, 4, 0}),
          Transformation<size_t>({0, 0, 2, 3, 4})});
-    
+
     S.run();
     REQUIRE(S.size() == 3125);
   }
@@ -1256,4 +1258,150 @@ namespace libsemigroups {
 
     REQUIRE(S.size() == 26);
   }
+
+  LIBSEMIGROUPS_TEST_CASE("FroidurePin",
+                          "020",
+                          "non-pointer BooleanMat",
+                          "[quick][froidure-pin][boolmat][booleanmat]") {
+    std::vector<BooleanMat> gens = {
+        BooleanMat({{1, 0, 0, 0}, {0, 0, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 0}}),
+        BooleanMat({{1, 0, 0, 1}, {1, 0, 0, 1}, {1, 1, 1, 1}, {0, 1, 1, 0}}),
+        BooleanMat({{1, 0, 1, 0}, {1, 0, 1, 1}, {0, 0, 1, 1}, {0, 1, 0, 1}}),
+        BooleanMat({{0, 0, 0, 0}, {0, 1, 0, 1}, {1, 1, 1, 0}, {1, 0, 0, 1}}),
+        BooleanMat({{0, 0, 0, 1}, {0, 0, 1, 0}, {1, 0, 0, 1}, {1, 1, 0, 0}})};
+
+    Konieczny<BooleanMat> S(gens);
+
+    REQUIRE(S.size() == 415);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("FroidurePin",
+                          "021",
+                          "non-pointer BooleanMat",
+                          "[extreme][froidure-pin][boolmat][booleanmat]") {
+    std::vector<BooleanMat> gens = {BooleanMat({{1, 1, 0, 0, 0, 0},
+                                              {1, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 1, 0, 0, 0},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {1, 0, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 1, 0, 0},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {1, 0, 0, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 1, 0},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {1, 0, 0, 0, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 1},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {1, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 1, 0, 0, 0},
+                                              {0, 1, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 0, 1, 0, 0},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {0, 1, 0, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 0, 0, 1, 0},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {0, 1, 0, 0, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 0, 0, 0, 1},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {0, 1, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 1, 0, 0},
+                                              {0, 0, 1, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 0, 1, 0},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {0, 0, 1, 0, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 0, 0, 1},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {0, 0, 1, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 1, 0},
+                                              {0, 0, 0, 1, 1, 0},
+                                              {0, 0, 0, 0, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 0, 1},
+                                              {0, 0, 0, 0, 1, 0},
+                                              {0, 0, 0, 1, 0, 1}}),
+                                  BooleanMat({{1, 0, 0, 0, 0, 0},
+                                              {0, 1, 0, 0, 0, 0},
+                                              {0, 0, 1, 0, 0, 0},
+                                              {0, 0, 0, 1, 0, 0},
+                                              {0, 0, 0, 0, 1, 1},
+                                              {0, 0, 0, 0, 1, 1}})};
+
+    Konieczny<BooleanMat> S(gens);
+
+    REQUIRE(S.size() == 1092473);
+  }
+
+  
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "022",
+                          "regular generated bmat monoid 4",
+                          "[standard]") {
+    const std::vector<BooleanMat> reg_bmat4_gens
+        = {BooleanMat({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
+           BooleanMat({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}),
+           BooleanMat({{1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
+           BooleanMat({{0, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}})};
+
+    Konieczny<BooleanMat> S(reg_bmat4_gens);
+    REQUIRE(S.size() == 63904);
+
+    /*
+    size_t reg_elts = 0;
+    for (auto D : S.regular_D_classes()) {
+      reg_elts += D->size();
+    }
+    REQUIRE(reg_elts == 40408);
+
+    size_t idems = 0;
+    for (auto D : S.regular_D_classes()) {
+      idems += D->nr_idempotents();
+    }
+    REQUIRE(idems == 2360);
+    */
+  }
+
 }  // namespace libsemigroups
