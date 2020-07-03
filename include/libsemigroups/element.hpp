@@ -2319,7 +2319,7 @@ namespace libsemigroups {
       for (auto it = rows.cbegin(); it < rows.cend(); ++it) {
         cup.assign(degree, false);
         if (std::find((*it).begin(), (*it).end(), true) != (*it).end()) {
-          for (auto it2 = rows.cbegin(); it < rows.cend(); ++it) {
+          for (auto it2 = rows.cbegin(); it2 < rows.cend(); ++it2) {
             if (it == it2) {
               continue;
             }
