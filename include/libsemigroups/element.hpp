@@ -2376,12 +2376,13 @@ namespace libsemigroups {
     }
   };
 
+  //TODO: remove noexcepts from all of these
   template <>
   struct ImageRightAction<BooleanMat, std::vector<std::vector<bool>>> {
     void operator()(std::vector<std::vector<bool>>&       res,
                     std::vector<std::vector<bool>> const& pt,
                     BooleanMat const&                     x) const noexcept {
-      std::vector<std::vector<bool>> out(pt.size());
+      std::vector<std::vector<bool>> out;
       for (auto it = pt.cbegin(); it < pt.cend(); ++it) {
         std::vector<bool> cup(x.degree(), false);
         for (size_t i = 0; i < x.degree(); ++i) {

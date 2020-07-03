@@ -177,8 +177,11 @@ namespace libsemigroups {
       Rho()(_tmp_rho_value1, bm);
       Lambda()(_tmp_lambda_value1, bm);
       lambda_orb_index_type     lpos = _lambda_orb.position(_tmp_lambda_value1);
+      LIBSEMIGROUPS_ASSERT(lpos != UNDEFINED);
+      
       lambda_orb_scc_index_type lval_scc_id
           = _lambda_orb.digraph().scc_id(lpos);
+
       std::pair<rho_orb_index_type, lambda_orb_scc_index_type> key
           = std::make_pair(_rho_orb.position(_tmp_rho_value1), lval_scc_id);
 
