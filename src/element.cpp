@@ -52,11 +52,13 @@ namespace libsemigroups {
   BooleanMat::BooleanMat(BooleanMat const& copy)
       : MatrixOverSemiringBase<bool, BooleanMat>(copy._vector, copy._semiring) {
   }
+  /*
   BooleanMat::BooleanMat()
       : BooleanMat(std::vector<bool>(16)) {
         assert(false);
     std::cout << "?????" << std::endl;    
   }
+  */
 
   void BooleanMat::redefine(Element const& x, Element const& y) {
     LIBSEMIGROUPS_ASSERT(x.degree() == y.degree());

@@ -1709,7 +1709,7 @@ namespace libsemigroups {
     //! A debug constructor.
     //!
     //! Constructs a boolean matrix of degree 4
-    explicit BooleanMat();
+   // BooleanMat();
 
     //! A copy constructor.
     BooleanMat(BooleanMat const&);

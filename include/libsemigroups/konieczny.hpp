@@ -93,10 +93,10 @@ namespace libsemigroups {
         = RightAction<element_type, lambda_value_type, LambdaAction>;
     using rho_orb_type = LeftAction<element_type, rho_value_type, RhoAction>;
 
-    using Product = ::libsemigroups::Product<element_type>;
-    using Rank    = ::libsemigroups::Rank<element_type>;
-    using One     = ::libsemigroups::One<element_type>;
-    using VecHash = ::libsemigroups::VecHash<element_type>;
+    using Product     = ::libsemigroups::Product<element_type>;
+    using Rank        = ::libsemigroups::Rank<element_type>;
+    using One         = ::libsemigroups::One<element_type>;
+    using VecHash     = ::libsemigroups::VecHash<element_type>;
     using ElementHash = ::libsemigroups::Hash<element_type>;
     using LambdaHash  = ::libsemigroups::Hash<lambda_value_type>;
     using RhoHash     = ::libsemigroups::Hash<rho_value_type>;
@@ -142,23 +142,24 @@ namespace libsemigroups {
           _regular_D_classes(),
           _lambda_orb(),
           _adjoined_identity_contained(false),
-          _computed_all_classes(false) {
+          _computed_all_classes(false),
+          _one(One()(_gens[0])),
+
+          _tmp_lambda_value1(Lambda()(_one)),
+          _tmp_lambda_value2(Lambda()(_one)),
+          _tmp_rho_value1(Rho()(_one)),
+          _tmp_rho_value2(Rho()(_one)),
+
+          _tmp_element1(_one),
+          _tmp_element2(_one),
+          _tmp_element3(_one)
+
+    {
       if (_gens.empty()) {
         LIBSEMIGROUPS_EXCEPTION(
             "expected a positive number of generators, but got 0");
       }
-
-      _one = One()(_gens[0]);
-
-      _tmp_lambda_value1 = Lambda()(_one);
-      _tmp_lambda_value2 = Lambda()(_one);
-      _tmp_rho_value1    = Rho()(_one);
-      _tmp_rho_value2    = Rho()(_one);
-
       // TODO: pointer badness
-      _tmp_element1 = _one;
-      _tmp_element2 = _one;
-      _tmp_element3 = _one;
 
       _gens.push_back(_one);  // TODO: maybe not this
     }
@@ -363,14 +364,15 @@ namespace libsemigroups {
           _right_mults_inv(),
           _left_reps(),
           _right_reps(),
-          _H_class() {
-      _tmp_lambda_value = Lambda()(_rep);
-      _tmp_rho_value    = Rho()(_rep);
-      _tmp_element      = _rep;
-      _tmp_element2     = _rep;
-      _tmp_element3     = _rep;
-      _tmp_element4     = _rep;
-    }
+          _H_class(),
+          _tmp_lambda_value(Lambda()(_rep)),
+          _tmp_rho_value(Rho()(_rep)),
+          _tmp_element(_rep),
+          _tmp_element2(_rep),
+          _tmp_element3(_rep),
+          _tmp_element4(_rep)
+
+    {}
 
     virtual ~BaseDClass() {}
 
@@ -1240,10 +1242,10 @@ namespace libsemigroups {
     NonRegularDClass(Konieczny* parent, element_type rep)
         : Konieczny::BaseDClass(parent, rep),
           _rho_val_positions(),
-          _left_idem_above(),
+          _left_idem_above(rep),
           _left_idem_class(),
           _H_set(),
-          _right_idem_above(),
+          _right_idem_above(rep),
           _right_idem_class(),
           _lambda_val_positions() {
       Product()(this->tmp_element(), rep, rep);
