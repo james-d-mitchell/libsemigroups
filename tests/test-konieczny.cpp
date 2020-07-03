@@ -1242,7 +1242,7 @@ namespace libsemigroups {
          Transformation<uint_fast8_t>({7, 7, 4, 0, 6, 4, 1, 7})});
     REQUIRE(S.size() == 597369);
   }
-  
+
   LIBSEMIGROUPS_TEST_CASE("FroidurePin",
                           "019",
                           "non-pointer BooleanMat",
@@ -1256,5 +1256,4 @@ namespace libsemigroups {
 
     REQUIRE(S.size() == 26);
   }
-
 }  // namespace libsemigroups

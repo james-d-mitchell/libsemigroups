@@ -26,6 +26,8 @@
 #include <ostream>    // for operator<<, basic_ostream, ostringstream
 #include <thread>     // for thread, get_id
 
+#include <iostream>    // for operator<<, basic_ostream, ostringstream
+
 #include "libsemigroups/blocks.hpp"    // for Blocks
 #include "libsemigroups/report.hpp"    // for THREAD_ID_MANAGER
 #include "libsemigroups/semiring.hpp"  // for BooleanSemiring, Semiring (ptr only)
@@ -49,6 +51,10 @@ namespace libsemigroups {
 
   BooleanMat::BooleanMat(BooleanMat const& copy)
       : MatrixOverSemiringBase<bool, BooleanMat>(copy._vector, copy._semiring) {
+  }
+  BooleanMat::BooleanMat()
+      : BooleanMat(std::vector<bool>(16)) {
+    std::cout << "?????" << std::endl;    
   }
 
   void BooleanMat::redefine(Element const& x, Element const& y) {

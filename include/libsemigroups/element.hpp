@@ -1705,6 +1705,11 @@ namespace libsemigroups {
     //!
     //! Constructs a boolean matrix of the specified degree
     explicit BooleanMat(size_t);
+    
+    //! A debug constructor.
+    //!
+    //! Constructs a boolean matrix of degree 4
+    explicit BooleanMat();
 
     //! A copy constructor.
     BooleanMat(BooleanMat const&);
@@ -2373,7 +2378,6 @@ namespace libsemigroups {
 
   template <>
   struct ImageRightAction<BooleanMat, std::vector<std::vector<bool>>> {
-    using result_type = std::vector<std::vector<bool>>;
     void operator()(std::vector<std::vector<bool>>&       res,
                     std::vector<std::vector<bool>> const& pt,
                     BooleanMat const&                     x) const noexcept {
@@ -2395,14 +2399,13 @@ namespace libsemigroups {
     operator()(std::vector<std::vector<bool>> const& pt,
                BooleanMat const&                     x) const {
       std::vector<std::vector<bool>> res;
-      this->                operator()(res, x);
+      this->                operator()(res, pt,  x);
       return res;
     }
   };
 
   template <>
   struct ImageLeftAction<BooleanMat, std::vector<std::vector<bool>>> {
-    using result_type = std::vector<std::vector<bool>>;
     void operator()(std::vector<std::vector<bool>>&       res,
                     std::vector<std::vector<bool>> const& pt,
                     BooleanMat const&                     x) const noexcept {
@@ -2414,7 +2417,7 @@ namespace libsemigroups {
     operator()(std::vector<std::vector<bool>> const& pt,
                BooleanMat const&                     x) const {
       std::vector<std::vector<bool>> res;
-      this->                operator()(res, x);
+      this->                operator()(res, pt,  x);
       return res;
     }
   };
