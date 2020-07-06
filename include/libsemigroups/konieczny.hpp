@@ -101,6 +101,7 @@ namespace libsemigroups {
     using ElementHash = ::libsemigroups::Hash<element_type>;
     using LambdaHash  = ::libsemigroups::Hash<lambda_value_type>;
     using RhoHash     = ::libsemigroups::Hash<rho_value_type>;
+    using EqualTo     = ::libsemigroups::EqualTo<element_type>;
   };
 
   template <typename TElementType,
@@ -125,7 +126,15 @@ namespace libsemigroups {
         return Hash()(this->to_external_const(x));
       }
     };
-
+    
+    struct InternalEqualTo : private detail::BruidhinnTraits<TElementType> {
+      bool operator()(internal_const_reference x,
+                      internal_const_reference y) const {
+        return EqualTo()(this->to_external_const(x),
+                         this->to_external_const(y));
+      }
+    };
+    
    public:
     using element_type    = typename TTraits::element_type;
     using const_reference = element_type const&;
@@ -145,6 +154,7 @@ namespace libsemigroups {
     using ElementHash = typename TTraits::ElementHash;
     using LambdaHash  = typename TTraits::LambdaHash;
     using RhoHash     = typename TTraits::RhoHash;
+    using EqualTo     = typename TTraits::EqualTo;
 
     // TODO(now) replace with aliases into lambda_orb_type/rho_orb_type
     using rho_orb_index_type        = size_t;
@@ -173,15 +183,17 @@ namespace libsemigroups {
           _tmp_rho_value1(),
           _tmp_rho_value2()
     {
-      if (_gens.empty()) {
-        LIBSEMIGROUPS_EXCEPTION(
-            "expected a positive number of generators, but got 0");
-      }
       // TODO(FLS): add more argument checks here!
 
       for (const_reference x : gens) {
         _gens.push_back(this->internal_copy(this->to_internal_const(x)));
       }
+      
+      if (_gens.empty()) {
+        LIBSEMIGROUPS_EXCEPTION(
+            "expected a positive number of generators, but got 0");
+      }
+      
       _one = this->to_internal(One()(gens[0]));
 
       _tmp_element1 = this->internal_copy(_one);
@@ -224,14 +236,14 @@ namespace libsemigroups {
         return _group_indices.at(key);
       } else {
         // use _tmp_element2 since is_group_index modifies 1
-        Product()(_tmp_element2, bm, _lambda_orb.multiplier_to_scc_root(lpos));
+        Product()(this->to_external(_tmp_element2), bm, _lambda_orb.multiplier_to_scc_root(lpos));
         for (auto it = _lambda_orb.digraph().cbegin_scc(lval_scc_id);
              it < _lambda_orb.digraph().cend_scc(lval_scc_id);
              it++) {
-          Product()(_tmp_element3,
-                    _tmp_element2,
+          Product()(this->to_external(_tmp_element3),
+                    this->to_external(_tmp_element2),
                     _lambda_orb.multiplier_from_scc_root(*it));
-          if (is_group_index(bm, _tmp_element3)) {
+          if (is_group_index(bm, this->to_external(_tmp_element3))) {
             _group_indices.emplace(key, *it);
             return *it;
           }
@@ -251,9 +263,9 @@ namespace libsemigroups {
     // modifies _tmp_element1
     // modifies _tmp_lambda_value and _tmp_rho_value
     bool is_group_index(const_reference x, const_reference y) {
-      Product()(_tmp_element1, y, x);
-      Lambda()(_tmp_lambda_value1, _tmp_element1);
-      Rho()(_tmp_rho_value1, _tmp_element1);
+      Product()(this->to_external(_tmp_element1), y, x);
+      Lambda()(_tmp_lambda_value1, this->to_external(_tmp_element1));
+      Rho()(_tmp_rho_value1, this->to_external(_tmp_element1));
       Lambda()(_tmp_lambda_value2, x);
       Rho()(_tmp_rho_value2, y);
       return _tmp_lambda_value1 == _tmp_lambda_value2
@@ -265,11 +277,12 @@ namespace libsemigroups {
     // modifies _tmp_lambda_value1
     element_type find_idem(const_reference bm) {
       LIBSEMIGROUPS_ASSERT(Degree<element_type>()(bm)
-                           == Degree<element_type>()(_tmp_element1));
+                           == Degree<element_type>()(this->to_external_const(_tmp_element1)));
       LIBSEMIGROUPS_ASSERT(Degree<element_type>()(bm)
-                           == Degree<element_type>()(_tmp_element2));
-      Product()(_tmp_element1, bm, bm);
-      if (_tmp_element1 == bm) {
+                           == Degree<element_type>()(this->to_external_const(_tmp_element2)));
+      Product()(this->to_external(_tmp_element1), bm, bm);
+      // TODO: this will change when this function takes an internal element type
+      if (this->to_external(_tmp_element1) == bm) {
         return bm;
       }
       if (!is_regular_element(bm)) {
@@ -279,22 +292,25 @@ namespace libsemigroups {
       Lambda()(_tmp_lambda_value1, bm);
       lambda_orb_index_type pos = _lambda_orb.position(_tmp_lambda_value1);
 
-      Product()(_tmp_element1, bm, _lambda_orb.multiplier_to_scc_root(pos));
-      Product()(_tmp_element2,
-                _tmp_element1,
+      Product()(this->to_external(_tmp_element1), bm, _lambda_orb.multiplier_to_scc_root(pos));
+      Product()(this->to_external(_tmp_element2),
+                this->to_external(_tmp_element1),
                 _lambda_orb.multiplier_from_scc_root(i));
 
       // BMat8(UNDEFINED) happens to be idempotent...
-      return konieczny_helpers::idem_in_H_class<element_type>(_tmp_element2);
+      return konieczny_helpers::idem_in_H_class<element_type>(this->to_external(_tmp_element2));
     }
 
+    // TODO this should maybe just modify its argument in place to avoid copying
     element_type group_inverse(const_reference id, const_reference bm) {
-      _tmp_element1 = bm;
+      _tmp_element1 = this->to_internal(this->external_copy(bm));
       do {
         _tmp_element2 = _tmp_element1;
-        Product()(_tmp_element1, _tmp_element2, bm);
-      } while (_tmp_element1 != id);
-      return _tmp_element2;
+        Product()(this->to_external(_tmp_element1),
+                  this->to_external_const(_tmp_element2),
+                  bm);
+      } while (_tmp_element1 != this->to_internal_const(id));
+      return this->to_external(_tmp_element2);
     }
 
     class BaseDClass;
@@ -336,12 +352,12 @@ namespace libsemigroups {
                      t.string());
     }
 
-    typename std::vector<element_type>::const_iterator
+    typename std::vector<internal_element_type>::const_iterator
     cbegin_generators() const {
       return _gens.cbegin();
     }
 
-    typename std::vector<element_type>::const_iterator cend_generators() const {
+    typename std::vector<internal_element_type>::const_iterator cend_generators() const {
       return _gens.cend();
     }
 
@@ -379,7 +395,7 @@ namespace libsemigroups {
 
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::BaseDClass
-      : private detail::BruidhinnTraits<TElementType> {
+      : protected detail::BruidhinnTraits<TElementType> {
    private:
     ////////////////////////////////////////////////////////////////////////
     // Konieczny::BaseDClass - aliases - private
@@ -523,7 +539,7 @@ namespace libsemigroups {
           for (auto it = _parent->cbegin_generators();
                it < _parent->cend_generators();
                ++it) {
-            Product()(_tmp_element3, w, *it);
+            Product()(_tmp_element3, w, this->to_external_const(*it));
             // uses _tmp_element, _tmp_element2
             if (!contains(_tmp_element3)) {
               out.push_back(_tmp_element3);
@@ -535,7 +551,7 @@ namespace libsemigroups {
           for (auto it = _parent->cbegin_generators();
                it < _parent->cend_generators();
                ++it) {
-            Product()(_tmp_element3, *it, z);
+            Product()(_tmp_element3, this->to_external_const(*it), z);
             // uses _tmp_element, _tmp_element2
             if (!contains(_tmp_element3)) {
               out.push_back(_tmp_element3);
@@ -1133,8 +1149,8 @@ namespace libsemigroups {
       }
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
-        for (const_reference g : this->parent()->_gens) {
-          Product()(this->tmp_element(), this->cbegin_left_reps()[i], g);
+        for (internal_const_reference g : this->parent()->_gens) {
+          Product()(this->tmp_element(), this->cbegin_left_reps()[i], this->to_external_const(g));
           Lambda()(this->tmp_lambda_value(), this->tmp_element());
           for (size_t j = 0; j < _left_indices.size(); ++j) {
             if (this->parent()->_lambda_orb.at(_left_indices[j])
