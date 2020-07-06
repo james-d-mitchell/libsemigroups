@@ -2311,6 +2311,9 @@ namespace libsemigroups {
     std::vector<std::vector<bool>>
     rows_basis(std::vector<std::vector<bool>> & rows) {
       std::vector<std::vector<bool>> out;
+      if (rows.empty()) {
+        return out;
+      }
       size_t degree = rows[0].size();
       std::vector<bool> cup(degree, false);
       std::sort(rows.begin(), rows.end());
