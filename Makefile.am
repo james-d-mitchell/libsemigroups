@@ -234,6 +234,7 @@ check_PROGRAMS += test_wislo
 check_PROGRAMS += test_word
 
 EXTRA_PROGRAMS =  bench_all
+EXTRA_PROGRAMS += bench_action
 EXTRA_PROGRAMS += bench_digraph
 EXTRA_PROGRAMS += bench_froidure_pin
 EXTRA_PROGRAMS += bench_knuth_bendix
@@ -439,6 +440,7 @@ test_word_SOURCES += tests/test-main.cpp
 bench_all_SOURCES =  benchmarks/examples/cong-intf.cpp
 bench_all_SOURCES += benchmarks/examples/fpsemi-intf.cpp
 bench_all_SOURCES += benchmarks/examples/generators.cpp
+bench_all_SOURCES += benchmarks/bench-action.cpp
 bench_all_SOURCES += benchmarks/bench-digraph.cpp
 bench_all_SOURCES += benchmarks/bench-froidure-pin.cpp
 bench_all_SOURCES += benchmarks/bench-knuth-bendix.cpp
@@ -447,6 +449,9 @@ bench_all_SOURCES += benchmarks/bench-siso.cpp
 bench_all_SOURCES += benchmarks/bench-todd-coxeter.cpp
 bench_all_SOURCES += benchmarks/bench-wilo.cpp
 bench_all_SOURCES += benchmarks/bench-wislo.cpp
+
+bench_action_SOURCES =  benchmarks/bench-action.cpp
+bench_action_SOURCES += benchmarks/bench-main.cpp
 
 bench_digraph_SOURCES =  benchmarks/bench-digraph.cpp
 bench_digraph_SOURCES += benchmarks/bench-main.cpp

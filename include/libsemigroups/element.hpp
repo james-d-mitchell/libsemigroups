@@ -1410,7 +1410,7 @@ namespace libsemigroups {
       //! The approximate time complexity of multiplying matrices is \f$n ^ 3\f$
       //! where \f$n\f$ is the dimension of the matrix.
       size_t complexity() const override {
-        return pow(this->degree(), 3);
+        return this->degree() * this->degree() * this->degree();
       }
 
       //! Returns the dimension of the matrix.
@@ -1673,7 +1673,7 @@ namespace libsemigroups {
       return id;
     }
   };
-  
+
 
   //! Matrices over the boolean semiring.
   //!
@@ -1705,7 +1705,7 @@ namespace libsemigroups {
     //!
     //! Constructs a boolean matrix of the specified degree
     explicit BooleanMat(size_t);
-    
+
     //! A debug constructor.
     //!
     //! Constructs a boolean matrix of degree 4
@@ -1733,7 +1733,7 @@ namespace libsemigroups {
 
     BooleanMat transpose() const;
     std::vector<std::vector<bool>> rows() const;
-    std::vector<std::vector<bool>> row_space_basis() const;    
+    std::vector<std::vector<bool>> row_space_basis() const;
     size_t row_space_size() const;
 
    private:
@@ -2198,7 +2198,7 @@ namespace libsemigroups {
       return x[pt];
     }
   };
-  
+
   // TODO use the final template parameter
   // TODO remove code duplication, Lambda = ImageRightAction(res, x,
   // identity_transformation);
