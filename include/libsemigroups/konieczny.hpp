@@ -102,6 +102,7 @@ namespace libsemigroups {
     using LambdaHash  = ::libsemigroups::Hash<lambda_value_type>;
     using RhoHash     = ::libsemigroups::Hash<rho_value_type>;
     using EqualTo     = ::libsemigroups::EqualTo<element_type>;
+    using Swap        = ::libsemigroups::Swap<element_type>;
   };
 
   template <typename TElementType,
@@ -155,6 +156,7 @@ namespace libsemigroups {
     using LambdaHash  = typename TTraits::LambdaHash;
     using RhoHash     = typename TTraits::RhoHash;
     using EqualTo     = typename TTraits::EqualTo;
+    using Swap        = typename TTraits::Swap;
 
     // TODO(now) replace with aliases into lambda_orb_type/rho_orb_type
     using rho_orb_index_type        = size_t;
@@ -305,11 +307,12 @@ namespace libsemigroups {
     element_type group_inverse(const_reference id, const_reference bm) {
       _tmp_element1 = this->to_internal(this->external_copy(bm));
       do {
-        _tmp_element2 = _tmp_element1;
+        Swap()(this->to_external(_tmp_element1),
+               this->to_external(_tmp_element2));
         Product()(this->to_external(_tmp_element1),
                   this->to_external_const(_tmp_element2),
                   bm);
-      } while (_tmp_element1 != this->to_internal_const(id));
+      } while (!EqualTo()(this->to_external(_tmp_element1), id));
       return this->to_external(_tmp_element2);
     }
 
