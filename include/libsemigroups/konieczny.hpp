@@ -39,6 +39,7 @@
 #include <iostream>
 
 #include "action.hpp"
+#include "bruidhinn-traits.hpp" // for BruidhinnTraits
 #include "constants.hpp"
 #include "libsemigroups-config.hpp"     // for LIBSEMIGROUPS_ASSERT
 #include "libsemigroups-debug.hpp"      // for LIBSEMIGROUPS_ASSERT
@@ -104,7 +105,27 @@ namespace libsemigroups {
 
   template <typename TElementType,
             typename TTraits = KoniecznyTraits<TElementType>>
-  class Konieczny : public Runner {
+  class Konieczny : public Runner,
+                    private detail::BruidhinnTraits<TElementType> {
+
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - aliases - private
+    ////////////////////////////////////////////////////////////////////////
+
+    using internal_element_type =
+        typename detail::BruidhinnTraits<TElementType>::internal_value_type;
+    using internal_const_element_type =
+        typename detail::BruidhinnTraits<TElementType>::internal_const_value_type;
+    using internal_const_reference =
+        typename detail::BruidhinnTraits<TElementType>::internal_const_reference;
+
+    struct InternalElementHash : private detail::BruidhinnTraits<TElementType> {
+      using Hash = typename TTraits::ElementHash;
+      size_t operator()(internal_const_element_type x) const {
+        return Hash()(this->to_external_const(x));
+      }
+    };
+
    public:
     using element_type    = typename TTraits::element_type;
     using const_reference = element_type const&;
@@ -137,27 +158,43 @@ namespace libsemigroups {
           _computed_all_classes(false),
           _D_classes(),
           _D_rels(),
-          _gens(gens),
+          _gens(),
           _group_indices(),
           _group_indices_alt(),
           _lambda_orb(),
-          _one(One()(_gens[0])),
+          _one(),
           _regular_D_classes(),
           _rho_orb(),
-          _tmp_element1(_one),
-          _tmp_element2(_one),
-          _tmp_element3(_one),
-          _tmp_lambda_value1(Lambda()(_one)),
-          _tmp_lambda_value2(Lambda()(_one)),
-          _tmp_rho_value1(Rho()(_one)),
-          _tmp_rho_value2(Rho()(_one))
-
+          _tmp_element1(),
+          _tmp_element2(),
+          _tmp_element3(),
+          _tmp_lambda_value1(),
+          _tmp_lambda_value2(),
+          _tmp_rho_value1(),
+          _tmp_rho_value2()
     {
       if (_gens.empty()) {
         LIBSEMIGROUPS_EXCEPTION(
             "expected a positive number of generators, but got 0");
       }
-      // TODO: pointer badness
+      // TODO(FLS): add more argument checks here!
+
+      for (const_reference x : gens) {
+        _gens.push_back(this->internal_copy(this->to_internal_const(x)));
+      }
+      _one = this->to_internal(One()(gens[0]));
+
+      _tmp_element1 = this->internal_copy(_one);
+      _tmp_element2 = this->internal_copy(_one);
+      _tmp_element3 = this->internal_copy(_one);
+
+      // TODO(now): use internal/external for lambda/rho values too
+      _tmp_lambda_value1 = Lambda()(gens[0]);
+      _tmp_lambda_value2 = Lambda()(gens[0]);
+
+      // TODO(now): use internal/external for lambda/rho values too
+      _tmp_rho_value1 = Lambda()(gens[0]);
+      _tmp_rho_value2 = Lambda()(gens[0]);
 
       _gens.push_back(_one);  // TODO: maybe not this
     }
@@ -176,7 +213,7 @@ namespace libsemigroups {
       Lambda()(_tmp_lambda_value1, bm);
       lambda_orb_index_type     lpos = _lambda_orb.position(_tmp_lambda_value1);
       LIBSEMIGROUPS_ASSERT(lpos != UNDEFINED);
-      
+
       lambda_orb_scc_index_type lval_scc_id
           = _lambda_orb.digraph().scc_id(lpos);
 
@@ -284,12 +321,13 @@ namespace libsemigroups {
       detail::Timer t;
       REPORT_DEFAULT("Computing orbits . . .\n");
 
-      _lambda_orb.add_seed(Lambda()(_one));
-      _rho_orb.add_seed(Rho()(_one));
-      for (const_reference g : _gens) {
-        _lambda_orb.add_generator(g);
-        _rho_orb.add_generator(g);
+      _lambda_orb.add_seed(Lambda()(this->to_external_const(_one)));
+      _rho_orb.add_seed(Rho()(this->to_external_const(_one)));
+      for (internal_const_element_type g : _gens) {
+        _lambda_orb.add_generator(this->to_external_const(g));
+        _rho_orb.add_generator(this->to_external_const(g));
       }
+      // TODO(now) the following also need to be sensitive to being stopped()
       _lambda_orb.run();
       _rho_orb.run();
       REPORT_DEFAULT("Found %llu lambda-values and %llu rho-values in %s\n",
@@ -313,7 +351,7 @@ namespace libsemigroups {
     // contains in _D_rels[i] the indices of the D classes which lie above
     // _D_classes[i]
     std::vector<std::vector<D_class_index_type>> _D_rels;
-    std::vector<element_type>                    _gens;
+    std::vector<internal_element_type>                    _gens;
     std::unordered_map<std::pair<rho_orb_index_type, lambda_orb_scc_index_type>,
                        lambda_orb_index_type,
                        PairHash>
@@ -321,18 +359,18 @@ namespace libsemigroups {
     std::unordered_map<std::pair<rho_orb_scc_index_type, lambda_orb_index_type>,
                        rho_orb_index_type,
                        PairHash>
-                                _group_indices_alt;
+                                _group_indices_alt; // TODO better name
     lambda_orb_type             _lambda_orb;
-    element_type                _one;
-    std::vector<RegularDClass*> _regular_D_classes;
-    rho_orb_type                _rho_orb;
-    element_type                _tmp_element1;
-    element_type                _tmp_element2;
-    element_type                _tmp_element3;
-    lambda_value_type           _tmp_lambda_value1;
-    lambda_value_type           _tmp_lambda_value2;
-    rho_value_type              _tmp_rho_value1;
-    rho_value_type              _tmp_rho_value2;
+    internal_element_type         _one;
+    std::vector<RegularDClass*>   _regular_D_classes;
+    rho_orb_type                  _rho_orb;
+    mutable internal_element_type _tmp_element1;
+    mutable internal_element_type _tmp_element2;
+    mutable internal_element_type _tmp_element3;
+    lambda_value_type             _tmp_lambda_value1;
+    lambda_value_type             _tmp_lambda_value2;
+    rho_value_type                _tmp_rho_value1;
+    rho_value_type                _tmp_rho_value2;
   };
 
   /////////////////////////////////////////////////////////////////////////////
@@ -340,17 +378,30 @@ namespace libsemigroups {
   /////////////////////////////////////////////////////////////////////////////
 
   template <typename TElementType, typename TTraits>
-  class Konieczny<TElementType, TTraits>::BaseDClass {
+  class Konieczny<TElementType, TTraits>::BaseDClass
+      : private detail::BruidhinnTraits<TElementType> {
+   private:
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny::BaseDClass - aliases - private
+    ////////////////////////////////////////////////////////////////////////
+    // TODO(now): check if all of these are used
+    using internal_element_type =
+        typename detail::BruidhinnTraits<TElementType>::internal_value_type;
+    using internal_const_element_type =
+        typename detail::BruidhinnTraits<TElementType>::internal_const_value_type;
+    using internal_const_reference =
+        typename detail::BruidhinnTraits<TElementType>::internal_const_reference;
+
    public:
     using konieczny_type    = Konieczny<TElementType, TTraits>;
     using element_type      = konieczny_type::element_type;
-    using Rank              = konieczny_type::Rank;
     using lambda_value_type = konieczny_type::lambda_value_type;
 
     using left_indices_index_type  = size_t;
     using right_indices_index_type = size_t;
 
-   public:
+    using Rank              = konieczny_type::Rank;
+
     BaseDClass(Konieczny* parent, const_reference rep)
         : _class_computed(false),
           _H_class(),
@@ -1562,7 +1613,6 @@ namespace libsemigroups {
 
       for (const_reference h : right_idem_H_class) {
         for (size_t i = 0; i < right_idem_right_reps.size(); ++i) {
-          element_type              z = right_idem_right_reps[i];
           std::vector<element_type> zhHx;
           for (auto it = this->cbegin_H_class(); it < this->cend_H_class();
                ++it) {
@@ -1703,33 +1753,42 @@ namespace libsemigroups {
   void Konieczny<TElementType, TTraits>::run_impl() {
     compute_orbs();
 
-    std::vector<std::vector<std::pair<element_type, D_class_index_type>>>
-        reg_reps(Rank()(_one) + 1,
-                 std::vector<std::pair<element_type, D_class_index_type>>());
-    std::vector<std::vector<std::pair<element_type, D_class_index_type>>>
+    // TODO(now) make these data members so that this is restartable
+    std::vector<
+        std::vector<std::pair<internal_element_type, D_class_index_type>>>
+        reg_reps(Rank()(this->to_external_const(_one)) + 1,
+                 std::vector<
+                     std::pair<internal_element_type, D_class_index_type>>());
+    std::vector<
+        std::vector<std::pair<internal_element_type, D_class_index_type>>>
         non_reg_reps(
-            Rank()(_one) + 1,
-            std::vector<std::pair<element_type, D_class_index_type>>());
+            Rank()(this->to_external_const(_one)) + 1,
+            std::vector<
+                std::pair<internal_element_type, D_class_index_type>>());
+
     // TODO: reserve?
     std::set<size_t> ranks;
     size_t           max_rank = 0;
     ranks.insert(0);
 
-    RegularDClass* top = new RegularDClass(this, _one);
+    RegularDClass* top = new RegularDClass(this, this->to_external_const(_one));
     add_D_class(top);
-    for (element_type x : top->covering_reps()) {
-      size_t rank = Rank()(x);
-      ranks.insert(rank);
+    for (const_reference x : top->covering_reps()) {
+      size_t rnk = Rank()(x);
+      ranks.insert(rnk);
       if (is_regular_element(x)) {
-        reg_reps[rank].push_back(std::make_pair(x, 0));
+        reg_reps[rnk].emplace_back(
+            this->internal_copy(this->to_internal_const(x)), 0);
       } else {
-        non_reg_reps[rank].push_back(std::make_pair(x, 0));
+        non_reg_reps[rnk].emplace_back(
+            this->internal_copy(this->to_internal_const(x)), 0);
       }
     }
-
-    while (*ranks.rbegin() > 0 && !stopped()) {
+    // TODO(now): use stopped
+    while (*ranks.rbegin() > 0) {
       size_t reps_are_reg = false;
-      std::vector<std::pair<element_type, D_class_index_type>> next_reps;
+      // TODO(now) move this outside this loop
+      std::vector<std::pair<internal_element_type, D_class_index_type>> next_reps;
 
       max_rank = *ranks.rbegin();
       if (!reg_reps[max_rank].empty()) {
@@ -1741,12 +1800,14 @@ namespace libsemigroups {
         non_reg_reps[max_rank].clear();
       }
 
-      std::vector<std::pair<element_type, D_class_index_type>> tmp_next;
+      // TODO(now) move this outside this loop
+      std::vector<std::pair<internal_element_type, D_class_index_type>> tmp_next;
       for (auto it = next_reps.begin(); it < next_reps.end(); it++) {
         bool contained = false;
         for (size_t i = 0; i < _D_classes.size(); ++i) {
-          if (_D_classes[i]->contains(std::get<0>(*it), max_rank)) {
-            _D_rels[i].push_back(std::get<1>(*it));
+          if (_D_classes[i]->contains(this->to_external_const(it->first),
+                                      max_rank)) {
+            _D_rels[i].push_back(it->second);
             contained = true;
             break;
           }
@@ -1757,52 +1818,60 @@ namespace libsemigroups {
       }
       next_reps = std::move(tmp_next);
 
-      while (!next_reps.empty() && !stopped()) {
+      // TODO(now): use stopped
+      while (!next_reps.empty()) {
         if (report()) {
           REPORT_DEFAULT("computed %d D classes, so far\n", _D_classes.size());
         }
 
         BaseDClass*                                  D;
-        std::tuple<element_type, D_class_index_type> tup(_one, 0);
+        // TODO(now): tuple -> pair
+        std::pair<internal_element_type, D_class_index_type> tup(
+            this->internal_copy(_one), 0);
 
         if (reps_are_reg) {
           tup = next_reps.back();
-          D   = new RegularDClass(this, find_idem(std::get<0>(tup)));
+          D   = new RegularDClass(this,
+                                find_idem(this->to_external_const(tup.first)));
           add_D_class(static_cast<RegularDClass*>(D));
           for (const_reference x : D->covering_reps()) {
-            size_t rank = Rank()(x);
-            ranks.insert(rank);
+            size_t rnk = Rank()(x);
+            ranks.insert(rnk);
             if (is_regular_element(x)) {
-              reg_reps[rank].push_back(
-                  std::make_pair(x, _D_classes.size() - 1));
+              reg_reps[rnk].emplace_back(
+                  this->internal_copy(this->to_internal_const(x)),
+                  _D_classes.size() - 1);
             } else {
-              non_reg_reps[rank].push_back(
-                  std::make_pair(x, _D_classes.size() - 1));
+              non_reg_reps[rnk].emplace_back(
+                  this->internal_copy(this->to_internal_const(x)),
+                  _D_classes.size() - 1);
             }
           }
           next_reps.pop_back();
 
         } else {
           tup = next_reps.back();
-          D   = new NonRegularDClass(this, std::get<0>(tup));
+          D   = new NonRegularDClass(this, this->to_external_const(tup.first));
           add_D_class(static_cast<NonRegularDClass*>(D));
           for (const_reference x : D->covering_reps()) {
-            size_t rank = Rank()(x);
-            ranks.insert(rank);
+            size_t rnk = Rank()(x);
+            ranks.insert(rnk);
             if (is_regular_element(x)) {
-              reg_reps[rank].push_back(
-                  std::make_pair(x, _D_classes.size() - 1));
+              reg_reps[rnk].emplace_back(
+                  this->internal_copy(this->to_internal_const(x)),
+                  _D_classes.size() - 1);
             } else {
-              non_reg_reps[rank].push_back(
-                  std::make_pair(x, _D_classes.size() - 1));
+              non_reg_reps[rnk].emplace_back(
+                  this->internal_copy(this->to_internal_const(x)),
+                  _D_classes.size() - 1);
             }
           }
           next_reps.pop_back();
         }
 
-        std::vector<std::pair<element_type, D_class_index_type>> tmp;
-        for (std::pair<element_type, D_class_index_type>& x : next_reps) {
-          if (D->contains(std::get<0>(x))) {
+        std::vector<std::pair<internal_element_type, D_class_index_type>> tmp;
+        for (auto& x : next_reps) {
+          if (D->contains(this->to_external_const(x.first))) {
             _D_rels[_D_classes.size() - 1].push_back(x.second);
           } else {
             tmp.push_back(std::move(x));
@@ -1820,8 +1889,8 @@ namespace libsemigroups {
     // Set whether the adjoined one is in the semigroup or not
     // i.e. whether the generators contain multiple elements in the top D class
     bool flag = false;
-    for (element_type x : _gens) {
-      if (_D_classes[0]->contains(x)) {
+    for (internal_const_element_type x : _gens) {
+      if (_D_classes[0]->contains(this->to_external_const(x))) {
         if (flag) {
           _adjoined_identity_contained = true;
           break;

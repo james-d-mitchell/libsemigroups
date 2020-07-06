@@ -35,12 +35,11 @@ namespace libsemigroups {
                           "016",
                           "non-pointer BooleanMat",
                           "[quick][froidure-pin][boolmat][booleanmat]") {
-    std::vector<BooleanMat> gens
-        = {BooleanMat({0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0}),
-           BooleanMat({0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1}),
-           BooleanMat({0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1})};
 
-    FroidurePin<BooleanMat> S(gens);
+    FroidurePin<BooleanMat> S;
+    S.add_generator(BooleanMat({0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0}));
+    S.add_generator(BooleanMat({0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1}));
+    S.add_generator(BooleanMat({0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1}));
 
     S.reserve(26);
     auto rg = ReportGuard(REPORT);
