@@ -317,7 +317,7 @@ namespace libsemigroups {
                 this->to_external_const(bm));
       if (EqualTo()(this->to_external(_tmp_element1),
                     this->to_external_const(bm))) {
-        return this->to_external_const(bm);
+        return this->internal_copy(bm);
       }
       if (!is_regular_element(bm)) {
         // TODO: exception/assertion
@@ -333,8 +333,8 @@ namespace libsemigroups {
                 this->to_external(_tmp_element1),
                 _lambda_orb.multiplier_from_scc_root(i));
 
-      return konieczny_helpers::idem_in_H_class<element_type>(
-          this->to_external(_tmp_element2));
+      return this->to_internal(konieczny_helpers::idem_in_H_class<element_type>(
+          this->to_external(_tmp_element2)));
     }
 
     void group_inverse(internal_element_type &    res,
@@ -2064,8 +2064,7 @@ namespace libsemigroups {
 
         if (reps_are_reg) {
           tup = next_reps.back();
-          D   = new RegularDClass(
-              this, this->to_internal_const(this->find_idem(tup.first)));
+          D   = new RegularDClass(this, this->find_idem(tup.first));
           add_D_class(static_cast<RegularDClass*>(D));
           for (internal_const_reference x : D->covering_reps()) {
             size_t rnk = Rank()(this->to_external_const(x));
