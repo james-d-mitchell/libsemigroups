@@ -341,16 +341,17 @@ namespace libsemigroups {
 
     // TODO this should maybe just modify its argument in place to avoid
     // copying
-    element_type group_inverse(const_reference id, const_reference bm) {
-      _tmp_element1 = this->to_internal(this->external_copy(bm));
+    void group_inverse(internal_element_type &    res,
+                       internal_const_reference id,
+                       internal_const_reference bm) {
+      this->to_external(_tmp_element1) = this->to_external_const(bm);
       do {
-        Swap()(this->to_external(_tmp_element1),
-               this->to_external(_tmp_element2));
+        Swap()(this->to_external(res),
+               this->to_external(_tmp_element1));
         Product()(this->to_external(_tmp_element1),
-                  this->to_external_const(_tmp_element2),
-                  bm);
-      } while (!EqualTo()(this->to_external(_tmp_element1), id));
-      return this->to_external(_tmp_element2);
+                  this->to_external_const(res),
+                  this->to_external_const(bm));
+      } while (!InternalEqualTo()(_tmp_element1, id));
     }
 
     class BaseDClass;
@@ -1239,11 +1240,13 @@ namespace libsemigroups {
         Product()(this->to_external(this->tmp_element()),
                   this->to_external_const(this->cbegin_left_reps()[i]),
                   this->to_external_const(this->cbegin_right_reps()[j]));
+
+        this->parent()->group_inverse(this->tmp_element3(),
+                                      this->to_internal_const(this->rep()),
+                                      this->tmp_element());
         Product()(this->to_external(this->tmp_element2()),
                   this->to_external_const(this->cbegin_right_reps()[j]),
-                  this->parent()->group_inverse(
-                      this->rep(), this->to_external(this->tmp_element())));
-
+                  this->to_external_const(this->tmp_element3()));
         right_invs.push_back(this->to_external(this->tmp_element2()));
       }
 
@@ -1805,13 +1808,14 @@ namespace libsemigroups {
             Product()(this->to_external(this->tmp_element2()),
                       this->to_external(this->tmp_element()),
                       this->to_external_const(left_idem_left_mult));
+            this->parent()->group_inverse(
+                this->tmp_element3(), _left_idem_above, this->tmp_element2());
+            this->parent()->group_inverse(
+                this->tmp_element4(), _left_idem_above, h);
             Product()(this->to_external(this->tmp_element()),
-                      this->parent()->group_inverse(
-                          this->to_external(_left_idem_above),
-                          this->to_external(this->tmp_element2())),
-                      this->parent()->group_inverse(
-                          this->to_external(_left_idem_above),
-                          this->to_external_const(h)));
+                      this->to_external(this->tmp_element3()),
+                      this->to_external(this->tmp_element4()));
+
             Product()(this->to_external(this->tmp_element2()),
                       this->to_external_const(
                           _left_idem_class->cbegin_left_mults_inv()[i]),
@@ -1871,13 +1875,15 @@ namespace libsemigroups {
             Product()(this->to_external(this->tmp_element2()),
                       this->to_external(this->tmp_element()),
                       this->to_external_const(right_idem_right_reps[i]));
+
+            this->parent()->group_inverse(
+                this->tmp_element3(), _right_idem_above, h);
+            this->parent()->group_inverse(
+                this->tmp_element4(), _right_idem_above, this->tmp_element2());
             Product()(this->to_external(this->tmp_element()),
-                      this->parent()->group_inverse(
-                          this->to_external(_right_idem_above),
-                          this->to_external_const(h)),
-                      this->parent()->group_inverse(
-                          this->to_external(_right_idem_above),
-                          this->to_external(this->tmp_element2())));
+                      this->to_external(this->tmp_element3()),
+                      this->to_external(this->tmp_element4()));
+
             Product()(this->to_external(this->tmp_element2()),
                       this->to_external_const(right_idem_right_mult),
                       this->to_external_const(
