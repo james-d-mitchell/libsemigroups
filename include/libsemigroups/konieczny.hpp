@@ -305,7 +305,7 @@ namespace libsemigroups {
     //! Finds an idempotent in the D class of \c bm, if \c bm is regular
     // modifies _tmp_element1 and _tmp_element2
     // modifies _tmp_lambda_value1
-    element_type find_idem(internal_const_reference bm) {
+    internal_element_type find_idem(internal_const_reference bm) {
       LIBSEMIGROUPS_ASSERT(
           Degree<element_type>()(this->to_external_const(bm))
           == Degree<element_type>()(this->to_external_const(_tmp_element1)));
@@ -315,8 +315,6 @@ namespace libsemigroups {
       Product()(this->to_external(_tmp_element1),
                 this->to_external_const(bm),
                 this->to_external_const(bm));
-      // TODO: this will change when this function takes an internal element
-      // type
       if (EqualTo()(this->to_external(_tmp_element1),
                     this->to_external_const(bm))) {
         return this->to_external_const(bm);
@@ -339,8 +337,6 @@ namespace libsemigroups {
           this->to_external(_tmp_element2));
     }
 
-    // TODO this should maybe just modify its argument in place to avoid
-    // copying
     void group_inverse(internal_element_type &    res,
                        internal_const_reference id,
                        internal_const_reference bm) {
@@ -1227,7 +1223,7 @@ namespace libsemigroups {
       rho_orb_index_type     rval_pos = this->parent()->_rho_orb.position(rval);
       rho_orb_scc_index_type rval_scc_id
           = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
-      std::vector<element_type> right_invs;
+      std::vector<internal_element_type> right_invs;
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         std::pair<rho_orb_scc_index_type, lambda_orb_index_type> key
@@ -1247,7 +1243,7 @@ namespace libsemigroups {
         Product()(this->to_external(this->tmp_element2()),
                   this->to_external_const(this->cbegin_right_reps()[j]),
                   this->to_external_const(this->tmp_element3()));
-        right_invs.push_back(this->to_external(this->tmp_element2()));
+        right_invs.push_back(this->internal_copy(this->tmp_element2()));
       }
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
@@ -1262,7 +1258,7 @@ namespace libsemigroups {
                 == this->tmp_lambda_value()) {
               Product()(this->to_external(this->tmp_element2()),
                         this->to_external(this->tmp_element()),
-                        right_invs[j]);
+                        this->to_external_const(right_invs[j]));
               _H_gens.push_back(this->internal_copy(this->tmp_element2()));
               break;
             }
