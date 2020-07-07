@@ -1224,7 +1224,6 @@ namespace libsemigroups {
         {Transformation<size_t>({1, 0, 2, 3, 4}),
          Transformation<size_t>({1, 2, 3, 4, 0}),
          Transformation<size_t>({0, 0, 2, 3, 4})});
-
     S.run();
     REQUIRE(S.size() == 3125);
   }
