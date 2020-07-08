@@ -77,7 +77,8 @@ namespace libsemigroups {
 
   template <typename TElementType>
   struct KoniecznyTraits {
-    using element_type = TElementType;
+    using element_type =
+        typename detail::BruidhinnTraits<TElementType>::value_type;
 
     using Lambda = ::libsemigroups::Lambda<element_type>;
     using Rho    = ::libsemigroups::Rho<element_type>;
@@ -108,6 +109,8 @@ namespace libsemigroups {
             typename TTraits = KoniecznyTraits<TElementType>>
   class Konieczny : public Runner,
                     private detail::BruidhinnTraits<TElementType> {
+    static_assert(!std::is_pointer<TElementType>::value,
+                  "Pointer types are not currently supported by Konieczny");
     ////////////////////////////////////////////////////////////////////////
     // Konieczny - aliases - private
     ////////////////////////////////////////////////////////////////////////
@@ -479,6 +482,8 @@ namespace libsemigroups {
           _tmp_rho_value(Rho()(this->to_external_const(_rep))) {}
 
     virtual ~BaseDClass() {}
+
+    //TODO(now): remove unused iterators / clean up
 
     const_reference rep() const noexcept {
       return this->to_external_const(_rep);
@@ -1558,8 +1563,11 @@ namespace libsemigroups {
       internal_const_element_type right_idem_right_mult
           = _right_idem_class->cbegin_right_mults()[right_idem_indices.second];
 
-      std::vector<internal_element_type> left_idem_H_class;
-      std::vector<internal_element_type> right_idem_H_class;
+      static std::vector<internal_element_type> left_idem_H_class;
+      static std::vector<internal_element_type> right_idem_H_class;
+
+      left_idem_H_class.clear();
+      right_idem_H_class.clear();
 
       for (auto it = _left_idem_class->cbegin_H_class();
            it < _left_idem_class->cend_H_class();
@@ -1587,8 +1595,11 @@ namespace libsemigroups {
         right_idem_H_class.push_back(this->internal_copy(this->tmp_element2()));
       }
 
-      std::vector<internal_element_type> left_idem_left_reps;
-      std::vector<internal_element_type> right_idem_right_reps;
+      static std::vector<internal_element_type> left_idem_left_reps;
+      static std::vector<internal_element_type> right_idem_right_reps;
+      
+      left_idem_left_reps.clear();
+      right_idem_right_reps.clear();
 
       for (auto it = _left_idem_class->cbegin_left_mults();
            it < _left_idem_class->cend_left_mults();
@@ -1616,8 +1627,11 @@ namespace libsemigroups {
             this->internal_copy((this->tmp_element2())));
       }
 
-      std::vector<internal_element_type> Hex;
-      std::vector<internal_element_type> xHf;
+      static std::vector<internal_element_type> Hex;
+      static std::vector<internal_element_type> xHf;
+
+      Hex.clear();
+      xHf.clear();
 
       for (internal_const_reference s : left_idem_H_class) {
         Product()(this->to_external(this->tmp_element()),
@@ -1633,22 +1647,30 @@ namespace libsemigroups {
         Hex.push_back(this->internal_copy(this->tmp_element()));
       }
 
-      std::unordered_set<internal_element_type,
-                         InternalElementHash,
-                         InternalEqualTo>
-          s(Hex.begin(), Hex.end());
+      static std::unordered_set<internal_element_type,
+                                InternalElementHash,
+                                InternalEqualTo>
+          s;
+      s.clear();
+      for (auto it = Hex.begin(); it < Hex.end(); ++it) {
+        s.insert(*it);
+      }
+
       Hex.assign(s.begin(), s.end());
 
-      s = std::unordered_set<internal_element_type,
-                             InternalElementHash,
-                             InternalEqualTo>(xHf.begin(), xHf.end());
+      s.clear();
+      for (auto it = xHf.begin(); it < xHf.end(); ++it) {
+        s.insert(*it);
+      }
+
       xHf.assign(s.begin(), s.end());
 
       std::sort(Hex.begin(), Hex.end(), InternalLess());
       std::sort(xHf.begin(), xHf.end(), InternalLess());
 
       // TODO(now) don't really need two tmp vectors here
-      std::vector<internal_element_type> tmp;
+      static std::vector<internal_element_type> tmp;
+      tmp.clear();
       std::set_intersection(Hex.begin(),
                             Hex.end(),
                             xHf.begin(),
@@ -1656,7 +1678,8 @@ namespace libsemigroups {
                             std::back_inserter(tmp),
                             InternalLess());
 
-      std::vector<internal_element_type> tmp2;
+      static std::vector<internal_element_type> tmp2;
+      tmp2.clear();
       for (auto it = tmp.cbegin(); it < tmp.cend(); ++it) {
         tmp2.push_back(this->internal_copy(*it));
       }
@@ -1687,8 +1710,11 @@ namespace libsemigroups {
       internal_const_element_type right_idem_right_mult
           = _right_idem_class->cbegin_right_mults()[right_idem_indices.second];
 
-      std::vector<internal_element_type> left_idem_H_class;
-      std::vector<internal_element_type> right_idem_H_class;
+      static std::vector<internal_element_type> left_idem_H_class;
+      static std::vector<internal_element_type> right_idem_H_class;
+
+      left_idem_H_class.clear();
+      right_idem_H_class.clear();
 
       for (auto it = _left_idem_class->cbegin_H_class();
            it < _left_idem_class->cend_H_class();
@@ -1716,8 +1742,11 @@ namespace libsemigroups {
         right_idem_H_class.push_back(this->internal_copy(this->tmp_element2()));
       }
 
-      std::vector<internal_element_type> left_idem_left_reps;
-      std::vector<internal_element_type> right_idem_right_reps;
+      static std::vector<internal_element_type> left_idem_left_reps;
+      static std::vector<internal_element_type> right_idem_right_reps;
+      
+      left_idem_left_reps.clear();
+      right_idem_right_reps.clear();
 
       for (auto it = _left_idem_class->cbegin_left_mults();
            it < _left_idem_class->cend_left_mults();
@@ -1745,19 +1774,23 @@ namespace libsemigroups {
             this->internal_copy((this->tmp_element2())));
       }
 
-      std::unordered_set<std::vector<internal_element_type>,
+
+      static std::unordered_set<std::vector<internal_element_type>,
                          InternalVecHash,
                          InternalVecEqualTo>
           Hxhw_set;
-      std::unordered_set<std::vector<internal_element_type>,
+      Hxhw_set.clear();
+      static std::unordered_set<std::vector<internal_element_type>,
                          InternalVecHash,
                          InternalVecEqualTo>
           zhHx_set;
+      zhHx_set.clear();
 
       for (internal_const_reference h : left_idem_H_class) {
         for (size_t i = 0; i < left_idem_left_reps.size(); ++i) {
           // TODO: enforce uniqueness here?
-          std::vector<internal_element_type> Hxhw;
+          static std::vector<internal_element_type> Hxhw;
+          Hxhw.clear();
 
           for (auto it = this->cbegin_H_class(); it < this->cend_H_class();
                ++it) {
@@ -1826,7 +1859,8 @@ namespace libsemigroups {
 
       for (internal_const_reference h : right_idem_H_class) {
         for (size_t i = 0; i < right_idem_right_reps.size(); ++i) {
-          std::vector<internal_element_type> zhHx;
+          static std::vector<internal_element_type> zhHx;
+          zhHx.clear();
           for (auto it = this->cbegin_H_class(); it < this->cend_H_class();
                ++it) {
             Product()(this->to_external(this->tmp_element()),
@@ -2015,13 +2049,13 @@ namespace libsemigroups {
         non_reg_reps[rnk].emplace_back(this->internal_copy(x), 0);
       }
     }
+    std::vector<std::pair<internal_element_type, D_class_index_type>> next_reps;
+    std::vector<std::pair<internal_element_type, D_class_index_type>> tmp_next;
+    std::vector<std::pair<internal_element_type, D_class_index_type>> tmp;
     // TODO(now): use stopped
     while (*ranks.rbegin() > 0) {
+      next_reps.clear();
       size_t reps_are_reg = false;
-      // TODO(now) move this outside this loop
-      std::vector<std::pair<internal_element_type, D_class_index_type>>
-          next_reps;
-
       max_rank = *ranks.rbegin();
       if (!reg_reps[max_rank].empty()) {
         reps_are_reg = true;
@@ -2032,9 +2066,7 @@ namespace libsemigroups {
         non_reg_reps[max_rank].clear();
       }
 
-      // TODO(now) move this outside this loop
-      std::vector<std::pair<internal_element_type, D_class_index_type>>
-          tmp_next;
+      tmp_next.clear();
       for (auto it = next_reps.begin(); it < next_reps.end(); it++) {
         bool contained = false;
         for (size_t i = 0; i < _D_classes.size(); ++i) {
@@ -2058,7 +2090,6 @@ namespace libsemigroups {
         }
 
         BaseDClass* D;
-        // TODO(now): tuple -> pair
         std::pair<internal_element_type, D_class_index_type> tup(
             this->internal_copy(_one), 0);
 
@@ -2097,7 +2128,7 @@ namespace libsemigroups {
           next_reps.pop_back();
         }
 
-        std::vector<std::pair<internal_element_type, D_class_index_type>> tmp;
+        tmp.clear();
         for (auto& x : next_reps) {
           if (D->contains(this->to_external_const(x.first))) {
             _D_rels[_D_classes.size() - 1].push_back(x.second);
