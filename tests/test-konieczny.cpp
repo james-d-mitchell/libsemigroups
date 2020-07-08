@@ -1273,6 +1273,7 @@ namespace libsemigroups {
 
     REQUIRE(S.size() == 415);
   }
+  
 
   LIBSEMIGROUPS_TEST_CASE("FroidurePin",
                           "021",
@@ -1405,4 +1406,22 @@ namespace libsemigroups {
     */
   }
 
+  /*
+   * This doesn't work and won't work for now (if ever).
+  LIBSEMIGROUPS_TEST_CASE("FroidurePin",
+                          "023",
+                          "pointer BooleanMat",
+                          "[quick][froidure-pin][boolmat][booleanmat]") {
+    std::vector<BooleanMat *> gens = {
+      new BooleanMat({{1, 0, 0, 0}, {0, 0, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 0}}),
+      new BooleanMat({{1, 0, 0, 1}, {1, 0, 0, 1}, {1, 1, 1, 1}, {0, 1, 1, 0}}),
+      new BooleanMat({{1, 0, 1, 0}, {1, 0, 1, 1}, {0, 0, 1, 1}, {0, 1, 0, 1}}),
+      new BooleanMat({{0, 0, 0, 0}, {0, 1, 0, 1}, {1, 1, 1, 0}, {1, 0, 0, 1}}),
+      new BooleanMat({{0, 0, 0, 1}, {0, 0, 1, 0}, {1, 0, 0, 1}, {1, 1, 0, 0}})};
+
+    Konieczny<Element const*> S(gens);
+
+    REQUIRE(S.size() == 415);
+  }
+  */
 }  // namespace libsemigroups
