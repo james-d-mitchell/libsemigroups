@@ -202,8 +202,10 @@ namespace libsemigroups {
           _group_indices(),
           _group_indices_alt(),
           _lambda_orb(),
+          _non_reg_reps(),
           _one(),
           _regular_D_classes(),
+          _reg_reps(),
           _rho_orb(),
           _tmp_element1(),
           _tmp_element2(),
@@ -238,6 +240,15 @@ namespace libsemigroups {
       _tmp_rho_value2 = Lambda()(gens[0]);
 
       _gens.push_back(_one);  // TODO: maybe not this
+
+      _non_reg_reps = std::vector<
+          std::vector<std::pair<internal_element_type, D_class_index_type>>>(
+          Rank()(this->to_external_const(_one)) + 1,
+          std::vector<std::pair<internal_element_type, D_class_index_type>>());
+      _reg_reps = std::vector<
+          std::vector<std::pair<internal_element_type, D_class_index_type>>>(
+          Rank()(this->to_external_const(_one)) + 1,
+          std::vector<std::pair<internal_element_type, D_class_index_type>>());
     }
 
     ~Konieczny();
@@ -416,10 +427,16 @@ namespace libsemigroups {
     std::unordered_map<std::pair<rho_orb_scc_index_type, lambda_orb_index_type>,
                        rho_orb_index_type,
                        PairHash>
-                                  _group_indices_alt;  // TODO better name
-    lambda_orb_type               _lambda_orb;
-    internal_element_type         _one;
-    std::vector<RegularDClass*>   _regular_D_classes;
+                    _group_indices_alt;  // TODO better name
+    lambda_orb_type _lambda_orb;
+    std::vector<
+        std::vector<std::pair<internal_element_type, D_class_index_type>>>
+                                _non_reg_reps;
+    internal_element_type       _one;
+    std::vector<RegularDClass*> _regular_D_classes;
+    std::vector<
+        std::vector<std::pair<internal_element_type, D_class_index_type>>>
+                                  _reg_reps;
     rho_orb_type                  _rho_orb;
     mutable internal_element_type _tmp_element1;
     mutable internal_element_type _tmp_element2;
@@ -573,10 +590,12 @@ namespace libsemigroups {
       return _H_class.size() * _left_reps.size() * _right_reps.size();
     }
 
+    //TODO: this is dangerous and will fall over if multi-threaded
     // uses _tmp_element, tmp_element2 _tmp_element3
-    std::vector<internal_element_type> covering_reps() {
+    std::vector<internal_element_type> & covering_reps() {
       init();
-      std::vector<internal_element_type> out;
+      static std::vector<internal_element_type> out;
+      out.clear();
       // TODO: how to decide which side to calculate? One is often faster
       if (_parent->_lambda_orb.size() < _parent->_rho_orb.size()) {
         for (internal_const_reference w : _left_reps) {
@@ -1228,7 +1247,8 @@ namespace libsemigroups {
       rho_orb_index_type     rval_pos = this->parent()->_rho_orb.position(rval);
       rho_orb_scc_index_type rval_scc_id
           = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
-      std::vector<internal_element_type> right_invs;
+      static std::vector<internal_element_type> right_invs;
+      right_invs.clear();
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         std::pair<rho_orb_scc_index_type, lambda_orb_index_type> key
@@ -1346,6 +1366,7 @@ namespace libsemigroups {
         return;
       }
       compute_H_gens();
+      // TODO: just push back to the H class instead
       std::vector<internal_element_type> vec(_H_gens.cbegin(), _H_gens.cend());
 
       std::unordered_set<internal_element_type,
@@ -2020,19 +2041,6 @@ namespace libsemigroups {
   void Konieczny<TElementType, TTraits>::run_impl() {
     compute_orbs();
 
-    // TODO(now) make these data members so that this is restartable
-    std::vector<
-        std::vector<std::pair<internal_element_type, D_class_index_type>>>
-        reg_reps(Rank()(this->to_external_const(_one)) + 1,
-                 std::vector<
-                     std::pair<internal_element_type, D_class_index_type>>());
-    std::vector<
-        std::vector<std::pair<internal_element_type, D_class_index_type>>>
-        non_reg_reps(
-            Rank()(this->to_external_const(_one)) + 1,
-            std::vector<
-                std::pair<internal_element_type, D_class_index_type>>());
-
     // TODO: reserve?
     std::set<size_t> ranks;
     size_t           max_rank = 0;
@@ -2044,9 +2052,9 @@ namespace libsemigroups {
       size_t rnk = Rank()(this->to_external_const(x));
       ranks.insert(rnk);
       if (is_regular_element(x)) {
-        reg_reps[rnk].emplace_back(this->internal_copy(x), 0);
+        _reg_reps[rnk].emplace_back(this->internal_copy(x), 0);
       } else {
-        non_reg_reps[rnk].emplace_back(this->internal_copy(x), 0);
+        _non_reg_reps[rnk].emplace_back(this->internal_copy(x), 0);
       }
     }
     std::vector<std::pair<internal_element_type, D_class_index_type>> next_reps;
@@ -2057,13 +2065,13 @@ namespace libsemigroups {
       next_reps.clear();
       size_t reps_are_reg = false;
       max_rank = *ranks.rbegin();
-      if (!reg_reps[max_rank].empty()) {
+      if (!_reg_reps[max_rank].empty()) {
         reps_are_reg = true;
-        next_reps    = std::move(reg_reps[max_rank]);
-        reg_reps[max_rank].clear();
+        next_reps    = std::move(_reg_reps[max_rank]);
+        _reg_reps[max_rank].clear();
       } else {
-        next_reps = std::move(non_reg_reps[max_rank]);
-        non_reg_reps[max_rank].clear();
+        next_reps = std::move(_non_reg_reps[max_rank]);
+        _non_reg_reps[max_rank].clear();
       }
 
       tmp_next.clear();
@@ -2101,10 +2109,10 @@ namespace libsemigroups {
             size_t rnk = Rank()(this->to_external_const(x));
             ranks.insert(rnk);
             if (is_regular_element(x)) {
-              reg_reps[rnk].emplace_back(this->internal_copy(x),
+              _reg_reps[rnk].emplace_back(this->internal_copy(x),
                                          _D_classes.size() - 1);
             } else {
-              non_reg_reps[rnk].emplace_back(this->internal_copy(x),
+              _non_reg_reps[rnk].emplace_back(this->internal_copy(x),
                                              _D_classes.size() - 1);
             }
           }
@@ -2118,10 +2126,10 @@ namespace libsemigroups {
             size_t rnk = Rank()(this->to_external_const(x));
             ranks.insert(rnk);
             if (is_regular_element(x)) {
-              reg_reps[rnk].emplace_back(this->internal_copy(x),
+              _reg_reps[rnk].emplace_back(this->internal_copy(x),
                                          _D_classes.size() - 1);
             } else {
-              non_reg_reps[rnk].emplace_back(this->internal_copy(x),
+              _non_reg_reps[rnk].emplace_back(this->internal_copy(x),
                                              _D_classes.size() - 1);
             }
           }
@@ -2138,8 +2146,8 @@ namespace libsemigroups {
         }
         next_reps = std::move(tmp);
       }
-      LIBSEMIGROUPS_ASSERT(reg_reps[max_rank].empty());
-      if (non_reg_reps[max_rank].empty()) {
+      LIBSEMIGROUPS_ASSERT(_reg_reps[max_rank].empty());
+      if (_non_reg_reps[max_rank].empty()) {
         ranks.erase(max_rank);
         max_rank = *ranks.rbegin();
       }
