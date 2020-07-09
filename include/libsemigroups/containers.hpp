@@ -623,6 +623,91 @@ namespace libsemigroups {
 
     // Currently only supports N x N 2-dimensional static vectors
     template <typename T, size_t N>
+    class StaticVector1 final {
+      public:
+      StaticVector1() : _array(), _size(0) {
+      }
+
+      StaticVector1(StaticVector1 const&) = default;
+      StaticVector1(StaticVector1&&)      = default;
+      StaticVector1& operator=(StaticVector1 const&) = default;
+      StaticVector1& operator=(StaticVector1&&) = default;
+      ~StaticVector1()                          = default;
+
+      StaticVector1(std::initializer_list<T> il) : StaticVector1() {
+        for (auto x : il) {
+          push_back(x);
+        }
+      }
+
+      bool operator==(StaticVector1 const& that) const {
+        return size() == that.size()
+               && std::equal(cbegin(), cend(), that.cbegin());
+      }
+
+      void clear() noexcept {
+        _size = 0;
+      }
+
+
+      // Not noexcept because std::array::operator[] isn't
+      void push_back(T x) {
+        LIBSEMIGROUPS_ASSERT(_size < N);
+        _array[_size] = x;
+        _size++;
+      }
+
+      size_t size() const noexcept {
+        return _size;
+      }
+
+      T const& back() const {
+        return _array[_size - 1];
+      }
+
+      T& back() {
+        return _array[_size - 1];
+      }
+
+      using iterator = typename std::array<T, N>::iterator;
+      using const_iterator = typename std::array<T, N>::const_iterator;
+
+      // TODO(now) Noexcept?
+      inline const_iterator cbegin() const {
+        return _array.cbegin();
+      }
+
+      // TODO(now) Noexcept?
+      inline const_iterator cend() const {
+        return _array.cbegin() + _size;
+      }
+
+      // TODO(now) Noexcept?
+      inline iterator begin() {
+        return _array.begin();
+      }
+
+      // TODO(now) Noexcept?
+      inline iterator end() {
+        return _array.begin() + _size;
+      }
+
+      inline const_iterator begin() const {
+        return _array.cbegin();
+      }
+
+      // TODO(now) Noexcept?
+      inline const_iterator end() const {
+        return _array.cbegin() + _size;
+      }
+
+     private:
+      std::array<T, N> _array;
+      size_t           _size;
+    };
+
+    // Currently only supports N x N 2-dimensional static vectors
+    template <typename T, size_t N>
     class StaticVector2 final {
       // So that StaticVector2<T, N> can access private data members of
       // StaticVector2<S, M> and vice versa.
@@ -768,4 +853,19 @@ namespace libsemigroups {
     };
   }  // namespace detail
 }  // namespace libsemigroups
+
+namespace std {
+  template <typename T, size_t N>
+      struct hash < libsemigroups::detail::StaticVector1<T, N>> {
+    size_t
+    operator()(libsemigroups::detail::StaticVector1<T, N> const& sv) const {
+      size_t seed = 0;
+      for (T const& x : sv) {
+        seed ^= std::hash<T>()(x) + 0x9e3779b97f4a7c16 + (seed << 6)
+                + (seed >> 2);
+      }
+      return seed;
+    }
+  };
+}  // namespace std
 #endif  // LIBSEMIGROUPS_CONTAINERS_HPP_

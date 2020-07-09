@@ -27,7 +27,9 @@
 #define LIBSEMIGROUPS_BITSET_HPP_
 
 #include <utility> // for hash
-#include <climits>
+#include <climits> // for CHAR_BIT
+
+#include "libsemigroups-debug.hpp" // for LIBSEMIGROUPS_ASSERT
 
 namespace libsemigroups {
 
@@ -60,11 +62,13 @@ namespace libsemigroups {
 
     bool operator==(BitSet const& that) const noexcept {
       clear_hi_bits();
+      that.clear_hi_bits();
       return size() == that.size() && _block == that._block;
     }
 
     bool operator!=(BitSet const& that) const noexcept {
       clear_hi_bits();
+      that.clear_hi_bits();
       return size() != that.size() || _block != that._block;
     }
 
@@ -147,7 +151,7 @@ namespace libsemigroups {
       }
     }
 
-    constexpr operator block_type() const noexcept {
+    operator block_type() const noexcept {
       clear_hi_bits();
       return _block;
     }
@@ -159,7 +163,7 @@ namespace libsemigroups {
     }
 
     constexpr block_type mask(size_t const i) const noexcept {
-      LIBSEMIGROUPS_ASSERT(i < size());
+      // LIBSEMIGROUPS_ASSERT(i < size());
       return static_cast<block_type>(MASK[i]);
     }
 

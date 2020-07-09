@@ -38,6 +38,7 @@
 #include <vector>       // for vector
 
 #include "adapters.hpp"    // for complexity, degree, IncreaseDegree, . . .
+#include "bitset.hpp"      // for BitSet
 #include "constants.hpp"   // for UNDEFINED
 #include "containers.hpp"  // for detail::DynamicArray2
 #include "libsemigroups-config.hpp"     // for LIBSEMIGROUPS_HPCOMBI
@@ -1053,6 +1054,26 @@ namespace libsemigroups {
     //       return new PartialPerm(std::move(vector));
     //     }
     // #endif
+    PartialPerm<T> inverse() const {
+      std::vector<T> dom(this->degree(), static_cast<T>(UNDEFINED));
+      size_t const   size = this->_vector.size();
+      for (size_t i = 0; i < size; ++i) {
+        if (this->_vector[i] != UNDEFINED) {
+          dom[this->_vector[i]] = i;
+        }
+      }
+      return PartialPerm<T>(dom);
+    }
+
+    void inverse(PartialPerm<T>& x) const {
+      x._vector.clear();
+      x._vector.resize(this->degree(), static_cast<T>(UNDEFINED));
+      for (size_t i = 0; i < this->degree(); ++i) {
+        if (this->_vector[i] != UNDEFINED) {
+          x._vector[this->_vector[i]] = i;
+        }
+      }
+    }
   };
 
   //! Class for bipartitions.
@@ -2132,8 +2153,7 @@ namespace libsemigroups {
 
   //! Specialization of the adapter ImageRightAction for instance of
   //! PartialPerm.
-  //!
-  //! \sa ImageRightAction.
+  // Slowest
   template <typename TIntType>
   struct ImageRightAction<PartialPerm<TIntType>, PartialPerm<TIntType>> {
     //! Stores the idempotent \f$(xy) ^ {-1}xy\f$ in \p res.
@@ -2145,10 +2165,43 @@ namespace libsemigroups {
     }
   };
 
+  // Faster than the above, but slower than the below
+  template <typename S, typename T>
+  struct ImageRightAction<PartialPerm<S>, T> {
+    void operator()(T&       res,
+                    T const& pt,
+                    PartialPerm<S> const& x) const {
+      res.clear();
+      for (auto i : pt) {
+        if (x[i] != UNDEFINED) {
+          res.push_back(x[i]);
+        }
+      }
+      std::sort(res.begin(), res.end());
+    }
+  };
+
+  // Fastest, but limited to at most degree 64
+  template <typename TIntType, size_t N>
+  struct ImageRightAction<PartialPerm<TIntType>, BitSet<N>> {
+    void operator()(BitSet<N>&                   res,
+                    BitSet<N> const&             pt,
+                    PartialPerm<TIntType> const& x) const {
+      res.reset();
+      // Apply the lambda to every set bit in pt
+      pt.apply([&x, &res](size_t i) {
+        if (x[i] != UNDEFINED) {
+          res.set(x[i]);
+        }
+      });
+    }
+  };
+
   //! Specialization of the adapter ImageLeftAction for instances of
   //! PartialPerm.
   //!
   //! \sa ImageLeftAction.
+  // Slowest
   template <typename TIntType>
   struct ImageLeftAction<PartialPerm<TIntType>, PartialPerm<TIntType>> {
     //! Stores the idempotent \f$xy(xy) ^ {-1}\f$ in \p res.
@@ -2159,6 +2212,41 @@ namespace libsemigroups {
       res.swap(res.left_one());
     }
   };
+
+  // Faster than the above, but slower than the below
+  // works for T = std::vector and T = BitSet<N>
+  template <typename S, typename T>
+  struct ImageLeftAction<PartialPerm<S>, T> {
+    void operator()(T&       res,
+                    T const& pt,
+                    PartialPerm<S> const& x) const {
+      static PartialPerm<S> xx;
+      x.inverse(xx);
+      ImageRightAction<PartialPerm<S>, T>()(
+          res, pt, xx);
+    }
+  };
+
+  // Fastest, but limited to at most degree 64
+  // template <typename TIntType, size_t N>
+  // struct ImageLeftAction<PartialPerm<TIntType>, BitSet<N>> {
+  //   void operator()(BitSet<N>&                   res,
+  //                   BitSet<N> const&             pt,
+  //                   PartialPerm<TIntType> const& x) const {
+  //     res.reset();
+  //     // Apply the lambda to every set bit in pt
+  //     // for (TIntType i = 0; i < x.degree(); ++i) {
+  //     //  if (x[i] != UNDEFINED && pt[x[i]]) {
+  //     //    res.set(i);
+  //     //  }
+  //     // }
+  //     // The approach below seems to be marginally faster than the one above,
+  //     // but both are slower than ImageRightAction (slightly less than 2 times)
+  //     static PartialPerm<TIntType> xx;
+  //     x.inverse(xx);
+  //     ImageRightAction<PartialPerm<S>, T>()(
+  //         res, pt, xx);
+  // };
 
   //! Specialization of the adapter EqualTo for pointers to subclasses of
   //! Element.

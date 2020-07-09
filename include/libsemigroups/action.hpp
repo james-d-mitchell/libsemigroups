@@ -180,6 +180,9 @@ namespace libsemigroups {
     //! \sa libsemigroups::ActionDigraph::scc_index_type
     using scc_index_type = ActionDigraph<size_t>::scc_index_type;
 
+    // TODO(now) doc
+    using action_type = TActionType;
+
     ////////////////////////////////////////////////////////////////////////
     // Action - iterators - public
     ////////////////////////////////////////////////////////////////////////
