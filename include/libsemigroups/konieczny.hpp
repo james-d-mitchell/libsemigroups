@@ -827,10 +827,9 @@ namespace libsemigroups {
       return _parent;
     }
 
-    // TODO: Once again I have deeply confused myself with move semantics
-    void set_H_class(std::vector<internal_element_type>&& vec) {
-      // TODO: assertions
-      _H_class = vec;
+    //Watch out! Doesn't copy its argument
+    void push_back_H_class(internal_element_type x) {
+      _H_class.push_back(x);
     }
 
     virtual void init() = 0;
@@ -857,6 +856,10 @@ namespace libsemigroups {
 
     internal_element_type& tmp_element4() {
       return _tmp_element4;
+    }
+    
+    size_t size_H_class() const {
+      return _H_class.size();
     }
 
    private:
@@ -1028,7 +1031,7 @@ namespace libsemigroups {
     // because the find_group_index method fixes the rval and loops
     // through the scc of the lval
     void compute_left_indices() {
-      if (this->_left_indices_computed) {
+      if (_left_indices_computed) {
         return;
       }
       _left_indices.clear();
@@ -1102,10 +1105,10 @@ namespace libsemigroups {
     }
 
     void compute_right_indices() {
-      if (this->_right_indices_computed) {
+      if (_right_indices_computed) {
         return;
       }
-      this->_right_indices.clear();
+      _right_indices.clear();
 
       Rho()(this->tmp_rho_value(), this->rep());
       rho_orb_index_type rval_pos
@@ -1237,6 +1240,7 @@ namespace libsemigroups {
         return;
       }
       _H_gens.clear();
+      //TODO: remove these
       compute_left_indices();
       compute_right_indices();
       compute_mults();
@@ -1366,26 +1370,33 @@ namespace libsemigroups {
         return;
       }
       compute_H_gens();
-      // TODO: just push back to the H class instead
-      std::vector<internal_element_type> vec(_H_gens.cbegin(), _H_gens.cend());
+
+      LIBSEMIGROUPS_ASSERT(_H_gens.begin() != _H_gens.end());
 
       std::unordered_set<internal_element_type,
                          InternalElementHash,
                          InternalEqualTo>
           set(_H_gens.begin(), _H_gens.end());
-      for (size_t i = 0; i < vec.size(); ++i) {
+
+      //set.clear();
+
+      for (auto it = _H_gens.begin(); it < _H_gens.end(); ++it) {
+        //set.insert(*it);
+        this->push_back_H_class(*it);
+      }
+
+      for (size_t i = 0; i < this->size_H_class(); ++i) {
         for (internal_const_reference g : _H_gens) {
           Product()(this->to_external(this->tmp_element()),
-                    this->to_external_const(vec[i]),
+                    this->to_external_const(this->cbegin_H_class()[i]),
                     this->to_external_const(g));
           if (set.find(this->tmp_element()) == set.end()) {
             internal_element_type x = this->internal_copy(this->tmp_element());
             set.insert(x);
-            vec.push_back(x);
+            this->push_back_H_class(x);
           }
         }
       }
-      this->set_H_class(std::move(vec));
       this->set_H_class_computed(true);
     }
 
@@ -1699,12 +1710,9 @@ namespace libsemigroups {
                             std::back_inserter(tmp),
                             InternalLess());
 
-      static std::vector<internal_element_type> tmp2;
-      tmp2.clear();
       for (auto it = tmp.cbegin(); it < tmp.cend(); ++it) {
-        tmp2.push_back(this->internal_copy(*it));
+        this->push_back_H_class(this->internal_copy(*it));
       }
-      this->set_H_class(std::move(tmp2));
       this->set_H_class_computed(true);
     }
 
