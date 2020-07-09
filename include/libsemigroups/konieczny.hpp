@@ -1773,8 +1773,6 @@ namespace libsemigroups {
       for (auto it = _left_idem_class->cbegin_H_class();
            it < _left_idem_class->cend_H_class();
            it++) {
-        // TODO: don't really need both tmps here, given we're copying it
-        // anyway?
         Product()(this->to_external(this->tmp_element()),
                   this->to_external_const(left_idem_right_mult),
                   this->to_external_const(*it));
@@ -1833,6 +1831,13 @@ namespace libsemigroups {
                                 InternalVecEqualTo>
           Hxhw_set;
       Hxhw_set.clear();
+      
+      static std::unordered_set<std::vector<internal_element_type>,
+                                InternalVecHash,
+                                InternalVecEqualTo>
+          Hxh_set;
+      Hxh_set.clear();
+      
       static std::unordered_set<std::vector<internal_element_type>,
                                 InternalVecHash,
                                 InternalVecEqualTo>
@@ -1840,11 +1845,28 @@ namespace libsemigroups {
       zhHx_set.clear();
 
       for (internal_const_reference h : left_idem_H_class) {
+
+        static std::vector<internal_element_type> Hxh;
+        Hxh.clear();
+
+        for (auto it = this->cbegin_H_class(); it < this->cend_H_class();
+             ++it) {
+          Product()(this->to_external(this->tmp_element()),
+                    this->to_external_const(*it),
+                    this->to_external_const(h));
+          Hxh.push_back(this->internal_copy(this->tmp_element()));
+        }
+
+        std::sort(Hxh.begin(), Hxh.end(), InternalLess());
+        if (Hxh_set.find(Hxh) == Hxh_set.end()) {
+          Hxh_set.insert(Hxh);
+        }
+
         for (size_t i = 0; i < left_idem_left_reps.size(); ++i) {
           // TODO: enforce uniqueness here?
           static std::vector<internal_element_type> Hxhw;
           Hxhw.clear();
-
+          
           for (auto it = this->cbegin_H_class(); it < this->cend_H_class();
                ++it) {
             Product()(this->to_external(this->tmp_element()),
@@ -1853,7 +1875,7 @@ namespace libsemigroups {
             Product()(this->to_external(this->tmp_element2()),
                       this->to_external(this->tmp_element()),
                       this->to_external_const(left_idem_left_reps[i]));
-
+            Hxh.push_back(this->internal_copy(this->tmp_element()));
             Hxhw.push_back(this->internal_copy(this->tmp_element2()));
           }
 
@@ -1907,6 +1929,13 @@ namespace libsemigroups {
                       this->to_external(this->tmp_element()));
             this->push_left_mult_inv(this->tmp_element3());
           }
+        }
+        size_t x = Hxh_set.size() * left_idem_left_reps.size();
+        size_t y = Hxhw_set.size();
+        if (x != y) {
+          std::cout << "would get " << x << " reps (" << Hxh_set.size() << " x "
+                    << left_idem_left_reps.size() << ") but there are only "
+                    << y << std::endl;
         }
       }
 
