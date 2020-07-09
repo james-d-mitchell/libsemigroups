@@ -578,6 +578,14 @@ namespace libsemigroups {
       compute_H_class();
       return _H_class.cend();
     }
+    
+    const_iterator cbegin_H_class_NC() const {
+      return _H_class.cbegin();
+    }
+
+    const_iterator cend_H_class_NC() const {
+      return _H_class.cend();
+    }
 
     virtual bool contains(const_reference bm) = 0;
 
@@ -1253,6 +1261,15 @@ namespace libsemigroups {
           = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
       static std::vector<internal_element_type> right_invs;
       right_invs.clear();
+      
+      static std::unordered_set<internal_element_type,
+                         InternalElementHash,
+                         InternalEqualTo>
+          set;
+      set.clear();
+      for (auto it = _H_gens.cbegin(); it < _H_gens.end(); ++it) {
+        set.insert(*it);
+      }
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         std::pair<rho_orb_scc_index_type, lambda_orb_index_type> key
@@ -1288,17 +1305,16 @@ namespace libsemigroups {
               Product()(this->to_external(this->tmp_element2()),
                         this->to_external(this->tmp_element()),
                         this->to_external_const(right_invs[j]));
-              _H_gens.push_back(this->internal_copy(this->tmp_element2()));
-              break;
+              if (set.find(this->tmp_element2()) == set.end()) {
+                internal_element_type x = this->internal_copy(this->tmp_element2());
+                set.insert(x);
+                _H_gens.push_back(x);
+                break;
+              }
             }
           }
         }
       }
-      std::unordered_set<internal_element_type,
-                         InternalElementHash,
-                         InternalEqualTo>
-          set(_H_gens.begin(), _H_gens.end());
-      _H_gens.assign(set.begin(), set.end());
       this->_H_gens_computed = true;
     }
 
@@ -1373,22 +1389,21 @@ namespace libsemigroups {
 
       LIBSEMIGROUPS_ASSERT(_H_gens.begin() != _H_gens.end());
 
-      std::unordered_set<internal_element_type,
+      static std::unordered_set<internal_element_type,
                          InternalElementHash,
                          InternalEqualTo>
-          set(_H_gens.begin(), _H_gens.end());
-
-      //set.clear();
+          set;
+      set.clear();
 
       for (auto it = _H_gens.begin(); it < _H_gens.end(); ++it) {
-        //set.insert(*it);
+        set.insert(*it);
         this->push_back_H_class(*it);
       }
 
       for (size_t i = 0; i < this->size_H_class(); ++i) {
         for (internal_const_reference g : _H_gens) {
           Product()(this->to_external(this->tmp_element()),
-                    this->to_external_const(this->cbegin_H_class()[i]),
+                    this->to_external_const(this->cbegin_H_class_NC()[i]),
                     this->to_external_const(g));
           if (set.find(this->tmp_element()) == set.end()) {
             internal_element_type x = this->internal_copy(this->tmp_element());
