@@ -1844,24 +1844,65 @@ namespace libsemigroups {
           zhHx_set;
       zhHx_set.clear();
 
+
+      static std::vector<internal_element_type> left_idem_rel_mults;
+      left_idem_rel_mults.clear();
+
+      for (size_t i = 0; i < left_idem_left_reps.size(); ++i) {
+        // tmp_element = (l_i ^ -1) *  l_f
+        Product()(this->to_external(this->tmp_element()),
+                this->to_external_const(_left_idem_class->cbegin_left_mults_inv()[i]),
+                this->to_external_const(left_idem_left_mult));
+        
+        // tmp_element2 = w_i * (l_i ^ -1) * l_f
+        Product()(this->to_external(this->tmp_element2()),
+                  this->to_external(left_idem_left_reps[i]),
+                  this->to_external_const(this->tmp_element()));
+
+        // tmp_element3 = [w_i * (l_i ^ -1) * l_f]^-1
+        this->parent()->group_inverse(
+            this->tmp_element3(), _left_idem_above, this->tmp_element2());
+
+        // tmp_element2 = [(l_i ^ -1) *  l_f] * [w_i * (l_i ^ -1) * l_f]^-1
+        Product()(this->to_external(this->tmp_element2()),
+                  this->to_external_const(this->tmp_element()),
+                  this->to_external_const(this->tmp_element3()));
+
+        left_idem_rel_mults.push_back(this->internal_copy(this->tmp_element2()));
+      }
+
+      std::vector<internal_element_type> left_rep_mults;
       for (internal_const_reference h : left_idem_H_class) {
+        Product()(this->to_external(this->tmp_element()),
+                  this->rep(),
+                  this->to_external_const(h));
+        for (size_t i = 0; i < left_idem_left_reps.size(); ++i) {
+          Product()(this->to_external(this->tmp_element2()),
+                    this->to_external_const(this->tmp_element()),
+                    this->to_external_const(left_idem_left_reps[i]));
+          bool found = false;
+          for (internal_const_reference m : left_rep_mults) {
+            Product()(this->to_external(this->tmp_element3()),
+                      this->to_external_const(this->tmp_element2()),
+                      this->to_external_const(m));
+            if (_H_set.find(this->tmp_element3()) != _H_set.end()) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            this->parent()->group_inverse(
+                this->tmp_element3(), _left_idem_above, h);
+            Product()(this->to_external(this->tmp_element4()),
+                      this->to_external_const(left_idem_rel_mults[i]),
+                      this->to_external_const(this->tmp_element3()));
 
-        static std::vector<internal_element_type> Hxh;
-        Hxh.clear();
-
-        for (auto it = this->cbegin_H_class(); it < this->cend_H_class();
-             ++it) {
-          Product()(this->to_external(this->tmp_element()),
-                    this->to_external_const(*it),
-                    this->to_external_const(h));
-          Hxh.push_back(this->internal_copy(this->tmp_element()));
+            left_rep_mults.push_back(this->internal_copy(this->tmp_element4()));
+          }
         }
+      }
 
-        std::sort(Hxh.begin(), Hxh.end(), InternalLess());
-        if (Hxh_set.find(Hxh) == Hxh_set.end()) {
-          Hxh_set.insert(Hxh);
-        }
-
+      for (internal_const_reference h : left_idem_H_class) {
         for (size_t i = 0; i < left_idem_left_reps.size(); ++i) {
           // TODO: enforce uniqueness here?
           static std::vector<internal_element_type> Hxhw;
@@ -1875,7 +1916,6 @@ namespace libsemigroups {
             Product()(this->to_external(this->tmp_element2()),
                       this->to_external(this->tmp_element()),
                       this->to_external_const(left_idem_left_reps[i]));
-            Hxh.push_back(this->internal_copy(this->tmp_element()));
             Hxhw.push_back(this->internal_copy(this->tmp_element2()));
           }
 
@@ -1930,13 +1970,12 @@ namespace libsemigroups {
             this->push_left_mult_inv(this->tmp_element3());
           }
         }
-        size_t x = Hxh_set.size() * left_idem_left_reps.size();
-        size_t y = Hxhw_set.size();
-        if (x != y) {
-          std::cout << "would get " << x << " reps (" << Hxh_set.size() << " x "
-                    << left_idem_left_reps.size() << ") but there are only "
-                    << y << std::endl;
-        }
+      }
+
+      if (left_rep_mults.size() != Hxhw_set.size()) {
+        std::cout << "would get " << left_rep_mults.size()
+                  << " reps but there are only " << Hxhw_set.size() << "!"
+                  << std::endl;
       }
 
       for (internal_const_reference h : right_idem_H_class) {
