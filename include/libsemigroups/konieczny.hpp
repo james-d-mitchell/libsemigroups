@@ -167,15 +167,15 @@ namespace libsemigroups {
       }
     };
 
-    //TODO: merge the following structs
+    // TODO: merge the following structs
     struct InternalVecFree : private detail::BruidhinnTraits<TElementType> {
-      void operator()(std::vector<internal_element_type> const & x) { 
+      void operator()(std::vector<internal_element_type> const& x) {
         for (auto it = x.cbegin(); it < x.cend(); ++it) {
           this->internal_free(*it);
         }
       }
     };
-    
+
     struct InternalSetFree : private detail::BruidhinnTraits<TElementType> {
       void operator()(std::unordered_set<internal_element_type,
                                          InternalElementHash,
@@ -219,7 +219,7 @@ namespace libsemigroups {
           _D_rels(),
           _gens(),
           _group_indices(),
-          _group_indices_alt(),
+          _group_indices_rev(),
           _lambda_orb(),
           _nonregular_reps(),
           _one(),
@@ -250,11 +250,10 @@ namespace libsemigroups {
       _tmp_element2 = this->internal_copy(_one);
       _tmp_element3 = this->internal_copy(_one);
 
-      // TODO(now): use internal/external for lambda/rho values too
+      // TODO(now): use internal/external for lambda/rho values too?
       _tmp_lambda_value1 = Lambda()(gens[0]);
       _tmp_lambda_value2 = Lambda()(gens[0]);
 
-      // TODO(now): use internal/external for lambda/rho values too
       _tmp_rho_value1 = Lambda()(gens[0]);
       _tmp_rho_value2 = Lambda()(gens[0]);
 
@@ -334,7 +333,6 @@ namespace libsemigroups {
              && _tmp_rho_value1 == _tmp_rho_value2;
     }
 
-    // TODO(now) have this modify an argument in place
     //! Finds an idempotent in the D class of \c bm, if \c bm is regular
     // modifies _tmp_element1 and _tmp_element2
     // modifies _tmp_lambda_value1
@@ -352,9 +350,8 @@ namespace libsemigroups {
                     this->to_external_const(bm))) {
         return this->internal_copy(bm);
       }
-      if (!is_regular_element(bm)) {
-        // TODO: exception/assertion
-      }
+      LIBSEMIGROUPS_ASSERT(is_regular_element(bm));
+
       lambda_orb_index_type i = find_group_index(bm);
       Lambda()(_tmp_lambda_value1, this->to_external_const(bm));
       lambda_orb_index_type pos = _lambda_orb.position(_tmp_lambda_value1);
@@ -445,7 +442,7 @@ namespace libsemigroups {
     std::unordered_map<std::pair<rho_orb_scc_index_type, lambda_orb_index_type>,
                        rho_orb_index_type,
                        PairHash>
-                    _group_indices_alt;  // TODO better name
+                    _group_indices_rev;
     lambda_orb_type _lambda_orb;
     std::vector<
         std::vector<std::pair<internal_element_type, D_class_index_type>>>
@@ -897,7 +894,9 @@ namespace libsemigroups {
       return _H_class.size();
     }
 
-    std::unordered_set<internal_element_type, InternalElementHash, InternalEqualTo>&
+    std::unordered_set<internal_element_type,
+                       InternalElementHash,
+                       InternalEqualTo>&
     internal_set() {
       return _internal_set;
     }
@@ -910,7 +909,9 @@ namespace libsemigroups {
     bool                               _class_computed;
     std::vector<internal_element_type> _H_class;
     bool                               _H_class_computed;
-    std::unordered_set<internal_element_type, InternalElementHash, InternalEqualTo>
+    std::unordered_set<internal_element_type,
+                       InternalElementHash,
+                       InternalEqualTo>
                                        _internal_set;
     std::vector<internal_element_type> _internal_vec;
     std::vector<internal_element_type> _left_mults;
@@ -1107,8 +1108,8 @@ namespace libsemigroups {
            it < this->parent()->_lambda_orb.digraph().cend_scc(lval_scc_id);
            it++) {
         key.second = *it;
-        if (this->parent()->_group_indices_alt.find(key)
-            == this->parent()->_group_indices_alt.end()) {
+        if (this->parent()->_group_indices_rev.find(key)
+            == this->parent()->_group_indices_rev.end()) {
           bool found = false;
           Product()(this->to_external(this->tmp_element()),
                     this->parent()->_rho_orb.multiplier_to_scc_root(rval_pos),
@@ -1136,15 +1137,15 @@ namespace libsemigroups {
             if (this->parent()->is_group_index(
                     this->to_external(this->tmp_element2()),
                     this->to_external(this->tmp_element4()))) {
-              this->parent()->_group_indices_alt.emplace(key, *it2);
+              this->parent()->_group_indices_rev.emplace(key, *it2);
               found = true;
             }
           }
           if (!found) {
-            this->parent()->_group_indices_alt.emplace(key, UNDEFINED);
+            this->parent()->_group_indices_rev.emplace(key, UNDEFINED);
           }
         }
-        if (this->parent()->_group_indices_alt.at(key) != UNDEFINED) {
+        if (this->parent()->_group_indices_rev.at(key) != UNDEFINED) {
           _lambda_index_positions.emplace(*it, _left_indices.size());
           _left_indices.push_back(*it);
         }
@@ -1171,8 +1172,6 @@ namespace libsemigroups {
       for (auto it = this->parent()->_rho_orb.digraph().cbegin_scc(rval_scc_id);
            it < this->parent()->_rho_orb.digraph().cend_scc(rval_scc_id);
            it++) {
-        // TODO: will need two temporary elements for this product etc.
-
         Product()(this->to_external(this->tmp_element()),
                   this->parent()->_rho_orb.multiplier_from_scc_root(*it),
                   this->parent()->_rho_orb.multiplier_to_scc_root(rval_pos));
@@ -1292,26 +1291,20 @@ namespace libsemigroups {
       if (_H_gens_computed) {
         return;
       }
-      _H_gens.clear();
-      // TODO: remove these
-      compute_left_indices();
-      compute_right_indices();
-      compute_mults();
-      compute_reps();
 
       Rho()(this->tmp_rho_value(), this->rep());
       rho_value_type&        rval     = this->tmp_rho_value();
       rho_orb_index_type     rval_pos = this->parent()->_rho_orb.position(rval);
       rho_orb_scc_index_type rval_scc_id
           = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
-      
+
       // internal vec represents right inverses
       this->internal_vec().clear();
 
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         std::pair<rho_orb_scc_index_type, lambda_orb_index_type> key
             = std::make_pair(rval_scc_id, _left_indices[i]);
-        rho_orb_index_type       k = this->parent()->_group_indices_alt.at(key);
+        rho_orb_index_type       k = this->parent()->_group_indices_rev.at(key);
         right_indices_index_type j = _rho_index_positions.at(k);
 
         // for p a left rep and q an appropriate right rep,
@@ -1380,13 +1373,11 @@ namespace libsemigroups {
       rho_orb_scc_index_type rval_scc_id
           = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
 
-      // this all relies on the indices having been computed already
-
       // TODO: use information from the looping through the left indices in
       // the loop through the right indices
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         auto               key = std::make_pair(rval_scc_id, _left_indices[i]);
-        rho_orb_index_type k   = this->parent()->_group_indices_alt.at(key);
+        rho_orb_index_type k   = this->parent()->_group_indices_rev.at(key);
         size_t             j   = 0;
         while (_right_indices[j] != k) {
           ++j;
@@ -1639,7 +1630,6 @@ namespace libsemigroups {
 #endif
     }
 
-    // TODO: this computes more than just the H class, and should be split
     void compute_H_class() override {
       if (this->H_class_computed()) {
         return;
@@ -1663,8 +1653,6 @@ namespace libsemigroups {
       for (auto it = _left_idem_class->cbegin_H_class();
            it < _left_idem_class->cend_H_class();
            it++) {
-        // TODO: don't really need both tmps here, given we're copying it
-        // anyway?
         Product()(this->to_external(this->tmp_element()),
                   this->to_external_const(left_idem_right_mult),
                   this->to_external_const(*it));
@@ -1683,7 +1671,8 @@ namespace libsemigroups {
         Product()(this->to_external(this->tmp_element2()),
                   this->to_external(this->tmp_element()),
                   this->to_external_const(right_idem_left_mult));
-        _right_idem_H_class.push_back(this->internal_copy(this->tmp_element2()));
+        _right_idem_H_class.push_back(
+            this->internal_copy(this->tmp_element2()));
       }
 
       for (auto it = _left_idem_class->cbegin_left_mults();
@@ -1794,13 +1783,13 @@ namespace libsemigroups {
                                 InternalVecEqualTo>
           Hxhw_set;
       Hxhw_set.clear();
-      
+
       static std::unordered_set<std::vector<internal_element_type>,
                                 InternalVecHash,
                                 InternalVecEqualTo>
           Hxh_set;
       Hxh_set.clear();
-      
+
       static std::unordered_set<std::vector<internal_element_type>,
                                 InternalVecHash,
                                 InternalVecEqualTo>
@@ -1833,7 +1822,6 @@ namespace libsemigroups {
         }
 
         for (size_t i = 0; i < _left_idem_left_reps.size(); ++i) {
-          // TODO: enforce uniqueness here?
           static std::vector<internal_element_type> Hxhw;
           Hxhw.clear();
 
@@ -1991,8 +1979,8 @@ namespace libsemigroups {
       this->set_mults_computed(true);
     }
 
-    // TODO(now) things will break if this function is called twice
     void construct_H_set() {
+      _H_set.clear();
       for (auto it = this->cbegin_H_class(); it < this->cend_H_class(); ++it) {
         _H_set.insert(*it);
       }
@@ -2028,16 +2016,16 @@ namespace libsemigroups {
         _H_set;
     std::unordered_map<lambda_orb_index_type,
                        std::vector<left_indices_index_type>>
-                          _lambda_index_positions;
-    internal_element_type _left_idem_above;
-    RegularDClass*        _left_idem_class;
+                                       _lambda_index_positions;
+    internal_element_type              _left_idem_above;
+    RegularDClass*                     _left_idem_class;
     std::vector<internal_element_type> _left_idem_H_class;
     std::vector<internal_element_type> _left_idem_left_reps;
     std::unordered_map<rho_orb_index_type,
                        std::vector<right_indices_index_type>>
-                          _rho_index_positions;
-    internal_element_type _right_idem_above;
-    RegularDClass*        _right_idem_class;
+                                       _rho_index_positions;
+    internal_element_type              _right_idem_above;
+    RegularDClass*                     _right_idem_class;
     std::vector<internal_element_type> _right_idem_H_class;
     std::vector<internal_element_type> _right_idem_right_reps;
   };
@@ -2167,11 +2155,10 @@ namespace libsemigroups {
                                           _D_classes.size() - 1);
             } else {
               _nonregular_reps[rnk].emplace_back(this->internal_copy(x),
-                                              _D_classes.size() - 1);
+                                                 _D_classes.size() - 1);
             }
           }
           next_reps.pop_back();
-
         } else {
           tup = next_reps.back();
           D   = new NonRegularDClass(this, tup.first);
@@ -2185,7 +2172,7 @@ namespace libsemigroups {
                                           _D_classes.size() - 1);
             } else {
               _nonregular_reps[rnk].emplace_back(this->internal_copy(x),
-                                              _D_classes.size() - 1);
+                                                 _D_classes.size() - 1);
             }
           }
           next_reps.pop_back();
