@@ -51,18 +51,7 @@
 
 namespace libsemigroups {
 
-  namespace konieczny_helpers {
-
-    // TODO: it must be possible to do better than this
-    template <typename TElementType>
-    TElementType idem_in_H_class(TElementType const& bm) {
-      TElementType tmp = bm;
-      while (tmp * tmp != tmp) {
-        tmp = tmp * bm;
-      }
-      return tmp;
-    }
-  }  // namespace konieczny_helpers
+  namespace konieczny_helpers {}  // namespace konieczny_helpers
 
   //! Provides a call operator returning a hash value for a pair of size_t.
   //!
@@ -122,6 +111,8 @@ namespace libsemigroups {
         TElementType>::internal_const_value_type;
     using internal_const_reference = typename detail::BruidhinnTraits<
         TElementType>::internal_const_reference;
+    using internal_reference =
+        typename detail::BruidhinnTraits<TElementType>::internal_reference;
 
     struct InternalElementHash : private detail::BruidhinnTraits<TElementType> {
       using Hash = typename TTraits::ElementHash;
@@ -274,6 +265,21 @@ namespace libsemigroups {
     void run_impl() override;
     bool finished_impl() const override;
 
+    // TODO: it must be possible to do better than this
+    void idem_in_H_class(internal_element_type&   res,
+                         internal_const_reference bm) {
+      this->to_external(res) = this->to_external_const(bm);
+      do {
+        Swap()(this->to_external(res), this->to_external(_tmp_element1));
+        Product()(this->to_external(res),
+                  this->to_external_const(_tmp_element1),
+                  this->to_external_const(bm));
+        Product()(this->to_external(_tmp_element1),
+                  this->to_external_const(res),
+                  this->to_external_const(res));
+      } while (!InternalEqualTo()(res, _tmp_element1));
+    }
+
     //! Finds a group index of a H class in the R class of \p bm
     // modifies _tmp_element1, _tmp_element2, _tmp_element3
     // modifies _tmp_lambda_value1
@@ -336,7 +342,7 @@ namespace libsemigroups {
     //! Finds an idempotent in the D class of \c bm, if \c bm is regular
     // modifies _tmp_element1 and _tmp_element2
     // modifies _tmp_lambda_value1
-    internal_element_type find_idem(internal_const_reference bm) {
+    internal_const_element_type find_idem(internal_const_reference bm) {
       LIBSEMIGROUPS_ASSERT(
           Degree<element_type>()(this->to_external_const(bm))
           == Degree<element_type>()(this->to_external_const(_tmp_element1)));
@@ -363,8 +369,8 @@ namespace libsemigroups {
                 this->to_external(_tmp_element1),
                 _lambda_orb.multiplier_from_scc_root(i));
 
-      return this->to_internal(konieczny_helpers::idem_in_H_class<element_type>(
-          this->to_external(_tmp_element2)));
+      idem_in_H_class(_tmp_element3, _tmp_element2);
+      return _tmp_element3;
     }
 
     void group_inverse(internal_element_type&   res,
@@ -1388,9 +1394,10 @@ namespace libsemigroups {
         Product()(this->to_external(this->tmp_element2()),
                   this->to_external(this->tmp_element()),
                   this->to_external_const(this->cbegin_left_mults()[i]));
-        _left_idem_reps.push_back(this->internal_copy(
-            this->to_internal(konieczny_helpers::idem_in_H_class<element_type>(
-                this->to_external(this->tmp_element2())))));
+        this->parent()->idem_in_H_class(this->tmp_element3(),
+                                        this->tmp_element2());
+
+        _left_idem_reps.push_back(this->internal_copy(this->tmp_element3()));
       }
 
       for (size_t j = 0; j < _right_indices.size(); ++j) {
@@ -1406,9 +1413,11 @@ namespace libsemigroups {
         Product()(this->to_external(this->tmp_element2()),
                   this->to_external(this->tmp_element()),
                   this->to_external_const(this->cbegin_left_mults()[i]));
-        _right_idem_reps.push_back(this->internal_copy(
-            this->to_internal(konieczny_helpers::idem_in_H_class<element_type>(
-                this->to_external(this->tmp_element2())))));
+
+        this->parent()->idem_in_H_class(this->tmp_element3(),
+                                        this->tmp_element2());
+
+        _right_idem_reps.push_back(this->internal_copy(this->tmp_element3()));
       }
       this->_idem_reps_computed = true;
     }
