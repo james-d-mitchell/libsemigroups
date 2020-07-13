@@ -1716,8 +1716,6 @@ namespace libsemigroups {
       static std::vector<internal_element_type> Hex;
       static std::vector<internal_element_type> xHf;
 
-      Hex.clear();
-      xHf.clear();
 
       for (internal_const_reference s : _left_idem_H_class) {
         Product()(this->to_external(this->tmp_element()),
@@ -1739,14 +1737,18 @@ namespace libsemigroups {
           s;
       this->internal_set().clear();
       for (auto it = Hex.begin(); it < Hex.end(); ++it) {
-        this->internal_set().insert(*it);
+        if (!this->internal_set().insert(*it).second) {
+          this->internal_free(*it); 
+        }
       }
       Hex.clear();
       Hex.assign(this->internal_set().begin(), this->internal_set().end());
 
       this->internal_set().clear();
       for (auto it = xHf.begin(); it < xHf.end(); ++it) {
-        this->internal_set().insert(*it);
+        if (!this->internal_set().insert(*it).second) {
+          this->internal_free(*it); 
+        }
       }
       xHf.clear();
       xHf.assign(this->internal_set().begin(), this->internal_set().end());
@@ -1770,6 +1772,8 @@ namespace libsemigroups {
 
       InternalVecFree()(xHf);
       InternalVecFree()(Hex);
+      Hex.clear();
+      xHf.clear();
 
       this->set_H_class_computed(true);
     }
@@ -1830,6 +1834,7 @@ namespace libsemigroups {
         if (Hxh_set.find(Hxh) == Hxh_set.end()) {
           Hxh_set.insert(Hxh);
         } else {
+          InternalVecFree()(Hxh);
           continue;
         }
 
@@ -1920,6 +1925,7 @@ namespace libsemigroups {
         if (hHx_set.find(hHx) == hHx_set.end()) {
           hHx_set.insert(hHx);
         } else {
+          InternalVecFree()(hHx);
           continue;
         }
 
