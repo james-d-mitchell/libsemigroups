@@ -342,7 +342,7 @@ namespace libsemigroups {
     //! Finds an idempotent in the D class of \c bm, if \c bm is regular
     // modifies _tmp_element1 and _tmp_element2
     // modifies _tmp_lambda_value1
-    internal_const_element_type find_idem(internal_const_reference bm) {
+    internal_element_type find_idem(internal_const_reference bm) {
       LIBSEMIGROUPS_ASSERT(
           Degree<element_type>()(this->to_external_const(bm))
           == Degree<element_type>()(this->to_external_const(_tmp_element1)));
@@ -370,7 +370,7 @@ namespace libsemigroups {
                 _lambda_orb.multiplier_from_scc_root(i));
 
       idem_in_H_class(_tmp_element3, _tmp_element2);
-      return _tmp_element3;
+      return this->internal_copy(_tmp_element3);
     }
 
     void group_inverse(internal_element_type&   res,
@@ -497,7 +497,7 @@ namespace libsemigroups {
 
     using Rank = konieczny_type::Rank;
 
-    BaseDClass(Konieczny* parent, internal_const_reference rep)
+    BaseDClass(Konieczny* parent, internal_reference rep)
         : _class_computed(false),
           _H_class(),
           _H_class_computed(false),
@@ -509,7 +509,7 @@ namespace libsemigroups {
           _mults_computed(false),
           _parent(parent),
           _rank(Rank()(this->to_external_const(rep))),
-          _rep(this->internal_copy(rep)),
+          _rep(rep),
           _reps_computed(false),
           _right_mults(),
           _right_mults_inv(),
@@ -964,7 +964,7 @@ namespace libsemigroups {
         typename konieczny_type::BaseDClass::right_indices_index_type;
 
    public:
-    RegularDClass(Konieczny* parent, internal_const_reference idem_rep)
+    RegularDClass(Konieczny* parent, internal_reference idem_rep)
         : Konieczny::BaseDClass(parent, idem_rep),
           _H_gens(),
           _H_gens_computed(false),
@@ -1504,7 +1504,7 @@ namespace libsemigroups {
         typename konieczny_type::BaseDClass::right_indices_index_type;
 
    public:
-    NonRegularDClass(Konieczny* parent, internal_const_reference rep)
+    NonRegularDClass(Konieczny* parent, internal_reference rep)
         : Konieczny::BaseDClass(parent, rep),
           _H_set(),
           _lambda_index_positions(),
@@ -2091,20 +2091,19 @@ namespace libsemigroups {
   void Konieczny<TElementType, TTraits>::run_impl() {
     compute_orbs();
 
-    // TODO: reserve?
     std::set<size_t> ranks;
     size_t           max_rank = 0;
     ranks.insert(0);
-
-    RegularDClass* top = new RegularDClass(this, _one);
+    internal_element_type y = this->internal_copy(_one);
+    RegularDClass* top = new RegularDClass(this, y);
     add_D_class(top);
-    for (internal_const_reference x : top->covering_reps()) {
+    for (internal_reference x : top->covering_reps()) {
       size_t rnk = Rank()(this->to_external_const(x));
       ranks.insert(rnk);
       if (is_regular_element(x)) {
-        _reg_reps[rnk].emplace_back(this->internal_copy(x), 0);
+        _reg_reps[rnk].emplace_back(x, 0);
       } else {
-        _nonregular_reps[rnk].emplace_back(this->internal_copy(x), 0);
+        _nonregular_reps[rnk].emplace_back(x, 0);
       }
     }
     std::vector<std::pair<internal_element_type, D_class_index_type>> next_reps;
@@ -2148,40 +2147,35 @@ namespace libsemigroups {
         }
 
         BaseDClass*                                          D;
-        std::pair<internal_element_type, D_class_index_type> tup(
-            this->internal_copy(_one), 0);
+        std::pair<internal_element_type, D_class_index_type> tup(_one, 0);
 
         if (reps_are_reg) {
           tup = next_reps.back();
-          D   = new RegularDClass(this, this->find_idem(tup.first));
+          internal_element_type y = this->find_idem(tup.first);
+          D   = new RegularDClass(this, y);
           add_D_class(static_cast<RegularDClass*>(D));
           this->internal_free(tup.first);
-          for (internal_const_reference x : D->covering_reps()) {
+          for (internal_reference x : D->covering_reps()) {
             size_t rnk = Rank()(this->to_external_const(x));
             ranks.insert(rnk);
             if (is_regular_element(x)) {
-              _reg_reps[rnk].emplace_back(this->internal_copy(x),
-                                          _D_classes.size() - 1);
+              _reg_reps[rnk].emplace_back(x, _D_classes.size() - 1);
             } else {
-              _nonregular_reps[rnk].emplace_back(this->internal_copy(x),
-                                                 _D_classes.size() - 1);
+              _nonregular_reps[rnk].emplace_back(x, _D_classes.size() - 1);
             }
           }
           next_reps.pop_back();
         } else {
           tup = next_reps.back();
           D   = new NonRegularDClass(this, tup.first);
-          this->internal_free(tup.first);
           add_D_class(static_cast<NonRegularDClass*>(D));
-          for (internal_const_reference x : D->covering_reps()) {
+          for (internal_reference x : D->covering_reps()) {
             size_t rnk = Rank()(this->to_external_const(x));
             ranks.insert(rnk);
             if (is_regular_element(x)) {
-              _reg_reps[rnk].emplace_back(this->internal_copy(x),
-                                          _D_classes.size() - 1);
+              _reg_reps[rnk].emplace_back(x, _D_classes.size() - 1);
             } else {
-              _nonregular_reps[rnk].emplace_back(this->internal_copy(x),
-                                                 _D_classes.size() - 1);
+              _nonregular_reps[rnk].emplace_back(x, _D_classes.size() - 1);
             }
           }
           next_reps.pop_back();
@@ -2191,6 +2185,7 @@ namespace libsemigroups {
         for (auto& x : next_reps) {
           if (D->contains(this->to_external_const(x.first))) {
             _D_rels[_D_classes.size() - 1].push_back(x.second);
+            this->internal_free(x.first);
           } else {
             tmp.push_back(std::move(x));
           }
