@@ -1893,6 +1893,8 @@ namespace libsemigroups {
                       this->to_external(this->tmp_element2()),
                       this->to_external(this->tmp_element()));
             this->push_left_mult_inv(this->tmp_element3());
+          } else {
+            InternalVecFree()(Hxhw);
           }
         }
         InternalVecFree()(Hxh);
@@ -1980,6 +1982,8 @@ namespace libsemigroups {
                       this->to_external(this->tmp_element()),
                       this->to_external(this->tmp_element2()));
             this->push_right_mult_inv(this->tmp_element3());
+          } else {
+            InternalVecFree()(zhHx);
           }
         }
         InternalVecFree()(hHx);
