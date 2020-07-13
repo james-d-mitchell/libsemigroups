@@ -158,13 +158,31 @@ namespace libsemigroups {
     };
 
     struct InternalVecEqualTo : private detail::BruidhinnTraits<TElementType> {
-      //! Hashes a vector of internal_element_types.
       size_t operator()(std::vector<internal_element_type> const& x,
                         std::vector<internal_element_type> const& y) const {
         if (x.size() != y.size()) {
           return false;
         }
         return std::equal(x.cbegin(), x.cend(), y.cbegin(), InternalEqualTo());
+      }
+    };
+
+    //TODO: merge the following structs
+    struct InternalVecFree : private detail::BruidhinnTraits<TElementType> {
+      void operator()(std::vector<internal_element_type> const & x) { 
+        for (auto it = x.cbegin(); it < x.cend(); ++it) {
+          this->internal_free(*it);
+        }
+      }
+    };
+    
+    struct InternalSetFree : private detail::BruidhinnTraits<TElementType> {
+      void operator()(std::unordered_set<internal_element_type,
+                                         InternalElementHash,
+                                         InternalEqualTo> const& x) {
+        for (auto it = x.cbegin(); it != x.cend(); ++it) {
+          this->internal_free(*it);
+        }
       }
     };
 
@@ -203,7 +221,7 @@ namespace libsemigroups {
           _group_indices(),
           _group_indices_alt(),
           _lambda_orb(),
-          _non_reg_reps(),
+          _nonregular_reps(),
           _one(),
           _regular_D_classes(),
           _reg_reps(),
@@ -242,7 +260,7 @@ namespace libsemigroups {
 
       _gens.push_back(_one);  // TODO: maybe not this
 
-      _non_reg_reps = std::vector<
+      _nonregular_reps = std::vector<
           std::vector<std::pair<internal_element_type, D_class_index_type>>>(
           Rank()(this->to_external_const(_one)) + 1,
           std::vector<std::pair<internal_element_type, D_class_index_type>>());
@@ -431,7 +449,7 @@ namespace libsemigroups {
     lambda_orb_type _lambda_orb;
     std::vector<
         std::vector<std::pair<internal_element_type, D_class_index_type>>>
-                                _non_reg_reps;
+                                _nonregular_reps;
     internal_element_type       _one;
     std::vector<RegularDClass*> _regular_D_classes;
     std::vector<
@@ -500,7 +518,22 @@ namespace libsemigroups {
           _tmp_lambda_value(Lambda()(this->to_external_const(_rep))),
           _tmp_rho_value(Rho()(this->to_external_const(_rep))) {}
 
-    virtual ~BaseDClass() {}
+    virtual ~BaseDClass() {
+      // the user of _internal_vec/_internal_set is responsible for freeing any
+      // necessary elements
+      InternalVecFree()(_H_class);
+      InternalVecFree()(_left_mults);
+      InternalVecFree()(_left_mults_inv);
+      InternalVecFree()(_left_reps);
+      this->internal_free(_rep);
+      InternalVecFree()(_right_mults);
+      InternalVecFree()(_right_mults_inv);
+      InternalVecFree()(_right_reps);
+      this->internal_free(_tmp_element);
+      this->internal_free(_tmp_element2);
+      this->internal_free(_tmp_element3);
+      this->internal_free(_tmp_element4);
+    }
 
     // TODO(now): remove unused iterators / clean up
 
@@ -787,11 +820,6 @@ namespace libsemigroups {
 #endif
     }
 
-    std::back_insert_iterator<std::vector<internal_element_type>>
-    _H_back_inserter() {
-      return std::back_inserter(_H_class);
-    }
-
     size_t left_reps_size() {
       return _left_reps.size();
     }
@@ -893,7 +921,7 @@ namespace libsemigroups {
     bool                               _mults_computed;
     Konieczny*                         _parent;
     size_t                             _rank;
-    internal_const_element_type        _rep;
+    internal_element_type              _rep;
     bool                               _reps_computed;
     std::vector<internal_element_type> _right_mults;
     std::vector<internal_element_type> _right_mults_inv;
@@ -952,6 +980,12 @@ namespace libsemigroups {
         LIBSEMIGROUPS_EXCEPTION(
             "the representative given should be idempotent");
       }
+    }
+
+    virtual ~RegularDClass() {
+      // _H_gens is contained in _H_class which is freed in ~BaseDClass
+      InternalVecFree()(_left_idem_reps);
+      InternalVecFree()(_right_idem_reps);
     }
 
     using const_index_iterator =
@@ -1324,10 +1358,7 @@ namespace libsemigroups {
           }
         }
       }
-      for (size_t i = 0; i < this->internal_vec().size(); ++i) {
-        this->internal_free(this->internal_vec()[i]); 
-      }
-
+      InternalVecFree()(this->internal_vec());
       this->_H_gens_computed = true;
     }
 
@@ -1493,6 +1524,9 @@ namespace libsemigroups {
                                 "given should not be idempotent");
       }
     }
+
+    // NonRegularDClass doesn't need to free anything
+    virtual ~NonRegularDClass() {}
 
     // uses _tmp_element, _tmp_element2
     // uses _tmp_lambda, _tmp_rho
@@ -1738,6 +1772,14 @@ namespace libsemigroups {
            ++it) {
         this->push_back_H_class(this->internal_copy(*it));
       }
+
+      InternalVecFree()(left_idem_H_class);
+      InternalVecFree()(right_idem_H_class);
+      InternalVecFree()(left_idem_left_reps);
+      InternalVecFree()(right_idem_right_reps);
+      InternalVecFree()(xHf);
+      InternalVecFree()(Hex);
+
       this->set_H_class_computed(true);
     }
 
@@ -1884,7 +1926,7 @@ namespace libsemigroups {
 
           std::sort(Hxhw.begin(), Hxhw.end(), InternalLess());
           if (Hxhw_set.find(Hxhw) == Hxhw_set.end()) {
-            Hxhw_set.insert(Hxhw);
+            Hxhw_set.insert(std::move(Hxhw));
 
             Product()(this->to_external(this->tmp_element3()),
                       this->to_external_const(h),
@@ -1933,6 +1975,11 @@ namespace libsemigroups {
             this->push_left_mult_inv(this->tmp_element3());
           }
         }
+        InternalVecFree()(Hxh);
+      }
+
+      for (auto it = Hxhw_set.begin(); it != Hxhw_set.end(); ++it) {
+        InternalVecFree()(*it);
       }
 
       for (internal_const_reference h : right_idem_H_class) {
@@ -1966,8 +2013,7 @@ namespace libsemigroups {
 
           std::sort(zhHx.begin(), zhHx.end(), InternalLess());
           if (zhHx_set.find(zhHx) == zhHx_set.end()) {
-            zhHx_set.insert(zhHx);
-
+            zhHx_set.insert(std::move(zhHx));
             // push_right_rep and push_right_mult use tmp_element and
             // tmp_element2
             Product()(this->to_external(this->tmp_element3()),
@@ -2016,7 +2062,18 @@ namespace libsemigroups {
             this->push_right_mult_inv(this->tmp_element3());
           }
         }
+        InternalVecFree()(hHx);
       }
+
+      for (auto it = zhHx_set.begin(); it != zhHx_set.end(); ++it) {
+        InternalVecFree()(*it);
+      }
+      /*
+      InternalVecFree()(left_idem_H_class);
+      InternalVecFree()(right_idem_H_class);
+      */
+      InternalVecFree()(left_idem_left_reps);
+      InternalVecFree()(right_idem_right_reps);
       this->set_mults_computed(true);
     }
 
@@ -2072,6 +2129,13 @@ namespace libsemigroups {
     for (BaseDClass* D : _D_classes) {
       delete D;
     }
+    // _one is included in _gens
+    for (internal_element_type x : _gens) {
+      this->internal_free(x);
+    }
+    this->internal_free(_tmp_element1);
+    this->internal_free(_tmp_element2);
+    this->internal_free(_tmp_element3);
   }
 
   template <typename TElementType, typename TTraits>
@@ -2125,7 +2189,7 @@ namespace libsemigroups {
       if (is_regular_element(x)) {
         _reg_reps[rnk].emplace_back(this->internal_copy(x), 0);
       } else {
-        _non_reg_reps[rnk].emplace_back(this->internal_copy(x), 0);
+        _nonregular_reps[rnk].emplace_back(this->internal_copy(x), 0);
       }
     }
     std::vector<std::pair<internal_element_type, D_class_index_type>> next_reps;
@@ -2141,8 +2205,8 @@ namespace libsemigroups {
         next_reps    = std::move(_reg_reps[max_rank]);
         _reg_reps[max_rank].clear();
       } else {
-        next_reps = std::move(_non_reg_reps[max_rank]);
-        _non_reg_reps[max_rank].clear();
+        next_reps = std::move(_nonregular_reps[max_rank]);
+        _nonregular_reps[max_rank].clear();
       }
 
       tmp_next.clear();
@@ -2176,6 +2240,7 @@ namespace libsemigroups {
           tup = next_reps.back();
           D   = new RegularDClass(this, this->find_idem(tup.first));
           add_D_class(static_cast<RegularDClass*>(D));
+          this->internal_free(tup.first);
           for (internal_const_reference x : D->covering_reps()) {
             size_t rnk = Rank()(this->to_external_const(x));
             ranks.insert(rnk);
@@ -2183,7 +2248,7 @@ namespace libsemigroups {
               _reg_reps[rnk].emplace_back(this->internal_copy(x),
                                           _D_classes.size() - 1);
             } else {
-              _non_reg_reps[rnk].emplace_back(this->internal_copy(x),
+              _nonregular_reps[rnk].emplace_back(this->internal_copy(x),
                                               _D_classes.size() - 1);
             }
           }
@@ -2192,6 +2257,7 @@ namespace libsemigroups {
         } else {
           tup = next_reps.back();
           D   = new NonRegularDClass(this, tup.first);
+          this->internal_free(tup.first);
           add_D_class(static_cast<NonRegularDClass*>(D));
           for (internal_const_reference x : D->covering_reps()) {
             size_t rnk = Rank()(this->to_external_const(x));
@@ -2200,7 +2266,7 @@ namespace libsemigroups {
               _reg_reps[rnk].emplace_back(this->internal_copy(x),
                                           _D_classes.size() - 1);
             } else {
-              _non_reg_reps[rnk].emplace_back(this->internal_copy(x),
+              _nonregular_reps[rnk].emplace_back(this->internal_copy(x),
                                               _D_classes.size() - 1);
             }
           }
@@ -2218,7 +2284,7 @@ namespace libsemigroups {
         next_reps = std::move(tmp);
       }
       LIBSEMIGROUPS_ASSERT(_reg_reps[max_rank].empty());
-      if (_non_reg_reps[max_rank].empty()) {
+      if (_nonregular_reps[max_rank].empty()) {
         ranks.erase(max_rank);
         max_rank = *ranks.rbegin();
       }
