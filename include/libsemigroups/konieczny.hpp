@@ -671,6 +671,9 @@ namespace libsemigroups {
       }
       std::sort(_internal_vec.begin(), _internal_vec.end(), InternalLess());
       auto it = std::unique(_internal_vec.begin(), _internal_vec.end());
+      for(; it < _internal_vec.end(); ++it) {
+        this->internal_free(*it);
+      }
       _internal_vec.erase(it, _internal_vec.end());
       return _internal_vec;
     }
@@ -2134,7 +2137,9 @@ namespace libsemigroups {
             break;
           }
         }
-        if (!contained) {
+        if (contained) {
+          this->internal_free(it->first);
+        } else {
           tmp_next.push_back(*it);
         }
       }
