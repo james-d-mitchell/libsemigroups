@@ -42,6 +42,7 @@
 #include "catch.hpp"      // for REQUIRE, REQUIRE_NOTHROW, REQUIRE_THROWS_AS
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
 
+#include "libsemigroups/element-adapters.hpp"  // for Degree
 #include "libsemigroups/element.hpp"       // for Element, Transf, Transf...
 #include "libsemigroups/froidure-pin.hpp"  // for FroidurePin
 #include "libsemigroups/kbe.hpp"           // for detail::KBE

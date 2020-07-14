@@ -21,13 +21,15 @@
 
 #include "libsemigroups/element.hpp"
 
-#include <algorithm>  // for fill, max_element, find
-#include <cmath>      // for abs
-#include <ostream>    // for operator<<, basic_ostream, ostringstream
-#include <thread>     // for thread, get_id
+#include <algorithm>      // for fill, max_element, find
+#include <cmath>          // for abs
+#include <ostream>        // for operator<<, basic_ostream, ostringstream
+#include <thread>         // for thread, get_id
+#include <unordered_set>  // for unordered_set
 
-#include <iostream>    // for operator<<, basic_ostream, ostringstream
+#include <iostream>  // for operator<<, basic_ostream, ostringstream
 
+#include "libsemigroups/adapters.hpp"  // for VecHash
 #include "libsemigroups/blocks.hpp"    // for Blocks
 #include "libsemigroups/report.hpp"    // for THREAD_ID_MANAGER
 #include "libsemigroups/semiring.hpp"  // for BooleanSemiring, Semiring (ptr only)
@@ -56,7 +58,7 @@ namespace libsemigroups {
   BooleanMat::BooleanMat()
       : BooleanMat(std::vector<bool>(16)) {
         assert(false);
-    std::cout << "?????" << std::endl;    
+    std::cout << "?????" << std::endl;
   }
   */
 
@@ -137,6 +139,48 @@ namespace libsemigroups {
                          Semiring<bool> const* semiring)
       : MatrixOverSemiringBase<bool, BooleanMat>(matrix, semiring) {}
 
+  // TODO(now) improve!
+  namespace boolmat_helpers {
+  std::vector<std::vector<bool>>
+    rows_basis(std::vector<std::vector<bool>>& rows) {
+      std::vector<std::vector<bool>> out;
+      if (rows.empty()) {
+        return out;
+      }
+      size_t            degree = rows[0].size();
+      std::vector<bool> cup(degree, false);
+      std::sort(rows.begin(), rows.end());
+      auto it = std::unique(rows.begin(), rows.end());
+      rows.erase(it, rows.end());
+      for (auto it = rows.cbegin(); it < rows.cend(); ++it) {
+        cup.assign(degree, false);
+        if (std::find((*it).begin(), (*it).end(), true) != (*it).end()) {
+          for (auto it2 = rows.cbegin(); it2 < rows.cend(); ++it2) {
+            if (it == it2) {
+              continue;
+            }
+            bool contained = true;
+            for (size_t i = 0; i < degree; ++i) {
+              if ((*it2)[i] && !(*it)[i]) {
+                contained = false;
+                break;
+              }
+            }
+            if (contained) {
+              for (size_t i = 0; i < degree; ++i) {
+                cup[i] = cup[i] || (*it2)[i];
+              }
+            }
+          }
+          if (cup != *it) {
+            out.push_back(*it);
+          }
+        }
+      }
+      return out;
+    }
+  }  // namespace boolmat_helpers
+
   ////////////////////////////////////////////////////////////////////////
   // Bipartitions
   ////////////////////////////////////////////////////////////////////////
@@ -163,7 +207,7 @@ namespace libsemigroups {
 
   Bipartition::Bipartition(std::vector<uint32_t>&& blocks)
       : ElementWithVectorDataDefaultHash<uint32_t, Bipartition>(
-            std::move(blocks)),
+          std::move(blocks)),
         _nr_blocks(UNDEFINED),
         _nr_left_blocks(UNDEFINED),
         _trans_blocks_lookup(),
@@ -503,8 +547,8 @@ namespace libsemigroups {
     after();  // this is to put the matrix in normal form
   }
 
-  ProjectiveMaxPlusMatrix ProjectiveMaxPlusMatrix::
-                          operator*(ElementWithVectorData const& y) const {
+  ProjectiveMaxPlusMatrix
+      ProjectiveMaxPlusMatrix::operator*(ElementWithVectorData const& y) const {
     ProjectiveMaxPlusMatrix xy(std::vector<int64_t>(pow(y.degree(), 2)),
                                this->semiring());
     xy.Element::redefine(*this, y);

@@ -21,6 +21,7 @@
 #include "libsemigroups/bmat8.hpp"           // for BMat8
 #include "libsemigroups/cong-pair.hpp"       // for KnuthBendixCongruenceByPairs
 #include "libsemigroups/cong.hpp"            // for Congruence
+#include "libsemigroups/element-adapters.hpp"  // for Degree etc
 #include "libsemigroups/element-helper.hpp"  // for BMatHelper
 #include "libsemigroups/element.hpp"         // for Element
 #include "libsemigroups/fpsemi.hpp"          // for FpSemigroup

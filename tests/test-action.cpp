@@ -21,6 +21,7 @@
 
 #include "libsemigroups/action.hpp"
 #include "libsemigroups/bmat8.hpp"
+#include "libsemigroups/element-adapters.hpp" // for Degree etc
 #include "libsemigroups/element-helper.hpp"
 #include "libsemigroups/element.hpp"
 #include "libsemigroups/hpcombi.hpp"

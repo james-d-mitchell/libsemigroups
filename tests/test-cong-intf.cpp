@@ -23,6 +23,7 @@
 #include "libsemigroups/cong-intf.hpp"     // for CongruenceInterface
 #include "libsemigroups/cong-pair.hpp"     // for CongruenceByPairs
 #include "libsemigroups/cong.hpp"          // for Congruence
+#include "libsemigroups/element-adapters.hpp"       // for Degree etc
 #include "libsemigroups/element.hpp"       // for Transformation
 #include "libsemigroups/fpsemi.hpp"        // for FpSemigroup
 #include "libsemigroups/knuth-bendix.hpp"  // for KnuthBendix

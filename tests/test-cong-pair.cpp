@@ -26,6 +26,7 @@
 #include "catch.hpp"  // for REQUIRE, SECTION, REQUIRE_THROWS_AS, REQ...
 #include "libsemigroups/cong-intf.hpp"  // for congruence_type, CongruenceInterface::non_tr...
 #include "libsemigroups/cong-pair.hpp"  // for KnuthBendixCongruenceByPairs, CongruenceByPairs
+#include "libsemigroups/element-adapters.hpp"  // for Degree etc
 #include "libsemigroups/element-helper.hpp"  // for TransfHelper and chums
 #include "libsemigroups/element.hpp"         // for Element
 #include "libsemigroups/knuth-bendix.hpp"    // for KnuthBendix

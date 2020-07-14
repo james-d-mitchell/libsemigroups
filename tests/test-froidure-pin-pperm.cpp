@@ -21,6 +21,7 @@
 #include <vector>   // for vector
 
 #include "catch.hpp"                       // for LIBSEMIGROUPS_TEST_CASE
+#include "libsemigroups/element-adapters.hpp"       // for Degree etc
 #include "libsemigroups/element.hpp"       // for PartialPerm
 #include "libsemigroups/froidure-pin.hpp"  // for FroidurePin<>::element_index_type
 #include "test-main.hpp"

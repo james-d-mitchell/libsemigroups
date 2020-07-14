@@ -19,11 +19,12 @@
 #include "bench-main.hpp"  // for LIBSEMIGROUPS_BENCHMARK
 #include "catch.hpp"       // for REQUIRE, REQUIRE_NOTHROW, REQUIRE_THROWS_AS
 
-#include "libsemigroups/action.hpp"          // for LeftAction
-#include "libsemigroups/bitset.hpp"          // for BitSet
-#include "libsemigroups/element-helper.hpp"  // for PartialPerm
-#include "libsemigroups/element.hpp"         // for Lambda
-#include "libsemigroups/report.hpp"          // for ReportGuard
+#include "libsemigroups/action.hpp"            // for LeftAction
+#include "libsemigroups/bitset.hpp"            // for BitSet
+#include "libsemigroups/element-adapters.hpp"  // for Lambda
+#include "libsemigroups/element-helper.hpp"    // for PPermHelper
+#include "libsemigroups/element.hpp"           // for PartialPerm
+#include "libsemigroups/report.hpp"            // for ReportGuard
 
 #define FOR_SET_BITS(__bit_int, __nr_bits, __variable) \
   uint_fast32_t block = __bit_int;                     \
