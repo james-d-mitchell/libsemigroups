@@ -671,7 +671,7 @@ namespace libsemigroups {
       }
       std::sort(_internal_vec.begin(), _internal_vec.end(), InternalLess());
       auto it = std::unique(_internal_vec.begin(), _internal_vec.end());
-      for(; it < _internal_vec.end(); ++it) {
+      for (; it < _internal_vec.end(); ++it) {
         this->internal_free(*it);
       }
       _internal_vec.erase(it, _internal_vec.end());
@@ -1716,7 +1716,6 @@ namespace libsemigroups {
       static std::vector<internal_element_type> Hex;
       static std::vector<internal_element_type> xHf;
 
-
       for (internal_const_reference s : _left_idem_H_class) {
         Product()(this->to_external(this->tmp_element()),
                   this->rep(),
@@ -1738,7 +1737,7 @@ namespace libsemigroups {
       this->internal_set().clear();
       for (auto it = Hex.begin(); it < Hex.end(); ++it) {
         if (!this->internal_set().insert(*it).second) {
-          this->internal_free(*it); 
+          this->internal_free(*it);
         }
       }
       Hex.clear();
@@ -1747,7 +1746,7 @@ namespace libsemigroups {
       this->internal_set().clear();
       for (auto it = xHf.begin(); it < xHf.end(); ++it) {
         if (!this->internal_set().insert(*it).second) {
-          this->internal_free(*it); 
+          this->internal_free(*it);
         }
       }
       xHf.clear();
@@ -1820,8 +1819,7 @@ namespace libsemigroups {
 
       for (internal_const_reference h : _left_idem_H_class) {
         static std::vector<internal_element_type> Hxh;
-        Hxh.clear();
-
+        LIBSEMIGROUPS_ASSERT(Hxh.empty());
         for (auto it = this->cbegin_H_class(); it < this->cend_H_class();
              ++it) {
           Product()(this->to_external(this->tmp_element()),
@@ -1832,77 +1830,79 @@ namespace libsemigroups {
 
         std::sort(Hxh.begin(), Hxh.end(), InternalLess());
         if (Hxh_set.find(Hxh) == Hxh_set.end()) {
-          Hxh_set.insert(Hxh);
+          for (size_t i = 0; i < _left_idem_left_reps.size(); ++i) {
+            static std::vector<internal_element_type> Hxhw;
+            Hxhw.clear();
+
+            for (auto it = Hxh.cbegin(); it < Hxh.cend(); ++it) {
+              Product()(this->to_external(this->tmp_element()),
+                        this->to_external_const(*it),
+                        this->to_external_const(_left_idem_left_reps[i]));
+              Hxhw.push_back(this->internal_copy(this->tmp_element()));
+            }
+
+            std::sort(Hxhw.begin(), Hxhw.end(), InternalLess());
+            if (Hxhw_set.find(Hxhw) == Hxhw_set.end()) {
+              Hxhw_set.insert(std::move(Hxhw));
+
+              Product()(this->to_external(this->tmp_element3()),
+                        this->to_external_const(h),
+                        this->to_external_const(_left_idem_left_reps[i]));
+              Product()(this->to_external(this->tmp_element4()),
+                        this->rep(),
+                        this->to_external(this->tmp_element3()));
+              Lambda()(this->tmp_lambda_value(),
+                       this->to_external(this->tmp_element4()));
+              lambda_orb_index_type lpos = this->parent()->_lambda_orb.position(
+                  this->tmp_lambda_value());
+              auto it = _lambda_index_positions.find(lpos);
+              if (it == _lambda_index_positions.end()) {
+                _lambda_index_positions.emplace(
+                    lpos, std::vector<left_indices_index_type>());
+              }
+              _lambda_index_positions[lpos].push_back(this->left_reps_size());
+
+              // push_left_rep and push_left_mult use tmp_element and
+              // tmp_element2
+              this->push_left_rep(this->tmp_element4());
+              this->push_left_mult(this->tmp_element3());
+
+              Product()(this->to_external(this->tmp_element()),
+                        this->to_external_const(_left_idem_left_reps[i]),
+                        this->to_external_const(
+                            _left_idem_class->cbegin_left_mults_inv()[i]));
+              Product()(this->to_external(this->tmp_element2()),
+                        this->to_external(this->tmp_element()),
+                        this->to_external_const(left_idem_left_mult));
+              this->parent()->group_inverse(
+                  this->tmp_element3(), _left_idem_above, this->tmp_element2());
+              this->parent()->group_inverse(
+                  this->tmp_element4(), _left_idem_above, h);
+              Product()(this->to_external(this->tmp_element()),
+                        this->to_external(this->tmp_element3()),
+                        this->to_external(this->tmp_element4()));
+
+              Product()(this->to_external(this->tmp_element2()),
+                        this->to_external_const(
+                            _left_idem_class->cbegin_left_mults_inv()[i]),
+                        this->to_external_const(left_idem_left_mult));
+              Product()(this->to_external(this->tmp_element3()),
+                        this->to_external(this->tmp_element2()),
+                        this->to_external(this->tmp_element()));
+              this->push_left_mult_inv(this->tmp_element3());
+            } else {
+              InternalVecFree()(Hxhw);
+            }
+          }
+          Hxh_set.insert(std::move(Hxh));
         } else {
           InternalVecFree()(Hxh);
-          continue;
         }
+        Hxh.clear();
+      }
 
-        for (size_t i = 0; i < _left_idem_left_reps.size(); ++i) {
-          static std::vector<internal_element_type> Hxhw;
-          Hxhw.clear();
-
-          for (auto it = Hxh.cbegin(); it < Hxh.cend(); ++it) {
-            Product()(this->to_external(this->tmp_element()),
-                      this->to_external_const(*it),
-                      this->to_external_const(_left_idem_left_reps[i]));
-            Hxhw.push_back(this->internal_copy(this->tmp_element()));
-          }
-
-          std::sort(Hxhw.begin(), Hxhw.end(), InternalLess());
-          if (Hxhw_set.find(Hxhw) == Hxhw_set.end()) {
-            Hxhw_set.insert(std::move(Hxhw));
-
-            Product()(this->to_external(this->tmp_element3()),
-                      this->to_external_const(h),
-                      this->to_external_const(_left_idem_left_reps[i]));
-            Product()(this->to_external(this->tmp_element4()),
-                      this->rep(),
-                      this->to_external(this->tmp_element3()));
-            Lambda()(this->tmp_lambda_value(),
-                     this->to_external(this->tmp_element4()));
-            lambda_orb_index_type lpos = this->parent()->_lambda_orb.position(
-                this->tmp_lambda_value());
-            auto it = _lambda_index_positions.find(lpos);
-            if (it == _lambda_index_positions.end()) {
-              _lambda_index_positions.emplace(
-                  lpos, std::vector<left_indices_index_type>());
-            }
-            _lambda_index_positions[lpos].push_back(this->left_reps_size());
-
-            // push_left_rep and push_left_mult use tmp_element and
-            // tmp_element2
-            this->push_left_rep(this->tmp_element4());
-            this->push_left_mult(this->tmp_element3());
-
-            Product()(this->to_external(this->tmp_element()),
-                      this->to_external_const(_left_idem_left_reps[i]),
-                      this->to_external_const(
-                          _left_idem_class->cbegin_left_mults_inv()[i]));
-            Product()(this->to_external(this->tmp_element2()),
-                      this->to_external(this->tmp_element()),
-                      this->to_external_const(left_idem_left_mult));
-            this->parent()->group_inverse(
-                this->tmp_element3(), _left_idem_above, this->tmp_element2());
-            this->parent()->group_inverse(
-                this->tmp_element4(), _left_idem_above, h);
-            Product()(this->to_external(this->tmp_element()),
-                      this->to_external(this->tmp_element3()),
-                      this->to_external(this->tmp_element4()));
-
-            Product()(this->to_external(this->tmp_element2()),
-                      this->to_external_const(
-                          _left_idem_class->cbegin_left_mults_inv()[i]),
-                      this->to_external_const(left_idem_left_mult));
-            Product()(this->to_external(this->tmp_element3()),
-                      this->to_external(this->tmp_element2()),
-                      this->to_external(this->tmp_element()));
-            this->push_left_mult_inv(this->tmp_element3());
-          } else {
-            InternalVecFree()(Hxhw);
-          }
-        }
-        InternalVecFree()(Hxh);
+      for (auto it = Hxh_set.begin(); it != Hxh_set.end(); ++it) {
+        InternalVecFree()(*it);
       }
 
       for (auto it = Hxhw_set.begin(); it != Hxhw_set.end(); ++it) {
@@ -1911,7 +1911,7 @@ namespace libsemigroups {
 
       for (internal_const_reference h : _right_idem_H_class) {
         static std::vector<internal_element_type> hHx;
-        hHx.clear();
+        LIBSEMIGROUPS_ASSERT(hHx.empty());
 
         for (auto it = this->cbegin_H_class(); it < this->cend_H_class();
              ++it) {
@@ -1923,76 +1923,79 @@ namespace libsemigroups {
 
         std::sort(hHx.begin(), hHx.end(), InternalLess());
         if (hHx_set.find(hHx) == hHx_set.end()) {
-          hHx_set.insert(hHx);
+          for (size_t i = 0; i < _right_idem_right_reps.size(); ++i) {
+            static std::vector<internal_element_type> zhHx;
+            zhHx.clear();
+            for (auto it = hHx.cbegin(); it < hHx.cend(); ++it) {
+              Product()(this->to_external(this->tmp_element()),
+                        this->to_external_const(_right_idem_right_reps[i]),
+                        this->to_external_const(*it));
+              zhHx.push_back(this->internal_copy(this->tmp_element()));
+            }
+
+            std::sort(zhHx.begin(), zhHx.end(), InternalLess());
+            if (zhHx_set.find(zhHx) == zhHx_set.end()) {
+              zhHx_set.insert(std::move(zhHx));
+              // push_right_rep and push_right_mult use tmp_element and
+              // tmp_element2
+              Product()(this->to_external(this->tmp_element3()),
+                        this->to_external_const(_right_idem_right_reps[i]),
+                        this->to_external_const(h));
+              Product()(this->to_external(this->tmp_element4()),
+                        this->to_external(this->tmp_element3()),
+                        this->rep());
+
+              Rho()(this->tmp_rho_value(),
+                    this->to_external(this->tmp_element4()));
+              rho_orb_index_type rpos
+                  = this->parent()->_rho_orb.position(this->tmp_rho_value());
+              auto it = _rho_index_positions.find(rpos);
+              if (it == _rho_index_positions.end()) {
+                _rho_index_positions.emplace(
+                    rpos, std::vector<right_indices_index_type>());
+              }
+              _rho_index_positions[rpos].push_back(this->right_reps_size());
+              this->push_right_rep(this->tmp_element4());
+              this->push_right_mult(this->tmp_element3());
+
+              Product()(this->to_external(this->tmp_element()),
+                        this->to_external_const(right_idem_right_mult),
+                        this->to_external_const(
+                            _right_idem_class->cbegin_right_mults_inv()[i]));
+              Product()(this->to_external(this->tmp_element2()),
+                        this->to_external(this->tmp_element()),
+                        this->to_external_const(_right_idem_right_reps[i]));
+
+              this->parent()->group_inverse(
+                  this->tmp_element3(), _right_idem_above, h);
+              this->parent()->group_inverse(this->tmp_element4(),
+                                            _right_idem_above,
+                                            this->tmp_element2());
+              Product()(this->to_external(this->tmp_element()),
+                        this->to_external(this->tmp_element3()),
+                        this->to_external(this->tmp_element4()));
+
+              Product()(this->to_external(this->tmp_element2()),
+                        this->to_external_const(right_idem_right_mult),
+                        this->to_external_const(
+                            _right_idem_class->cbegin_right_mults_inv()[i]));
+              Product()(this->to_external(this->tmp_element3()),
+                        this->to_external(this->tmp_element()),
+                        this->to_external(this->tmp_element2()));
+              this->push_right_mult_inv(this->tmp_element3());
+            } else {
+              InternalVecFree()(zhHx);
+            }
+          }
+          hHx_set.insert(std::move(hHx));
         } else {
           InternalVecFree()(hHx);
-          continue;
         }
+        hHx.clear();
+      }
 
-        for (size_t i = 0; i < _right_idem_right_reps.size(); ++i) {
-          static std::vector<internal_element_type> zhHx;
-          zhHx.clear();
-          for (auto it = hHx.cbegin(); it < hHx.cend(); ++it) {
-            Product()(this->to_external(this->tmp_element()),
-                      this->to_external_const(_right_idem_right_reps[i]),
-                      this->to_external_const(*it));
-            zhHx.push_back(this->internal_copy(this->tmp_element()));
-          }
-
-          std::sort(zhHx.begin(), zhHx.end(), InternalLess());
-          if (zhHx_set.find(zhHx) == zhHx_set.end()) {
-            zhHx_set.insert(std::move(zhHx));
-            // push_right_rep and push_right_mult use tmp_element and
-            // tmp_element2
-            Product()(this->to_external(this->tmp_element3()),
-                      this->to_external_const(_right_idem_right_reps[i]),
-                      this->to_external_const(h));
-            Product()(this->to_external(this->tmp_element4()),
-                      this->to_external(this->tmp_element3()),
-                      this->rep());
-
-            Rho()(this->tmp_rho_value(),
-                  this->to_external(this->tmp_element4()));
-            rho_orb_index_type rpos
-                = this->parent()->_rho_orb.position(this->tmp_rho_value());
-            auto it = _rho_index_positions.find(rpos);
-            if (it == _rho_index_positions.end()) {
-              _rho_index_positions.emplace(
-                  rpos, std::vector<right_indices_index_type>());
-            }
-            _rho_index_positions[rpos].push_back(this->right_reps_size());
-            this->push_right_rep(this->tmp_element4());
-            this->push_right_mult(this->tmp_element3());
-
-            Product()(this->to_external(this->tmp_element()),
-                      this->to_external_const(right_idem_right_mult),
-                      this->to_external_const(
-                          _right_idem_class->cbegin_right_mults_inv()[i]));
-            Product()(this->to_external(this->tmp_element2()),
-                      this->to_external(this->tmp_element()),
-                      this->to_external_const(_right_idem_right_reps[i]));
-
-            this->parent()->group_inverse(
-                this->tmp_element3(), _right_idem_above, h);
-            this->parent()->group_inverse(
-                this->tmp_element4(), _right_idem_above, this->tmp_element2());
-            Product()(this->to_external(this->tmp_element()),
-                      this->to_external(this->tmp_element3()),
-                      this->to_external(this->tmp_element4()));
-
-            Product()(this->to_external(this->tmp_element2()),
-                      this->to_external_const(right_idem_right_mult),
-                      this->to_external_const(
-                          _right_idem_class->cbegin_right_mults_inv()[i]));
-            Product()(this->to_external(this->tmp_element3()),
-                      this->to_external(this->tmp_element()),
-                      this->to_external(this->tmp_element2()));
-            this->push_right_mult_inv(this->tmp_element3());
-          } else {
-            InternalVecFree()(zhHx);
-          }
-        }
-        InternalVecFree()(hHx);
+      for (auto it = hHx_set.begin(); it != hHx_set.end(); ++it) {
+        InternalVecFree()(*it);
       }
 
       for (auto it = zhHx_set.begin(); it != zhHx_set.end(); ++it) {
@@ -2107,8 +2110,8 @@ namespace libsemigroups {
     std::set<size_t> ranks;
     size_t           max_rank = 0;
     ranks.insert(0);
-    internal_element_type y = this->internal_copy(_one);
-    RegularDClass* top = new RegularDClass(this, y);
+    internal_element_type y   = this->internal_copy(_one);
+    RegularDClass*        top = new RegularDClass(this, y);
     add_D_class(top);
     for (internal_reference x : top->covering_reps()) {
       size_t rnk = Rank()(this->to_external_const(x));
@@ -2165,9 +2168,9 @@ namespace libsemigroups {
         std::pair<internal_element_type, D_class_index_type> tup(_one, 0);
 
         if (reps_are_reg) {
-          tup = next_reps.back();
+          tup                     = next_reps.back();
           internal_element_type y = this->find_idem(tup.first);
-          D   = new RegularDClass(this, y);
+          D                       = new RegularDClass(this, y);
           add_D_class(static_cast<RegularDClass*>(D));
           this->internal_free(tup.first);
           for (internal_reference x : D->covering_reps()) {
