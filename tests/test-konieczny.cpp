@@ -29,7 +29,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "000",
                           "regular elements and idempotents",
-                          "[quick]") {
+                          "[quick][no-valgrind]") {
     const std::vector<BMat8> gens
         = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}),
@@ -130,7 +130,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "004",
                           "regular D class 04: contains",
-                          "[quick]") {
+                          "[quick][no-valgrind]") {
     const std::vector<BMat8> gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
@@ -755,7 +755,7 @@ namespace libsemigroups {
     }
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Konieczny", "008", "full bmat monoid 4", "[quick]") {
+  LIBSEMIGROUPS_TEST_CASE("Konieczny", "008", "full bmat monoid 4", "[quick][no-valgrind]") {
     const std::vector<BMat8> bmat4_gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{1, 1, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 1}, {0, 0, 1, 1}}),
@@ -852,7 +852,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "010",
                           "regular generated bmat monoid 4 idempotents",
-                          "[quick]") {
+                          "[quick][no-valgrind]") {
     const std::vector<BMat8> reg_bmat4_gens
         = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}),
@@ -927,7 +927,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "012",
                           "my favourite example",
-                          "[quick][finite]") {
+                          "[quick][finite][no-valgrind]") {
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0, 0, 0, 0, 0, 0},
                                             {0, 0, 0, 0, 0, 0, 0, 1},
                                             {0, 0, 1, 0, 0, 0, 0, 0},
@@ -1000,7 +1000,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "013",
                           "another large example",
-                          "[quick]") {
+                          "[quick][no-valgrind]") {
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0, 0, 0, 0, 0, 0},
                                             {0, 0, 0, 0, 0, 1, 0, 0},
                                             {0, 0, 0, 0, 0, 1, 0, 0},
@@ -1155,7 +1155,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "016",
                           "transformations - JDM favourite example",
-                          "[quick]") {
+                          "[quick][no-valgrind]") {
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({1, 7, 2, 6, 0, 4, 1, 5}),
          Transformation<uint_fast8_t>({2, 4, 6, 1, 4, 5, 2, 7}),
@@ -1184,7 +1184,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "018",
                           "non-pointer BooleanMat",
-                          "[quick][boolmat][booleanmat]") {
+                          "[quick][boolmat][booleanmat][no-valgrind]") {
     std::vector<BooleanMat> gens = {
         BooleanMat({{1, 0, 0, 0}, {0, 0, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 0}}),
         BooleanMat({{1, 0, 0, 1}, {1, 0, 0, 1}, {1, 1, 1, 1}, {0, 1, 1, 0}}),
@@ -1206,6 +1206,113 @@ namespace libsemigroups {
          Transformation<uint_fast8_t>({1, 0, 7, 2, 1, 3, 1, 3, 7}),
          Transformation<uint_fast8_t>({0, 3, 8, 1, 2, 8, 1, 7, 0}),
          Transformation<uint_fast8_t>({0, 0, 0, 2, 7, 7, 5, 5, 3})});
+    REQUIRE(S.size() == 232511);
+  }
+  
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "020",
+                          "transformations - large example with stop",
+                          "[standard][no-valgrind]") {
+    Konieczny<Transformation<uint_fast8_t>> S(
+        {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
+         Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
+         Transformation<uint_fast8_t>({1, 0, 7, 2, 1, 3, 1, 3, 7}),
+         Transformation<uint_fast8_t>({0, 3, 8, 1, 2, 8, 1, 7, 0}),
+         Transformation<uint_fast8_t>({0, 0, 0, 2, 7, 7, 5, 5, 3})});
+    S.run_for(std::chrono::milliseconds(100));
+    REQUIRE(S.size() == 232511);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "021",
+                          "regular generated bmat monoid 5 with stops",
+                          "[extreme]") {
+    const std::vector<BMat8> reg_bmat5_gens = {BMat8({{0, 1, 0, 0, 0},
+                                                      {1, 0, 0, 0, 0},
+                                                      {0, 0, 1, 0, 0},
+                                                      {0, 0, 0, 1, 0},
+                                                      {0, 0, 0, 0, 1}}),
+                                               BMat8({{0, 1, 0, 0, 0},
+                                                      {0, 0, 1, 0, 0},
+                                                      {0, 0, 0, 1, 0},
+                                                      {0, 0, 0, 0, 1},
+                                                      {1, 0, 0, 0, 0}}),
+                                               BMat8({{1, 0, 0, 0, 0},
+                                                      {1, 1, 0, 0, 0},
+                                                      {0, 0, 1, 0, 0},
+                                                      {0, 0, 0, 1, 0},
+                                                      {0, 0, 0, 0, 1}}),
+                                               BMat8({{0, 0, 0, 0, 0},
+                                                      {0, 1, 0, 0, 0},
+                                                      {0, 0, 1, 0, 0},
+                                                      {0, 0, 0, 1, 0},
+                                                      {0, 0, 0, 0, 1}})};
+
+    Konieczny<BMat8>T(reg_bmat5_gens);
+    T.run_for(std::chrono::milliseconds(4000));
+    size_t nr_classes = T.cend_D_classes() - T.cbegin_D_classes();
+    REQUIRE(nr_classes > 0);
+    T.run_for(std::chrono::milliseconds(2000));
+    REQUIRE(T.cend_D_classes() - T.cbegin_D_classes() > nr_classes);
+
+    REQUIRE(T.size() == 32311832);
+
+    size_t reg_elts = 0;
+    for (auto it = T.cbegin_regular_D_classes();
+         it < T.cend_regular_D_classes();
+         ++it) {
+      reg_elts += (*it)->size();
+    }
+    REQUIRE(reg_elts == 8683982);
+
+    size_t idems = 0;
+    for (auto it = T.cbegin_regular_D_classes();
+         it < T.cend_regular_D_classes();
+         ++it) {
+      idems += (*it)->nr_idempotents();
+    }
+    REQUIRE(idems == 73023);
+  }
+  
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "022",
+                          "transformations - large example with run_until",
+                          "[standard][no-valgrind]") {
+    Konieczny<Transformation<uint_fast8_t>> S(
+        {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
+         Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
+         Transformation<uint_fast8_t>({1, 0, 7, 2, 1, 3, 1, 3, 7}),
+         Transformation<uint_fast8_t>({0, 3, 8, 1, 2, 8, 1, 7, 0}),
+         Transformation<uint_fast8_t>({0, 0, 0, 2, 7, 7, 5, 5, 3})});
+    S.run_until([&S]() -> bool {return S.cend_D_classes() - S.cbegin_D_classes() > 20;});
+    
+    size_t nr_classes1 = S.cend_D_classes() - S.cbegin_D_classes();
+    REQUIRE(nr_classes1 >= 20);
+    S.run();
+    size_t nr_classes2 = S.cend_D_classes() - S.cbegin_D_classes();
+    REQUIRE(S.size() == 232511);
+    REQUIRE(nr_classes1 < nr_classes2);
+    REQUIRE(nr_classes2 == 2122);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "023",
+                          "transformations - large example with stop in Action",
+                          "[standard][no-valgrind]") {
+    Konieczny<Transformation<uint_fast8_t>> S(
+        {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
+         Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
+         Transformation<uint_fast8_t>({1, 0, 7, 2, 1, 3, 1, 3, 7}),
+         Transformation<uint_fast8_t>({0, 3, 8, 1, 2, 8, 1, 7, 0}),
+         Transformation<uint_fast8_t>({0, 0, 0, 2, 7, 7, 5, 5, 3})});
+    S.run_for(std::chrono::milliseconds(5));
+    S.run_for(std::chrono::milliseconds(5));
+    S.run_for(std::chrono::milliseconds(5));
+    S.run_for(std::chrono::milliseconds(100));
+    S.run_for(std::chrono::milliseconds(100));
+    S.run();
+    S.run_for(std::chrono::milliseconds(100));
+    S.run_for(std::chrono::milliseconds(100));
     REQUIRE(S.size() == 232511);
   }
 }  // namespace libsemigroups
