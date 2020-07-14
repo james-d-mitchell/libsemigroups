@@ -1246,7 +1246,7 @@ namespace libsemigroups {
     REQUIRE(S.size() == 597369);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("FroidurePin",
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "019",
                           "non-pointer BooleanMat",
                           "[quick][froidure-pin][boolmat][booleanmat]") {
@@ -1260,7 +1260,7 @@ namespace libsemigroups {
     REQUIRE(S.size() == 26);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("FroidurePin",
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "020",
                           "non-pointer BooleanMat",
                           "[quick][froidure-pin][boolmat][booleanmat]") {
@@ -1276,7 +1276,7 @@ namespace libsemigroups {
     REQUIRE(S.size() == 415);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("FroidurePin",
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "021",
                           "non-pointer BooleanMat",
                           "[extreme][froidure-pin][boolmat][booleanmat]") {
