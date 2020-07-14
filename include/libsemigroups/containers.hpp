@@ -699,6 +699,31 @@ namespace libsemigroups {
         return _array.cbegin() + _size;
       }
 
+      inline iterator erase(iterator first, iterator last) {
+        iterator const old_end = end();
+        std::copy(last, end(), first);
+        _size -= std::distance(first, last);
+        return (last == old_end ? end(): first + 1);
+      }
+
+      inline void resize(size_t count) {
+        LIBSEMIGROUPS_ASSERT(count < N);
+        if (count >= _size) {
+          for (auto it = begin() + _size; it < begin() + (count - _size); ++it) {
+            *it = T();
+          }
+        }
+        _size = count;
+      }
+
+      T& operator[](size_t pos) {
+        return _array[pos];
+      }
+
+      T const& operator[](size_t pos) const {
+        return _array[pos];
+      }
+
      private:
       std::array<T, N> _array;
       size_t           _size;

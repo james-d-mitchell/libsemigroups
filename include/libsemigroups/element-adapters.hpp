@@ -273,6 +273,26 @@ namespace libsemigroups {
     }
   };
 
+  //! Specialization of the adapter EqualTo for pointers to subclasses of
+  //! Element.
+  //!
+  //! \sa EqualTo.
+  template <typename TSubclass>
+  struct EqualTo<
+      TSubclass*,
+      typename std::enable_if<
+          std::is_base_of<libsemigroups::Element, TSubclass>::value>::type> {
+    //! Tests equality of two const Element pointers via equality of the
+    //! Elements they point to.
+    bool operator()(TSubclass const* x, TSubclass const* y) const {
+      return *x == *y;
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////////////
+  // PartialPerm
+  ////////////////////////////////////////////////////////////////////////
+
   //! Specialization of the adapter ImageRightAction for instance of
   //! PartialPerm.
   // Slowest
@@ -353,42 +373,78 @@ namespace libsemigroups {
     }
   };
 
-  //! Specialization of the adapter EqualTo for pointers to subclasses of
-  //! Element.
-  //!
-  //! \sa EqualTo.
-  template <typename TSubclass>
-  struct EqualTo<
-      TSubclass*,
-      typename std::enable_if<
-          std::is_base_of<libsemigroups::Element, TSubclass>::value>::type> {
-    //! Tests equality of two const Element pointers via equality of the
-    //! Elements they point to.
-    bool operator()(TSubclass const* x, TSubclass const* y) const {
-      return *x == *y;
+
+  ////////////////////////////////////////////////////////////////////////
+  // Transformation
+  ////////////////////////////////////////////////////////////////////////
+
+  // Equivalent to OnSets in GAP
+  // Slowest
+  // works for T = std::vector and T = StaticVector1
+  template <typename S, typename T>
+  struct ImageRightAction<Transformation<S>, T> {
+    void operator()(T& res, T const& pt, Transformation<S> const& x) const {
+      res.clear();
+      for (auto i : pt) {
+        res.push_back(x[i]);
+      }
+      std::sort(res.begin(), res.end());
+      res.erase(std::unique(res.begin(), res.end()), res.end());
+    }
+
+    T operator()(T const& pt, Transformation<S> const& x) const {
+      T     res;
+      this->operator()(res, pt, x);
+      return res;
     }
   };
 
-  //! Specialization of the adapter ImageRightAction for instances of
-  //! Permutation.
-  //!
-  //! \sa ImageRightAction.
-  template <typename TIntType>
-  struct ImageRightAction<
-      Permutation<TIntType>,
-      TIntType,
-      typename std::enable_if<std::is_integral<TIntType>::value>::type> {
-    //! Stores the image of \p pt under the action of \p p in \p res.
-    void operator()(TIntType&                    res,
-                    TIntType const&              pt,
-                    Permutation<TIntType> const& p) const noexcept {
-      LIBSEMIGROUPS_ASSERT(pt < p.degree());
-      res = p[pt];
+  // Fastest, but limited to at most degree 64
+  template <typename TIntType, size_t N>
+  struct ImageRightAction<Transformation<TIntType>, BitSet<N>> {
+    void operator()(BitSet<N>&                   res,
+                    BitSet<N> const&             pt,
+                    Transformation<TIntType> const& x) const {
+      res.reset();
+      // Apply the lambda to every set bit in pt
+      pt.apply([&x, &res](size_t i) {
+        res.set(x[i]);
+      });
+    }
+  };
+
+  // OnKernelAntiAction
+  template <typename S, typename T>
+  struct ImageLeftAction<Transformation<S>, T> {
+    void operator()(T&          res,
+                    T const&    pt,
+                    Transformation<S> const& x) const {
+      res.clear();
+      res.resize(x.degree());
+      static thread_local std::vector<S> buf;
+      buf.clear();
+      buf.resize(x.degree(), S(UNDEFINED));
+      S              next = 0;
+
+      for (size_t i = 0; i < res.size(); ++i) {
+        if (buf[pt[x[i]]] == UNDEFINED) {
+          buf[pt[x[i]]] = next++;
+        }
+        res[i] = buf[pt[x[i]]];
+      }
     }
 
-    //! Returns the image of \p pt under the action of \p p.
-    TIntType operator()(TIntType const pt, Permutation<TIntType> const& x) {
-      return x[pt];
+    T operator()(T const& pt, Transformation<S> const& x) const {
+      T     res;
+      this->operator()(res, pt, x);
+      return res;
+    }
+  };
+
+  template <typename TIntType>
+  struct Rank<Transformation<TIntType>> {
+    size_t operator()(Transformation<TIntType> const& x) {
+      return x.crank();
     }
   };
 
@@ -400,8 +456,8 @@ namespace libsemigroups {
   struct Lambda<Transformation<TIntType>> {
     using result_type = std::vector<TIntType>;
     // TODO(now) noexcept
-    void operator()(result_type&          res,
-                    Transformation<TIntType> const& x) const {
+    void operator()(result_type& res, Transformation<TIntType> const& x) const {
+
       res.clear();
       res.resize(x.degree());
       for (size_t i = 0; i < res.size(); ++i) {
@@ -445,60 +501,36 @@ namespace libsemigroups {
     }
   };
 
-  // OnSets
+  ////////////////////////////////////////////////////////////////////////
+  // Permutation
+  ////////////////////////////////////////////////////////////////////////
+
+  //! Specialization of the adapter ImageRightAction for instances of
+  //! Permutation.
+  //!
+  //! \sa ImageRightAction.
   template <typename TIntType>
-  struct ImageRightAction<Transformation<TIntType>, std::vector<TIntType>> {
-    void operator()(std::vector<TIntType>&          res,
-                    std::vector<TIntType> const&    pt,
-                    Transformation<TIntType> const& x) const {
-      res.clear();
-      for (auto i : pt) {
-        res.push_back(x[i]);
-      }
-      std::sort(res.begin(), res.end());
-      res.erase(std::unique(res.begin(), res.end()), res.end());
+  struct ImageRightAction<
+      Permutation<TIntType>,
+      TIntType,
+      typename std::enable_if<std::is_integral<TIntType>::value>::type> {
+    //! Stores the image of \p pt under the action of \p p in \p res.
+    void operator()(TIntType&                    res,
+                    TIntType const&              pt,
+                    Permutation<TIntType> const& p) const noexcept {
+      LIBSEMIGROUPS_ASSERT(pt < p.degree());
+      res = p[pt];
     }
-    std::vector<TIntType> operator()(std::vector<TIntType> const&    pt,
-                                     Transformation<TIntType> const& x) const {
-      std::vector<TIntType> res;
-      this->                operator()(res, pt, x);
-      return res;
+
+    //! Returns the image of \p pt under the action of \p p.
+    TIntType operator()(TIntType const pt, Permutation<TIntType> const& x) {
+      return x[pt];
     }
   };
 
-  // OnKernelAntiAction
-  template <typename TIntType>
-  struct ImageLeftAction<Transformation<TIntType>, std::vector<TIntType>> {
-    void operator()(std::vector<TIntType>&          res,
-                    std::vector<TIntType> const&    pt,
-                    Transformation<TIntType> const& x) const {
-      res.clear();
-      res.resize(x.degree());
-      std::vector<TIntType> buf(x.degree(), TIntType(UNDEFINED));
-      TIntType              next = 0;
-
-      for (size_t i = 0; i < res.size(); ++i) {
-        if (buf[pt[x[i]]] == UNDEFINED) {
-          buf[pt[x[i]]] = next++;
-        }
-        res[i] = buf[pt[x[i]]];
-      }
-    }
-
-    std::vector<TIntType> operator()(std::vector<TIntType> const&    pt,
-                                     Transformation<TIntType> const& x) const {
-      std::vector<TIntType> res;
-      this->                operator()(res, pt, x);
-      return res;
-    }
-  };
-
-  template <typename TIntType>
-  struct Rank<Transformation<TIntType>> {
-    size_t operator()(Transformation<TIntType> const& x) {
-      return x.crank();
-    }
-  };
+  ////////////////////////////////////////////////////////////////////////
+  // BooleanMat
+  ////////////////////////////////////////////////////////////////////////
 
   // TODO this involves lots of copying
   template <>
@@ -563,7 +595,7 @@ namespace libsemigroups {
   struct ImageLeftAction<BooleanMat, std::vector<std::vector<bool>>> {
     void operator()(std::vector<std::vector<bool>>&       res,
                     std::vector<std::vector<bool>> const& pt,
-                    BooleanMat const&                     x) const noexcept {
+                    BooleanMat const&                     x) const {
       BooleanMat transpose = x.transpose();
       ImageRightAction<BooleanMat, std::vector<std::vector<bool>>>()(
           res, pt, transpose);
