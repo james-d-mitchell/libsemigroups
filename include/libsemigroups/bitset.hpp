@@ -234,6 +234,10 @@ namespace libsemigroups {
                                           0x8000000000000000};
     mutable block_type        _block;
   };
+
+  template <size_t N>
+  constexpr uint64_t BitSet<N>::MASK[64];
+
 }  // namespace libsemigroups
 
 namespace std {

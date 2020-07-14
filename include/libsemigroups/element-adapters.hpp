@@ -288,6 +288,7 @@ namespace libsemigroups {
   };
 
   // Faster than the above, but slower than the below
+  // works for T = std::vector and T = StaticVector1
   template <typename S, typename T>
   struct ImageRightAction<PartialPerm<S>, T> {
     void operator()(T& res, T const& pt, PartialPerm<S> const& x) const {
@@ -333,8 +334,16 @@ namespace libsemigroups {
     }
   };
 
-  // Faster than the above, but slower than the below
+  // Fastest when used with BitSet<N>.
   // works for T = std::vector and T = BitSet<N>
+  // Using BitSet<N> limits this to size 64. However, if we are trying to
+  // compute a LeftAction object, then the max size of such is 2 ^ 64, which is
+  // probably not achievable. So, for higher degrees, we will only be able to
+  // compute relatively sparse LeftActions (i.e. not containing the majority of
+  // the 2 ^ n possible subsets), in which case using vectors or
+  // StaticVector1's might be not be appreciable slower anyway. All of this is
+  // to say that it probably isn't worthwhile trying to make BitSet's work for
+  // more than 64 bits.
   template <typename S, typename T>
   struct ImageLeftAction<PartialPerm<S>, T> {
     void operator()(T& res, T const& pt, PartialPerm<S> const& x) const {
@@ -343,26 +352,6 @@ namespace libsemigroups {
       ImageRightAction<PartialPerm<S>, T>()(res, pt, xx);
     }
   };
-
-  // Fastest, but limited to at most degree 64
-  // template <typename TIntType, size_t N>
-  // struct ImageLeftAction<PartialPerm<TIntType>, BitSet<N>> {
-  //   void operator()(BitSet<N>&                   res,
-  //                   BitSet<N> const&             pt,
-  //                   PartialPerm<TIntType> const& x) const {
-  //     res.reset();
-  //     // Apply the lambda to every set bit in pt
-  //     // for (TIntType i = 0; i < x.degree(); ++i) {
-  //     //  if (x[i] != UNDEFINED && pt[x[i]]) {
-  //     //    res.set(i);
-  //     //  }
-  //     // }
-  //     // The approach below seems to be marginally faster than the one above,
-  //     // but both are slower than ImageRightAction (slightly less than 2
-  //     times) static PartialPerm<TIntType> xx; x.inverse(xx);
-  //     ImageRightAction<PartialPerm<S>, T>()(
-  //         res, pt, xx);
-  // };
 
   //! Specialization of the adapter EqualTo for pointers to subclasses of
   //! Element.
@@ -403,14 +392,16 @@ namespace libsemigroups {
     }
   };
 
+  // TODO(now) make one of these for Permutations
   // TODO use the final template parameter
   // TODO remove code duplication, Lambda = ImageRightAction(res, x,
   // identity_transformation);
   template <typename TIntType>
   struct Lambda<Transformation<TIntType>> {
     using result_type = std::vector<TIntType>;
-    void operator()(std::vector<TIntType>&          res,
-                    Transformation<TIntType> const& x) const noexcept {
+    // TODO(now) noexcept
+    void operator()(result_type&          res,
+                    Transformation<TIntType> const& x) const {
       res.clear();
       res.resize(x.degree());
       for (size_t i = 0; i < res.size(); ++i) {
@@ -419,7 +410,8 @@ namespace libsemigroups {
       std::sort(res.begin(), res.end());
       res.erase(std::unique(res.begin(), res.end()), res.end());
     }
-    std::vector<TIntType> operator()(Transformation<TIntType> const& x) const {
+
+    result_type operator()(Transformation<TIntType> const& x) const {
       std::vector<TIntType> res;
       this->                operator()(res, x);
       return res;
