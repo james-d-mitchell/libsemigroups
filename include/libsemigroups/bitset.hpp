@@ -26,18 +26,17 @@
 #ifndef LIBSEMIGROUPS_BITSET_HPP_
 #define LIBSEMIGROUPS_BITSET_HPP_
 
-#include <utility> // for hash
-#include <climits> // for CHAR_BIT
+#include <climits>  // for CHAR_BIT
+#include <utility>  // for hash
 
-#include "libsemigroups-debug.hpp" // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups-debug.hpp"  // for LIBSEMIGROUPS_ASSERT
 
 namespace libsemigroups {
 
   // T = type of integers
   template <size_t N>
   class BitSet {
-    static_assert(N <= 64,
-                  "BitSet does not support more than 64 entries");
+    static_assert(N <= 64, "BitSet does not support more than 64 entries");
 
    public:
     using block_type = typename std::conditional<
@@ -49,7 +48,7 @@ namespace libsemigroups {
             typename std::conditional<N <= 32, uint_fast32_t, uint64_t>::type>::
             type>::type;
 
-    BitSet() noexcept = default;
+    BitSet() noexcept              = default;
     BitSet(BitSet const&) noexcept = default;
     BitSet(BitSet&&) noexcept      = default;
     BitSet& operator=(BitSet const&) noexcept = default;
@@ -96,7 +95,9 @@ namespace libsemigroups {
       return *this;
     }
 
-    BitSet& set(size_t const first, size_t const last, bool const value) noexcept {
+    BitSet& set(size_t const first,
+                size_t const last,
+                bool const   value) noexcept {
       LIBSEMIGROUPS_ASSERT(first < N);
       LIBSEMIGROUPS_ASSERT(last <= N);
       LIBSEMIGROUPS_ASSERT(first < last);
@@ -159,7 +160,7 @@ namespace libsemigroups {
    private:
     void clear_hi_bits() const noexcept {
       size_t s = (sizeof(block_type) * CHAR_BIT) - N;
-      _block = (_block << s) >> s;
+      _block   = (_block << s) >> s;
     }
 
     constexpr block_type mask(size_t const i) const noexcept {
@@ -231,7 +232,7 @@ namespace libsemigroups {
                                           0x2000000000000000,
                                           0x4000000000000000,
                                           0x8000000000000000};
-    mutable block_type _block;
+    mutable block_type        _block;
   };
 }  // namespace libsemigroups
 

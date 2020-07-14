@@ -141,7 +141,7 @@ namespace libsemigroups {
 
   // TODO(now) improve!
   namespace boolmat_helpers {
-  std::vector<std::vector<bool>>
+    std::vector<std::vector<bool>>
     rows_basis(std::vector<std::vector<bool>>& rows) {
       std::vector<std::vector<bool>> out;
       if (rows.empty()) {

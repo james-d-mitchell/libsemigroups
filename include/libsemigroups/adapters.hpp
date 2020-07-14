@@ -514,7 +514,6 @@ namespace libsemigroups {
     }
   };
 
-
   /////////////////////////////////////////////////////////////////////
   // KONIECZNY THINGS
   /////////////////////////////////////////////////////////////////////
@@ -528,7 +527,7 @@ namespace libsemigroups {
   template <typename TElementType, typename = void>
   struct Rank;
 
-  //TODO: not sure this is strictly necessary
+  // TODO: not sure this is strictly necessary
   template <typename TPointType, typename = void>
   struct ToInt;
 
@@ -550,7 +549,7 @@ namespace libsemigroups {
       return hash;
     }
   };
-  
+
   template <>
   struct Hash<std::vector<bool>> {
     //! This call operator hashes \p x using std::hash<TValueType>.
@@ -562,7 +561,7 @@ namespace libsemigroups {
       return VecHash<bool>()(x);
     }
   };
-  
+
   template <>
   struct Hash<std::vector<std::vector<bool>>> {
     //! This call operator hashes \p x using std::hash<TValueType>.
@@ -575,11 +574,11 @@ namespace libsemigroups {
     }
   };
 
-  //TODO: not sure this is strictly necessary
+  // TODO: not sure this is strictly necessary
   template <typename TElementType, typename TPointType, typename = void>
   struct InverseLambda;
 
-  //TODO: not sure this is strictly necessary
+  // TODO: not sure this is strictly necessary
   template <typename TElementType, typename TPointType, typename = void>
   struct InverseRho;
 

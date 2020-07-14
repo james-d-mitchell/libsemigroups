@@ -746,7 +746,8 @@ namespace libsemigroups {
   struct ImageLeftAction<BMat8, BMat8> {
     //! Changes \p res in place to hold the image of \p pt under the left
     //! action of \p x.
-    void operator()(BMat8& res, BMat8 const& pt, BMat8 const& x) const noexcept {
+    void operator()(BMat8& res, BMat8 const& pt, BMat8 const& x) const
+        noexcept {
       res = (x * pt).col_space_basis();
     }
   };
@@ -795,8 +796,8 @@ namespace libsemigroups {
       res = x.col_space_basis();
     }
 
-    //! Returns the rho value of \p x as used in the Konieczny algorithm; for BMat8
-    //! this is the column space basis.
+    //! Returns the rho value of \p x as used in the Konieczny algorithm; for
+    //! BMat8 this is the column space basis.
     inline BMat8 operator()(BMat8 const& x) const noexcept {
       return x.col_space_basis();
     }
@@ -809,8 +810,7 @@ namespace libsemigroups {
   template <>
   struct InverseLambda<BMat8, BMat8> {
     //! Returns a BMat8 with row basis \p pt.
-    BMat8 operator()(BMat8 const& pt) const
-        noexcept {
+    BMat8 operator()(BMat8 const& pt) const noexcept {
       return pt;
     }
   };
@@ -822,8 +822,7 @@ namespace libsemigroups {
   template <>
   struct InverseRho<BMat8, BMat8> {
     //! Returns a BMat8 with column basis \p pt.
-    BMat8 operator()(BMat8 const& pt) const
-        noexcept {
+    BMat8 operator()(BMat8 const& pt) const noexcept {
       return pt;
     }
   };

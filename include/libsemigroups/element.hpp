@@ -40,8 +40,8 @@
 #include "containers.hpp"               // for detail::DynamicArray2
 #include "libsemigroups-debug.hpp"      // for LIBSEMIGROUPS_ASSERT
 #include "libsemigroups-exception.hpp"  // for LIBSEMIGROUPS_EXCEPTION
-#include "string.hpp"                   // for to_string
 #include "semiring.hpp"                 // for Semiring
+#include "string.hpp"                   // for to_string
 
 namespace libsemigroups {
   // Forward declarations
@@ -1433,7 +1433,6 @@ namespace libsemigroups {
         return _degree;
       }
 
-
       //! Returns the identity matrix with dimension of \c this.
       //!
       //! This member function returns a new matrix with dimension equal to that
@@ -1686,7 +1685,6 @@ namespace libsemigroups {
     }
   };
 
-
   //! Matrices over the boolean semiring.
   //!
   //! A *boolean matrix* is a square matrix over the boolean semiring, under
@@ -1721,7 +1719,7 @@ namespace libsemigroups {
     //! A debug constructor.
     //!
     //! Constructs a boolean matrix of degree 4
-   // BooleanMat();
+    // BooleanMat();
 
     //! A copy constructor.
     BooleanMat(BooleanMat const&);
@@ -1743,10 +1741,10 @@ namespace libsemigroups {
     //  this->_hash_value = std::hash<std::vector<bool>>{}(this->_vector);
     // }
 
-    BooleanMat transpose() const;
+    BooleanMat                     transpose() const;
     std::vector<std::vector<bool>> rows() const;
     std::vector<std::vector<bool>> row_space_basis() const;
-    size_t row_space_size() const;
+    size_t                         row_space_size() const;
 
    private:
     // This constructor only exists to make the empty_key member function for

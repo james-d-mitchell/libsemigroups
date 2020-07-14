@@ -21,7 +21,7 @@
 
 #include "libsemigroups/action.hpp"
 #include "libsemigroups/bmat8.hpp"
-#include "libsemigroups/element-adapters.hpp" // for Degree etc
+#include "libsemigroups/element-adapters.hpp"  // for Degree etc
 #include "libsemigroups/element-helper.hpp"
 #include "libsemigroups/element.hpp"
 #include "libsemigroups/hpcombi.hpp"
@@ -272,7 +272,7 @@ namespace libsemigroups {
                           "006",
                           "orbits for regular boolean mat monoid 6",
                           "[extreme]") {
-    //auto                     rg             = ReportGuard(REPORT);
+    // auto                     rg             = ReportGuard(REPORT);
     const std::vector<BMat8> reg_bmat6_gens = {BMat8({{0, 1, 0, 0, 0, 0},
                                                       {1, 0, 0, 0, 0, 0},
                                                       {0, 0, 1, 0, 0, 0},
@@ -303,7 +303,7 @@ namespace libsemigroups {
     for (BMat8 g : reg_bmat6_gens) {
       row_orb.add_generator(g);
     }
-    //row_orb.run_for(std::chrono::milliseconds(500));
+    // row_orb.run_for(std::chrono::milliseconds(500));
 
     REQUIRE(row_orb.size() == 37977468);
   }

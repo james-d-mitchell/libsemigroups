@@ -19,9 +19,9 @@
 #include <cstddef>  // for size_t
 #include <vector>   // for vector
 
-#include "catch.hpp"                          // for REQUIRE
+#include "catch.hpp"                           // for REQUIRE
 #include "libsemigroups/element-adapters.hpp"  // for Product etc
-#include "libsemigroups/element.hpp"          // for BooleanMat
+#include "libsemigroups/element.hpp"           // for BooleanMat
 #include "libsemigroups/froidure-pin.hpp"  // for FroidurePin<>::element_index_type
 #include "libsemigroups/semiring.hpp"      // for BooleanSemiring
 #include "test-main.hpp"                   // for LIBSEMIGROUPS_TEST_CASE
@@ -36,11 +36,13 @@ namespace libsemigroups {
                           "016",
                           "non-pointer BooleanMat",
                           "[quick][froidure-pin][boolmat][booleanmat]") {
-
     FroidurePin<BooleanMat> S;
-    S.add_generator(BooleanMat({0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0}));
-    S.add_generator(BooleanMat({0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1}));
-    S.add_generator(BooleanMat({0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1}));
+    S.add_generator(
+        BooleanMat({0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0}));
+    S.add_generator(
+        BooleanMat({0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1}));
+    S.add_generator(
+        BooleanMat({0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1}));
 
     S.reserve(26);
     auto rg = ReportGuard(REPORT);

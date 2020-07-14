@@ -698,7 +698,7 @@ namespace libsemigroups {
                   this->to_external_const(x));
         LIBSEMIGROUPS_ASSERT(Lambda()(this->to_external(_tmp_element))
                              == Lambda()(this->to_external_const(
-                                    _left_reps[_left_mults.size() - 1])));
+                                 _left_reps[_left_mults.size() - 1])));
       }
       if (_left_mults_inv.size() >= _left_mults.size()) {
         Product()(this->to_external(_tmp_element),
@@ -745,7 +745,7 @@ namespace libsemigroups {
                   this->to_external_const(_rep));
         LIBSEMIGROUPS_ASSERT(Rho()(this->to_external(_tmp_element))
                              == Rho()(this->to_external_const(
-                                    _right_reps[_right_mults.size() - 1])));
+                                 _right_reps[_right_mults.size() - 1])));
       }
       if (_right_mults_inv.size() >= _right_mults.size()) {
         Product()(this->to_external(_tmp_element),
@@ -1132,7 +1132,7 @@ namespace libsemigroups {
                = this->parent()->_rho_orb.digraph().cbegin_scc(rval_scc_id);
                !found
                && it2 < this->parent()->_rho_orb.digraph().cend_scc(
-                            rval_scc_id);
+                      rval_scc_id);
                it2++) {
             Product()(this->to_external(this->tmp_element2()),
                       this->parent()->_rho_orb.multiplier_from_scc_root(*it2),

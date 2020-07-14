@@ -624,9 +624,8 @@ namespace libsemigroups {
     // Currently only supports N x N 2-dimensional static vectors
     template <typename T, size_t N>
     class StaticVector1 final {
-      public:
-      StaticVector1() : _array(), _size(0) {
-      }
+     public:
+      StaticVector1() : _array(), _size(0) {}
 
       StaticVector1(StaticVector1 const&) = default;
       StaticVector1(StaticVector1&&)      = default;
@@ -649,7 +648,6 @@ namespace libsemigroups {
         _size = 0;
       }
 
-
       // Not noexcept because std::array::operator[] isn't
       void push_back(T x) {
         LIBSEMIGROUPS_ASSERT(_size < N);
@@ -669,7 +667,7 @@ namespace libsemigroups {
         return _array[_size - 1];
       }
 
-      using iterator = typename std::array<T, N>::iterator;
+      using iterator       = typename std::array<T, N>::iterator;
       using const_iterator = typename std::array<T, N>::const_iterator;
 
       // TODO(now) Noexcept?
@@ -856,7 +854,7 @@ namespace libsemigroups {
 
 namespace std {
   template <typename T, size_t N>
-      struct hash < libsemigroups::detail::StaticVector1<T, N>> {
+  struct hash<libsemigroups::detail::StaticVector1<T, N>> {
     size_t
     operator()(libsemigroups::detail::StaticVector1<T, N> const& sv) const {
       size_t seed = 0;
