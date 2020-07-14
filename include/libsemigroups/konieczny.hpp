@@ -37,8 +37,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <iostream>
-
 #include "action.hpp"
 #include "bruidhinn-traits.hpp"  // for BruidhinnTraits
 #include "constants.hpp"
@@ -391,12 +389,32 @@ namespace libsemigroups {
 
     // TODO: these shouldn't be accessible like this
     // and they shouldn't include the top D class if it's not contained!
-    std::vector<RegularDClass*> regular_D_classes() {
-      return _regular_D_classes;
-    }
-
     std::vector<BaseDClass*> D_classes() {
       return _D_classes;
+    }
+
+    typename std::vector<RegularDClass*>::const_iterator cbegin_regular_D_classes() {
+      auto it = _regular_D_classes.cbegin();
+      if (!_adjoined_identity_contained) {
+        it++;
+      }
+      return it;
+    }
+    
+    typename std::vector<RegularDClass*>::const_iterator cend_regular_D_classes() {
+      return _regular_D_classes.cend();
+    }
+    
+    typename std::vector<NonRegularDClass*>::const_iterator cbegin_D_classes() {
+      auto it = _D_classes.cbegin();
+      if (!_adjoined_identity_contained) {
+        it++;
+      }
+      return it;
+    }
+    
+    typename std::vector<NonRegularDClass*>::const_iterator cend_D_classes() {
+      return _D_classes.cend();
     }
 
     size_t size();
@@ -1077,10 +1095,10 @@ namespace libsemigroups {
     size_t nr_idempotents() {
       init();
       size_t count = 0;
-      for (auto it = cbegin_left_indices(); it < cend_left_indices(); ++it) {
-        for (auto it2 = cbegin_right_indices(); it2 < cend_right_indices();
+      for (auto it = _left_idem_reps.cbegin(); it < _left_idem_reps.cend(); ++it) {
+        for (auto it2 = _right_idem_reps.cbegin(); it2 < _right_idem_reps.cend();
              ++it2) {
-          if (this->parent->is_group_index(*it2, *it)) {
+          if (this->parent()->is_group_index(*it2, *it)) {
             count++;
           }
         }
