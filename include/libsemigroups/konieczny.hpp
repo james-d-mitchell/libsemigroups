@@ -25,7 +25,6 @@
 // TODO(now):
 // 1) more reporting
 // 2) BruidhinnTraits
-// 3) free everything that needs to be freed!
 
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 #define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
@@ -44,7 +43,6 @@
 #include "libsemigroups-debug.hpp"      // for LIBSEMIGROUPS_ASSERT
 #include "libsemigroups-exception.hpp"  // for LIBSEMIGROUPS_ASSERT
 
-// TODO: copying?
 // TODO: profiling
 
 namespace libsemigroups {
@@ -248,7 +246,7 @@ namespace libsemigroups {
       _tmp_rho_value1 = Lambda()(gens[0]);
       _tmp_rho_value2 = Lambda()(gens[0]);
 
-      _gens.push_back(_one);  // TODO: maybe not this
+      _gens.push_back(_one);  // TODO(later): maybe not this
 
       _nonregular_reps = std::vector<
           std::vector<std::pair<internal_element_type, D_class_index_type>>>(
@@ -265,7 +263,7 @@ namespace libsemigroups {
     void run_impl() override;
     bool finished_impl() const override;
 
-    // TODO: it must be possible to do better than this
+    // TODO(later): it must be possible to do better than this
     void idem_in_H_class(internal_element_type&   res,
                          internal_const_reference bm) {
       this->to_external(res) = this->to_external_const(bm);
@@ -445,8 +443,8 @@ namespace libsemigroups {
       _lambda_orb.run_until([this]() -> bool { return this->stopped(); });
       _rho_orb.run_until([this]() -> bool { return this->stopped(); });
       REPORT_DEFAULT("Found %llu lambda-values and %llu rho-values in %s\n",
-                     _lambda_orb.size(),
-                     _rho_orb.size(),
+                     _lambda_orb.current_size(),
+                     _rho_orb.current_size(),
                      t.string());
     }
 
@@ -2136,6 +2134,9 @@ namespace libsemigroups {
     }
     // compute orbits TODO: make that stoppable as well
     compute_orbs();
+    if (stopped()) {
+      return;
+    }
     _ranks.insert(0);
     internal_element_type y   = this->internal_copy(_one);
     RegularDClass*        top = new RegularDClass(this, y);
@@ -2163,21 +2164,25 @@ namespace libsemigroups {
         }
       }
     }
+
     _initialised = true;
   }
 
   template <typename TElementType, typename TTraits>
   void Konieczny<TElementType, TTraits>::run_impl() {
     init();
-    size_t max_rank;
+    if (!_initialised) {
+      LIBSEMIGROUPS_ASSERT(stopped());
+      return;
+    }
+
     std::vector<std::pair<internal_element_type, D_class_index_type>> next_reps;
     std::vector<std::pair<internal_element_type, D_class_index_type>> tmp_next;
     std::vector<std::pair<internal_element_type, D_class_index_type>> tmp;
-    // TODO(now): use stopped
-    while (*_ranks.rbegin() > 0 && !stopped()) {
+    while (!stopped()  && *_ranks.rbegin() > 0) {
       next_reps.clear();
-      size_t reps_are_reg = false;
-      max_rank            = *_ranks.rbegin();
+      bool   reps_are_reg        = false;
+      size_t max_rank            = *_ranks.rbegin();
       if (!_reg_reps[max_rank].empty()) {
         reps_are_reg = true;
         next_reps    = std::move(_reg_reps[max_rank]);

@@ -35,7 +35,7 @@ namespace libsemigroups {
            BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}),
            BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {1, 0, 0, 1}}),
            BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 0}})};
-    Konieczny<BMat8> KS(gens);
+    Konieczny<BMat8>   KS(gens);
     FroidurePin<BMat8> S(gens);
     S.run();
 
@@ -157,7 +157,7 @@ namespace libsemigroups {
                           "005",
                           "non-regular D classes 01",
                           "[quick]") {
-    const std::vector<BMat8> gens = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
+    const std::vector<BMat8> gens  = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                      BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                      BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
                                      BMat8({{1, 1, 0}, {0, 1, 1}, {1, 0, 1}})};
@@ -171,7 +171,7 @@ namespace libsemigroups {
                                       BMat8({{1, 1, 0}, {1, 1, 0}, {1, 1, 1}}),
                                       BMat8({{1, 1, 1}, {1, 1, 1}, {1, 1, 1}})};
 
-    Konieczny<BMat8>         KS(gens);
+    Konieczny<BMat8> KS(gens);
     KS.run();
 
     REQUIRE(KS.cend_regular_D_classes() - KS.cbegin_regular_D_classes()
@@ -263,7 +263,7 @@ namespace libsemigroups {
            BMat8({{1, 1, 1, 1}, {0, 1, 1, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}}),
            BMat8({{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}}),
            BMat8({{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}})};
-    
+
     Konieczny<BMat8> KS(gens);
     KS.run();
 
@@ -742,7 +742,7 @@ namespace libsemigroups {
 
     Konieczny<BMat8> KS(gens);
     KS.run();
-    BMat8            idem = BMat8({{1, 0, 1}, {0, 1, 0}, {1, 0, 1}});
+    BMat8 idem = BMat8({{1, 0, 1}, {0, 1, 0}, {1, 0, 1}});
     Konieczny<BMat8>::RegularDClass D
         = Konieczny<BMat8>::RegularDClass(&KS, idem);
     for (auto it = D.cbegin_left_reps(); it < D.cend_left_reps(); it++) {
@@ -755,7 +755,10 @@ namespace libsemigroups {
     }
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Konieczny", "008", "full bmat monoid 4", "[quick][no-valgrind]") {
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "008",
+                          "full bmat monoid 4",
+                          "[quick][no-valgrind]") {
     const std::vector<BMat8> bmat4_gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{1, 1, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 1}, {0, 0, 1, 1}}),
@@ -845,7 +848,7 @@ namespace libsemigroups {
                                                   {0, 1, 0, 0, 1},
                                                   {0, 0, 1, 1, 1}})};
 
-    Konieczny<BMat8>T(bmat5_gens);
+    Konieczny<BMat8> T(bmat5_gens);
     REQUIRE(T.size() == 33554432);
   }
 
@@ -904,7 +907,7 @@ namespace libsemigroups {
                                                       {0, 0, 0, 1, 0},
                                                       {0, 0, 0, 0, 1}})};
 
-    Konieczny<BMat8>T(reg_bmat5_gens);
+    Konieczny<BMat8> T(reg_bmat5_gens);
     REQUIRE(T.size() == 32311832);
 
     size_t reg_elts = 0;
@@ -1208,7 +1211,7 @@ namespace libsemigroups {
          Transformation<uint_fast8_t>({0, 0, 0, 2, 7, 7, 5, 5, 3})});
     REQUIRE(S.size() == 232511);
   }
-  
+
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "020",
                           "transformations - large example with stop",
@@ -1248,7 +1251,7 @@ namespace libsemigroups {
                                                       {0, 0, 0, 1, 0},
                                                       {0, 0, 0, 0, 1}})};
 
-    Konieczny<BMat8>T(reg_bmat5_gens);
+    Konieczny<BMat8> T(reg_bmat5_gens);
     T.run_for(std::chrono::milliseconds(4000));
     size_t nr_classes = T.cend_D_classes() - T.cbegin_D_classes();
     REQUIRE(nr_classes > 0);
@@ -1273,7 +1276,7 @@ namespace libsemigroups {
     }
     REQUIRE(idems == 73023);
   }
-  
+
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "022",
                           "transformations - large example with run_until",
@@ -1284,8 +1287,10 @@ namespace libsemigroups {
          Transformation<uint_fast8_t>({1, 0, 7, 2, 1, 3, 1, 3, 7}),
          Transformation<uint_fast8_t>({0, 3, 8, 1, 2, 8, 1, 7, 0}),
          Transformation<uint_fast8_t>({0, 0, 0, 2, 7, 7, 5, 5, 3})});
-    S.run_until([&S]() -> bool {return S.cend_D_classes() - S.cbegin_D_classes() > 20;});
-    
+    S.run_until([&S]() -> bool {
+      return S.cend_D_classes() - S.cbegin_D_classes() > 20;
+    });
+
     size_t nr_classes1 = S.cend_D_classes() - S.cbegin_D_classes();
     REQUIRE(nr_classes1 >= 20);
     S.run();
@@ -1314,5 +1319,92 @@ namespace libsemigroups {
     S.run_for(std::chrono::milliseconds(100));
     S.run_for(std::chrono::milliseconds(100));
     REQUIRE(S.size() == 232511);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "024",
+                          "full bmat monoid 5 with stop in Action",
+                          "[extreme]") {
+    const std::vector<BMat8> bmat5_gens = {BMat8({{1, 0, 0, 0, 0},
+                                                  {0, 1, 0, 0, 0},
+                                                  {0, 0, 1, 0, 0},
+                                                  {0, 0, 0, 1, 0},
+                                                  {0, 0, 0, 0, 1}}),
+                                           BMat8({{0, 1, 0, 0, 0},
+                                                  {0, 0, 1, 0, 0},
+                                                  {0, 0, 0, 1, 0},
+                                                  {0, 0, 0, 0, 1},
+                                                  {1, 0, 0, 0, 0}}),
+                                           BMat8({{0, 1, 0, 0, 0},
+                                                  {1, 0, 0, 0, 0},
+                                                  {0, 0, 1, 0, 0},
+                                                  {0, 0, 0, 1, 0},
+                                                  {0, 0, 0, 0, 1}}),
+                                           BMat8({{1, 0, 0, 0, 0},
+                                                  {0, 1, 0, 0, 0},
+                                                  {0, 0, 1, 0, 0},
+                                                  {0, 0, 0, 1, 0},
+                                                  {1, 0, 0, 0, 1}}),
+                                           BMat8({{1, 1, 0, 0, 0},
+                                                  {1, 0, 1, 0, 0},
+                                                  {0, 1, 0, 1, 0},
+                                                  {0, 0, 1, 1, 0},
+                                                  {0, 0, 0, 0, 1}}),
+                                           BMat8({{1, 1, 0, 0, 0},
+                                                  {1, 0, 1, 0, 0},
+                                                  {0, 1, 1, 0, 0},
+                                                  {0, 0, 0, 1, 0},
+                                                  {0, 0, 0, 0, 1}}),
+                                           BMat8({{1, 1, 1, 0, 0},
+                                                  {1, 0, 0, 1, 0},
+                                                  {0, 1, 0, 1, 0},
+                                                  {0, 0, 1, 1, 0},
+                                                  {0, 0, 0, 0, 1}}),
+                                           BMat8({{1, 1, 0, 0, 0},
+                                                  {1, 0, 1, 0, 0},
+                                                  {0, 1, 0, 1, 0},
+                                                  {0, 0, 1, 0, 1},
+                                                  {0, 0, 0, 1, 1}}),
+                                           BMat8({{1, 1, 1, 1, 0},
+                                                  {1, 0, 0, 0, 1},
+                                                  {0, 1, 0, 0, 1},
+                                                  {0, 0, 1, 0, 1},
+                                                  {0, 0, 0, 1, 1}}),
+                                           BMat8({{1, 0, 0, 0, 0},
+                                                  {0, 1, 0, 0, 0},
+                                                  {0, 0, 1, 0, 0},
+                                                  {0, 0, 0, 1, 0},
+                                                  {0, 0, 0, 0, 0}}),
+                                           BMat8({{1, 1, 1, 0, 0},
+                                                  {1, 0, 0, 1, 0},
+                                                  {0, 1, 0, 1, 0},
+                                                  {0, 0, 1, 0, 1},
+                                                  {0, 0, 0, 1, 1}}),
+                                           BMat8({{1, 1, 1, 0, 0},
+                                                  {1, 0, 0, 1, 0},
+                                                  {1, 0, 0, 0, 1},
+                                                  {0, 1, 0, 1, 0},
+                                                  {0, 0, 1, 0, 1}}),
+                                           BMat8({{1, 1, 1, 0, 0},
+                                                  {1, 0, 0, 1, 1},
+                                                  {0, 1, 0, 1, 0},
+                                                  {0, 1, 0, 0, 1},
+                                                  {0, 0, 1, 1, 0}}),
+                                           BMat8({{1, 1, 1, 0, 0},
+                                                  {1, 1, 0, 1, 0},
+                                                  {1, 0, 0, 0, 1},
+                                                  {0, 1, 0, 0, 1},
+                                                  {0, 0, 1, 1, 1}})};
+
+    Konieczny<BMat8> T(bmat5_gens);
+    T.run_for(std::chrono::milliseconds(100));
+    T.run_for(std::chrono::milliseconds(100));
+    T.run_for(std::chrono::milliseconds(100));
+    T.run_for(std::chrono::milliseconds(100));
+    T.run_for(std::chrono::milliseconds(100));
+    T.run();
+    T.run_for(std::chrono::milliseconds(100));
+    T.run_for(std::chrono::milliseconds(100));
+    REQUIRE(T.size() == 33554432);
   }
 }  // namespace libsemigroups
