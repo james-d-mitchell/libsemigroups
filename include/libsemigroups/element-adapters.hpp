@@ -373,7 +373,6 @@ namespace libsemigroups {
     }
   };
 
-
   ////////////////////////////////////////////////////////////////////////
   // Transformation
   ////////////////////////////////////////////////////////////////////////
@@ -402,29 +401,25 @@ namespace libsemigroups {
   // Fastest, but limited to at most degree 64
   template <typename TIntType, size_t N>
   struct ImageRightAction<Transformation<TIntType>, BitSet<N>> {
-    void operator()(BitSet<N>&                   res,
-                    BitSet<N> const&             pt,
+    void operator()(BitSet<N>&                      res,
+                    BitSet<N> const&                pt,
                     Transformation<TIntType> const& x) const {
       res.reset();
       // Apply the lambda to every set bit in pt
-      pt.apply([&x, &res](size_t i) {
-        res.set(x[i]);
-      });
+      pt.apply([&x, &res](size_t i) { res.set(x[i]); });
     }
   };
 
   // OnKernelAntiAction
   template <typename S, typename T>
   struct ImageLeftAction<Transformation<S>, T> {
-    void operator()(T&          res,
-                    T const&    pt,
-                    Transformation<S> const& x) const {
+    void operator()(T& res, T const& pt, Transformation<S> const& x) const {
       res.clear();
       res.resize(x.degree());
       static thread_local std::vector<S> buf;
       buf.clear();
       buf.resize(x.degree(), S(UNDEFINED));
-      S              next = 0;
+      S next = 0;
 
       for (size_t i = 0; i < res.size(); ++i) {
         if (buf[pt[x[i]]] == UNDEFINED) {
@@ -457,7 +452,6 @@ namespace libsemigroups {
     using result_type = std::vector<TIntType>;
     // TODO(now) noexcept
     void operator()(result_type& res, Transformation<TIntType> const& x) const {
-
       res.clear();
       res.resize(x.degree());
       for (size_t i = 0; i < res.size(); ++i) {
@@ -562,12 +556,13 @@ namespace libsemigroups {
     }
   };
 
-  // TODO: remove noexcepts from all of these
   template <>
   struct ImageRightAction<BooleanMat, std::vector<std::vector<bool>>> {
+    // TODO(now): noexcept
     void operator()(std::vector<std::vector<bool>>&       res,
                     std::vector<std::vector<bool>> const& pt,
-                    BooleanMat const&                     x) const noexcept {
+
+                    BooleanMat const& x) const {
       std::vector<std::vector<bool>> out;
       for (auto it = pt.cbegin(); it < pt.cend(); ++it) {
         std::vector<bool> cup(x.degree(), false);
@@ -582,6 +577,69 @@ namespace libsemigroups {
       }
       res = boolmat_helpers::rows_basis(out);
     }
+
+    std::vector<std::vector<bool>>
+    operator()(std::vector<std::vector<bool>> const& pt,
+               BooleanMat const&                     x) const {
+      std::vector<std::vector<bool>> res;
+      this->                         operator()(res, pt, x);
+      return res;
+    }
+  };
+
+  struct Compare {
+    template <typename T>
+    bool operator()(T const& x, T const& y) const noexcept {
+      return x.count() > y.count();
+    }
+  };
+
+  template <typename T>
+  struct ImageRightAction<BooleanMat, T> {
+    // TODO(now): noexcept
+    void operator()(T& res, T const& pt, BooleanMat const& x) const {
+      using value_type = typename T::value_type;
+      T buf;
+      // buf.clear();
+      res.clear();
+
+      for (auto v : pt) {
+        value_type cup;
+        cup.reset();
+        v.apply([&x, &cup](size_t i) {
+          for (size_t j = 0; j < x.degree(); ++j) {
+            cup.set(j, cup[j] || x[i * x.degree() + j]);
+          }
+        });
+        res.push_back(std::move(cup));
+      }
+      std::sort(res.begin(), res.end());
+      // Remove duplicates
+      res.erase(std::unique(res.begin(), res.end()), res.end());
+      // Sort by size (largest to smallest)
+      // std::sort(res.begin(), res.end(), Compare());
+      size_t const res_size = res.size();
+      for (size_t i = 0; i < res_size; ++i) {
+        value_type cup;
+        cup.reset();
+        for (size_t j = 0; j < i; ++j) {
+          if ((res[i] & res[j]) == res[j]) {
+            cup |= res[j];
+          }
+        }
+        for (size_t j = i + 1; j < res_size; ++j) {
+          if ((res[i] & res[j]) == res[j]) {
+            cup |= res[j];
+          }
+        }
+        if (cup != res[i]) {
+          buf.push_back(std::move(res[i]));
+        }
+      }
+      // res.erase(res.begin(), res.begin() + res_size);
+      std::swap(buf, res);
+    }
+
     std::vector<std::vector<bool>>
     operator()(std::vector<std::vector<bool>> const& pt,
                BooleanMat const&                     x) const {
@@ -600,6 +658,7 @@ namespace libsemigroups {
       ImageRightAction<BooleanMat, std::vector<std::vector<bool>>>()(
           res, pt, transpose);
     }
+
     std::vector<std::vector<bool>>
     operator()(std::vector<std::vector<bool>> const& pt,
                BooleanMat const&                     x) const {

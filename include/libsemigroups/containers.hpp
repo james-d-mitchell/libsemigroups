@@ -625,6 +625,14 @@ namespace libsemigroups {
     template <typename T, size_t N>
     class StaticVector1 final {
      public:
+      using value_type      = typename std::array<T, N>::value_type;
+      using reference       = typename std::array<T, N>::reference;
+      using const_reference = typename std::array<T, N>::const_reference;
+      using difference_type = typename std::array<T, N>::difference_type;
+      using size_type       = typename std::array<T, N>::size_type;
+      using const_pointer   = typename std::array<T, N>::const_pointer;
+      using pointer         = typename std::array<T, N>::pointer;
+
       StaticVector1() : _array(), _size(0) {}
 
       StaticVector1(StaticVector1 const&) = default;
@@ -703,13 +711,14 @@ namespace libsemigroups {
         iterator const old_end = end();
         std::copy(last, end(), first);
         _size -= std::distance(first, last);
-        return (last == old_end ? end(): first + 1);
+        return (last == old_end ? end() : first + 1);
       }
 
       inline void resize(size_t count) {
         LIBSEMIGROUPS_ASSERT(count < N);
         if (count >= _size) {
-          for (auto it = begin() + _size; it < begin() + (count - _size); ++it) {
+          for (auto it = begin() + _size; it < begin() + (count - _size);
+               ++it) {
             *it = T();
           }
         }

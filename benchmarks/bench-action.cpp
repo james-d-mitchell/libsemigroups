@@ -123,12 +123,9 @@ namespace libsemigroups {
   template <typename T>
   void transf_example2(T& o) {
     using Transf = Transformation<uint_fast8_t>;
-    o.add_generator(
-        Transf({1, 2, 3, 4, 5, 6, 7, 8, 9, 0}));
-    o.add_generator(
-        Transf({1, 0, 2, 3, 4, 5, 6, 7, 8, 9}));
-    o.add_generator(
-        Transf({0, 0, 2, 3, 4, 5, 6, 7, 8, 9}));
+    o.add_generator(Transf({1, 2, 3, 4, 5, 6, 7, 8, 9, 0}));
+    o.add_generator(Transf({1, 0, 2, 3, 4, 5, 6, 7, 8, 9}));
+    o.add_generator(Transf({0, 0, 2, 3, 4, 5, 6, 7, 8, 9}));
   }
 
   template <typename T>
@@ -143,25 +140,25 @@ namespace libsemigroups {
     o.add_generator(
         BooleanMat({{0, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}));*/
     o.add_generator(BMat({{0, 1, 0, 0, 0},
-                                {1, 0, 0, 0, 0},
-                                {0, 0, 1, 0, 0},
-                                {0, 0, 0, 1, 0},
-                                {0, 0, 0, 0, 1}}));
+                          {1, 0, 0, 0, 0},
+                          {0, 0, 1, 0, 0},
+                          {0, 0, 0, 1, 0},
+                          {0, 0, 0, 0, 1}}));
     o.add_generator(BMat({{0, 1, 0, 0, 0},
-                                {0, 0, 1, 0, 0},
-                                {0, 0, 0, 1, 0},
-                                {0, 0, 0, 0, 1},
-                                {1, 0, 0, 0, 0}}));
+                          {0, 0, 1, 0, 0},
+                          {0, 0, 0, 1, 0},
+                          {0, 0, 0, 0, 1},
+                          {1, 0, 0, 0, 0}}));
     o.add_generator(BMat({{1, 0, 0, 0, 0},
-                                {0, 1, 0, 0, 0},
-                                {0, 0, 1, 0, 0},
-                                {0, 0, 0, 1, 0},
-                                {1, 0, 0, 0, 1}}));
+                          {0, 1, 0, 0, 0},
+                          {0, 0, 1, 0, 0},
+                          {0, 0, 0, 1, 0},
+                          {1, 0, 0, 0, 1}}));
     o.add_generator(BMat({{1, 0, 0, 0, 0},
-                                {0, 1, 0, 0, 0},
-                                {0, 0, 1, 0, 0},
-                                {0, 0, 0, 1, 0},
-                                {0, 0, 0, 0, 0}}));
+                          {0, 1, 0, 0, 0},
+                          {0, 0, 1, 0, 0},
+                          {0, 0, 0, 1, 0},
+                          {0, 0, 0, 0, 0}}));
   }
 
   TEST_CASE("Slowest PartialPerm", "[quick][001]") {
@@ -325,7 +322,7 @@ namespace libsemigroups {
 
     BENCHMARK("BitSets") {
       RightAction<Transf, BitSet<17>, ImageRightAction<Transf, BitSet<17>>> o;
-      BitSet<17> sd;
+      BitSet<17>                                                            sd;
       sd.set();
       REQUIRE(sd.size() == 17);
       REQUIRE(sd.count() == 17);
@@ -341,8 +338,8 @@ namespace libsemigroups {
     using Transf   = Transformation<int_type>;
     BENCHMARK("vectors") {
       LeftAction<Transf,
-                  std::vector<int_type>,
-                  ImageLeftAction<Transf, std::vector<int_type>>>
+                 std::vector<int_type>,
+                 ImageLeftAction<Transf, std::vector<int_type>>>
           o;
       o.add_seed({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
       transf_example2(o);
@@ -350,8 +347,8 @@ namespace libsemigroups {
     };
     BENCHMARK("array/StaticVector1") {
       LeftAction<Transf,
-                  detail::StaticVector1<int_type, 10>,
-                  ImageLeftAction<Transf, detail::StaticVector1<int_type, 10>>>
+                 detail::StaticVector1<int_type, 10>,
+                 ImageLeftAction<Transf, detail::StaticVector1<int_type, 10>>>
           o;
       o.add_seed({0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
       transf_example2(o);
@@ -360,11 +357,46 @@ namespace libsemigroups {
   }
 
   TEST_CASE("ImageRightAction for boolean mats", "[quick][008]") {
-    auto rg        = ReportGuard(false);
+    auto rg = ReportGuard(false);
+    BENCHMARK("StaticVector1 of BitSets") {
+      RightAction<
+          BooleanMat,
+          detail::StaticVector1<BitSet<5>, 5>,
+          ImageRightAction<BooleanMat, detail::StaticVector1<BitSet<5>, 5>>>
+                                           o;
+      detail::StaticVector1<BitSet<5>, 5> seed;
+      for (size_t i = 0; i < 5; ++i) {
+        BitSet<5> x;
+        x.reset();
+        x.set(i);
+        seed.push_back(x);
+      }
+      o.add_seed(seed);
+      booleanmat_example1(o);
+      REQUIRE(o.size() == 110518);
+    };
+
+    BENCHMARK("vectors of BitSets") {
+      RightAction<BooleanMat,
+                  std::vector<BitSet<5>>,
+                  ImageRightAction<BooleanMat, std::vector<BitSet<5>>>>
+                             o;
+      std::vector<BitSet<5>> seed;
+      for (size_t i = 0; i < 5; ++i) {
+        BitSet<5> x;
+        x.reset();
+        x.set(i);
+        seed.push_back(x);
+      }
+      o.add_seed(seed);
+      booleanmat_example1(o);
+      REQUIRE(o.size() == 110518);
+    };
+
     BENCHMARK("vectors of vectors") {
       RightAction<BooleanMat,
-                 std::vector<std::vector<bool>>,
-                 ImageRightAction<BooleanMat, std::vector<std::vector<bool>>>>
+                  std::vector<std::vector<bool>>,
+                  ImageRightAction<BooleanMat, std::vector<std::vector<bool>>>>
           o;
       o.add_seed(std::vector<std::vector<bool>>({{1, 0, 0, 0, 0},
                                                  {0, 1, 0, 0, 0},
@@ -377,7 +409,7 @@ namespace libsemigroups {
   }
 
   TEST_CASE("ImageRightAction for BMat8", "[quick][009]") {
-    auto rg        = ReportGuard(false);
+    auto rg = ReportGuard(false);
     BENCHMARK("BMat8") {
       RightAction<BMat8, BMat8, ImageRightAction<BMat8, BMat8>> o;
       o.add_seed(BMat8({{1, 0, 0, 0, 0},

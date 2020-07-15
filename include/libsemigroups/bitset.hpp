@@ -17,11 +17,9 @@
 //
 
 // TODO(now):
-// 1) doc
-// 2) more than 64 points
-// 3) tests
-// 4) IWYU
-// 5) make this intrinsic proof
+// 1) tests
+// 2) IWYU
+// 3) make this intrinsic proof
 
 #ifndef LIBSEMIGROUPS_BITSET_HPP_
 #define LIBSEMIGROUPS_BITSET_HPP_
@@ -55,20 +53,44 @@ namespace libsemigroups {
     BitSet& operator=(BitSet&&) noexcept = default;
     ~BitSet()                            = default;
 
-    size_t size() const noexcept {
+    constexpr size_t size() const noexcept {
       return N;
     }
 
-    bool operator==(BitSet const& that) const noexcept {
+    bool operator<(BitSet const& that) const noexcept {
+      if (size() != that.size()) {
+        return (size() < that.size());
+      }
       clear_hi_bits();
       that.clear_hi_bits();
-      return size() == that.size() && _block == that._block;
+      return _block < that._block;
+    }
+
+    bool operator==(BitSet const& that) const noexcept {
+      if (size() != that.size()) {
+        return false;
+      }
+      clear_hi_bits();
+      that.clear_hi_bits();
+      return _block == that._block;
     }
 
     bool operator!=(BitSet const& that) const noexcept {
       clear_hi_bits();
       that.clear_hi_bits();
       return size() != that.size() || _block != that._block;
+    }
+
+    void operator&=(BitSet const& that) const noexcept {
+      _block &= that._block;
+    }
+
+    BitSet<N> operator&(BitSet const& that) const noexcept {
+      return BitSet(_block & that._block);
+    }
+
+    void operator|=(BitSet const& that) const noexcept {
+      _block |= that._block;
     }
 
     bool test(size_t const pos) const noexcept {
@@ -158,6 +180,8 @@ namespace libsemigroups {
     }
 
    private:
+    explicit BitSet<N>(block_type const block) : _block(block) {}
+
     void clear_hi_bits() const noexcept {
       size_t s = (sizeof(block_type) * CHAR_BIT) - N;
       _block   = (_block << s) >> s;
