@@ -170,38 +170,38 @@ namespace libsemigroups {
     Konieczny<BMat8>::NonRegularDClass X(&KS, non_reg_reps[0]);
     REQUIRE(X.size() == 36);
     REQUIRE(X.size_H_class() == 1);
-    REQUIRE(X.nr_left_reps() == 6);
-    REQUIRE(X.nr_right_reps() == 6);
+    REQUIRE(X.nr_L_classes() == 6);
+    REQUIRE(X.nr_R_classes() == 6);
 
     Konieczny<BMat8>::NonRegularDClass Y(&KS, non_reg_reps[1]);
     REQUIRE(Y.size() == 18);
     REQUIRE(Y.size_H_class() == 1);
-    REQUIRE(Y.nr_left_reps() == 3);
-    REQUIRE(Y.nr_right_reps() == 6);
+    REQUIRE(Y.nr_L_classes() == 3);
+    REQUIRE(Y.nr_R_classes() == 6);
 
     Konieczny<BMat8>::NonRegularDClass Z(&KS, non_reg_reps[2]);
     REQUIRE(Z.size() == 18);
     REQUIRE(Z.size_H_class() == 2);
-    REQUIRE(Z.nr_left_reps() == 3);
-    REQUIRE(Z.nr_right_reps() == 3);
+    REQUIRE(Z.nr_L_classes() == 3);
+    REQUIRE(Z.nr_R_classes() == 3);
 
     Konieczny<BMat8>::NonRegularDClass A(&KS, non_reg_reps[3]);
     REQUIRE(A.size() == 6);
     REQUIRE(A.size_H_class() == 6);
-    REQUIRE(A.nr_left_reps() == 1);
-    REQUIRE(A.nr_right_reps() == 1);
+    REQUIRE(A.nr_L_classes() == 1);
+    REQUIRE(A.nr_R_classes() == 1);
 
     Konieczny<BMat8>::NonRegularDClass B(&KS, non_reg_reps[4]);
     REQUIRE(B.size() == 18);
     REQUIRE(B.size_H_class() == 1);
-    REQUIRE(B.nr_left_reps() == 6);
-    REQUIRE(B.nr_right_reps() == 3);
+    REQUIRE(B.nr_L_classes() == 6);
+    REQUIRE(B.nr_R_classes() == 3);
 
     Konieczny<BMat8>::NonRegularDClass C(&KS, non_reg_reps[5]);
     REQUIRE(C.size() == 9);
     REQUIRE(C.size_H_class() == 1);
-    REQUIRE(C.nr_left_reps() == 3);
-    REQUIRE(C.nr_right_reps() == 3);
+    REQUIRE(C.nr_L_classes() == 3);
+    REQUIRE(C.nr_R_classes() == 3);
 
     for (BMat8 x : non_reg_reps) {
       Konieczny<BMat8>::NonRegularDClass N(&KS, x);
@@ -315,393 +315,393 @@ namespace libsemigroups {
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[0]);
     REQUIRE(X0.size() == 180);
     REQUIRE(X0.size_H_class() == 2);
-    REQUIRE(X0.nr_left_reps() == 2);
-    REQUIRE(X0.nr_right_reps() == 45);
+    REQUIRE(X0.nr_L_classes() == 2);
+    REQUIRE(X0.nr_R_classes() == 45);
 
     Konieczny<BMat8>::NonRegularDClass X1
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[1]);
     REQUIRE(X1.size() == 16);
     REQUIRE(X1.size_H_class() == 1);
-    REQUIRE(X1.nr_left_reps() == 4);
-    REQUIRE(X1.nr_right_reps() == 4);
+    REQUIRE(X1.nr_L_classes() == 4);
+    REQUIRE(X1.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X2
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[2]);
     REQUIRE(X2.size() == 64);
     REQUIRE(X2.size_H_class() == 1);
-    REQUIRE(X2.nr_left_reps() == 4);
-    REQUIRE(X2.nr_right_reps() == 16);
+    REQUIRE(X2.nr_L_classes() == 4);
+    REQUIRE(X2.nr_R_classes() == 16);
 
     Konieczny<BMat8>::NonRegularDClass X3
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[3]);
     REQUIRE(X3.size() == 16);
     REQUIRE(X3.size_H_class() == 1);
-    REQUIRE(X3.nr_left_reps() == 4);
-    REQUIRE(X3.nr_right_reps() == 4);
+    REQUIRE(X3.nr_L_classes() == 4);
+    REQUIRE(X3.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X4
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[4]);
     REQUIRE(X4.size() == 32);
     REQUIRE(X4.size_H_class() == 1);
-    REQUIRE(X4.nr_left_reps() == 4);
-    REQUIRE(X4.nr_right_reps() == 8);
+    REQUIRE(X4.nr_L_classes() == 4);
+    REQUIRE(X4.nr_R_classes() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X5
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[5]);
     REQUIRE(X5.size() == 64);
     REQUIRE(X5.size_H_class() == 2);
-    REQUIRE(X5.nr_left_reps() == 4);
-    REQUIRE(X5.nr_right_reps() == 8);
+    REQUIRE(X5.nr_L_classes() == 4);
+    REQUIRE(X5.nr_R_classes() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X6
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[6]);
     REQUIRE(X6.size() == 16);
     REQUIRE(X6.size_H_class() == 1);
-    REQUIRE(X6.nr_left_reps() == 4);
-    REQUIRE(X6.nr_right_reps() == 4);
+    REQUIRE(X6.nr_L_classes() == 4);
+    REQUIRE(X6.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X7
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[7]);
     REQUIRE(X7.size() == 16);
     REQUIRE(X7.size_H_class() == 1);
-    REQUIRE(X7.nr_left_reps() == 4);
-    REQUIRE(X7.nr_right_reps() == 4);
+    REQUIRE(X7.nr_L_classes() == 4);
+    REQUIRE(X7.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X8
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[8]);
     REQUIRE(X8.size() == 16);
     REQUIRE(X8.size_H_class() == 1);
-    REQUIRE(X8.nr_left_reps() == 4);
-    REQUIRE(X8.nr_right_reps() == 4);
+    REQUIRE(X8.nr_L_classes() == 4);
+    REQUIRE(X8.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X9
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[9]);
     REQUIRE(X9.size() == 16);
     REQUIRE(X9.size_H_class() == 1);
-    REQUIRE(X9.nr_left_reps() == 4);
-    REQUIRE(X9.nr_right_reps() == 4);
+    REQUIRE(X9.nr_L_classes() == 4);
+    REQUIRE(X9.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X10
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[10]);
     REQUIRE(X10.size() == 16);
     REQUIRE(X10.size_H_class() == 1);
-    REQUIRE(X10.nr_left_reps() == 4);
-    REQUIRE(X10.nr_right_reps() == 4);
+    REQUIRE(X10.nr_L_classes() == 4);
+    REQUIRE(X10.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X11
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[11]);
     REQUIRE(X11.size() == 16);
     REQUIRE(X11.size_H_class() == 1);
-    REQUIRE(X11.nr_left_reps() == 4);
-    REQUIRE(X11.nr_right_reps() == 4);
+    REQUIRE(X11.nr_L_classes() == 4);
+    REQUIRE(X11.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X12
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[12]);
     REQUIRE(X12.size() == 16);
     REQUIRE(X12.size_H_class() == 1);
-    REQUIRE(X12.nr_left_reps() == 4);
-    REQUIRE(X12.nr_right_reps() == 4);
+    REQUIRE(X12.nr_L_classes() == 4);
+    REQUIRE(X12.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X13
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[13]);
     REQUIRE(X13.size() == 16);
     REQUIRE(X13.size_H_class() == 1);
-    REQUIRE(X13.nr_left_reps() == 4);
-    REQUIRE(X13.nr_right_reps() == 4);
+    REQUIRE(X13.nr_L_classes() == 4);
+    REQUIRE(X13.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X14
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[14]);
     REQUIRE(X14.size() == 16);
     REQUIRE(X14.size_H_class() == 1);
-    REQUIRE(X14.nr_left_reps() == 4);
-    REQUIRE(X14.nr_right_reps() == 4);
+    REQUIRE(X14.nr_L_classes() == 4);
+    REQUIRE(X14.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X15
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[15]);
     REQUIRE(X15.size() == 16);
     REQUIRE(X15.size_H_class() == 1);
-    REQUIRE(X15.nr_left_reps() == 4);
-    REQUIRE(X15.nr_right_reps() == 4);
+    REQUIRE(X15.nr_L_classes() == 4);
+    REQUIRE(X15.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X16
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[16]);
     REQUIRE(X16.size() == 16);
     REQUIRE(X16.size_H_class() == 1);
-    REQUIRE(X16.nr_left_reps() == 4);
-    REQUIRE(X16.nr_right_reps() == 4);
+    REQUIRE(X16.nr_L_classes() == 4);
+    REQUIRE(X16.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X17
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[17]);
     REQUIRE(X17.size() == 16);
     REQUIRE(X17.size_H_class() == 2);
-    REQUIRE(X17.nr_left_reps() == 2);
-    REQUIRE(X17.nr_right_reps() == 4);
+    REQUIRE(X17.nr_L_classes() == 2);
+    REQUIRE(X17.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X18
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[18]);
     REQUIRE(X18.size() == 32);
     REQUIRE(X18.size_H_class() == 1);
-    REQUIRE(X18.nr_left_reps() == 8);
-    REQUIRE(X18.nr_right_reps() == 4);
+    REQUIRE(X18.nr_L_classes() == 8);
+    REQUIRE(X18.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X19
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[19]);
     REQUIRE(X19.size() == 16);
     REQUIRE(X19.size_H_class() == 1);
-    REQUIRE(X19.nr_left_reps() == 4);
-    REQUIRE(X19.nr_right_reps() == 4);
+    REQUIRE(X19.nr_L_classes() == 4);
+    REQUIRE(X19.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X20
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[20]);
     REQUIRE(X20.size() == 156);
     REQUIRE(X20.size_H_class() == 2);
-    REQUIRE(X20.nr_left_reps() == 39);
-    REQUIRE(X20.nr_right_reps() == 2);
+    REQUIRE(X20.nr_L_classes() == 39);
+    REQUIRE(X20.nr_R_classes() == 2);
 
     Konieczny<BMat8>::NonRegularDClass X21
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[21]);
     REQUIRE(X21.size() == 16);
     REQUIRE(X21.size_H_class() == 1);
-    REQUIRE(X21.nr_left_reps() == 4);
-    REQUIRE(X21.nr_right_reps() == 4);
+    REQUIRE(X21.nr_L_classes() == 4);
+    REQUIRE(X21.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X22
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[22]);
     REQUIRE(X22.size() == 32);
     REQUIRE(X22.size_H_class() == 1);
-    REQUIRE(X22.nr_left_reps() == 4);
-    REQUIRE(X22.nr_right_reps() == 8);
+    REQUIRE(X22.nr_L_classes() == 4);
+    REQUIRE(X22.nr_R_classes() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X23
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[23]);
     REQUIRE(X23.size() == 32);
     REQUIRE(X23.size_H_class() == 1);
-    REQUIRE(X23.nr_left_reps() == 4);
-    REQUIRE(X23.nr_right_reps() == 8);
+    REQUIRE(X23.nr_L_classes() == 4);
+    REQUIRE(X23.nr_R_classes() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X24
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[24]);
     REQUIRE(X24.size() == 16);
     REQUIRE(X24.size_H_class() == 1);
-    REQUIRE(X24.nr_left_reps() == 4);
-    REQUIRE(X24.nr_right_reps() == 4);
+    REQUIRE(X24.nr_L_classes() == 4);
+    REQUIRE(X24.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X25
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[25]);
     REQUIRE(X25.size() == 16);
     REQUIRE(X25.size_H_class() == 1);
-    REQUIRE(X25.nr_left_reps() == 4);
-    REQUIRE(X25.nr_right_reps() == 4);
+    REQUIRE(X25.nr_L_classes() == 4);
+    REQUIRE(X25.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X26
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[26]);
     REQUIRE(X26.size() == 32);
     REQUIRE(X26.size_H_class() == 1);
-    REQUIRE(X26.nr_left_reps() == 4);
-    REQUIRE(X26.nr_right_reps() == 8);
+    REQUIRE(X26.nr_L_classes() == 4);
+    REQUIRE(X26.nr_R_classes() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X27
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[27]);
     REQUIRE(X27.size() == 16);
     REQUIRE(X27.size_H_class() == 1);
-    REQUIRE(X27.nr_left_reps() == 4);
-    REQUIRE(X27.nr_right_reps() == 4);
+    REQUIRE(X27.nr_L_classes() == 4);
+    REQUIRE(X27.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X28
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[28]);
     REQUIRE(X28.size() == 16);
     REQUIRE(X28.size_H_class() == 1);
-    REQUIRE(X28.nr_left_reps() == 4);
-    REQUIRE(X28.nr_right_reps() == 4);
+    REQUIRE(X28.nr_L_classes() == 4);
+    REQUIRE(X28.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X29
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[29]);
     REQUIRE(X29.size() == 16);
     REQUIRE(X29.size_H_class() == 1);
-    REQUIRE(X29.nr_left_reps() == 4);
-    REQUIRE(X29.nr_right_reps() == 4);
+    REQUIRE(X29.nr_L_classes() == 4);
+    REQUIRE(X29.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X30
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[30]);
     REQUIRE(X30.size() == 16);
     REQUIRE(X30.size_H_class() == 1);
-    REQUIRE(X30.nr_left_reps() == 4);
-    REQUIRE(X30.nr_right_reps() == 4);
+    REQUIRE(X30.nr_L_classes() == 4);
+    REQUIRE(X30.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X31
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[31]);
     REQUIRE(X31.size() == 16);
     REQUIRE(X31.size_H_class() == 1);
-    REQUIRE(X31.nr_left_reps() == 4);
-    REQUIRE(X31.nr_right_reps() == 4);
+    REQUIRE(X31.nr_L_classes() == 4);
+    REQUIRE(X31.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X32
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[32]);
     REQUIRE(X32.size() == 32);
     REQUIRE(X32.size_H_class() == 1);
-    REQUIRE(X32.nr_left_reps() == 8);
-    REQUIRE(X32.nr_right_reps() == 4);
+    REQUIRE(X32.nr_L_classes() == 8);
+    REQUIRE(X32.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X33
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[33]);
     REQUIRE(X33.size() == 16);
     REQUIRE(X33.size_H_class() == 1);
-    REQUIRE(X33.nr_left_reps() == 4);
-    REQUIRE(X33.nr_right_reps() == 4);
+    REQUIRE(X33.nr_L_classes() == 4);
+    REQUIRE(X33.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X34
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[34]);
     REQUIRE(X34.size() == 32);
     REQUIRE(X34.size_H_class() == 1);
-    REQUIRE(X34.nr_left_reps() == 8);
-    REQUIRE(X34.nr_right_reps() == 4);
+    REQUIRE(X34.nr_L_classes() == 8);
+    REQUIRE(X34.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X35
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[35]);
     REQUIRE(X35.size() == 32);
     REQUIRE(X35.size_H_class() == 2);
-    REQUIRE(X35.nr_left_reps() == 4);
-    REQUIRE(X35.nr_right_reps() == 4);
+    REQUIRE(X35.nr_L_classes() == 4);
+    REQUIRE(X35.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X36
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[36]);
     REQUIRE(X36.size() == 16);
     REQUIRE(X36.size_H_class() == 1);
-    REQUIRE(X36.nr_left_reps() == 4);
-    REQUIRE(X36.nr_right_reps() == 4);
+    REQUIRE(X36.nr_L_classes() == 4);
+    REQUIRE(X36.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X37
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[37]);
     REQUIRE(X37.size() == 32);
     REQUIRE(X37.size_H_class() == 1);
-    REQUIRE(X37.nr_left_reps() == 8);
-    REQUIRE(X37.nr_right_reps() == 4);
+    REQUIRE(X37.nr_L_classes() == 8);
+    REQUIRE(X37.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X38
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[38]);
     REQUIRE(X38.size() == 16);
     REQUIRE(X38.size_H_class() == 1);
-    REQUIRE(X38.nr_left_reps() == 4);
-    REQUIRE(X38.nr_right_reps() == 4);
+    REQUIRE(X38.nr_L_classes() == 4);
+    REQUIRE(X38.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X39
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[39]);
     REQUIRE(X39.size() == 32);
     REQUIRE(X39.size_H_class() == 1);
-    REQUIRE(X39.nr_left_reps() == 8);
-    REQUIRE(X39.nr_right_reps() == 4);
+    REQUIRE(X39.nr_L_classes() == 8);
+    REQUIRE(X39.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X40
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[40]);
     REQUIRE(X40.size() == 16);
     REQUIRE(X40.size_H_class() == 1);
-    REQUIRE(X40.nr_left_reps() == 4);
-    REQUIRE(X40.nr_right_reps() == 4);
+    REQUIRE(X40.nr_L_classes() == 4);
+    REQUIRE(X40.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X41
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[41]);
     REQUIRE(X41.size() == 16);
     REQUIRE(X41.size_H_class() == 1);
-    REQUIRE(X41.nr_left_reps() == 4);
-    REQUIRE(X41.nr_right_reps() == 4);
+    REQUIRE(X41.nr_L_classes() == 4);
+    REQUIRE(X41.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X42
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[42]);
     REQUIRE(X42.size() == 16);
     REQUIRE(X42.size_H_class() == 1);
-    REQUIRE(X42.nr_left_reps() == 4);
-    REQUIRE(X42.nr_right_reps() == 4);
+    REQUIRE(X42.nr_L_classes() == 4);
+    REQUIRE(X42.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X43
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[43]);
     REQUIRE(X43.size() == 16);
     REQUIRE(X43.size_H_class() == 1);
-    REQUIRE(X43.nr_left_reps() == 4);
-    REQUIRE(X43.nr_right_reps() == 4);
+    REQUIRE(X43.nr_L_classes() == 4);
+    REQUIRE(X43.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X44
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[44]);
     REQUIRE(X44.size() == 16);
     REQUIRE(X44.size_H_class() == 1);
-    REQUIRE(X44.nr_left_reps() == 4);
-    REQUIRE(X44.nr_right_reps() == 4);
+    REQUIRE(X44.nr_L_classes() == 4);
+    REQUIRE(X44.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X45
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[45]);
     REQUIRE(X45.size() == 16);
     REQUIRE(X45.size_H_class() == 1);
-    REQUIRE(X45.nr_left_reps() == 4);
-    REQUIRE(X45.nr_right_reps() == 4);
+    REQUIRE(X45.nr_L_classes() == 4);
+    REQUIRE(X45.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X46
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[46]);
     REQUIRE(X46.size() == 16);
     REQUIRE(X46.size_H_class() == 1);
-    REQUIRE(X46.nr_left_reps() == 4);
-    REQUIRE(X46.nr_right_reps() == 4);
+    REQUIRE(X46.nr_L_classes() == 4);
+    REQUIRE(X46.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X47
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[47]);
     REQUIRE(X47.size() == 16);
     REQUIRE(X47.size_H_class() == 1);
-    REQUIRE(X47.nr_left_reps() == 4);
-    REQUIRE(X47.nr_right_reps() == 4);
+    REQUIRE(X47.nr_L_classes() == 4);
+    REQUIRE(X47.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X48
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[48]);
     REQUIRE(X48.size() == 16);
     REQUIRE(X48.size_H_class() == 1);
-    REQUIRE(X48.nr_left_reps() == 4);
-    REQUIRE(X48.nr_right_reps() == 4);
+    REQUIRE(X48.nr_L_classes() == 4);
+    REQUIRE(X48.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X49
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[49]);
     REQUIRE(X49.size() == 16);
     REQUIRE(X49.size_H_class() == 1);
-    REQUIRE(X49.nr_left_reps() == 4);
-    REQUIRE(X49.nr_right_reps() == 4);
+    REQUIRE(X49.nr_L_classes() == 4);
+    REQUIRE(X49.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X50
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[50]);
     REQUIRE(X50.size() == 16);
     REQUIRE(X50.size_H_class() == 1);
-    REQUIRE(X50.nr_left_reps() == 4);
-    REQUIRE(X50.nr_right_reps() == 4);
+    REQUIRE(X50.nr_L_classes() == 4);
+    REQUIRE(X50.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X51
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[51]);
     REQUIRE(X51.size() == 16);
     REQUIRE(X51.size_H_class() == 2);
-    REQUIRE(X51.nr_left_reps() == 2);
-    REQUIRE(X51.nr_right_reps() == 4);
+    REQUIRE(X51.nr_L_classes() == 2);
+    REQUIRE(X51.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X52
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[52]);
     REQUIRE(X52.size() == 16);
     REQUIRE(X52.size_H_class() == 1);
-    REQUIRE(X52.nr_left_reps() == 4);
-    REQUIRE(X52.nr_right_reps() == 4);
+    REQUIRE(X52.nr_L_classes() == 4);
+    REQUIRE(X52.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X53
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[53]);
     REQUIRE(X53.size() == 16);
     REQUIRE(X53.size_H_class() == 1);
-    REQUIRE(X53.nr_left_reps() == 4);
-    REQUIRE(X53.nr_right_reps() == 4);
+    REQUIRE(X53.nr_L_classes() == 4);
+    REQUIRE(X53.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X54
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[54]);
     REQUIRE(X54.size() == 16);
     REQUIRE(X54.size_H_class() == 1);
-    REQUIRE(X54.nr_left_reps() == 4);
-    REQUIRE(X54.nr_right_reps() == 4);
+    REQUIRE(X54.nr_L_classes() == 4);
+    REQUIRE(X54.nr_R_classes() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X55
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[55]);
     REQUIRE(X55.size() == 8);
     REQUIRE(X55.size_H_class() == 2);
-    REQUIRE(X55.nr_left_reps() == 2);
-    REQUIRE(X55.nr_right_reps() == 2);
+    REQUIRE(X55.nr_L_classes() == 2);
+    REQUIRE(X55.nr_R_classes() == 2);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny", "007", "RegularDClass", "[quick]") {
@@ -718,8 +718,8 @@ namespace libsemigroups {
     BMat8 x = BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 0}});
     Konieczny<BMat8>::RegularDClass D = Konieczny<BMat8>::RegularDClass(&KS, x);
     REQUIRE(D.size() == 90);
-    REQUIRE(D.nr_left_reps() == 5);
-    REQUIRE(D.nr_right_reps() == 9);
+    REQUIRE(D.nr_L_classes() == 5);
+    REQUIRE(D.nr_R_classes() == 9);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny",

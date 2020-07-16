@@ -27,6 +27,7 @@
 // 1) more reporting
 // 2) BruidhinnTraits
 // 3) profiling
+// 4) maps to D classes containing given L/R values
 
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 #define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
@@ -665,7 +666,9 @@ namespace libsemigroups {
   //! A BaseDClass is defined by a pointer to the corresponding Konieczny
   //! object, together with a representative of the D class, but as an abstract
   //! class cannot be directly constructed; instead you should construct a
-  //! RegularDClass or NonRegularDClass.
+  //! RegularDClass or NonRegularDClass. Note that the values returned by calls
+  //! to member functions of BaseDClass and its derived classes are unlikely to
+  //! be correct unless the parent semigroup has been sufficiently enumerated.
   //!
   //! \sa Konieczny, RegularDClass, and NonRegularDClass
   //!
@@ -710,6 +713,9 @@ namespace libsemigroups {
           _tmp_rho_value(Rho()(this->to_external_const(_rep))) {}
 
    public:
+    ////////////////////////////////////////////////////////////////////////
+    // BaseDClass - destructor - public 
+    ////////////////////////////////////////////////////////////////////////
     virtual ~BaseDClass() {
       // the user of _internal_vec/_internal_set is responsible for freeing any
       // necessary elements
@@ -725,6 +731,114 @@ namespace libsemigroups {
       this->internal_free(_tmp_element2);
       this->internal_free(_tmp_element3);
       this->internal_free(_tmp_element4);
+    }
+   
+    ////////////////////////////////////////////////////////////////////////
+    // BaseDClass - member functions - public
+    ////////////////////////////////////////////////////////////////////////
+
+    //! Returns the representative which defines \c this.
+    //!
+    //! The complete frame computed for \c this depends on the choice of
+    //! representative. This function returns the representative used by \c
+    //! this. This may not be the same representative as used to construct \c
+    //! this, but is guaranteed to not change.
+    const_reference rep() const noexcept {
+      return this->to_external_const(_rep);
+    }
+
+    //! Returns whether the element \p x belongs to this D class.
+    //!
+    //! Given an element \p x of the semigroup represented by \c parent, this
+    //! function returns whether \p x is an element of the D class represented
+    //! by \c this. If \p x is not an element of the semigroup, then the
+    //! behaviour is undefined.
+    virtual bool contains(const_reference x) = 0;
+
+    //! Returns whether the element \p x belongs to this D class.
+    //!
+    //! Given an element \p x of the semigroup represented by \c parent, this
+    //! function returns whether \p x is an element of the D class represented
+    //! by \c this. If \p x is not an element of the semigroup, then the
+    //! behaviour is undefined. This overload of BaseDClass::contains is
+    //! provided in order to avoid recalculating the rank of \p x when it is
+    //! already known.
+    bool contains(const_reference x, size_t rank) {
+      return (rank == _rank && contains(x));
+    }
+
+    //! Returns the size of \c this.
+    //!
+    //! This involves computing most of the complete frame for this semigroup.
+    virtual size_t size() {
+      init();
+      return nr_L_classes() * nr_R_classes() * size_H_class();
+    }
+
+    //! Returns the number of L classes in \c this. 
+    //!
+    //! 
+    size_t nr_L_classes() {
+      compute_left_mults();
+      return _left_reps.size();
+    }
+
+    size_t nr_R_classes() {
+      compute_right_mults();
+      return _right_reps.size();
+    }
+
+    size_t size_H_class() {
+      compute_H_class();
+      return _H_class.size();
+    }
+
+    //! Returns the size of \c this.
+    //!
+    //! Returns the size of the D class represented by \c this. This requires
+    //! complete frame for \c this to be computed.
+
+    // uses _tmp_element, tmp_element2 _tmp_element3
+    std::vector<internal_element_type>& covering_reps() {
+      init();
+      _internal_vec.clear();
+      // TODO(later): how to decide which side to calculate? One is often faster
+      if (_parent->_lambda_orb.size() < _parent->_rho_orb.size()) {
+        for (internal_const_reference w : _left_reps) {
+          for (auto it = _parent->cbegin_generators();
+               it < _parent->cend_generators();
+               ++it) {
+            Product()(this->to_external(_tmp_element3),
+                      this->to_external_const(w),
+                      this->to_external_const(*it));
+            // uses _tmp_element, _tmp_element2
+            if (!contains(this->to_external(_tmp_element3))) {
+              _internal_vec.push_back(this->internal_copy(_tmp_element3));
+            }
+          }
+        }
+      } else {
+        for (internal_const_reference z : _right_reps) {
+          for (auto it = _parent->cbegin_generators();
+               it < _parent->cend_generators();
+               ++it) {
+            Product()(this->to_external(_tmp_element3),
+                      this->to_external_const(*it),
+                      this->to_external_const(z));
+            // uses _tmp_element, _tmp_element2
+            if (!contains(this->to_external(_tmp_element3))) {
+              _internal_vec.push_back(this->internal_copy(_tmp_element3));
+            }
+          }
+        }
+      }
+      std::sort(_internal_vec.begin(), _internal_vec.end(), InternalLess());
+      auto it = std::unique(_internal_vec.begin(), _internal_vec.end());
+      for (; it < _internal_vec.end(); ++it) {
+        this->internal_free(*it);
+      }
+      _internal_vec.erase(it, _internal_vec.end());
+      return _internal_vec;
     }
 
    protected:
@@ -812,81 +926,6 @@ namespace libsemigroups {
       return _H_class.cend();
     }
 
-   public:
-    ////////////////////////////////////////////////////////////////////////
-    // BaseDClass - member functions - public
-    ////////////////////////////////////////////////////////////////////////
-    const_reference rep() const noexcept {
-      return this->to_external_const(_rep);
-    }
-
-    virtual bool contains(const_reference bm) = 0;
-
-    bool contains(const_reference bm, size_t rank) {
-      return (rank == _rank && contains(bm));
-    }
-
-    virtual size_t size() {
-      init();
-      return _H_class.size() * _left_reps.size() * _right_reps.size();
-    }
-
-    size_t nr_left_reps() {
-      return _left_reps.size();
-    }
-
-    size_t nr_right_reps() {
-      return _right_reps.size();
-    }
-
-    size_t size_H_class() const {
-      return _H_class.size();
-    }
-
-    // uses _tmp_element, tmp_element2 _tmp_element3
-    std::vector<internal_element_type>& covering_reps() {
-      init();
-      _internal_vec.clear();
-      // TODO(later): how to decide which side to calculate? One is often faster
-      if (_parent->_lambda_orb.size() < _parent->_rho_orb.size()) {
-        for (internal_const_reference w : _left_reps) {
-          for (auto it = _parent->cbegin_generators();
-               it < _parent->cend_generators();
-               ++it) {
-            Product()(this->to_external(_tmp_element3),
-                      this->to_external_const(w),
-                      this->to_external_const(*it));
-            // uses _tmp_element, _tmp_element2
-            if (!contains(this->to_external(_tmp_element3))) {
-              _internal_vec.push_back(this->internal_copy(_tmp_element3));
-            }
-          }
-        }
-      } else {
-        for (internal_const_reference z : _right_reps) {
-          for (auto it = _parent->cbegin_generators();
-               it < _parent->cend_generators();
-               ++it) {
-            Product()(this->to_external(_tmp_element3),
-                      this->to_external_const(*it),
-                      this->to_external_const(z));
-            // uses _tmp_element, _tmp_element2
-            if (!contains(this->to_external(_tmp_element3))) {
-              _internal_vec.push_back(this->internal_copy(_tmp_element3));
-            }
-          }
-        }
-      }
-      std::sort(_internal_vec.begin(), _internal_vec.end(), InternalLess());
-      auto it = std::unique(_internal_vec.begin(), _internal_vec.end());
-      for (; it < _internal_vec.end(); ++it) {
-        this->internal_free(*it);
-      }
-      _internal_vec.erase(it, _internal_vec.end());
-      return _internal_vec;
-    }
-
-   protected:
     ////////////////////////////////////////////////////////////////////////
     // BaseDClass - initialisation member functions - protected
     ////////////////////////////////////////////////////////////////////////
@@ -902,6 +941,18 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
     // BaseDClass - accessor member functions - protected
     ////////////////////////////////////////////////////////////////////////
+    size_t nr_left_reps_NC() const {
+      return _left_reps.size();
+    }
+
+    size_t nr_right_reps_NC() const {
+      return _right_reps.size();
+    }
+
+    size_t size_H_class_NC() const {
+      return _H_class.size();
+    }
+
     void push_left_mult(internal_const_reference x) {
       _left_mults.push_back(this->internal_copy(x));
 #ifdef LIBSEMIGROUPS_DEBUG
@@ -1640,7 +1691,7 @@ namespace libsemigroups {
         this->push_back_H_class(*it);
       }
 
-      for (size_t i = 0; i < this->size_H_class(); ++i) {
+      for (size_t i = 0; i < this->size_H_class_NC(); ++i) {
         for (internal_const_reference g : _H_gens) {
           Product()(this->to_external(this->tmp_element()),
                     this->to_external_const(this->cbegin_H_class_NC()[i]),
@@ -2049,7 +2100,7 @@ namespace libsemigroups {
                 _lambda_index_positions.emplace(
                     lpos, std::vector<left_indices_index_type>());
               }
-              _lambda_index_positions[lpos].push_back(this->nr_left_reps());
+              _lambda_index_positions[lpos].push_back(this->nr_left_reps_NC());
 
               // push_left_rep and push_left_mult use tmp_element and
               // tmp_element2
@@ -2143,7 +2194,7 @@ namespace libsemigroups {
                 _rho_index_positions.emplace(
                     rpos, std::vector<right_indices_index_type>());
               }
-              _rho_index_positions[rpos].push_back(this->nr_right_reps());
+              _rho_index_positions[rpos].push_back(this->nr_right_reps_NC());
               this->push_right_rep(this->tmp_element4());
               this->push_right_mult(this->tmp_element3());
 
@@ -2368,6 +2419,7 @@ namespace libsemigroups {
       tmp_next.clear();
       for (auto it = next_reps.begin(); it < next_reps.end(); it++) {
         bool contained = false;
+        // TODO(now) we can do better than this
         for (size_t i = 0; i < _D_classes.size(); ++i) {
           if (_D_classes[i]->contains(this->to_external_const(it->first),
                                       max_rank)) {
