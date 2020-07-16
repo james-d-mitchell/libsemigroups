@@ -25,7 +25,7 @@
 #include "catch.hpp"
 #include "test-main.hpp"
 
-#include "test-konieczny-data.hpp"
+#include "data/test-konieczny-data.hpp"
 
 namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
@@ -1412,11 +1412,11 @@ namespace libsemigroups {
   
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "025",
-                          "BooleanMat generators from Sean Clark",
+                          "generators from Sean Clark",
                           "[extreme]") {
-    Konieczny<BooleanMat> S(konieczny_data::clark_gens);
-    S.run();
     // actual size unknown, this is more of an aspirational test for now...
-    REQUIRE(S.size() == 33554432);
+    //Konieczny<BooleanMat> S(konieczny_data::clark_gens);
+    //S.run();
+    //REQUIRE(S.size() == 33554432);
   }
 }  // namespace libsemigroups

@@ -53,7 +53,7 @@ namespace libsemigroups {
   // TODO(now) Replace this with specalization of Hash for pairs
   struct PairHash {
     //! Hashes a pair of size_t.
-    size_t operator()(std::pair<size_t, size_t> x) const {
+    size_t operator()(std::pair<size_t, size_t> const& x) const {
       return std::get<0>(x) + std::get<1>(x) + 0x9e3779b97f4a7c16;
     }
   };
@@ -496,28 +496,17 @@ namespace libsemigroups {
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::BaseDClass
       : protected detail::BruidhinnTraits<TElementType> {
-   private:
     ////////////////////////////////////////////////////////////////////////
-    // Konieczny::BaseDClass - aliases - private
+    // BaseDClass - aliases - public
     ////////////////////////////////////////////////////////////////////////
-    // TODO(now): check if all of these are used
-    using internal_element_type =
-        typename detail::BruidhinnTraits<TElementType>::internal_value_type;
-    using internal_const_element_type = typename detail::BruidhinnTraits<
-        TElementType>::internal_const_value_type;
-    using internal_const_reference = typename detail::BruidhinnTraits<
-        TElementType>::internal_const_reference;
-
    public:
-    using konieczny_type    = Konieczny<TElementType, TTraits>;
-    using element_type      = konieczny_type::element_type;
-    using lambda_value_type = konieczny_type::lambda_value_type;
-
-    using left_indices_index_type  = size_t;
+    using left_indices_index_type = size_t;
     using right_indices_index_type = size_t;
-
-    using Rank = konieczny_type::Rank;
-
+    ////////////////////////////////////////////////////////////////////////
+    // BaseDClass - constructor
+    ////////////////////////////////////////////////////////////////////////
+        
+  public:
     BaseDClass(Konieczny* parent, internal_reference rep)
         : _class_computed(false),
           _H_class(),
@@ -969,24 +958,13 @@ namespace libsemigroups {
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::RegularDClass
       : public Konieczny<TElementType, TTraits>::BaseDClass {
-    using konieczny_type    = Konieczny<TElementType, TTraits>;
-    using element_type      = konieczny_type::element_type;
-    using lambda_value_type = konieczny_type::lambda_value_type;
-    using rho_value_type    = konieczny_type::lambda_value_type;
-    using EqualTo           = konieczny_type::EqualTo;
-
-    using InternalElementHash = konieczny_type::InternalElementHash;
-    using InternalEqualTo     = konieczny_type::InternalEqualTo;
-
-    using lambda_orb_index_type = konieczny_type::lambda_orb_index_type;
-    using rho_orb_index_type    = konieczny_type::rho_orb_index_type;
-
+   public:
+    using konieczny_type = Konieczny<element_type>;
     using left_indices_index_type =
         typename konieczny_type::BaseDClass::left_indices_index_type;
     using right_indices_index_type =
         typename konieczny_type::BaseDClass::right_indices_index_type;
 
-   public:
     RegularDClass(Konieczny* parent, internal_reference idem_rep)
         : Konieczny::BaseDClass(parent, idem_rep),
           _H_gens(),
@@ -1404,8 +1382,8 @@ namespace libsemigroups {
       rho_orb_scc_index_type rval_scc_id
           = this->parent()->_rho_orb.digraph().scc_id(rval_pos);
 
-      // TODO: use information from the looping through the left indices in
-      // the loop through the right indices
+      // TODO(later): use information from the looping through the left indices
+      // in the loop through the right indices
       for (size_t i = 0; i < _left_indices.size(); ++i) {
         auto               key = std::make_pair(rval_scc_id, _left_indices[i]);
         rho_orb_index_type k   = this->parent()->_group_indices_rev.at(key);
@@ -1515,20 +1493,14 @@ namespace libsemigroups {
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::NonRegularDClass
       : public Konieczny<TElementType, TTraits>::BaseDClass {
-    using konieczny_type    = Konieczny<TElementType, TTraits>;
-    using element_type      = konieczny_type::element_type;
-    using lambda_value_type = konieczny_type::lambda_value_type;
-    using rho_value_type    = konieczny_type::lambda_value_type;
-
-    using lambda_orb_index_type = konieczny_type::lambda_orb_index_type;
-    using rho_orb_index_type    = konieczny_type::rho_orb_index_type;
-
+   public:
+    
+    using konieczny_type = Konieczny<element_type>;
     using left_indices_index_type =
         typename konieczny_type::BaseDClass::left_indices_index_type;
     using right_indices_index_type =
         typename konieczny_type::BaseDClass::right_indices_index_type;
-
-   public:
+    
     NonRegularDClass(Konieczny* parent, internal_reference rep)
         : Konieczny::BaseDClass(parent, rep),
           _H_set(),
@@ -2217,7 +2189,6 @@ namespace libsemigroups {
       }
       next_reps = std::move(tmp_next);
 
-      // TODO(now): use stopped
       while (!next_reps.empty()) {
         if (report()) {
           REPORT_DEFAULT("computed %d D classes, so far\n", _D_classes.size());
