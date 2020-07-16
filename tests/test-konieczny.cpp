@@ -28,10 +28,14 @@
 #include "data/test-konieczny-data.hpp"
 
 namespace libsemigroups {
+
+  constexpr bool REPORT = false;
+
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "000",
                           "regular elements and idempotents",
                           "[quick][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}),
@@ -62,6 +66,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny", "001", "regular D class 01", "[quick]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                      BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                      BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
@@ -79,6 +84,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny", "002", "regular D class 02", "[quick]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
@@ -96,6 +102,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny", "003", "regular D class 03", "[quick]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                      BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                      BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
@@ -133,6 +140,7 @@ namespace libsemigroups {
                           "004",
                           "regular D class 04: contains",
                           "[quick][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
@@ -159,6 +167,7 @@ namespace libsemigroups {
                           "005",
                           "non-regular D classes 01",
                           "[quick]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens  = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                      BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                      BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
@@ -245,6 +254,7 @@ namespace libsemigroups {
                           "006",
                           "non-regular D classes 02",
                           "[quick]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 1}, {1, 0, 0, 1}, {0, 1, 1, 0}}),
            BMat8({{0, 1, 0, 1}, {0, 1, 1, 1}, {0, 0, 1, 0}, {1, 1, 1, 1}}),
@@ -735,6 +745,7 @@ namespace libsemigroups {
                           "007",
                           "D class containment",
                           "[quick]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
@@ -761,6 +772,7 @@ namespace libsemigroups {
                           "008",
                           "full bmat monoid 4",
                           "[quick][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> bmat4_gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{1, 1, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 1}, {0, 0, 1, 1}}),
@@ -779,6 +791,7 @@ namespace libsemigroups {
                           "009",
                           "full bmat monoid 5",
                           "[extreme]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> bmat5_gens = {BMat8({{1, 0, 0, 0, 0},
                                                   {0, 1, 0, 0, 0},
                                                   {0, 0, 1, 0, 0},
@@ -858,6 +871,7 @@ namespace libsemigroups {
                           "010",
                           "regular generated bmat monoid 4 idempotents",
                           "[quick][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> reg_bmat4_gens
         = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}),
@@ -888,6 +902,7 @@ namespace libsemigroups {
                           "011",
                           "regular generated bmat monoid 5",
                           "[extreme]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> reg_bmat5_gens = {BMat8({{0, 1, 0, 0, 0},
                                                       {1, 0, 0, 0, 0},
                                                       {0, 0, 1, 0, 0},
@@ -933,6 +948,7 @@ namespace libsemigroups {
                           "012",
                           "my favourite example",
                           "[quick][finite][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0, 0, 0, 0, 0, 0},
                                             {0, 0, 0, 0, 0, 0, 0, 1},
                                             {0, 0, 1, 0, 0, 0, 0, 0},
@@ -1006,6 +1022,7 @@ namespace libsemigroups {
                           "013",
                           "another large example",
                           "[quick][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0, 0, 0, 0, 0, 0},
                                             {0, 0, 0, 0, 0, 1, 0, 0},
                                             {0, 0, 0, 0, 0, 1, 0, 0},
@@ -1079,6 +1096,7 @@ namespace libsemigroups {
                           "014",
                           "my favourite example transposed",
                           "[quick][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens = {BMat8({{0, 0, 0, 0, 1, 0, 0, 0},
                                             {1, 0, 0, 0, 0, 0, 1, 0},
                                             {0, 0, 1, 0, 0, 0, 0, 0},
@@ -1149,6 +1167,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny", "015", "transformations", "[quick]") {
+    auto         rg = ReportGuard(REPORT);
     Konieczny<Transformation<size_t>> S(
         {Transformation<size_t>({1, 0, 2, 3, 4}),
          Transformation<size_t>({1, 2, 3, 4, 0}),
@@ -1161,6 +1180,7 @@ namespace libsemigroups {
                           "016",
                           "transformations - JDM favourite example",
                           "[quick][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({1, 7, 2, 6, 0, 4, 1, 5}),
          Transformation<uint_fast8_t>({2, 4, 6, 1, 4, 5, 2, 7}),
@@ -1177,6 +1197,7 @@ namespace libsemigroups {
                           "017",
                           "non-pointer BooleanMat",
                           "[quick][boolmat][booleanmat]") {
+    auto         rg = ReportGuard(REPORT);
     std::vector<BooleanMat> gens
         = {BooleanMat({0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0}),
            BooleanMat({0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1}),
@@ -1190,6 +1211,7 @@ namespace libsemigroups {
                           "018",
                           "non-pointer BooleanMat",
                           "[quick][boolmat][booleanmat][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     std::vector<BooleanMat> gens = {
         BooleanMat({{1, 0, 0, 0}, {0, 0, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 0}}),
         BooleanMat({{1, 0, 0, 1}, {1, 0, 0, 1}, {1, 1, 1, 1}, {0, 1, 1, 0}}),
@@ -1205,6 +1227,7 @@ namespace libsemigroups {
                           "019",
                           "transformations - large example",
                           "[standard][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
          Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
@@ -1218,6 +1241,7 @@ namespace libsemigroups {
                           "020",
                           "transformations - large example with stop",
                           "[standard][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
          Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
@@ -1232,6 +1256,7 @@ namespace libsemigroups {
                           "021",
                           "regular generated bmat monoid 5 with stops",
                           "[extreme]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> reg_bmat5_gens = {BMat8({{0, 1, 0, 0, 0},
                                                       {1, 0, 0, 0, 0},
                                                       {0, 0, 1, 0, 0},
@@ -1283,6 +1308,7 @@ namespace libsemigroups {
                           "022",
                           "transformations - large example with run_until",
                           "[standard][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
          Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
@@ -1306,6 +1332,7 @@ namespace libsemigroups {
                           "023",
                           "transformations - large example with stop in Action",
                           "[standard][no-valgrind]") {
+    auto         rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
          Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
@@ -1327,6 +1354,7 @@ namespace libsemigroups {
                           "024",
                           "full bmat monoid 5 with stop in Action",
                           "[extreme]") {
+    auto         rg = ReportGuard(REPORT);
     const std::vector<BMat8> bmat5_gens = {BMat8({{1, 0, 0, 0, 0},
                                                   {0, 1, 0, 0, 0},
                                                   {0, 0, 1, 0, 0},
@@ -1414,6 +1442,7 @@ namespace libsemigroups {
                           "025",
                           "generators from Sean Clark",
                           "[extreme]") {
+    auto         rg = ReportGuard(REPORT);
     // actual size unknown, this is more of an aspirational test for now...
     //Konieczny<BooleanMat> S(konieczny_data::clark_gens);
     //S.run();

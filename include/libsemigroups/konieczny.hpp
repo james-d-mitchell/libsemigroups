@@ -46,17 +46,21 @@
 
 namespace libsemigroups {
 
-  //! Provides a call operator returning a hash value for a pair of size_t.
-  //!
-  //! This struct provides a call operator for obtaining a hash value for the
-  //! pair.
-  // TODO(now) Replace this with specalization of Hash for pairs
-  struct PairHash {
-    //! Hashes a pair of size_t.
-    size_t operator()(std::pair<size_t, size_t> const& x) const {
-      return std::get<0>(x) + std::get<1>(x) + 0x9e3779b97f4a7c16;
-    }
-  };
+  namespace konieczny_helpers {
+    //! Provides a call operator returning a hash value for a pair of size_t.
+    //!
+    //! This struct provides a call operator for obtaining a hash value for the
+    //! pair.
+    struct PairHash {
+      //! Hashes a pair of size_t.
+      size_t operator()(std::pair<size_t, size_t> const& x) const {
+        // this is bad in general, but if the actions have > 2^32 points then
+        // hash collisions in the index tables will probably be the least of our
+        // worries
+        return (std::get<0>(x) << 32) + std::get<1>(x);
+      }
+    };
+  }  // namespace konieczny_helpers
 
   template <typename TElementType>
   struct KoniecznyTraits {
@@ -153,24 +157,21 @@ namespace libsemigroups {
       }
     };
 
-    // TODO: merge the following structs
-    struct InternalVecFree : private detail::BruidhinnTraits<TElementType> {
-      void operator()(std::vector<internal_element_type> const& x) {
-        for (auto it = x.cbegin(); it < x.cend(); ++it) {
-          this->internal_free(*it);
-        }
-      }
-    };
-
-    struct InternalSetFree : private detail::BruidhinnTraits<TElementType> {
-      void operator()(std::unordered_set<internal_element_type,
-                                         InternalElementHash,
-                                         InternalEqualTo> const& x) {
+    template <typename TCollType>
+    struct InternalCollFree : private detail::BruidhinnTraits<TElementType> {
+      void operator()(TCollType const& x) {
         for (auto it = x.cbegin(); it != x.cend(); ++it) {
           this->internal_free(*it);
         }
       }
     };
+
+    using InternalVecFree
+        = InternalCollFree<std::vector<internal_element_type>>;
+    using InternalSetFree
+        = InternalCollFree<std::unordered_set<internal_element_type,
+                                              InternalElementHash,
+                                              InternalEqualTo>>;
 
    public:
     using element_type    = typename TTraits::element_type;
@@ -182,15 +183,16 @@ namespace libsemigroups {
     using lambda_orb_type = typename TTraits::lambda_orb_type;
     using rho_orb_type    = typename TTraits::rho_orb_type;
 
-    using Product = typename TTraits::Product;
-    using Lambda  = typename TTraits::Lambda;
-    using Rho     = typename TTraits::Rho;
-    using Rank    = typename TTraits::Rank;
-    using One     = typename TTraits::One;
-    using EqualTo = typename TTraits::EqualTo;
-    using Swap    = typename TTraits::Swap;
-    using Less    = typename TTraits::Less;
-    using Degree  = typename TTraits::Degree;
+    using Product  = typename TTraits::Product;
+    using Lambda   = typename TTraits::Lambda;
+    using Rho      = typename TTraits::Rho;
+    using Rank     = typename TTraits::Rank;
+    using One      = typename TTraits::One;
+    using EqualTo  = typename TTraits::EqualTo;
+    using Swap     = typename TTraits::Swap;
+    using Less     = typename TTraits::Less;
+    using Degree   = typename TTraits::Degree;
+    using PairHash = konieczny_helpers::PairHash;
 
     using rho_orb_index_type        = typename rho_orb_type::index_type;
     using rho_orb_scc_index_type    = typename rho_orb_type::scc_index_type;
@@ -500,13 +502,13 @@ namespace libsemigroups {
     // BaseDClass - aliases - public
     ////////////////////////////////////////////////////////////////////////
    public:
-    using left_indices_index_type = size_t;
+    using left_indices_index_type  = size_t;
     using right_indices_index_type = size_t;
     ////////////////////////////////////////////////////////////////////////
     // BaseDClass - constructor
     ////////////////////////////////////////////////////////////////////////
-        
-  public:
+
+   public:
     BaseDClass(Konieczny* parent, internal_reference rep)
         : _class_computed(false),
           _H_class(),
@@ -1039,12 +1041,11 @@ namespace libsemigroups {
       return _right_idem_reps.cend();
     }
 
-    // TODO: this is the wrong function! contains shouldn't assume argument is
-    //        in semigroup!
     //! Tests whether an element \p bm of the semigroup is in this D class
     //!
     //! Watch out! The element \bm must be known to be in the semigroup for
     //! this to be valid!
+    // TODO think of a better name for this
     bool contains(const_reference bm) override {
       init();
       std::pair<lambda_orb_index_type, rho_orb_index_type> x
@@ -1494,13 +1495,12 @@ namespace libsemigroups {
   class Konieczny<TElementType, TTraits>::NonRegularDClass
       : public Konieczny<TElementType, TTraits>::BaseDClass {
    public:
-    
     using konieczny_type = Konieczny<element_type>;
     using left_indices_index_type =
         typename konieczny_type::BaseDClass::left_indices_index_type;
     using right_indices_index_type =
         typename konieczny_type::BaseDClass::right_indices_index_type;
-    
+
     NonRegularDClass(Konieczny* parent, internal_reference rep)
         : Konieczny::BaseDClass(parent, rep),
           _H_set(),
@@ -2193,7 +2193,6 @@ namespace libsemigroups {
         if (report()) {
           REPORT_DEFAULT("computed %d D classes, so far\n", _D_classes.size());
         }
-
         BaseDClass*                                          D;
         std::pair<internal_element_type, D_class_index_type> tup(_one, 0);
 
