@@ -29,7 +29,8 @@ The development version of ``libsemigroups`` is available on github_, and some r
 
 The main classes in ``libsemigroups`` are named after the algorithms they
 implement; see, for example,  :cpp:any:`libsemigroups::FroidurePin`,
-:cpp:any:`libsemigroups::congruence::ToddCoxeter`, 
+:cpp:any:`libsemigroups::Konieczny`,
+:cpp:any:`libsemigroups::congruence::ToddCoxeter`,
 :cpp:any:`libsemigroups::fpsemigroup::KnuthBendix`, and
 :cpp:any:`libsemigroups::SchreierSims`.
 
@@ -39,7 +40,7 @@ user-defined types.
 
 ``libsemigroups`` uses: `HPCombi`_ which uses the SSE and AVX instruction sets
 for very fast manipulation of transformations, partial permutations,
-permutations, and boolean matrices of small size;  `catch`_ for tests; 
+permutations, and boolean matrices of small size;  `catch`_ for tests;
 and `fmt`_ for reporting.
 
 .. _HPCombi: https://github.com/hivert/HPCombi

@@ -35,7 +35,7 @@ namespace libsemigroups {
                           "000",
                           "regular elements and idempotents",
                           "[quick][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}),
@@ -66,7 +66,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny", "001", "regular D class 01", "[quick]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg   = ReportGuard(REPORT);
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                      BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                      BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
@@ -74,17 +74,15 @@ namespace libsemigroups {
     Konieczny<BMat8>         KS(gens);
     REQUIRE(KS.size() == 247);
 
-    BMat8                           x({{1, 0, 0}, {1, 0, 1}, {1, 1, 0}});
-    BMat8                           idem = KS.find_idem(x);
-    Konieczny<BMat8>::RegularDClass D
-        = Konieczny<BMat8>::RegularDClass(&KS, idem);
+    BMat8                           x({{1, 0, 0}, {1, 1, 0}, {1, 0, 1}});
+    Konieczny<BMat8>::RegularDClass D = Konieczny<BMat8>::RegularDClass(&KS, x);
     REQUIRE(D.cend_left_indices() - D.cbegin_left_indices() == 3);
     REQUIRE(D.cend_right_indices() - D.cbegin_right_indices() == 3);
     REQUIRE(D.size() == 18);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny", "002", "regular D class 02", "[quick]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
@@ -101,46 +99,11 @@ namespace libsemigroups {
     REQUIRE(D.size() == 24);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Konieczny", "003", "regular D class 03", "[quick]") {
-    auto         rg = ReportGuard(REPORT);
-    const std::vector<BMat8> gens = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
-                                     BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
-                                     BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
-                                     BMat8({{1, 1, 0}, {0, 1, 1}, {1, 0, 1}})};
-    Konieczny<BMat8>         KS(gens);
-    FroidurePin<BMat8>       S(gens);
-    KS.run();
-
-    BMat8                           idem({{1, 0, 0}, {1, 1, 0}, {1, 0, 1}});
-    Konieczny<BMat8>::RegularDClass D
-        = Konieczny<BMat8>::RegularDClass(&KS, idem);
-    REQUIRE(D.cend_left_idem_reps() - D.cbegin_left_idem_reps() == 3);
-    REQUIRE(D.cend_right_idem_reps() - D.cbegin_right_idem_reps() == 3);
-    for (auto it = D.cbegin_left_idem_reps(); it < D.cend_left_idem_reps();
-         it++) {
-      BMat8 x = *it;
-      for (auto it2 = it + 1; it2 < D.cend_left_idem_reps(); it2++) {
-        REQUIRE(x != *it2);
-      }
-      REQUIRE(x * x == x);
-      REQUIRE(S.contains(x));
-    }
-    for (auto it = D.cbegin_right_idem_reps(); it < D.cend_right_idem_reps();
-         it++) {
-      BMat8 x = *it;
-      for (auto it2 = it + 1; it2 < D.cend_right_idem_reps(); it2++) {
-        REQUIRE(x != *it2);
-      }
-      REQUIRE(x * x == x);
-      REQUIRE(S.contains(x));
-    }
-  }
-
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "004",
                           "regular D class 04: contains",
                           "[quick][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
@@ -167,7 +130,7 @@ namespace libsemigroups {
                           "005",
                           "non-regular D classes 01",
                           "[quick]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg    = ReportGuard(REPORT);
     const std::vector<BMat8> gens  = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                      BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                      BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
@@ -206,39 +169,39 @@ namespace libsemigroups {
 
     Konieczny<BMat8>::NonRegularDClass X(&KS, non_reg_reps[0]);
     REQUIRE(X.size() == 36);
-    REQUIRE(X.cend_H_class() - X.cbegin_H_class() == 1);
-    REQUIRE(X.cend_left_reps() - X.cbegin_left_reps() == 6);
-    REQUIRE(X.cend_right_reps() - X.cbegin_right_reps() == 6);
+    REQUIRE(X.size_H_class() == 1);
+    REQUIRE(X.nr_left_reps() == 6);
+    REQUIRE(X.nr_right_reps() == 6);
 
     Konieczny<BMat8>::NonRegularDClass Y(&KS, non_reg_reps[1]);
     REQUIRE(Y.size() == 18);
-    REQUIRE(Y.cend_H_class() - Y.cbegin_H_class() == 1);
-    REQUIRE(Y.cend_left_reps() - Y.cbegin_left_reps() == 3);
-    REQUIRE(Y.cend_right_reps() - Y.cbegin_right_reps() == 6);
+    REQUIRE(Y.size_H_class() == 1);
+    REQUIRE(Y.nr_left_reps() == 3);
+    REQUIRE(Y.nr_right_reps() == 6);
 
     Konieczny<BMat8>::NonRegularDClass Z(&KS, non_reg_reps[2]);
     REQUIRE(Z.size() == 18);
-    REQUIRE(Z.cend_H_class() - Z.cbegin_H_class() == 2);
-    REQUIRE(Z.cend_left_reps() - Z.cbegin_left_reps() == 3);
-    REQUIRE(Z.cend_right_reps() - Z.cbegin_right_reps() == 3);
+    REQUIRE(Z.size_H_class() == 2);
+    REQUIRE(Z.nr_left_reps() == 3);
+    REQUIRE(Z.nr_right_reps() == 3);
 
     Konieczny<BMat8>::NonRegularDClass A(&KS, non_reg_reps[3]);
     REQUIRE(A.size() == 6);
-    REQUIRE(A.cend_H_class() - A.cbegin_H_class() == 6);
-    REQUIRE(A.cend_left_reps() - A.cbegin_left_reps() == 1);
-    REQUIRE(A.cend_right_reps() - A.cbegin_right_reps() == 1);
+    REQUIRE(A.size_H_class() == 6);
+    REQUIRE(A.nr_left_reps() == 1);
+    REQUIRE(A.nr_right_reps() == 1);
 
     Konieczny<BMat8>::NonRegularDClass B(&KS, non_reg_reps[4]);
     REQUIRE(B.size() == 18);
-    REQUIRE(B.cend_H_class() - B.cbegin_H_class() == 1);
-    REQUIRE(B.cend_left_reps() - B.cbegin_left_reps() == 6);
-    REQUIRE(B.cend_right_reps() - B.cbegin_right_reps() == 3);
+    REQUIRE(B.size_H_class() == 1);
+    REQUIRE(B.nr_left_reps() == 6);
+    REQUIRE(B.nr_right_reps() == 3);
 
     Konieczny<BMat8>::NonRegularDClass C(&KS, non_reg_reps[5]);
     REQUIRE(C.size() == 9);
-    REQUIRE(C.cend_H_class() - C.cbegin_H_class() == 1);
-    REQUIRE(C.cend_left_reps() - C.cbegin_left_reps() == 3);
-    REQUIRE(C.cend_right_reps() - C.cbegin_right_reps() == 3);
+    REQUIRE(C.size_H_class() == 1);
+    REQUIRE(C.nr_left_reps() == 3);
+    REQUIRE(C.nr_right_reps() == 3);
 
     for (BMat8 x : non_reg_reps) {
       Konieczny<BMat8>::NonRegularDClass N(&KS, x);
@@ -254,7 +217,7 @@ namespace libsemigroups {
                           "006",
                           "non-regular D classes 02",
                           "[quick]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 1}, {1, 0, 0, 1}, {0, 1, 1, 0}}),
            BMat8({{0, 1, 0, 1}, {0, 1, 1, 1}, {0, 0, 1, 0}, {1, 1, 1, 1}}),
@@ -351,428 +314,419 @@ namespace libsemigroups {
     Konieczny<BMat8>::NonRegularDClass X0
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[0]);
     REQUIRE(X0.size() == 180);
-    REQUIRE(X0.cend_H_class() - X0.cbegin_H_class() == 2);
-    REQUIRE(X0.cend_left_reps() - X0.cbegin_left_reps() == 2);
-    REQUIRE(X0.cend_right_reps() - X0.cbegin_right_reps() == 45);
+    REQUIRE(X0.size_H_class() == 2);
+    REQUIRE(X0.nr_left_reps() == 2);
+    REQUIRE(X0.nr_right_reps() == 45);
 
     Konieczny<BMat8>::NonRegularDClass X1
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[1]);
     REQUIRE(X1.size() == 16);
-    REQUIRE(X1.cend_H_class() - X1.cbegin_H_class() == 1);
-    REQUIRE(X1.cend_left_reps() - X1.cbegin_left_reps() == 4);
-    REQUIRE(X1.cend_right_reps() - X1.cbegin_right_reps() == 4);
+    REQUIRE(X1.size_H_class() == 1);
+    REQUIRE(X1.nr_left_reps() == 4);
+    REQUIRE(X1.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X2
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[2]);
     REQUIRE(X2.size() == 64);
-    REQUIRE(X2.cend_H_class() - X2.cbegin_H_class() == 1);
-    REQUIRE(X2.cend_left_reps() - X2.cbegin_left_reps() == 4);
-    REQUIRE(X2.cend_right_reps() - X2.cbegin_right_reps() == 16);
+    REQUIRE(X2.size_H_class() == 1);
+    REQUIRE(X2.nr_left_reps() == 4);
+    REQUIRE(X2.nr_right_reps() == 16);
 
     Konieczny<BMat8>::NonRegularDClass X3
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[3]);
     REQUIRE(X3.size() == 16);
-    REQUIRE(X3.cend_H_class() - X3.cbegin_H_class() == 1);
-    REQUIRE(X3.cend_left_reps() - X3.cbegin_left_reps() == 4);
-    REQUIRE(X3.cend_right_reps() - X3.cbegin_right_reps() == 4);
+    REQUIRE(X3.size_H_class() == 1);
+    REQUIRE(X3.nr_left_reps() == 4);
+    REQUIRE(X3.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X4
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[4]);
     REQUIRE(X4.size() == 32);
-    REQUIRE(X4.cend_H_class() - X4.cbegin_H_class() == 1);
-    REQUIRE(X4.cend_left_reps() - X4.cbegin_left_reps() == 4);
-    REQUIRE(X4.cend_right_reps() - X4.cbegin_right_reps() == 8);
+    REQUIRE(X4.size_H_class() == 1);
+    REQUIRE(X4.nr_left_reps() == 4);
+    REQUIRE(X4.nr_right_reps() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X5
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[5]);
     REQUIRE(X5.size() == 64);
-    REQUIRE(X5.cend_H_class() - X5.cbegin_H_class() == 2);
-    REQUIRE(X5.cend_left_reps() - X5.cbegin_left_reps() == 4);
-    REQUIRE(X5.cend_right_reps() - X5.cbegin_right_reps() == 8);
+    REQUIRE(X5.size_H_class() == 2);
+    REQUIRE(X5.nr_left_reps() == 4);
+    REQUIRE(X5.nr_right_reps() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X6
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[6]);
     REQUIRE(X6.size() == 16);
-    REQUIRE(X6.cend_H_class() - X6.cbegin_H_class() == 1);
-    REQUIRE(X6.cend_left_reps() - X6.cbegin_left_reps() == 4);
-    REQUIRE(X6.cend_right_reps() - X6.cbegin_right_reps() == 4);
+    REQUIRE(X6.size_H_class() == 1);
+    REQUIRE(X6.nr_left_reps() == 4);
+    REQUIRE(X6.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X7
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[7]);
     REQUIRE(X7.size() == 16);
-    REQUIRE(X7.cend_H_class() - X7.cbegin_H_class() == 1);
-    REQUIRE(X7.cend_left_reps() - X7.cbegin_left_reps() == 4);
-    REQUIRE(X7.cend_right_reps() - X7.cbegin_right_reps() == 4);
+    REQUIRE(X7.size_H_class() == 1);
+    REQUIRE(X7.nr_left_reps() == 4);
+    REQUIRE(X7.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X8
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[8]);
     REQUIRE(X8.size() == 16);
-    REQUIRE(X8.cend_H_class() - X8.cbegin_H_class() == 1);
-    REQUIRE(X8.cend_left_reps() - X8.cbegin_left_reps() == 4);
-    REQUIRE(X8.cend_right_reps() - X8.cbegin_right_reps() == 4);
+    REQUIRE(X8.size_H_class() == 1);
+    REQUIRE(X8.nr_left_reps() == 4);
+    REQUIRE(X8.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X9
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[9]);
     REQUIRE(X9.size() == 16);
-    REQUIRE(X9.cend_H_class() - X9.cbegin_H_class() == 1);
-    REQUIRE(X9.cend_left_reps() - X9.cbegin_left_reps() == 4);
-    REQUIRE(X9.cend_right_reps() - X9.cbegin_right_reps() == 4);
+    REQUIRE(X9.size_H_class() == 1);
+    REQUIRE(X9.nr_left_reps() == 4);
+    REQUIRE(X9.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X10
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[10]);
     REQUIRE(X10.size() == 16);
-    REQUIRE(X10.cend_H_class() - X10.cbegin_H_class() == 1);
-    REQUIRE(X10.cend_left_reps() - X10.cbegin_left_reps() == 4);
-    REQUIRE(X10.cend_right_reps() - X10.cbegin_right_reps() == 4);
+    REQUIRE(X10.size_H_class() == 1);
+    REQUIRE(X10.nr_left_reps() == 4);
+    REQUIRE(X10.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X11
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[11]);
     REQUIRE(X11.size() == 16);
-    REQUIRE(X11.cend_H_class() - X11.cbegin_H_class() == 1);
-    REQUIRE(X11.cend_left_reps() - X11.cbegin_left_reps() == 4);
-    REQUIRE(X11.cend_right_reps() - X11.cbegin_right_reps() == 4);
+    REQUIRE(X11.size_H_class() == 1);
+    REQUIRE(X11.nr_left_reps() == 4);
+    REQUIRE(X11.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X12
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[12]);
     REQUIRE(X12.size() == 16);
-    REQUIRE(X12.cend_H_class() - X12.cbegin_H_class() == 1);
-    REQUIRE(X12.cend_left_reps() - X12.cbegin_left_reps() == 4);
-    REQUIRE(X12.cend_right_reps() - X12.cbegin_right_reps() == 4);
+    REQUIRE(X12.size_H_class() == 1);
+    REQUIRE(X12.nr_left_reps() == 4);
+    REQUIRE(X12.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X13
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[13]);
     REQUIRE(X13.size() == 16);
-    REQUIRE(X13.cend_H_class() - X13.cbegin_H_class() == 1);
-    REQUIRE(X13.cend_left_reps() - X13.cbegin_left_reps() == 4);
-    REQUIRE(X13.cend_right_reps() - X13.cbegin_right_reps() == 4);
+    REQUIRE(X13.size_H_class() == 1);
+    REQUIRE(X13.nr_left_reps() == 4);
+    REQUIRE(X13.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X14
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[14]);
     REQUIRE(X14.size() == 16);
-    REQUIRE(X14.cend_H_class() - X14.cbegin_H_class() == 1);
-    REQUIRE(X14.cend_left_reps() - X14.cbegin_left_reps() == 4);
-    REQUIRE(X14.cend_right_reps() - X14.cbegin_right_reps() == 4);
+    REQUIRE(X14.size_H_class() == 1);
+    REQUIRE(X14.nr_left_reps() == 4);
+    REQUIRE(X14.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X15
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[15]);
     REQUIRE(X15.size() == 16);
-    REQUIRE(X15.cend_H_class() - X15.cbegin_H_class() == 1);
-    REQUIRE(X15.cend_left_reps() - X15.cbegin_left_reps() == 4);
-    REQUIRE(X15.cend_right_reps() - X15.cbegin_right_reps() == 4);
+    REQUIRE(X15.size_H_class() == 1);
+    REQUIRE(X15.nr_left_reps() == 4);
+    REQUIRE(X15.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X16
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[16]);
     REQUIRE(X16.size() == 16);
-    REQUIRE(X16.cend_H_class() - X16.cbegin_H_class() == 1);
-    REQUIRE(X16.cend_left_reps() - X16.cbegin_left_reps() == 4);
-    REQUIRE(X16.cend_right_reps() - X16.cbegin_right_reps() == 4);
+    REQUIRE(X16.size_H_class() == 1);
+    REQUIRE(X16.nr_left_reps() == 4);
+    REQUIRE(X16.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X17
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[17]);
     REQUIRE(X17.size() == 16);
-    REQUIRE(X17.cend_H_class() - X17.cbegin_H_class() == 2);
-    REQUIRE(X17.cend_left_reps() - X17.cbegin_left_reps() == 2);
-    REQUIRE(X17.cend_right_reps() - X17.cbegin_right_reps() == 4);
+    REQUIRE(X17.size_H_class() == 2);
+    REQUIRE(X17.nr_left_reps() == 2);
+    REQUIRE(X17.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X18
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[18]);
     REQUIRE(X18.size() == 32);
-    REQUIRE(X18.cend_H_class() - X18.cbegin_H_class() == 1);
-    REQUIRE(X18.cend_left_reps() - X18.cbegin_left_reps() == 8);
-    REQUIRE(X18.cend_right_reps() - X18.cbegin_right_reps() == 4);
+    REQUIRE(X18.size_H_class() == 1);
+    REQUIRE(X18.nr_left_reps() == 8);
+    REQUIRE(X18.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X19
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[19]);
     REQUIRE(X19.size() == 16);
-    REQUIRE(X19.cend_H_class() - X19.cbegin_H_class() == 1);
-    REQUIRE(X19.cend_left_reps() - X19.cbegin_left_reps() == 4);
-    REQUIRE(X19.cend_right_reps() - X19.cbegin_right_reps() == 4);
+    REQUIRE(X19.size_H_class() == 1);
+    REQUIRE(X19.nr_left_reps() == 4);
+    REQUIRE(X19.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X20
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[20]);
     REQUIRE(X20.size() == 156);
-    REQUIRE(X20.cend_H_class() - X20.cbegin_H_class() == 2);
-    REQUIRE(X20.cend_left_reps() - X20.cbegin_left_reps() == 39);
-    REQUIRE(X20.cend_right_reps() - X20.cbegin_right_reps() == 2);
+    REQUIRE(X20.size_H_class() == 2);
+    REQUIRE(X20.nr_left_reps() == 39);
+    REQUIRE(X20.nr_right_reps() == 2);
 
     Konieczny<BMat8>::NonRegularDClass X21
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[21]);
     REQUIRE(X21.size() == 16);
-    REQUIRE(X21.cend_H_class() - X21.cbegin_H_class() == 1);
-    REQUIRE(X21.cend_left_reps() - X21.cbegin_left_reps() == 4);
-    REQUIRE(X21.cend_right_reps() - X21.cbegin_right_reps() == 4);
+    REQUIRE(X21.size_H_class() == 1);
+    REQUIRE(X21.nr_left_reps() == 4);
+    REQUIRE(X21.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X22
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[22]);
     REQUIRE(X22.size() == 32);
-    REQUIRE(X22.cend_H_class() - X22.cbegin_H_class() == 1);
-    REQUIRE(X22.cend_left_reps() - X22.cbegin_left_reps() == 4);
-    REQUIRE(X22.cend_right_reps() - X22.cbegin_right_reps() == 8);
+    REQUIRE(X22.size_H_class() == 1);
+    REQUIRE(X22.nr_left_reps() == 4);
+    REQUIRE(X22.nr_right_reps() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X23
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[23]);
     REQUIRE(X23.size() == 32);
-    REQUIRE(X23.cend_H_class() - X23.cbegin_H_class() == 1);
-    REQUIRE(X23.cend_left_reps() - X23.cbegin_left_reps() == 4);
-    REQUIRE(X23.cend_right_reps() - X23.cbegin_right_reps() == 8);
+    REQUIRE(X23.size_H_class() == 1);
+    REQUIRE(X23.nr_left_reps() == 4);
+    REQUIRE(X23.nr_right_reps() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X24
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[24]);
     REQUIRE(X24.size() == 16);
-    REQUIRE(X24.cend_H_class() - X24.cbegin_H_class() == 1);
-    REQUIRE(X24.cend_left_reps() - X24.cbegin_left_reps() == 4);
-    REQUIRE(X24.cend_right_reps() - X24.cbegin_right_reps() == 4);
+    REQUIRE(X24.size_H_class() == 1);
+    REQUIRE(X24.nr_left_reps() == 4);
+    REQUIRE(X24.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X25
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[25]);
     REQUIRE(X25.size() == 16);
-    REQUIRE(X25.cend_H_class() - X25.cbegin_H_class() == 1);
-    REQUIRE(X25.cend_left_reps() - X25.cbegin_left_reps() == 4);
-    REQUIRE(X25.cend_right_reps() - X25.cbegin_right_reps() == 4);
+    REQUIRE(X25.size_H_class() == 1);
+    REQUIRE(X25.nr_left_reps() == 4);
+    REQUIRE(X25.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X26
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[26]);
     REQUIRE(X26.size() == 32);
-    REQUIRE(X26.cend_H_class() - X26.cbegin_H_class() == 1);
-    REQUIRE(X26.cend_left_reps() - X26.cbegin_left_reps() == 4);
-    REQUIRE(X26.cend_right_reps() - X26.cbegin_right_reps() == 8);
+    REQUIRE(X26.size_H_class() == 1);
+    REQUIRE(X26.nr_left_reps() == 4);
+    REQUIRE(X26.nr_right_reps() == 8);
 
     Konieczny<BMat8>::NonRegularDClass X27
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[27]);
     REQUIRE(X27.size() == 16);
-    REQUIRE(X27.cend_H_class() - X27.cbegin_H_class() == 1);
-    REQUIRE(X27.cend_left_reps() - X27.cbegin_left_reps() == 4);
-    REQUIRE(X27.cend_right_reps() - X27.cbegin_right_reps() == 4);
+    REQUIRE(X27.size_H_class() == 1);
+    REQUIRE(X27.nr_left_reps() == 4);
+    REQUIRE(X27.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X28
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[28]);
     REQUIRE(X28.size() == 16);
-    REQUIRE(X28.cend_H_class() - X28.cbegin_H_class() == 1);
-    REQUIRE(X28.cend_left_reps() - X28.cbegin_left_reps() == 4);
-    REQUIRE(X28.cend_right_reps() - X28.cbegin_right_reps() == 4);
+    REQUIRE(X28.size_H_class() == 1);
+    REQUIRE(X28.nr_left_reps() == 4);
+    REQUIRE(X28.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X29
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[29]);
     REQUIRE(X29.size() == 16);
-    REQUIRE(X29.cend_H_class() - X29.cbegin_H_class() == 1);
-    REQUIRE(X29.cend_left_reps() - X29.cbegin_left_reps() == 4);
-    REQUIRE(X29.cend_right_reps() - X29.cbegin_right_reps() == 4);
+    REQUIRE(X29.size_H_class() == 1);
+    REQUIRE(X29.nr_left_reps() == 4);
+    REQUIRE(X29.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X30
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[30]);
     REQUIRE(X30.size() == 16);
-    REQUIRE(X30.cend_H_class() - X30.cbegin_H_class() == 1);
-    REQUIRE(X30.cend_left_reps() - X30.cbegin_left_reps() == 4);
-    REQUIRE(X30.cend_right_reps() - X30.cbegin_right_reps() == 4);
+    REQUIRE(X30.size_H_class() == 1);
+    REQUIRE(X30.nr_left_reps() == 4);
+    REQUIRE(X30.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X31
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[31]);
     REQUIRE(X31.size() == 16);
-    REQUIRE(X31.cend_H_class() - X31.cbegin_H_class() == 1);
-    REQUIRE(X31.cend_left_reps() - X31.cbegin_left_reps() == 4);
-    REQUIRE(X31.cend_right_reps() - X31.cbegin_right_reps() == 4);
+    REQUIRE(X31.size_H_class() == 1);
+    REQUIRE(X31.nr_left_reps() == 4);
+    REQUIRE(X31.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X32
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[32]);
     REQUIRE(X32.size() == 32);
-    REQUIRE(X32.cend_H_class() - X32.cbegin_H_class() == 1);
-    REQUIRE(X32.cend_left_reps() - X32.cbegin_left_reps() == 8);
-    REQUIRE(X32.cend_right_reps() - X32.cbegin_right_reps() == 4);
+    REQUIRE(X32.size_H_class() == 1);
+    REQUIRE(X32.nr_left_reps() == 8);
+    REQUIRE(X32.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X33
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[33]);
     REQUIRE(X33.size() == 16);
-    REQUIRE(X33.cend_H_class() - X33.cbegin_H_class() == 1);
-    REQUIRE(X33.cend_left_reps() - X33.cbegin_left_reps() == 4);
-    REQUIRE(X33.cend_right_reps() - X33.cbegin_right_reps() == 4);
+    REQUIRE(X33.size_H_class() == 1);
+    REQUIRE(X33.nr_left_reps() == 4);
+    REQUIRE(X33.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X34
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[34]);
     REQUIRE(X34.size() == 32);
-    REQUIRE(X34.cend_H_class() - X34.cbegin_H_class() == 1);
-    REQUIRE(X34.cend_left_reps() - X34.cbegin_left_reps() == 8);
-    REQUIRE(X34.cend_right_reps() - X34.cbegin_right_reps() == 4);
+    REQUIRE(X34.size_H_class() == 1);
+    REQUIRE(X34.nr_left_reps() == 8);
+    REQUIRE(X34.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X35
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[35]);
     REQUIRE(X35.size() == 32);
-    REQUIRE(X35.cend_H_class() - X35.cbegin_H_class() == 2);
-    REQUIRE(X35.cend_left_reps() - X35.cbegin_left_reps() == 4);
-    REQUIRE(X35.cend_right_reps() - X35.cbegin_right_reps() == 4);
+    REQUIRE(X35.size_H_class() == 2);
+    REQUIRE(X35.nr_left_reps() == 4);
+    REQUIRE(X35.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X36
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[36]);
     REQUIRE(X36.size() == 16);
-    REQUIRE(X36.cend_H_class() - X36.cbegin_H_class() == 1);
-    REQUIRE(X36.cend_left_reps() - X36.cbegin_left_reps() == 4);
-    REQUIRE(X36.cend_right_reps() - X36.cbegin_right_reps() == 4);
+    REQUIRE(X36.size_H_class() == 1);
+    REQUIRE(X36.nr_left_reps() == 4);
+    REQUIRE(X36.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X37
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[37]);
     REQUIRE(X37.size() == 32);
-    REQUIRE(X37.cend_H_class() - X37.cbegin_H_class() == 1);
-    REQUIRE(X37.cend_left_reps() - X37.cbegin_left_reps() == 8);
-    REQUIRE(X37.cend_right_reps() - X37.cbegin_right_reps() == 4);
+    REQUIRE(X37.size_H_class() == 1);
+    REQUIRE(X37.nr_left_reps() == 8);
+    REQUIRE(X37.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X38
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[38]);
     REQUIRE(X38.size() == 16);
-    REQUIRE(X38.cend_H_class() - X38.cbegin_H_class() == 1);
-    REQUIRE(X38.cend_left_reps() - X38.cbegin_left_reps() == 4);
-    REQUIRE(X38.cend_right_reps() - X38.cbegin_right_reps() == 4);
+    REQUIRE(X38.size_H_class() == 1);
+    REQUIRE(X38.nr_left_reps() == 4);
+    REQUIRE(X38.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X39
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[39]);
     REQUIRE(X39.size() == 32);
-    REQUIRE(X39.cend_H_class() - X39.cbegin_H_class() == 1);
-    REQUIRE(X39.cend_left_reps() - X39.cbegin_left_reps() == 8);
-    REQUIRE(X39.cend_right_reps() - X39.cbegin_right_reps() == 4);
+    REQUIRE(X39.size_H_class() == 1);
+    REQUIRE(X39.nr_left_reps() == 8);
+    REQUIRE(X39.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X40
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[40]);
     REQUIRE(X40.size() == 16);
-    REQUIRE(X40.cend_H_class() - X40.cbegin_H_class() == 1);
-    REQUIRE(X40.cend_left_reps() - X40.cbegin_left_reps() == 4);
-    REQUIRE(X40.cend_right_reps() - X40.cbegin_right_reps() == 4);
+    REQUIRE(X40.size_H_class() == 1);
+    REQUIRE(X40.nr_left_reps() == 4);
+    REQUIRE(X40.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X41
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[41]);
     REQUIRE(X41.size() == 16);
-    REQUIRE(X41.cend_H_class() - X41.cbegin_H_class() == 1);
-    REQUIRE(X41.cend_left_reps() - X41.cbegin_left_reps() == 4);
-    REQUIRE(X41.cend_right_reps() - X41.cbegin_right_reps() == 4);
+    REQUIRE(X41.size_H_class() == 1);
+    REQUIRE(X41.nr_left_reps() == 4);
+    REQUIRE(X41.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X42
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[42]);
     REQUIRE(X42.size() == 16);
-    REQUIRE(X42.cend_H_class() - X42.cbegin_H_class() == 1);
-    REQUIRE(X42.cend_left_reps() - X42.cbegin_left_reps() == 4);
-    REQUIRE(X42.cend_right_reps() - X42.cbegin_right_reps() == 4);
+    REQUIRE(X42.size_H_class() == 1);
+    REQUIRE(X42.nr_left_reps() == 4);
+    REQUIRE(X42.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X43
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[43]);
     REQUIRE(X43.size() == 16);
-    REQUIRE(X43.cend_H_class() - X43.cbegin_H_class() == 1);
-    REQUIRE(X43.cend_left_reps() - X43.cbegin_left_reps() == 4);
-    REQUIRE(X43.cend_right_reps() - X43.cbegin_right_reps() == 4);
+    REQUIRE(X43.size_H_class() == 1);
+    REQUIRE(X43.nr_left_reps() == 4);
+    REQUIRE(X43.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X44
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[44]);
     REQUIRE(X44.size() == 16);
-    REQUIRE(X44.cend_H_class() - X44.cbegin_H_class() == 1);
-    REQUIRE(X44.cend_left_reps() - X44.cbegin_left_reps() == 4);
-    REQUIRE(X44.cend_right_reps() - X44.cbegin_right_reps() == 4);
+    REQUIRE(X44.size_H_class() == 1);
+    REQUIRE(X44.nr_left_reps() == 4);
+    REQUIRE(X44.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X45
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[45]);
     REQUIRE(X45.size() == 16);
-    REQUIRE(X45.cend_H_class() - X45.cbegin_H_class() == 1);
-    REQUIRE(X45.cend_left_reps() - X45.cbegin_left_reps() == 4);
-    REQUIRE(X45.cend_right_reps() - X45.cbegin_right_reps() == 4);
+    REQUIRE(X45.size_H_class() == 1);
+    REQUIRE(X45.nr_left_reps() == 4);
+    REQUIRE(X45.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X46
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[46]);
     REQUIRE(X46.size() == 16);
-    REQUIRE(X46.cend_H_class() - X46.cbegin_H_class() == 1);
-    REQUIRE(X46.cend_left_reps() - X46.cbegin_left_reps() == 4);
-    REQUIRE(X46.cend_right_reps() - X46.cbegin_right_reps() == 4);
+    REQUIRE(X46.size_H_class() == 1);
+    REQUIRE(X46.nr_left_reps() == 4);
+    REQUIRE(X46.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X47
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[47]);
     REQUIRE(X47.size() == 16);
-    REQUIRE(X47.cend_H_class() - X47.cbegin_H_class() == 1);
-    REQUIRE(X47.cend_left_reps() - X47.cbegin_left_reps() == 4);
-    REQUIRE(X47.cend_right_reps() - X47.cbegin_right_reps() == 4);
+    REQUIRE(X47.size_H_class() == 1);
+    REQUIRE(X47.nr_left_reps() == 4);
+    REQUIRE(X47.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X48
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[48]);
     REQUIRE(X48.size() == 16);
-    REQUIRE(X48.cend_H_class() - X48.cbegin_H_class() == 1);
-    REQUIRE(X48.cend_left_reps() - X48.cbegin_left_reps() == 4);
-    REQUIRE(X48.cend_right_reps() - X48.cbegin_right_reps() == 4);
+    REQUIRE(X48.size_H_class() == 1);
+    REQUIRE(X48.nr_left_reps() == 4);
+    REQUIRE(X48.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X49
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[49]);
     REQUIRE(X49.size() == 16);
-    REQUIRE(X49.cend_H_class() - X49.cbegin_H_class() == 1);
-    REQUIRE(X49.cend_left_reps() - X49.cbegin_left_reps() == 4);
-    REQUIRE(X49.cend_right_reps() - X49.cbegin_right_reps() == 4);
+    REQUIRE(X49.size_H_class() == 1);
+    REQUIRE(X49.nr_left_reps() == 4);
+    REQUIRE(X49.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X50
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[50]);
     REQUIRE(X50.size() == 16);
-    REQUIRE(X50.cend_H_class() - X50.cbegin_H_class() == 1);
-    REQUIRE(X50.cend_left_reps() - X50.cbegin_left_reps() == 4);
-    REQUIRE(X50.cend_right_reps() - X50.cbegin_right_reps() == 4);
+    REQUIRE(X50.size_H_class() == 1);
+    REQUIRE(X50.nr_left_reps() == 4);
+    REQUIRE(X50.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X51
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[51]);
     REQUIRE(X51.size() == 16);
-    REQUIRE(X51.cend_H_class() - X51.cbegin_H_class() == 2);
-    REQUIRE(X51.cend_left_reps() - X51.cbegin_left_reps() == 2);
-    REQUIRE(X51.cend_right_reps() - X51.cbegin_right_reps() == 4);
+    REQUIRE(X51.size_H_class() == 2);
+    REQUIRE(X51.nr_left_reps() == 2);
+    REQUIRE(X51.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X52
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[52]);
     REQUIRE(X52.size() == 16);
-    REQUIRE(X52.cend_H_class() - X52.cbegin_H_class() == 1);
-    REQUIRE(X52.cend_left_reps() - X52.cbegin_left_reps() == 4);
-    REQUIRE(X52.cend_right_reps() - X52.cbegin_right_reps() == 4);
+    REQUIRE(X52.size_H_class() == 1);
+    REQUIRE(X52.nr_left_reps() == 4);
+    REQUIRE(X52.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X53
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[53]);
     REQUIRE(X53.size() == 16);
-    REQUIRE(X53.cend_H_class() - X53.cbegin_H_class() == 1);
-    REQUIRE(X53.cend_left_reps() - X53.cbegin_left_reps() == 4);
-    REQUIRE(X53.cend_right_reps() - X53.cbegin_right_reps() == 4);
+    REQUIRE(X53.size_H_class() == 1);
+    REQUIRE(X53.nr_left_reps() == 4);
+    REQUIRE(X53.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X54
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[54]);
     REQUIRE(X54.size() == 16);
-    REQUIRE(X54.cend_H_class() - X54.cbegin_H_class() == 1);
-    REQUIRE(X54.cend_left_reps() - X54.cbegin_left_reps() == 4);
-    REQUIRE(X54.cend_right_reps() - X54.cbegin_right_reps() == 4);
+    REQUIRE(X54.size_H_class() == 1);
+    REQUIRE(X54.nr_left_reps() == 4);
+    REQUIRE(X54.nr_right_reps() == 4);
 
     Konieczny<BMat8>::NonRegularDClass X55
         = Konieczny<BMat8>::NonRegularDClass(&KS, non_reg_reps[55]);
     REQUIRE(X55.size() == 8);
-    REQUIRE(X55.cend_H_class() - X55.cbegin_H_class() == 2);
-    REQUIRE(X55.cend_left_reps() - X55.cbegin_left_reps() == 2);
-    REQUIRE(X55.cend_right_reps() - X55.cbegin_right_reps() == 2);
+    REQUIRE(X55.size_H_class() == 2);
+    REQUIRE(X55.nr_left_reps() == 2);
+    REQUIRE(X55.nr_right_reps() == 2);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                          "007",
-                          "D class containment",
-                          "[quick]") {
-    auto         rg = ReportGuard(REPORT);
+  LIBSEMIGROUPS_TEST_CASE("Konieczny", "007", "RegularDClass", "[quick]") {
+    auto                     rg = ReportGuard(REPORT);
     const std::vector<BMat8> gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 1}, {1, 0, 1, 0}, {1, 0, 1, 0}, {0, 0, 1, 1}}),
            BMat8({{0, 1, 0, 1}, {1, 0, 1, 0}, {1, 0, 1, 0}, {0, 1, 0, 1}}),
-           BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 0}})};
+           BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}})};
 
     Konieczny<BMat8> KS(gens);
     KS.run();
-    BMat8 idem = BMat8({{1, 0, 1}, {0, 1, 0}, {1, 0, 1}});
-    Konieczny<BMat8>::RegularDClass D
-        = Konieczny<BMat8>::RegularDClass(&KS, idem);
-    for (auto it = D.cbegin_left_reps(); it < D.cend_left_reps(); it++) {
-      REQUIRE(D.index_positions(*it).first != UNDEFINED);
-      REQUIRE(D.index_positions(*it).second != UNDEFINED);
-      REQUIRE(D.contains(*it));
-    }
-    for (auto it = D.cbegin_right_reps(); it < D.cend_right_reps(); it++) {
-      REQUIRE(D.contains(*it));
-    }
+    BMat8 x = BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 0}});
+    Konieczny<BMat8>::RegularDClass D = Konieczny<BMat8>::RegularDClass(&KS, x);
+    REQUIRE(D.size() == 90);
+    REQUIRE(D.nr_left_reps() == 5);
+    REQUIRE(D.nr_right_reps() == 9);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "008",
                           "full bmat monoid 4",
                           "[quick][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg = ReportGuard(REPORT);
     const std::vector<BMat8> bmat4_gens
         = {BMat8({{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{1, 1, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 1}, {0, 0, 1, 1}}),
@@ -791,7 +745,7 @@ namespace libsemigroups {
                           "009",
                           "full bmat monoid 5",
                           "[extreme]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg         = ReportGuard(REPORT);
     const std::vector<BMat8> bmat5_gens = {BMat8({{1, 0, 0, 0, 0},
                                                   {0, 1, 0, 0, 0},
                                                   {0, 0, 1, 0, 0},
@@ -871,7 +825,7 @@ namespace libsemigroups {
                           "010",
                           "regular generated bmat monoid 4 idempotents",
                           "[quick][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg = ReportGuard(REPORT);
     const std::vector<BMat8> reg_bmat4_gens
         = {BMat8({{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}),
            BMat8({{0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}}),
@@ -902,7 +856,7 @@ namespace libsemigroups {
                           "011",
                           "regular generated bmat monoid 5",
                           "[extreme]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg             = ReportGuard(REPORT);
     const std::vector<BMat8> reg_bmat5_gens = {BMat8({{0, 1, 0, 0, 0},
                                                       {1, 0, 0, 0, 0},
                                                       {0, 0, 1, 0, 0},
@@ -948,7 +902,7 @@ namespace libsemigroups {
                           "012",
                           "my favourite example",
                           "[quick][finite][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg   = ReportGuard(REPORT);
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0, 0, 0, 0, 0, 0},
                                             {0, 0, 0, 0, 0, 0, 0, 1},
                                             {0, 0, 1, 0, 0, 0, 0, 0},
@@ -1022,7 +976,7 @@ namespace libsemigroups {
                           "013",
                           "another large example",
                           "[quick][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg   = ReportGuard(REPORT);
     const std::vector<BMat8> gens = {BMat8({{0, 1, 0, 0, 0, 0, 0, 0},
                                             {0, 0, 0, 0, 0, 1, 0, 0},
                                             {0, 0, 0, 0, 0, 1, 0, 0},
@@ -1096,7 +1050,7 @@ namespace libsemigroups {
                           "014",
                           "my favourite example transposed",
                           "[quick][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg   = ReportGuard(REPORT);
     const std::vector<BMat8> gens = {BMat8({{0, 0, 0, 0, 1, 0, 0, 0},
                                             {1, 0, 0, 0, 0, 0, 1, 0},
                                             {0, 0, 1, 0, 0, 0, 0, 0},
@@ -1167,7 +1121,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Konieczny", "015", "transformations", "[quick]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                              rg = ReportGuard(REPORT);
     Konieczny<Transformation<size_t>> S(
         {Transformation<size_t>({1, 0, 2, 3, 4}),
          Transformation<size_t>({1, 2, 3, 4, 0}),
@@ -1180,7 +1134,7 @@ namespace libsemigroups {
                           "016",
                           "transformations - JDM favourite example",
                           "[quick][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                                    rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({1, 7, 2, 6, 0, 4, 1, 5}),
          Transformation<uint_fast8_t>({2, 4, 6, 1, 4, 5, 2, 7}),
@@ -1197,7 +1151,7 @@ namespace libsemigroups {
                           "017",
                           "non-pointer BooleanMat",
                           "[quick][boolmat][booleanmat]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                    rg = ReportGuard(REPORT);
     std::vector<BooleanMat> gens
         = {BooleanMat({0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0}),
            BooleanMat({0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1}),
@@ -1211,7 +1165,7 @@ namespace libsemigroups {
                           "018",
                           "non-pointer BooleanMat",
                           "[quick][boolmat][booleanmat][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                    rg   = ReportGuard(REPORT);
     std::vector<BooleanMat> gens = {
         BooleanMat({{1, 0, 0, 0}, {0, 0, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 0}}),
         BooleanMat({{1, 0, 0, 1}, {1, 0, 0, 1}, {1, 1, 1, 1}, {0, 1, 1, 0}}),
@@ -1227,7 +1181,7 @@ namespace libsemigroups {
                           "019",
                           "transformations - large example",
                           "[standard][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                                    rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
          Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
@@ -1241,7 +1195,7 @@ namespace libsemigroups {
                           "020",
                           "transformations - large example with stop",
                           "[standard][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                                    rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
          Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
@@ -1256,7 +1210,7 @@ namespace libsemigroups {
                           "021",
                           "regular generated bmat monoid 5 with stops",
                           "[extreme]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg             = ReportGuard(REPORT);
     const std::vector<BMat8> reg_bmat5_gens = {BMat8({{0, 1, 0, 0, 0},
                                                       {1, 0, 0, 0, 0},
                                                       {0, 0, 1, 0, 0},
@@ -1308,7 +1262,7 @@ namespace libsemigroups {
                           "022",
                           "transformations - large example with run_until",
                           "[standard][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                                    rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
          Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
@@ -1332,7 +1286,7 @@ namespace libsemigroups {
                           "023",
                           "transformations - large example with stop in Action",
                           "[standard][no-valgrind]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                                    rg = ReportGuard(REPORT);
     Konieczny<Transformation<uint_fast8_t>> S(
         {Transformation<uint_fast8_t>({2, 1, 0, 4, 2, 1, 1, 8, 0}),
          Transformation<uint_fast8_t>({1, 7, 6, 2, 5, 1, 1, 4, 3}),
@@ -1354,7 +1308,7 @@ namespace libsemigroups {
                           "024",
                           "full bmat monoid 5 with stop in Action",
                           "[extreme]") {
-    auto         rg = ReportGuard(REPORT);
+    auto                     rg         = ReportGuard(REPORT);
     const std::vector<BMat8> bmat5_gens = {BMat8({{1, 0, 0, 0, 0},
                                                   {0, 1, 0, 0, 0},
                                                   {0, 0, 1, 0, 0},
@@ -1437,15 +1391,15 @@ namespace libsemigroups {
     T.run_for(std::chrono::milliseconds(100));
     REQUIRE(T.size() == 33554432);
   }
-  
+
   LIBSEMIGROUPS_TEST_CASE("Konieczny",
                           "025",
                           "generators from Sean Clark",
                           "[extreme]") {
-    auto         rg = ReportGuard(REPORT);
+    auto rg = ReportGuard(REPORT);
     // actual size unknown, this is more of an aspirational test for now...
-    //Konieczny<BooleanMat> S(konieczny_data::clark_gens);
-    //S.run();
-    //REQUIRE(S.size() == 33554432);
+    // Konieczny<BooleanMat> S(konieczny_data::clark_gens);
+    // S.run();
+    // REQUIRE(S.size() == 33554432);
   }
 }  // namespace libsemigroups

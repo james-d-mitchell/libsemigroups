@@ -15,12 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// This file contains an implementation of Konieczny's algorithm for computing
-// subsemigroups of the boolean matrix monoid.
+// This file contains a generic implementation of Konieczny's algorithm,
+// originally for computing subsemigroups of the boolean matrix monoid.
 
 // TODO(later):
 // 1) exception safety!
 // 2) IWYU
+// 3) expose iterators to relevant things in D classes
 //
 // TODO(now):
 // 1) more reporting
@@ -62,42 +63,100 @@ namespace libsemigroups {
     };
   }  // namespace konieczny_helpers
 
+  //! Defined in ``konieczny.hpp``.
+  //!
+  //! This is a traits class for use with Konieczny.
+  //!
+  //! \sa Konieczny
   template <typename TElementType>
   struct KoniecznyTraits {
+    //! The type of the elements of a Konieczny instance with const removed.
     using element_type =
         typename detail::BruidhinnTraits<TElementType>::value_type;
 
+    //! \copydoc libsemigroups::Lambda
     using Lambda = ::libsemigroups::Lambda<element_type>;
-    using Rho    = ::libsemigroups::Rho<element_type>;
 
+    //! \copydoc libsemigroups::Rho
+    using Rho = ::libsemigroups::Rho<element_type>;
+
+    //! The type of lambda values of a Konieczny instance.
+    //! \sa Lambda
     using lambda_value_type =
         typename ::libsemigroups::Lambda<element_type>::result_type;
+
+    //! The type of lambda values of a Konieczny instance.
+    //! \sa Rho
     using rho_value_type =
         typename ::libsemigroups::Rho<element_type>::result_type;
 
+    //! The action of the elements on the lambda values.
+    //! \sa ImageRightAction
     using LambdaAction = ImageRightAction<element_type, lambda_value_type>;
-    using RhoAction    = ImageLeftAction<element_type, rho_value_type>;
 
+    //! The action of the elements on the rho values.
+    //! \sa ImageLeftAction
+    using RhoAction = ImageLeftAction<element_type, rho_value_type>;
+
+    //! The orbit of the lambda values under LambdaAction
+    //! \sa LambdaAction and RightAction
     using lambda_orb_type
         = RightAction<element_type, lambda_value_type, LambdaAction>;
+
+    //! The orbit of the rho values under RhoAction
+    //! \sa RhoAction and LeftAction
     using rho_orb_type = LeftAction<element_type, rho_value_type, RhoAction>;
 
-    // TODO(now) why define these here?
-    using Product     = ::libsemigroups::Product<element_type>;
-    using Rank        = ::libsemigroups::Rank<element_type>;
-    using One         = ::libsemigroups::One<element_type>;
-    using VecHash     = ::libsemigroups::VecHash<element_type>;
+    //! \copydoc libsemigroups::Product
+    using Product = ::libsemigroups::Product<element_type>;
+
+    //! \copydoc libsemigroups::Rank
+    using Rank = ::libsemigroups::Rank<element_type>;
+
+    //! \copydoc libsemigroups::One
+    using One = ::libsemigroups::One<element_type>;
+
+    //! \copydoc libsemigroups::VecHash
+    using VecHash = ::libsemigroups::VecHash<element_type>;
+
+    //! \copydoc libsemigroups::Hash
     using ElementHash = ::libsemigroups::Hash<element_type>;
-    using EqualTo     = ::libsemigroups::EqualTo<element_type>;
-    using Swap        = ::libsemigroups::Swap<element_type>;
-    using Less        = ::libsemigroups::Less<element_type>;
-    using Degree      = ::libsemigroups::Degree<element_type>;
+
+    //! \copydoc libsemigroups::EqualTo
+    using EqualTo = ::libsemigroups::EqualTo<element_type>;
+
+    //! \copydoc libsemigroups::Swap
+    using Swap = ::libsemigroups::Swap<element_type>;
+
+    //! \copydoc libsemigroups::Less
+    using Less = ::libsemigroups::Less<element_type>;
+
+    //! \copydoc libsemigroups::Degree
+    using Degree = ::libsemigroups::Degree<element_type>;
   };
 
+  //! Defined in ``konieczny.hpp``.
+  //!
+  //! The class template Konieczny implements %Konieczny's algorithm as
+  //! described in the article "Green's equivalences in finite semigroups of
+  //! binary relations" by Janusz %Konieczny; see [here] for more details.
+  //!
+  //! A Konieczny instance is defined by a generating set, and the main
+  //! member function is Konieczny::run, which implements
+  //! Konieczny's Algorithm.  If Konieczny::run is invoked and
+  //! Konieczny::finished returns \c true, then the size, partial order of
+  //! D-classes, and complete frames for each D class are known.
+  //!
+  //! \sa KoniecznyTraits, BaseDClass, RegularDClass, and NonRegularDClass
+  //!
+  //! [here]:  https://link.springer.com/article/10.1007/BF02573672
+  //!
+  // TODO(??) Example
   template <typename TElementType,
             typename TTraits = KoniecznyTraits<TElementType>>
   class Konieczny : public Runner,
                     private detail::BruidhinnTraits<TElementType> {
+    // pointers are not currently supported
     static_assert(!std::is_pointer<TElementType>::value,
                   "Pointer types are not currently supported by Konieczny");
     ////////////////////////////////////////////////////////////////////////
@@ -112,6 +171,12 @@ namespace libsemigroups {
         TElementType>::internal_const_reference;
     using internal_reference =
         typename detail::BruidhinnTraits<TElementType>::internal_reference;
+
+    using PairHash = konieczny_helpers::PairHash;
+
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - internal structs - private
+    ////////////////////////////////////////////////////////////////////////
 
     struct InternalElementHash : private detail::BruidhinnTraits<TElementType> {
       using Hash = typename TTraits::ElementHash;
@@ -174,32 +239,95 @@ namespace libsemigroups {
                                               InternalEqualTo>>;
 
    public:
-    using element_type    = typename TTraits::element_type;
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - aliases - public
+    ////////////////////////////////////////////////////////////////////////
+
+    //! The type of the elements of the semigroup represented by \c this.
+    using element_type = typename TTraits::element_type;
+
+    //! The type of a const reference to an element of the semigroup represented
+    //! by \c this.
     using const_reference = element_type const&;
 
+    //! The type of indices of D classes in the semigroup represented by \c
+    //! this.
+    //! \sa cbegin_D_classes and cbegin_regular_D_classes
+    using D_class_index_type = size_t;
+
+    //! The type of the lambda values that the semigroup represented by \c this
+    //! acts on.
     using lambda_value_type = typename TTraits::lambda_value_type;
-    using rho_value_type    = typename TTraits::rho_value_type;
 
+    //! The type of the orbit of the lambda values under the action of the
+    //! semigroup represented by \c this.
     using lambda_orb_type = typename TTraits::lambda_orb_type;
-    using rho_orb_type    = typename TTraits::rho_orb_type;
 
-    using Product  = typename TTraits::Product;
-    using Lambda   = typename TTraits::Lambda;
-    using Rho      = typename TTraits::Rho;
-    using Rank     = typename TTraits::Rank;
-    using One      = typename TTraits::One;
-    using EqualTo  = typename TTraits::EqualTo;
-    using Swap     = typename TTraits::Swap;
-    using Less     = typename TTraits::Less;
-    using Degree   = typename TTraits::Degree;
-    using PairHash = konieczny_helpers::PairHash;
+    //! The type of the rho values that the semigroup represented by \c this
+    //! acts on.
+    using rho_value_type = typename TTraits::rho_value_type;
 
-    using rho_orb_index_type        = typename rho_orb_type::index_type;
-    using rho_orb_scc_index_type    = typename rho_orb_type::scc_index_type;
+    //! The type of the orbit of the rho values under the action of the
+    //! semigroup represented by \c this.
+    using rho_orb_type = typename TTraits::rho_orb_type;
+
+    //! \copydoc libsemigroups::Degree
+    using Degree = typename TTraits::Degree;
+
+    //! \copydoc libsemigroups::EqualTo
+    using EqualTo = typename TTraits::EqualTo;
+
+    //! \copydoc libsemigroups::Lambda
+    using Lambda = typename TTraits::Lambda;
+
+    //! \copydoc libsemigroups::Less
+    using Less = typename TTraits::Less;
+
+    //! \copydoc libsemigroups::One
+    using One = typename TTraits::One;
+
+    //! \copydoc libsemigroups::Product
+    using Product = typename TTraits::Product;
+
+    //! \copydoc libsemigroups::Rank
+    using Rank = typename TTraits::Rank;
+
+    //! \copydoc libsemigroups::Rho
+    using Rho = typename TTraits::Rho;
+
+    //! \copydoc libsemigroups::Swap
+    using Swap = typename TTraits::Swap;
+
+   private:
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - aliases - private
+    ////////////////////////////////////////////////////////////////////////
     using lambda_orb_index_type     = typename lambda_orb_type::index_type;
     using lambda_orb_scc_index_type = typename lambda_orb_type::scc_index_type;
-    using D_class_index_type        = size_t;
+    using rho_orb_index_type        = typename rho_orb_type::index_type;
+    using rho_orb_scc_index_type    = typename rho_orb_type::scc_index_type;
 
+   public:
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - constructor and destructor - public
+    ////////////////////////////////////////////////////////////////////////
+
+    //! Construct from generators.
+    //!
+    //! This is the default constructor for a semigroup generated by a vector
+    //! of generators.  There can be duplicate generators and although they do
+    //! not count as distinct elements, they do count as distinct generators.
+    //! In other words, the generators of the semigroup are precisely (a copy
+    //! of) \p gens in the same order they occur in \p gens.
+    //!
+    //! The generators \p gens are copied by the constructor, and so it is the
+    //! responsibility of the caller to delete \p gens.
+    //!
+    //! \param gens the generators of the semigroup represented by \c this.
+    //!
+    //! \throws LibsemigroupsException if \p gens is empty, or
+    //! Konieczny::Degree()(x) != Konieczny::Degree()(y) for \c x, \c y in
+    //! \p gens.
     explicit Konieczny(std::vector<element_type> const& gens)
         : _adjoined_identity_contained(false),
           _computed_all_classes(false),
@@ -265,63 +393,21 @@ namespace libsemigroups {
 
     ~Konieczny();
 
-    void run_impl() override;
-    bool finished_impl() const override;
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - forward class declarations - public
+    ////////////////////////////////////////////////////////////////////////
 
-    // TODO(later): it must be possible to do better than this
-    void idem_in_H_class(internal_element_type&   res,
-                         internal_const_reference bm) {
-      this->to_external(res) = this->to_external_const(bm);
-      do {
-        Swap()(this->to_external(res), this->to_external(_tmp_element1));
-        Product()(this->to_external(res),
-                  this->to_external_const(_tmp_element1),
-                  this->to_external_const(bm));
-        Product()(this->to_external(_tmp_element1),
-                  this->to_external_const(res),
-                  this->to_external_const(res));
-      } while (!InternalEqualTo()(res, _tmp_element1));
-    }
+    class BaseDClass;
+    class RegularDClass;
+    class NonRegularDClass;
 
-    //! Finds a group index of a H class in the R class of \p bm
-    // modifies _tmp_element1, _tmp_element2, _tmp_element3
-    // modifies _tmp_lambda_value1
-    // modifies _tmp_rho_value1
-    lambda_orb_index_type find_group_index(internal_const_reference bm) {
-      Rho()(_tmp_rho_value1, this->to_external_const(bm));
-      Lambda()(_tmp_lambda_value1, this->to_external_const(bm));
-      lambda_orb_index_type lpos = _lambda_orb.position(_tmp_lambda_value1);
-      LIBSEMIGROUPS_ASSERT(lpos != UNDEFINED);
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - member functions - public
+    ////////////////////////////////////////////////////////////////////////
 
-      lambda_orb_scc_index_type lval_scc_id
-          = _lambda_orb.digraph().scc_id(lpos);
-
-      std::pair<rho_orb_index_type, lambda_orb_scc_index_type> key
-          = std::make_pair(_rho_orb.position(_tmp_rho_value1), lval_scc_id);
-
-      if (_group_indices.find(key) != _group_indices.end()) {
-        return _group_indices.at(key);
-      } else {
-        // use _tmp_element2 since is_group_index modifies 1
-        Product()(this->to_external(_tmp_element2),
-                  this->to_external_const(bm),
-                  _lambda_orb.multiplier_to_scc_root(lpos));
-        for (auto it = _lambda_orb.digraph().cbegin_scc(lval_scc_id);
-             it < _lambda_orb.digraph().cend_scc(lval_scc_id);
-             it++) {
-          Product()(this->to_external(_tmp_element3),
-                    this->to_external(_tmp_element2),
-                    _lambda_orb.multiplier_from_scc_root(*it));
-          if (is_group_index(this->to_external_const(bm),
-                             this->to_external(_tmp_element3))) {
-            _group_indices.emplace(key, *it);
-            return *it;
-          }
-        }
-      }
-      _group_indices.emplace(key, UNDEFINED);
-      return UNDEFINED;
-    }
+    bool   finished_impl() const override;
+    void   run_impl() override;
+    size_t size();
 
     bool is_regular_element(internal_const_reference bm) {
       if (find_group_index(bm) != UNDEFINED) {
@@ -330,65 +416,9 @@ namespace libsemigroups {
       return false;
     }
 
-    // modifies _tmp_element1
-    // modifies _tmp_lambda_value and _tmp_rho_value
-    bool is_group_index(const_reference x, const_reference y) {
-      Product()(this->to_external(_tmp_element1), y, x);
-      Lambda()(_tmp_lambda_value1, this->to_external(_tmp_element1));
-      Rho()(_tmp_rho_value1, this->to_external(_tmp_element1));
-      Lambda()(_tmp_lambda_value2, x);
-      Rho()(_tmp_rho_value2, y);
-      return _tmp_lambda_value1 == _tmp_lambda_value2
-             && _tmp_rho_value1 == _tmp_rho_value2;
-    }
-
-    //! Finds an idempotent in the D class of \c bm, if \c bm is regular
-    // modifies _tmp_element1 and _tmp_element2
-    // modifies _tmp_lambda_value1
-    internal_element_type find_idem(internal_const_reference bm) {
-      LIBSEMIGROUPS_ASSERT(Degree()(this->to_external_const(bm))
-                           == Degree()(this->to_external_const(_tmp_element1)));
-      LIBSEMIGROUPS_ASSERT(Degree()(this->to_external_const(bm))
-                           == Degree()(this->to_external_const(_tmp_element2)));
-      Product()(this->to_external(_tmp_element1),
-                this->to_external_const(bm),
-                this->to_external_const(bm));
-      if (EqualTo()(this->to_external(_tmp_element1),
-                    this->to_external_const(bm))) {
-        return this->internal_copy(bm);
-      }
-      LIBSEMIGROUPS_ASSERT(is_regular_element(bm));
-
-      lambda_orb_index_type i = find_group_index(bm);
-      Lambda()(_tmp_lambda_value1, this->to_external_const(bm));
-      lambda_orb_index_type pos = _lambda_orb.position(_tmp_lambda_value1);
-
-      Product()(this->to_external(_tmp_element1),
-                this->to_external_const(bm),
-                _lambda_orb.multiplier_to_scc_root(pos));
-      Product()(this->to_external(_tmp_element2),
-                this->to_external(_tmp_element1),
-                _lambda_orb.multiplier_from_scc_root(i));
-
-      idem_in_H_class(_tmp_element3, _tmp_element2);
-      return this->internal_copy(_tmp_element3);
-    }
-
-    void group_inverse(internal_element_type&   res,
-                       internal_const_reference id,
-                       internal_const_reference bm) {
-      this->to_external(_tmp_element1) = this->to_external_const(bm);
-      do {
-        Swap()(this->to_external(res), this->to_external(_tmp_element1));
-        Product()(this->to_external(_tmp_element1),
-                  this->to_external_const(res),
-                  this->to_external_const(bm));
-      } while (!InternalEqualTo()(_tmp_element1, id));
-    }
-
-    class BaseDClass;
-    class RegularDClass;
-    class NonRegularDClass;
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - iterators - public
+    ////////////////////////////////////////////////////////////////////////
 
     typename std::vector<RegularDClass*>::const_iterator
     cbegin_regular_D_classes() {
@@ -416,12 +446,150 @@ namespace libsemigroups {
       return _D_classes.cend();
     }
 
-    size_t size();
-
    private:
-    void init();
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - utility methods - private
+    ////////////////////////////////////////////////////////////////////////
+
+    //! Finds a group index of a H class in the R class of \p x.
+    // modifies _tmp_element1, _tmp_element2, _tmp_element3
+    // modifies _tmp_lambda_value1
+    // modifies _tmp_rho_value1
+    lambda_orb_index_type find_group_index(internal_const_reference x) {
+      Rho()(_tmp_rho_value1, this->to_external_const(x));
+      Lambda()(_tmp_lambda_value1, this->to_external_const(x));
+      lambda_orb_index_type lpos = _lambda_orb.position(_tmp_lambda_value1);
+      LIBSEMIGROUPS_ASSERT(lpos != UNDEFINED);
+
+      lambda_orb_scc_index_type lval_scc_id
+          = _lambda_orb.digraph().scc_id(lpos);
+
+      std::pair<rho_orb_index_type, lambda_orb_scc_index_type> key
+          = std::make_pair(_rho_orb.position(_tmp_rho_value1), lval_scc_id);
+
+      if (_group_indices.find(key) != _group_indices.end()) {
+        return _group_indices.at(key);
+      } else {
+        // use _tmp_element2 since is_group_index modifies 1
+        Product()(this->to_external(_tmp_element2),
+                  this->to_external_const(x),
+                  _lambda_orb.multiplier_to_scc_root(lpos));
+        for (auto it = _lambda_orb.digraph().cbegin_scc(lval_scc_id);
+             it < _lambda_orb.digraph().cend_scc(lval_scc_id);
+             it++) {
+          Product()(this->to_external(_tmp_element3),
+                    this->to_external(_tmp_element2),
+                    _lambda_orb.multiplier_from_scc_root(*it));
+          if (is_group_index(this->to_external_const(x),
+                             this->to_external(_tmp_element3))) {
+            _group_indices.emplace(key, *it);
+            return *it;
+          }
+        }
+      }
+      _group_indices.emplace(key, UNDEFINED);
+      return UNDEFINED;
+    }
+
+    //! Finds the idempotent in the H class of \p x. Note that it is assumed
+    //! that \p x is in a group H class.
+    // TODO(later): it must be possible to do better than this
+    void idem_in_H_class(internal_element_type&   res,
+                         internal_const_reference x) {
+      this->to_external(res) = this->to_external_const(x);
+      do {
+        Swap()(this->to_external(res), this->to_external(_tmp_element1));
+        Product()(this->to_external(res),
+                  this->to_external_const(_tmp_element1),
+                  this->to_external_const(x));
+        Product()(this->to_external(_tmp_element1),
+                  this->to_external_const(res),
+                  this->to_external_const(res));
+      } while (!InternalEqualTo()(res, _tmp_element1));
+    }
+
+    //! Finds an idempotent in the D class of \c x, if \c x is regular, and
+    //! modifies \c x in place to be this idempotent
+    // modifies _tmp_element1, _tmp_element2, and _tmp_element3
+    // modifies _tmp_lambda_value1
+    void make_idem(internal_reference x) {
+      LIBSEMIGROUPS_ASSERT(Degree()(this->to_external_const(x))
+                           == Degree()(this->to_external_const(_tmp_element1)));
+      LIBSEMIGROUPS_ASSERT(Degree()(this->to_external_const(x))
+                           == Degree()(this->to_external_const(_tmp_element2)));
+      LIBSEMIGROUPS_ASSERT(is_regular_element(x));
+
+      Product()(this->to_external(_tmp_element1),
+                this->to_external_const(x),
+                this->to_external_const(x));
+      if (EqualTo()(this->to_external(_tmp_element1),
+                    this->to_external_const(x))) {
+        return;
+      }
+
+      lambda_orb_index_type i = find_group_index(x);
+      Lambda()(_tmp_lambda_value1, this->to_external_const(x));
+      lambda_orb_index_type pos = _lambda_orb.position(_tmp_lambda_value1);
+
+      Product()(this->to_external(_tmp_element1),
+                this->to_external_const(x),
+                _lambda_orb.multiplier_to_scc_root(pos));
+      Product()(this->to_external(_tmp_element2),
+                this->to_external(_tmp_element1),
+                _lambda_orb.multiplier_from_scc_root(i));
+
+      idem_in_H_class(_tmp_element3, _tmp_element2);
+      this->to_external(x) = this->to_external_const(_tmp_element3);
+    }
+
+    //! Finds the group inverse of \p x in its H class; i.e. the element \c y
+    //! in the H class of \p x such that <tt> xy = \p id</tt>. Will run forever
+    //! if no such element exists.
+    void group_inverse(internal_element_type&   res,
+                       internal_const_reference id,
+                       internal_const_reference x) {
+      this->to_external(_tmp_element1) = this->to_external_const(x);
+      do {
+        Swap()(this->to_external(res), this->to_external(_tmp_element1));
+        Product()(this->to_external(_tmp_element1),
+                  this->to_external_const(res),
+                  this->to_external_const(x));
+      } while (!InternalEqualTo()(_tmp_element1, id));
+    }
+
+    //! Determines whether <tt>(x, y)</tt> forms a group index.
+    // modifies _tmp_element1
+    // modifies _tmp_lambda_value and _tmp_rho_value
+    bool is_group_index(const_reference x, const_reference y) {
+      Product()(this->to_external(_tmp_element1), y, x);
+      Lambda()(_tmp_lambda_value1, this->to_external(_tmp_element1));
+      Rho()(_tmp_rho_value1, this->to_external(_tmp_element1));
+      Lambda()(_tmp_lambda_value2, x);
+      Rho()(_tmp_rho_value2, y);
+      return _tmp_lambda_value1 == _tmp_lambda_value2
+             && _tmp_rho_value1 == _tmp_rho_value2;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - accessor member functions - private
+    ////////////////////////////////////////////////////////////////////////
     void add_D_class(Konieczny::RegularDClass* D);
     void add_D_class(Konieczny::NonRegularDClass* D);
+
+    typename std::vector<internal_element_type>::const_iterator
+    cbegin_generators() const {
+      return _gens.cbegin();
+    }
+
+    typename std::vector<internal_element_type>::const_iterator
+    cend_generators() const {
+      return _gens.cend();
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - initialisation member functions - private
+    ////////////////////////////////////////////////////////////////////////
+    void init();
 
     void compute_orbs() {
       detail::Timer t;
@@ -447,16 +615,9 @@ namespace libsemigroups {
                      t.string());
     }
 
-    typename std::vector<internal_element_type>::const_iterator
-    cbegin_generators() const {
-      return _gens.cbegin();
-    }
-
-    typename std::vector<internal_element_type>::const_iterator
-    cend_generators() const {
-      return _gens.cend();
-    }
-
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - data - private
+    ////////////////////////////////////////////////////////////////////////
     bool                                         _adjoined_identity_contained;
     bool                                         _computed_all_classes;
     std::vector<BaseDClass*>                     _D_classes;
@@ -495,20 +656,35 @@ namespace libsemigroups {
   // BaseDClass
   /////////////////////////////////////////////////////////////////////////////
 
+  //! Defined in ``konieczny.hpp``.
+  //!
+  //! The nested abstract class Konieczny::BaseDClass represents a D class via a
+  //! complete frame as computed in %Konieczny's algorithm. See [here] for more
+  //! details.
+  //!
+  //! A BaseDClass is defined by a pointer to the corresponding Konieczny
+  //! object, together with a representative of the D class, but as an abstract
+  //! class cannot be directly constructed; instead you should construct a
+  //! RegularDClass or NonRegularDClass.
+  //!
+  //! \sa Konieczny, RegularDClass, and NonRegularDClass
+  //!
+  //! [here]:  https://link.springer.com/article/10.1007/BF02573672
+  //!
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::BaseDClass
       : protected detail::BruidhinnTraits<TElementType> {
     ////////////////////////////////////////////////////////////////////////
-    // BaseDClass - aliases - public
+    // BaseDClass - aliases - protected
     ////////////////////////////////////////////////////////////////////////
-   public:
+   protected:
     using left_indices_index_type  = size_t;
     using right_indices_index_type = size_t;
-    ////////////////////////////////////////////////////////////////////////
-    // BaseDClass - constructor
-    ////////////////////////////////////////////////////////////////////////
 
-   public:
+   protected:
+    ////////////////////////////////////////////////////////////////////////
+    // BaseDClass - constructor - protected
+    ////////////////////////////////////////////////////////////////////////
     BaseDClass(Konieczny* parent, internal_reference rep)
         : _class_computed(false),
           _H_class(),
@@ -533,6 +709,7 @@ namespace libsemigroups {
           _tmp_lambda_value(Lambda()(this->to_external_const(_rep))),
           _tmp_rho_value(Rho()(this->to_external_const(_rep))) {}
 
+   public:
     virtual ~BaseDClass() {
       // the user of _internal_vec/_internal_set is responsible for freeing any
       // necessary elements
@@ -550,10 +727,10 @@ namespace libsemigroups {
       this->internal_free(_tmp_element4);
     }
 
-    const_reference rep() const noexcept {
-      return this->to_external_const(_rep);
-    }
-
+   protected:
+    ////////////////////////////////////////////////////////////////////////
+    // BaseDClass - iterators - protected
+    ////////////////////////////////////////////////////////////////////////
     using const_iterator =
         typename std::vector<internal_element_type>::const_iterator;
 
@@ -635,6 +812,14 @@ namespace libsemigroups {
       return _H_class.cend();
     }
 
+   public:
+    ////////////////////////////////////////////////////////////////////////
+    // BaseDClass - member functions - public
+    ////////////////////////////////////////////////////////////////////////
+    const_reference rep() const noexcept {
+      return this->to_external_const(_rep);
+    }
+
     virtual bool contains(const_reference bm) = 0;
 
     bool contains(const_reference bm, size_t rank) {
@@ -644,6 +829,18 @@ namespace libsemigroups {
     virtual size_t size() {
       init();
       return _H_class.size() * _left_reps.size() * _right_reps.size();
+    }
+
+    size_t nr_left_reps() {
+      return _left_reps.size();
+    }
+
+    size_t nr_right_reps() {
+      return _right_reps.size();
+    }
+
+    size_t size_H_class() const {
+      return _H_class.size();
     }
 
     // uses _tmp_element, tmp_element2 _tmp_element3
@@ -690,16 +887,21 @@ namespace libsemigroups {
     }
 
    protected:
-    virtual void compute_left_mults()     = 0;
-    virtual void compute_left_mults_inv() = 0;
-    virtual void compute_left_reps()      = 0;
-
+    ////////////////////////////////////////////////////////////////////////
+    // BaseDClass - initialisation member functions - protected
+    ////////////////////////////////////////////////////////////////////////
+    virtual void init()                    = 0;
+    virtual void compute_left_mults()      = 0;
+    virtual void compute_left_mults_inv()  = 0;
+    virtual void compute_left_reps()       = 0;
     virtual void compute_right_mults()     = 0;
     virtual void compute_right_mults_inv() = 0;
     virtual void compute_right_reps()      = 0;
+    virtual void compute_H_class()         = 0;
 
-    virtual void compute_H_class() = 0;
-
+    ////////////////////////////////////////////////////////////////////////
+    // BaseDClass - accessor member functions - protected
+    ////////////////////////////////////////////////////////////////////////
     void push_left_mult(internal_const_reference x) {
       _left_mults.push_back(this->internal_copy(x));
 #ifdef LIBSEMIGROUPS_DEBUG
@@ -835,14 +1037,6 @@ namespace libsemigroups {
 #endif
     }
 
-    size_t left_reps_size() {
-      return _left_reps.size();
-    }
-
-    size_t right_reps_size() {
-      return _right_reps.size();
-    }
-
     bool class_computed() const {
       return _class_computed;
     }
@@ -884,8 +1078,6 @@ namespace libsemigroups {
       _H_class.push_back(x);
     }
 
-    virtual void init() = 0;
-
     lambda_value_type& tmp_lambda_value() {
       return _tmp_lambda_value;
     }
@@ -910,10 +1102,6 @@ namespace libsemigroups {
       return _tmp_element4;
     }
 
-    size_t size_H_class() const {
-      return _H_class.size();
-    }
-
     std::unordered_set<internal_element_type,
                        InternalElementHash,
                        InternalEqualTo>&
@@ -925,7 +1113,14 @@ namespace libsemigroups {
       return _internal_vec;
     }
 
+    internal_reference unsafe_rep() {
+      return _rep;
+    }
+
    private:
+    ////////////////////////////////////////////////////////////////////////
+    // BaseDClass - data - private
+    ////////////////////////////////////////////////////////////////////////
     bool                               _class_computed;
     std::vector<internal_element_type> _H_class;
     bool                               _H_class_computed;
@@ -960,6 +1155,8 @@ namespace libsemigroups {
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::RegularDClass
       : public Konieczny<TElementType, TTraits>::BaseDClass {
+    friend class Konieczny<TElementType, TTraits>::NonRegularDClass;
+
    public:
     using konieczny_type = Konieczny<element_type>;
     using left_indices_index_type =
@@ -967,8 +1164,8 @@ namespace libsemigroups {
     using right_indices_index_type =
         typename konieczny_type::BaseDClass::right_indices_index_type;
 
-    RegularDClass(Konieczny* parent, internal_reference idem_rep)
-        : Konieczny::BaseDClass(parent, idem_rep),
+    RegularDClass(Konieczny* parent, internal_reference rep)
+        : Konieczny::BaseDClass(parent, rep),
           _H_gens(),
           _H_gens_computed(false),
           _idem_reps_computed(false),
@@ -980,14 +1177,15 @@ namespace libsemigroups {
           _right_idem_reps(),
           _right_indices(),
           _right_indices_computed(false) {
-      Product()(this->to_external(this->tmp_element()),
-                this->to_external_const(idem_rep),
-                this->to_external_const(idem_rep));
-      if (!EqualTo()(this->to_external(this->tmp_element()),
-                     this->to_external_const(idem_rep))) {
-        LIBSEMIGROUPS_EXCEPTION(
-            "the representative given should be idempotent");
+      if (!parent->is_regular_element(rep)) {
+        LIBSEMIGROUPS_EXCEPTION("RegularDClass: the representative "
+                                "given should be regular");
       }
+      parent->make_idem(this->unsafe_rep());
+      Product()(
+          this->to_external(this->tmp_element()), this->rep(), this->rep());
+      LIBSEMIGROUPS_ASSERT(
+          EqualTo()(this->to_external(this->tmp_element()), this->rep()));
     }
 
     virtual ~RegularDClass() {
@@ -1494,13 +1692,14 @@ namespace libsemigroups {
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::NonRegularDClass
       : public Konieczny<TElementType, TTraits>::BaseDClass {
-   public:
+   private:
     using konieczny_type = Konieczny<element_type>;
     using left_indices_index_type =
         typename konieczny_type::BaseDClass::left_indices_index_type;
     using right_indices_index_type =
         typename konieczny_type::BaseDClass::right_indices_index_type;
 
+   public:
     NonRegularDClass(Konieczny* parent, internal_reference rep)
         : Konieczny::BaseDClass(parent, rep),
           _H_set(),
@@ -1514,11 +1713,7 @@ namespace libsemigroups {
           _right_idem_class(),
           _right_idem_H_class(),
           _right_idem_right_reps() {
-      Product()(this->to_external(this->tmp_element()),
-                this->to_external_const(rep),
-                this->to_external_const(rep));
-      if (EqualTo()(this->to_external(this->tmp_element()),
-                    this->to_external_const(rep))) {
+      if (parent->is_regular_element(rep)) {
         LIBSEMIGROUPS_EXCEPTION("NonRegularDClass: the representative "
                                 "given should not be idempotent");
       }
@@ -1854,7 +2049,7 @@ namespace libsemigroups {
                 _lambda_index_positions.emplace(
                     lpos, std::vector<left_indices_index_type>());
               }
-              _lambda_index_positions[lpos].push_back(this->left_reps_size());
+              _lambda_index_positions[lpos].push_back(this->nr_left_reps());
 
               // push_left_rep and push_left_mult use tmp_element and
               // tmp_element2
@@ -1948,7 +2143,7 @@ namespace libsemigroups {
                 _rho_index_positions.emplace(
                     rpos, std::vector<right_indices_index_type>());
               }
-              _rho_index_positions[rpos].push_back(this->right_reps_size());
+              _rho_index_positions[rpos].push_back(this->nr_right_reps());
               this->push_right_rep(this->tmp_element4());
               this->push_right_mult(this->tmp_element3());
 
@@ -2197,11 +2392,9 @@ namespace libsemigroups {
         std::pair<internal_element_type, D_class_index_type> tup(_one, 0);
 
         if (reps_are_reg) {
-          tup                     = next_reps.back();
-          internal_element_type y = this->find_idem(tup.first);
-          D                       = new RegularDClass(this, y);
+          tup = next_reps.back();
+          D   = new RegularDClass(this, tup.first);
           add_D_class(static_cast<RegularDClass*>(D));
-          this->internal_free(tup.first);
           for (internal_reference x : D->covering_reps()) {
             size_t rnk = Rank()(this->to_external_const(x));
             _ranks.insert(rnk);
