@@ -599,8 +599,8 @@ namespace libsemigroups {
     // TODO(now): noexcept
     void operator()(T& res, T const& pt, BooleanMat const& x) const {
       using value_type = typename T::value_type;
-      T buf;
-      // buf.clear();
+      static thread_local T buf;
+      buf.clear();
       res.clear();
 
       for (auto v : pt) {
