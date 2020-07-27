@@ -76,8 +76,8 @@ namespace libsemigroups {
 
     BMat8                           x({{1, 0, 0}, {1, 1, 0}, {1, 0, 1}});
     Konieczny<BMat8>::RegularDClass D = Konieczny<BMat8>::RegularDClass(&KS, x);
-    REQUIRE(D.cend_left_indices() - D.cbegin_left_indices() == 3);
-    REQUIRE(D.cend_right_indices() - D.cbegin_right_indices() == 3);
+    REQUIRE(D.nr_L_classes() == 3);
+    REQUIRE(D.nr_R_classes() == 3);
     REQUIRE(D.size() == 18);
   }
 

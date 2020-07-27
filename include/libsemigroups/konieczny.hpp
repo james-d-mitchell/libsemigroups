@@ -20,14 +20,19 @@
 
 // TODO(later):
 // 1) exception safety!
-// 2) IWYU
 // 3) expose iterators to relevant things in D classes
+// 4) maps to D classes containing given L/R values
 //
 // TODO(now):
 // 1) more reporting
 // 2) BruidhinnTraits
 // 3) profiling
-// 4) maps to D classes containing given L/R values
+// 4) IWYU - manually
+// 5) codecov - script in code coverage
+// 6) const
+// 7) noexcept
+// 8) linting
+// 9) formatting
 
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 #define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
@@ -53,6 +58,7 @@ namespace libsemigroups {
     //!
     //! This struct provides a call operator for obtaining a hash value for the
     //! pair.
+    // TODO: this should be changed somehow
     struct PairHash {
       //! Hashes a pair of size_t.
       size_t operator()(std::pair<size_t, size_t> const& x) const {
@@ -153,6 +159,7 @@ namespace libsemigroups {
   //! [here]:  https://link.springer.com/article/10.1007/BF02573672
   //!
   // TODO(??) Example
+  // TODO add Lallement and McFadden, and ref to bib
   template <typename TElementType,
             typename TTraits = KoniecznyTraits<TElementType>>
   class Konieczny : public Runner,
@@ -398,19 +405,77 @@ namespace libsemigroups {
     // Konieczny - forward class declarations - public
     ////////////////////////////////////////////////////////////////////////
 
+    //! Defined in ``konieczny.hpp``.
+    //!
+    //! The nested abstract class Konieczny::BaseDClass represents a D class via
+    //! a complete frame as computed in %Konieczny's algorithm. See [here] for
+    //! more details.
+    //!
+    //! A BaseDClass is defined by a pointer to the corresponding Konieczny
+    //! object, together with a representative of the D class, but as an
+    //! abstract class cannot be directly constructed; instead you should
+    //! construct a RegularDClass or NonRegularDClass. Note that the values
+    //! returned by calls to member functions of BaseDClass and its derived
+    //! classes are unlikely to be correct unless the parent semigroup has been
+    //! sufficiently enumerated.
+    //!
+    //! \sa Konieczny, RegularDClass, and NonRegularDClass
+    //!
+    //! [here]:  https://link.springer.com/article/10.1007/BF02573672
     class BaseDClass;
+
+    //! Defined in ``konieczny.hpp``.
+    //!
+    //! The nested class Konieczny::RegularDClass inherits from BaseDClass and
+    //! represents a regular D class via a complete frame as computed in
+    //! %Konieczny's algorithm. See [here] for more details.
+    //!
+    //! A RegularDClass is defined by a pointer to the corresponding Konieczny
+    //! object, together with a representative of the D class.
+    //!
+    //! Note that the values returned by calls to member functions of
+    //! RegularDClass are unlikely to be correct unless the parent semigroup has
+    //! been sufficiently enumerated.
+    //!
+    //! \sa Konieczny, BaseDClass, and NonRegularDClass
+    //!
+    //! [here]:  https://link.springer.com/article/10.1007/BF02573672
     class RegularDClass;
+
+    //! Defined in ``konieczny.hpp``.
+    //!
+    //! The nested class Konieczny::NonRegularDClass inherits from BaseDClass
+    //! and represents a regular D class via a complete frame as computed in
+    //! %Konieczny's algorithm. See [here] for more details.
+    //!
+    //! A NonRegularDClass is defined by a pointer to the corresponding
+    //! Konieczny object, together with a representative of the D class.
+    //!
+    //! Note that the values returned by calls to member functions of
+    //! RegularDClass are unlikely to be correct unless the parent semigroup has
+    //! been sufficiently enumerated.
+    //!
+    //! \sa Konieczny, BaseDClass, and RegularDClass
+    //!
+    //! [here]:  https://link.springer.com/article/10.1007/BF02573672
     class NonRegularDClass;
 
     ////////////////////////////////////////////////////////////////////////
     // Konieczny - member functions - public
     ////////////////////////////////////////////////////////////////////////
 
-    bool   finished_impl() const override;
-    void   run_impl() override;
+    //! Returns the size of \c this.
+    //!
+    //! This involves computing complete frames for every D class of \c this, if
+    //! they are not already computed.
     size_t size();
 
+    //! Returns the size of \c this.
+    //!
+    //! This involves computing the orbits of the Lambda and Rho values under
+    //! the action of \c this, if they are not already computed.
     bool is_regular_element(internal_const_reference bm) {
+      compute_orbs();
       if (find_group_index(bm) != UNDEFINED) {
         return true;
       }
@@ -421,8 +486,14 @@ namespace libsemigroups {
     // Konieczny - iterators - public
     ////////////////////////////////////////////////////////////////////////
 
+    //! Returns a const iterator referring to a pointer to the first regular D-
+    //! class of the semigroup.
+    //!
+    //! This member function involves fully
+    //! enumerating the semigroup, if it is not already fully enumerated.
     typename std::vector<RegularDClass*>::const_iterator
     cbegin_regular_D_classes() {
+      run();
       auto it = _regular_D_classes.cbegin();
       if (!_adjoined_identity_contained) {
         it++;
@@ -430,12 +501,24 @@ namespace libsemigroups {
       return it;
     }
 
+    //! Returns a const iterator referring to past the pointer to the last
+    //! regular D-class of the semigroup.
+    //!
+    //! This member function involves fully
+    //! enumerating the semigroup, if it is not already fully enumerated.
     typename std::vector<RegularDClass*>::const_iterator
     cend_regular_D_classes() {
+      run();
       return _regular_D_classes.cend();
     }
 
+    //! Returns a const iterator referring to a pointer to the first D-class
+    //! of the semigroup.
+    //!
+    //! This member function involves fully
+    //! enumerating the semigroup, if it is not already fully enumerated.
     typename std::vector<BaseDClass*>::const_iterator cbegin_D_classes() {
+      run();
       auto it = _D_classes.cbegin();
       if (!_adjoined_identity_contained) {
         it++;
@@ -443,7 +526,13 @@ namespace libsemigroups {
       return it;
     }
 
+    //! Returns a const iterator referring to past the pointer to the last
+    //! D-class of the semigroup.
+    //!
+    //! This member function involves fully
+    //! enumerating the semigroup, if it is not already fully enumerated.
     typename std::vector<BaseDClass*>::const_iterator cend_D_classes() {
+      run();
       return _D_classes.cend();
     }
 
@@ -615,6 +704,12 @@ namespace libsemigroups {
                      _rho_orb.current_size(),
                      t.string());
     }
+    
+    ////////////////////////////////////////////////////////////////////////
+    // Konieczny - Runner methods - private
+    ////////////////////////////////////////////////////////////////////////
+    bool   finished_impl() const override;
+    void   run_impl() override;
 
     ////////////////////////////////////////////////////////////////////////
     // Konieczny - data - private
@@ -657,23 +752,6 @@ namespace libsemigroups {
   // BaseDClass
   /////////////////////////////////////////////////////////////////////////////
 
-  //! Defined in ``konieczny.hpp``.
-  //!
-  //! The nested abstract class Konieczny::BaseDClass represents a D class via a
-  //! complete frame as computed in %Konieczny's algorithm. See [here] for more
-  //! details.
-  //!
-  //! A BaseDClass is defined by a pointer to the corresponding Konieczny
-  //! object, together with a representative of the D class, but as an abstract
-  //! class cannot be directly constructed; instead you should construct a
-  //! RegularDClass or NonRegularDClass. Note that the values returned by calls
-  //! to member functions of BaseDClass and its derived classes are unlikely to
-  //! be correct unless the parent semigroup has been sufficiently enumerated.
-  //!
-  //! \sa Konieczny, RegularDClass, and NonRegularDClass
-  //!
-  //! [here]:  https://link.springer.com/article/10.1007/BF02573672
-  //!
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::BaseDClass
       : protected detail::BruidhinnTraits<TElementType> {
@@ -688,7 +766,7 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
     // BaseDClass - constructor - protected
     ////////////////////////////////////////////////////////////////////////
-    BaseDClass(Konieczny* parent, internal_reference rep)
+    BaseDClass(Konieczny* parent, element_type & rep)
         : _class_computed(false),
           _H_class(),
           _H_class_computed(false),
@@ -699,22 +777,22 @@ namespace libsemigroups {
           _left_reps(),
           _mults_computed(false),
           _parent(parent),
-          _rank(Rank()(this->to_external_const(rep))),
-          _rep(rep),
+          _rank(Rank()(rep)),
+          _rep(this->to_internal(rep)),
           _reps_computed(false),
           _right_mults(),
           _right_mults_inv(),
           _right_reps(),
-          _tmp_element(this->internal_copy(rep)),
-          _tmp_element2(this->internal_copy(rep)),
-          _tmp_element3(this->internal_copy(rep)),
-          _tmp_element4(this->internal_copy(rep)),
-          _tmp_lambda_value(Lambda()(this->to_external_const(_rep))),
-          _tmp_rho_value(Rho()(this->to_external_const(_rep))) {}
+          _tmp_element(this->internal_copy(_rep)),
+          _tmp_element2(this->internal_copy(_rep)),
+          _tmp_element3(this->internal_copy(_rep)),
+          _tmp_element4(this->internal_copy(_rep)),
+          _tmp_lambda_value(Lambda()(rep)),
+          _tmp_rho_value(Rho()(rep)) {}
 
    public:
     ////////////////////////////////////////////////////////////////////////
-    // BaseDClass - destructor - public 
+    // BaseDClass - destructor - public
     ////////////////////////////////////////////////////////////////////////
     virtual ~BaseDClass() {
       // the user of _internal_vec/_internal_set is responsible for freeing any
@@ -732,7 +810,7 @@ namespace libsemigroups {
       this->internal_free(_tmp_element3);
       this->internal_free(_tmp_element4);
     }
-   
+
     ////////////////////////////////////////////////////////////////////////
     // BaseDClass - member functions - public
     ////////////////////////////////////////////////////////////////////////
@@ -743,7 +821,7 @@ namespace libsemigroups {
     //! representative. This function returns the representative used by \c
     //! this. This may not be the same representative as used to construct \c
     //! this, but is guaranteed to not change.
-    const_reference rep() const noexcept {
+    const_reference rep() const {
       return this->to_external_const(_rep);
     }
 
@@ -775,34 +853,43 @@ namespace libsemigroups {
       return nr_L_classes() * nr_R_classes() * size_H_class();
     }
 
-    //! Returns the number of L classes in \c this. 
+    //! Returns the number of L classes in \c this.
     //!
-    //! 
+    //! This involves computing most of the complete frame for this semigroup.
     size_t nr_L_classes() {
       compute_left_mults();
-      return _left_reps.size();
+      return _left_mults.size();
     }
 
+    //! Returns the number of L classes in \c this.
+    //!
+    //! This involves computing most of the complete frame for this semigroup.
     size_t nr_R_classes() {
       compute_right_mults();
-      return _right_reps.size();
+      return _right_mults.size();
     }
 
+    //! Returns the number of L classes in \c this.
+    //!
+    //! This involves computing most of the complete frame for this semigroup.
     size_t size_H_class() {
       compute_H_class();
       return _H_class.size();
     }
 
-    //! Returns the size of \c this.
+    // TODO: should this really be public??
+    //! Returns a set of representatives of L- or R-classes covered by \c this.
     //!
-    //! Returns the size of the D class represented by \c this. This requires
-    //! complete frame for \c this to be computed.
-
+    //! The D classes of the parent semigroup are enumerated either by finding
+    //! representatives of all L-classes or all R-classes. This member function
+    //! returns the representatives obtainable by multipliying the representatives
+    //! of \c this by generators on either the left or right.
     // uses _tmp_element, tmp_element2 _tmp_element3
     std::vector<internal_element_type>& covering_reps() {
       init();
       _internal_vec.clear();
-      // TODO(later): how to decide which side to calculate? One is often faster
+      // TODO(later): how to best decide which side to calculate? One is often
+      // faster
       if (_parent->_lambda_orb.size() < _parent->_rho_orb.size()) {
         for (internal_const_reference w : _left_reps) {
           for (auto it = _parent->cbegin_generators();
@@ -1208,14 +1295,41 @@ namespace libsemigroups {
       : public Konieczny<TElementType, TTraits>::BaseDClass {
     friend class Konieczny<TElementType, TTraits>::NonRegularDClass;
 
-   public:
+   private:
+    ////////////////////////////////////////////////////////////////////////
+    // RegularDClass - aliases - private
+    ////////////////////////////////////////////////////////////////////////
     using konieczny_type = Konieczny<element_type>;
     using left_indices_index_type =
         typename konieczny_type::BaseDClass::left_indices_index_type;
     using right_indices_index_type =
         typename konieczny_type::BaseDClass::right_indices_index_type;
+    using const_index_iterator =
+        typename std::vector<lambda_orb_index_type>::const_iterator;
+    using const_internal_iterator =
+        typename std::vector<internal_element_type>::const_iterator;
+   
+   public:
+    ////////////////////////////////////////////////////////////////////////
+    // RegularDClass - constructor and destructor - public
+    ////////////////////////////////////////////////////////////////////////
 
-    RegularDClass(Konieczny* parent, internal_reference rep)
+    //! Construct from a pointer to a Konieczny object and an element of the
+    //! semigroup represented by the Konieczny object.
+    //!
+    //! The representative \p rep is not copied by the constructor, and so must
+    //! not be modified by the user after constructing the RegularDClass. The
+    //! behaviour of RegularDClass when \p rep is not an element of the
+    //! semigroup represented by \p parent is undefined.
+    //!
+    //! \param parent a pointer to the Konieczny object representing the
+    //! semigroup of which \c this represents a D class.
+    //!
+    //! \param rep a regular element of the semigroup represented by \p parent.
+    //!
+    //! \throws LibsemigroupsException if \p rep is an element of the semigroup
+    //! represented by \p parent but is not regular.
+    RegularDClass(Konieczny* parent, element_type & rep)
         : Konieczny::BaseDClass(parent, rep),
           _H_gens(),
           _H_gens_computed(false),
@@ -1228,7 +1342,7 @@ namespace libsemigroups {
           _right_idem_reps(),
           _right_indices(),
           _right_indices_computed(false) {
-      if (!parent->is_regular_element(rep)) {
+      if (!parent->is_regular_element(this->to_internal(rep))) {
         LIBSEMIGROUPS_EXCEPTION("RegularDClass: the representative "
                                 "given should be regular");
       }
@@ -1245,56 +1359,7 @@ namespace libsemigroups {
       InternalVecFree()(_right_idem_reps);
     }
 
-    using const_index_iterator =
-        typename std::vector<lambda_orb_index_type>::const_iterator;
-    const_index_iterator cbegin_left_indices() {
-      compute_left_indices();
-      return _left_indices.cbegin();
-    }
-
-    const_index_iterator cend_left_indices() {
-      compute_left_indices();
-      return _left_indices.cend();
-    }
-
-    const_index_iterator cbegin_right_indices() {
-      compute_right_indices();
-      return _right_indices.cbegin();
-    }
-
-    const_index_iterator cend_right_indices() {
-      compute_right_indices();
-      return _right_indices.cend();
-    }
-
-    using const_internal_iterator =
-        typename std::vector<internal_element_type>::const_iterator;
-
-    const_internal_iterator cbegin_left_idem_reps() {
-      init();
-      return _left_idem_reps.cbegin();
-    }
-
-    const_internal_iterator cend_left_idem_reps() {
-      init();
-      return _left_idem_reps.cend();
-    }
-
-    const_internal_iterator cbegin_right_idem_reps() {
-      init();
-      return _right_idem_reps.cbegin();
-    }
-
-    const_internal_iterator cend_right_idem_reps() {
-      init();
-      return _right_idem_reps.cend();
-    }
-
-    //! Tests whether an element \p bm of the semigroup is in this D class
-    //!
-    //! Watch out! The element \bm must be known to be in the semigroup for
-    //! this to be valid!
-    // TODO think of a better name for this
+    //! \copydoc BaseDClass::contains
     bool contains(const_reference bm) override {
       init();
       std::pair<lambda_orb_index_type, rho_orb_index_type> x
@@ -1302,12 +1367,15 @@ namespace libsemigroups {
       return x.first != UNDEFINED;
     }
 
-    // Returns the indices of the L and R classes of \c this that \p bm is in,
-    // unless bm is not in \c this, in which case returns the pair (UNDEFINED,
-    // UNDEFINED)
+    //! Returns the indices of the L and R classes of \c this that \p bm is in.
+    //!
+    //! Returns the indices of the L and R classes of \c this that \p bm is in,
+    //! unless bm is not in \c this, in which case returns the pair (UNDEFINED,
+    //! UNDEFINED). Requires computing part of the complete frame of \c this.
     std::pair<lambda_orb_index_type, rho_orb_index_type>
     index_positions(const_reference bm) {
-      init();
+      compute_left_indices();
+      compute_right_indices();
       Lambda()(this->tmp_lambda_value(), bm);
       auto l_it = _lambda_index_positions.find(
           this->parent()->_lambda_orb.position(this->tmp_lambda_value()));
@@ -1322,8 +1390,13 @@ namespace libsemigroups {
       return std::make_pair(UNDEFINED, UNDEFINED);
     }
 
+    //! Returns the indices of the L and R classes of \c this that \p bm is in.
+    //!
+    //! Returns the indices of the L and R classes of \c this that \p bm is in,
+    //! unless bm is not in \c this, in which case returns the pair (UNDEFINED,
+    //! UNDEFINED). Requires computing most of the complete frame of \c this.
     size_t nr_idempotents() {
-      init();
+      compute_idem_reps();
       size_t count = 0;
       for (auto it = _left_idem_reps.cbegin(); it < _left_idem_reps.cend();
            ++it) {
@@ -1340,6 +1413,10 @@ namespace libsemigroups {
     }
 
    private:
+    ////////////////////////////////////////////////////////////////////////
+    // RegularDClass - initialisation member functions - private
+    ////////////////////////////////////////////////////////////////////////
+
     // this is annoyingly a bit more complicated than the right indices
     // because the find_group_index method fixes the rval and loops
     // through the scc of the lval
@@ -1720,7 +1797,53 @@ namespace libsemigroups {
       compute_H_class();
       this->set_class_computed(true);
     }
+   
+    ////////////////////////////////////////////////////////////////////////
+    // RegularDClass - accessor member functions - private (friend NonRegular) 
+    ////////////////////////////////////////////////////////////////////////
+    const_index_iterator cbegin_left_indices() {
+      compute_left_indices();
+      return _left_indices.cbegin();
+    }
 
+    const_index_iterator cend_left_indices() {
+      compute_left_indices();
+      return _left_indices.cend();
+    }
+
+    const_index_iterator cbegin_right_indices() {
+      compute_right_indices();
+      return _right_indices.cbegin();
+    }
+
+    const_index_iterator cend_right_indices() {
+      compute_right_indices();
+      return _right_indices.cend();
+    }
+
+    const_internal_iterator cbegin_left_idem_reps() {
+      init();
+      return _left_idem_reps.cbegin();
+    }
+
+    const_internal_iterator cend_left_idem_reps() {
+      init();
+      return _left_idem_reps.cend();
+    }
+
+    const_internal_iterator cbegin_right_idem_reps() {
+      init();
+      return _right_idem_reps.cbegin();
+    }
+
+    const_internal_iterator cend_right_idem_reps() {
+      init();
+      return _right_idem_reps.cend();
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // RegularDClass - data - private
+    ////////////////////////////////////////////////////////////////////////
     std::vector<internal_element_type> _H_gens;
     bool                               _H_gens_computed;
     bool                               _idem_reps_computed;
@@ -1744,6 +1867,9 @@ namespace libsemigroups {
   class Konieczny<TElementType, TTraits>::NonRegularDClass
       : public Konieczny<TElementType, TTraits>::BaseDClass {
    private:
+    ////////////////////////////////////////////////////////////////////////
+    // NonRegularDClass - aliases - private
+    ////////////////////////////////////////////////////////////////////////
     using konieczny_type = Konieczny<element_type>;
     using left_indices_index_type =
         typename konieczny_type::BaseDClass::left_indices_index_type;
@@ -1751,20 +1877,39 @@ namespace libsemigroups {
         typename konieczny_type::BaseDClass::right_indices_index_type;
 
    public:
-    NonRegularDClass(Konieczny* parent, internal_reference rep)
+    ////////////////////////////////////////////////////////////////////////
+    // NonRegularDClass - constructor and destructor - public
+    ////////////////////////////////////////////////////////////////////////
+
+    //! Construct from a pointer to a Konieczny object and an element of the
+    //! semigroup represented by the Konieczny object.
+    //!
+    //! The representative \p rep is not copied by the constructor, and so must
+    //! not be modified by the user after constructing the NonRegularDClass. The
+    //! behaviour of NonRegularDClass when \p rep is not an element of the
+    //! semigroup represented by \p parent is undefined.
+    //!
+    //! \param parent a pointer to the Konieczny object representing the
+    //! semigroup of which \c this represents a D class.
+    //!
+    //! \param rep an element of the semigroup represented by \p parent.
+    //!
+    //! \throws LibsemigroupsException if \p rep is a regular element of the
+    //! semigroup represented by \p parent.
+    NonRegularDClass(Konieczny* parent, element_type & rep)
         : Konieczny::BaseDClass(parent, rep),
           _H_set(),
           _lambda_index_positions(),
-          _left_idem_above(rep),
+          _left_idem_above(this->to_internal(rep)),
           _left_idem_class(),
           _left_idem_H_class(),
           _left_idem_left_reps(),
           _rho_index_positions(),
-          _right_idem_above(rep),
+          _right_idem_above(this->to_internal(rep)),
           _right_idem_class(),
           _right_idem_H_class(),
           _right_idem_right_reps() {
-      if (parent->is_regular_element(rep)) {
+      if (parent->is_regular_element(this->to_internal(rep))) {
         LIBSEMIGROUPS_EXCEPTION("NonRegularDClass: the representative "
                                 "given should not be idempotent");
       }
@@ -1779,6 +1924,7 @@ namespace libsemigroups {
 
     // uses _tmp_element, _tmp_element2
     // uses _tmp_lambda, _tmp_rho
+    //! \copydoc BaseDClass::contains
     bool contains(const_reference bm) override {
       init();
       Lambda()(this->tmp_lambda_value(), bm);
@@ -1810,6 +1956,9 @@ namespace libsemigroups {
     }
 
    private:
+    ////////////////////////////////////////////////////////////////////////
+    // NonRegularDClass - initialisation member functions - private 
+    ////////////////////////////////////////////////////////////////////////
     void init() override {
       if (this->class_computed()) {
         return;
@@ -2275,6 +2424,9 @@ namespace libsemigroups {
       compute_mults();
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    // NonRegularDClass - data - private
+    ////////////////////////////////////////////////////////////////////////
     std::unordered_set<internal_element_type,
                        InternalElementHash,
                        InternalEqualTo>
@@ -2360,7 +2512,7 @@ namespace libsemigroups {
     _ranks.insert(0);
     // compute the D class of the adjoined identity and its covering reps
     internal_element_type y   = this->internal_copy(_one);
-    RegularDClass*        top = new RegularDClass(this, y);
+    RegularDClass*        top = new RegularDClass(this, this->to_external(y));
     add_D_class(top);
     for (internal_reference x : top->covering_reps()) {
       size_t rnk = Rank()(this->to_external_const(x));
@@ -2445,7 +2597,7 @@ namespace libsemigroups {
 
         if (reps_are_reg) {
           tup = next_reps.back();
-          D   = new RegularDClass(this, tup.first);
+          D   = new RegularDClass(this, this->to_external(tup.first));
           add_D_class(static_cast<RegularDClass*>(D));
           for (internal_reference x : D->covering_reps()) {
             size_t rnk = Rank()(this->to_external_const(x));
@@ -2459,7 +2611,7 @@ namespace libsemigroups {
           next_reps.pop_back();
         } else {
           tup = next_reps.back();
-          D   = new NonRegularDClass(this, tup.first);
+          D   = new NonRegularDClass(this, this->to_external(tup.first));
           add_D_class(static_cast<NonRegularDClass*>(D));
           for (internal_reference x : D->covering_reps()) {
             size_t rnk = Rank()(this->to_external_const(x));
