@@ -561,7 +561,6 @@ namespace libsemigroups {
     // TODO(now): noexcept
     void operator()(std::vector<std::vector<bool>>&       res,
                     std::vector<std::vector<bool>> const& pt,
-
                     BooleanMat const& x) const {
       std::vector<std::vector<bool>> out;
       for (auto it = pt.cbegin(); it < pt.cend(); ++it) {
@@ -587,12 +586,12 @@ namespace libsemigroups {
     }
   };
 
-  struct Compare {
-    template <typename T>
-    bool operator()(T const& x, T const& y) const noexcept {
-      return x.count() > y.count();
-    }
-  };
+  // struct Compare {
+  //   template <typename T>
+  //   bool operator()(T const& x, T const& y) const noexcept {
+  //     return x.count() > y.count();
+  //   }
+  // };
 
   template <typename T>
   struct ImageRightAction<BooleanMat, T> {
@@ -640,28 +639,29 @@ namespace libsemigroups {
       std::swap(buf, res);
     }
 
-    std::vector<std::vector<bool>>
+    /*std::vector<std::vector<bool>>
     operator()(std::vector<std::vector<bool>> const& pt,
                BooleanMat const&                     x) const {
       std::vector<std::vector<bool>> res;
       this->                         operator()(res, pt, x);
       return res;
-    }
+    }*/
   };
 
   template <>
   struct ImageLeftAction<BooleanMat, std::vector<std::vector<bool>>> {
     void operator()(std::vector<std::vector<bool>>&       res,
                     std::vector<std::vector<bool>> const& pt,
-                    BooleanMat const&                     x) const {
-      BooleanMat transpose = x.transpose();
+                    BooleanMat&                     x) const {
+      x.transpose_in_place();
       ImageRightAction<BooleanMat, std::vector<std::vector<bool>>>()(
-          res, pt, transpose);
+          res, pt, x);
+      x.transpose_in_place();
     }
 
     std::vector<std::vector<bool>>
     operator()(std::vector<std::vector<bool>> const& pt,
-               BooleanMat const&                     x) const {
+               BooleanMat&                     x) const {
       std::vector<std::vector<bool>> res;
       this->                         operator()(res, pt, x);
       return res;

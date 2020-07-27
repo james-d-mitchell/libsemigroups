@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 #ifndef LIBSEMIGROUPS_KONIECZNY_DATA_HPP_
-#define LIBSEMIGROUPS_KONIECZNT_DATA_HPP_
+#define LIBSEMIGROUPS_KONIECZNY_DATA_HPP_
 
 #include "libsemigroups/element.hpp"
 namespace konieczny_data {
@@ -3098,4 +3098,4 @@ namespace konieczny_data {
              1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}})});
 }  // namespace konieczny_data
-#endif
+#endif // LIBSEMIGROUPS_KONIECZNY_DATA_HPP_

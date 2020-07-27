@@ -1742,6 +1742,7 @@ namespace libsemigroups {
     // }
 
     BooleanMat                     transpose() const;
+    void transpose_in_place();
     std::vector<std::vector<bool>> rows() const;
     std::vector<std::vector<bool>> row_space_basis() const;
     size_t                         row_space_size() const;
