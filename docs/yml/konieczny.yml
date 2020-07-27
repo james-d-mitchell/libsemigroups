@@ -1,0 +1,38 @@
+libsemigroups::Konieczny:
+- Public types:
+  - [typedef, element_type]
+  - [typedef, const_reference]
+  - [typedef, lambda_value_type]
+  - [typedef, lambda_orb_type]
+  - [typedef, rho_value_type]
+  - [typedef, rho_orb_type]
+- Stateless public types:
+  - [typedef, Degree]
+  - [typedef, EqualTo]
+  - [typedef, Lambda]
+  - [typedef, Less]
+  - [typedef, One]
+  - [typedef, Product]
+  - [typedef, Rank]
+  - [typedef, Rho]
+  - [typedef, Swap]
+- Constructors:
+  - Konieczny
+- Regular elements:
+  - is_regular_element
+- State:
+  - finished
+  - started
+  - stopped
+  - timed_out
+  - running
+  - stopped_by_predicate
+- Iterators:
+  - cbegin_D_classes
+  - cend_D_classes
+  - cbegin_regular_D_classes
+  - cend_regular_D_classes
+- D-classes:
+  - [class, BaseDClass]
+  - [class, RegularDClass]
+  - [class, NonRegularDClass]

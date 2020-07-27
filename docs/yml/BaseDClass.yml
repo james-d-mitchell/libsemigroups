@@ -1,0 +1,4 @@
+libsemigroups::Konieczny::BaseDClass:
+- Accessors:
+  - rep
+
