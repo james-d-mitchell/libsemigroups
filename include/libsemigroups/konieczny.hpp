@@ -22,17 +22,15 @@
 // 1) exception safety!
 // 3) expose iterators to relevant things in D classes
 // 4) maps to D classes containing given L/R values
+// 5) more reporting
 //
 // TODO(now):
-// 1) more reporting
-// 2) BruidhinnTraits
-// 3) profiling
-// 4) IWYU - manually
-// 5) codecov - script in code coverage
-// 6) const
-// 7) noexcept
-// 8) linting
-// 9) formatting
+// 4) IWYU - manually - JDM
+// 5) codecov - script in code coverage - FLS
+// 6) const - FLS
+// 7) noexcept - FLS
+// 8) linting - later
+// 9) formatting - last
 
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 #define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
@@ -53,22 +51,17 @@
 
 namespace libsemigroups {
 
-  namespace konieczny_helpers {
-    //! Provides a call operator returning a hash value for a pair of size_t.
-    //!
-    //! This struct provides a call operator for obtaining a hash value for the
-    //! pair.
-    // TODO: this should be changed somehow
+  namespace detail {
     struct PairHash {
       //! Hashes a pair of size_t.
-      size_t operator()(std::pair<size_t, size_t> const& x) const {
+      size_t operator()(std::pair<size_t, size_t> const& x) const noexcept {
         // this is bad in general, but if the actions have > 2^32 points then
         // hash collisions in the index tables will probably be the least of our
         // worries
-        return (std::get<0>(x) << 32) + std::get<1>(x);
+        return (x.first << 32) + x.second;
       }
     };
-  }  // namespace konieczny_helpers
+  }  // namespace detail
 
   //! Defined in ``konieczny.hpp``.
   //!
@@ -145,12 +138,12 @@ namespace libsemigroups {
   //! Defined in ``konieczny.hpp``.
   //!
   //! The class template Konieczny implements %Konieczny's algorithm as
-  //! described in the article "Green's equivalences in finite semigroups of
-  //! binary relations" by Janusz %Konieczny; see [here] for more details.
+  //! described in the article 'Green's equivalences in finite semigroups of
+  //! binary relations' by Janusz %Konieczny; see [here] for more details.
   //!
   //! A Konieczny instance is defined by a generating set, and the main
   //! member function is Konieczny::run, which implements
-  //! Konieczny's Algorithm.  If Konieczny::run is invoked and
+  //! %Konieczny's Algorithm.  If Konieczny::run is invoked and
   //! Konieczny::finished returns \c true, then the size, partial order of
   //! D-classes, and complete frames for each D class are known.
   //!
@@ -180,7 +173,7 @@ namespace libsemigroups {
     using internal_reference =
         typename detail::BruidhinnTraits<TElementType>::internal_reference;
 
-    using PairHash = konieczny_helpers::PairHash;
+    using PairHash = detail::PairHash;
 
     ////////////////////////////////////////////////////////////////////////
     // Konieczny - internal structs - private
@@ -405,59 +398,8 @@ namespace libsemigroups {
     // Konieczny - forward class declarations - public
     ////////////////////////////////////////////////////////////////////////
 
-    //! Defined in ``konieczny.hpp``.
-    //!
-    //! The nested abstract class Konieczny::BaseDClass represents a D class via
-    //! a complete frame as computed in %Konieczny's algorithm. See [here] for
-    //! more details.
-    //!
-    //! A BaseDClass is defined by a pointer to the corresponding Konieczny
-    //! object, together with a representative of the D class, but as an
-    //! abstract class cannot be directly constructed; instead you should
-    //! construct a RegularDClass or NonRegularDClass. Note that the values
-    //! returned by calls to member functions of BaseDClass and its derived
-    //! classes are unlikely to be correct unless the parent semigroup has been
-    //! sufficiently enumerated.
-    //!
-    //! \sa Konieczny, RegularDClass, and NonRegularDClass
-    //!
-    //! [here]:  https://link.springer.com/article/10.1007/BF02573672
     class BaseDClass;
-
-    //! Defined in ``konieczny.hpp``.
-    //!
-    //! The nested class Konieczny::RegularDClass inherits from BaseDClass and
-    //! represents a regular D class via a complete frame as computed in
-    //! %Konieczny's algorithm. See [here] for more details.
-    //!
-    //! A RegularDClass is defined by a pointer to the corresponding Konieczny
-    //! object, together with a representative of the D class.
-    //!
-    //! Note that the values returned by calls to member functions of
-    //! RegularDClass are unlikely to be correct unless the parent semigroup has
-    //! been sufficiently enumerated.
-    //!
-    //! \sa Konieczny, BaseDClass, and NonRegularDClass
-    //!
-    //! [here]:  https://link.springer.com/article/10.1007/BF02573672
     class RegularDClass;
-
-    //! Defined in ``konieczny.hpp``.
-    //!
-    //! The nested class Konieczny::NonRegularDClass inherits from BaseDClass
-    //! and represents a regular D class via a complete frame as computed in
-    //! %Konieczny's algorithm. See [here] for more details.
-    //!
-    //! A NonRegularDClass is defined by a pointer to the corresponding
-    //! Konieczny object, together with a representative of the D class.
-    //!
-    //! Note that the values returned by calls to member functions of
-    //! RegularDClass are unlikely to be correct unless the parent semigroup has
-    //! been sufficiently enumerated.
-    //!
-    //! \sa Konieczny, BaseDClass, and RegularDClass
-    //!
-    //! [here]:  https://link.springer.com/article/10.1007/BF02573672
     class NonRegularDClass;
 
     ////////////////////////////////////////////////////////////////////////
@@ -466,8 +408,9 @@ namespace libsemigroups {
 
     //! Returns the size of \c this.
     //!
-    //! This involves computing complete frames for every D class of \c this, if
-    //! they are not already computed.
+    //! This involves computing complete frames for every
+    //! \f$\mathscr{D}\f$-class of \c this, if they are not already computed.
+    // TODO(later): current_size const noexcept
     size_t size();
 
     //! Returns the size of \c this.
@@ -704,12 +647,12 @@ namespace libsemigroups {
                      _rho_orb.current_size(),
                      t.string());
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     // Konieczny - Runner methods - private
     ////////////////////////////////////////////////////////////////////////
-    bool   finished_impl() const override;
-    void   run_impl() override;
+    bool finished_impl() const override;
+    void run_impl() override;
 
     ////////////////////////////////////////////////////////////////////////
     // Konieczny - data - private
@@ -752,6 +695,23 @@ namespace libsemigroups {
   // BaseDClass
   /////////////////////////////////////////////////////////////////////////////
 
+  //! Defined in ``konieczny.hpp``.
+  //!
+  //! The nested abstract class Konieczny::BaseDClass represents a D class via
+  //! a complete frame as computed in %Konieczny's algorithm. See [here] for
+  //! more details.
+  //!
+  //! A BaseDClass is defined by a pointer to the corresponding Konieczny
+  //! object, together with a representative of the D class, but as an
+  //! abstract class cannot be directly constructed; instead you should
+  //! construct a RegularDClass or NonRegularDClass. Note that the values
+  //! returned by calls to member functions of BaseDClass and its derived
+  //! classes are unlikely to be correct unless the parent semigroup has been
+  //! sufficiently enumerated.
+  //!
+  //! \sa Konieczny, RegularDClass, and NonRegularDClass
+  //!
+  //! [here]:  https://link.springer.com/article/10.1007/BF02573672
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::BaseDClass
       : protected detail::BruidhinnTraits<TElementType> {
@@ -766,7 +726,7 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
     // BaseDClass - constructor - protected
     ////////////////////////////////////////////////////////////////////////
-    BaseDClass(Konieczny* parent, element_type & rep)
+    BaseDClass(Konieczny* parent, element_type& rep)
         : _class_computed(false),
           _H_class(),
           _H_class_computed(false),
@@ -877,14 +837,14 @@ namespace libsemigroups {
       return _H_class.size();
     }
 
-    // TODO: should this really be public??
-    //! Returns a set of representatives of L- or R-classes covered by \c this.
-    //!
-    //! The D classes of the parent semigroup are enumerated either by finding
-    //! representatives of all L-classes or all R-classes. This member function
-    //! returns the representatives obtainable by multipliying the representatives
-    //! of \c this by generators on either the left or right.
+    // Returns a set of representatives of L- or R-classes covered by \c this.
+    //
+    // The D classes of the parent semigroup are enumerated either by finding
+    // representatives of all L-classes or all R-classes. This member function
+    // returns the representatives obtainable by multipliying the
+    // representatives of \c this by generators on either the left or right.
     // uses _tmp_element, tmp_element2 _tmp_element3
+    //! nodoc
     std::vector<internal_element_type>& covering_reps() {
       init();
       _internal_vec.clear();
@@ -1290,6 +1250,22 @@ namespace libsemigroups {
   // RegularDClass
   /////////////////////////////////////////////////////////////////////////////
 
+  //! Defined in ``konieczny.hpp``.
+  //!
+  //! The nested class Konieczny::RegularDClass inherits from BaseDClass and
+  //! represents a regular D class via a complete frame as computed in
+  //! %Konieczny's algorithm. See [here] for more details.
+  //!
+  //! A RegularDClass is defined by a pointer to the corresponding Konieczny
+  //! object, together with a representative of the D class.
+  //!
+  //! Note that the values returned by calls to member functions of
+  //! RegularDClass are unlikely to be correct unless the parent semigroup has
+  //! been sufficiently enumerated.
+  //!
+  //! \sa Konieczny, BaseDClass, and NonRegularDClass
+  //!
+  //! [here]:  https://link.springer.com/article/10.1007/BF02573672
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::RegularDClass
       : public Konieczny<TElementType, TTraits>::BaseDClass {
@@ -1308,7 +1284,7 @@ namespace libsemigroups {
         typename std::vector<lambda_orb_index_type>::const_iterator;
     using const_internal_iterator =
         typename std::vector<internal_element_type>::const_iterator;
-   
+
    public:
     ////////////////////////////////////////////////////////////////////////
     // RegularDClass - constructor and destructor - public
@@ -1329,7 +1305,7 @@ namespace libsemigroups {
     //!
     //! \throws LibsemigroupsException if \p rep is an element of the semigroup
     //! represented by \p parent but is not regular.
-    RegularDClass(Konieczny* parent, element_type & rep)
+    RegularDClass(Konieczny* parent, element_type& rep)
         : Konieczny::BaseDClass(parent, rep),
           _H_gens(),
           _H_gens_computed(false),
@@ -1797,9 +1773,9 @@ namespace libsemigroups {
       compute_H_class();
       this->set_class_computed(true);
     }
-   
+
     ////////////////////////////////////////////////////////////////////////
-    // RegularDClass - accessor member functions - private (friend NonRegular) 
+    // RegularDClass - accessor member functions - private (friend NonRegular)
     ////////////////////////////////////////////////////////////////////////
     const_index_iterator cbegin_left_indices() {
       compute_left_indices();
@@ -1863,6 +1839,22 @@ namespace libsemigroups {
   // NonRegularDClass
   /////////////////////////////////////////////////////////////////////////////
 
+  //! Defined in ``konieczny.hpp``.
+  //!
+  //! The nested class Konieczny::NonRegularDClass inherits from BaseDClass
+  //! and represents a regular D class via a complete frame as computed in
+  //! %Konieczny's algorithm. See [here] for more details.
+  //!
+  //! A NonRegularDClass is defined by a pointer to the corresponding
+  //! Konieczny object, together with a representative of the D class.
+  //!
+  //! Note that the values returned by calls to member functions of
+  //! RegularDClass are unlikely to be correct unless the parent semigroup has
+  //! been sufficiently enumerated.
+  //!
+  //! \sa Konieczny, BaseDClass, and RegularDClass
+  //!
+  //! [here]:  https://link.springer.com/article/10.1007/BF02573672
   template <typename TElementType, typename TTraits>
   class Konieczny<TElementType, TTraits>::NonRegularDClass
       : public Konieczny<TElementType, TTraits>::BaseDClass {
@@ -1896,7 +1888,7 @@ namespace libsemigroups {
     //!
     //! \throws LibsemigroupsException if \p rep is a regular element of the
     //! semigroup represented by \p parent.
-    NonRegularDClass(Konieczny* parent, element_type & rep)
+    NonRegularDClass(Konieczny* parent, element_type& rep)
         : Konieczny::BaseDClass(parent, rep),
           _H_set(),
           _lambda_index_positions(),
@@ -1957,7 +1949,7 @@ namespace libsemigroups {
 
    private:
     ////////////////////////////////////////////////////////////////////////
-    // NonRegularDClass - initialisation member functions - private 
+    // NonRegularDClass - initialisation member functions - private
     ////////////////////////////////////////////////////////////////////////
     void init() override {
       if (this->class_computed()) {
@@ -2571,7 +2563,7 @@ namespace libsemigroups {
       tmp_next.clear();
       for (auto it = next_reps.begin(); it < next_reps.end(); it++) {
         bool contained = false;
-        // TODO(now) we can do better than this
+        // TODO(later) we can do better than this
         for (size_t i = 0; i < _D_classes.size(); ++i) {
           if (_D_classes[i]->contains(this->to_external_const(it->first),
                                       max_rank)) {

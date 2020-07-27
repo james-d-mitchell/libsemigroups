@@ -20,6 +20,8 @@ libsemigroups::Konieczny:
   - Konieczny
 - Regular elements:
   - is_regular_element
+- Attributes:
+  - size
 - State:
   - finished
   - started
@@ -32,7 +34,3 @@ libsemigroups::Konieczny:
   - cend_D_classes
   - cbegin_regular_D_classes
   - cend_regular_D_classes
-- D-classes:
-  - [class, BaseDClass]
-  - [class, RegularDClass]
-  - [class, NonRegularDClass]

@@ -1,8 +1,8 @@
-libsemigroups::Konieczny::BaseDClass:
+libsemigroups::Konieczny::NonRegularDClass:
 - Accessors:
   - rep
 - Constructors:
-  - BaseDClass 
+  - NonRegularDClass 
 - Size:
   - nr_L_classes
   - nr_R_classes
