@@ -25,7 +25,7 @@
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
 
 #include "libsemigroups/cong-pair.hpp"        // for FpSemigroupByPairs
-#include "libsemigroups/element-adapter.hpp"  // for Degree etc
+#include "libsemigroups/element-adapters.hpp"  // for Degree etc
 #include "libsemigroups/element-helper.hpp"   // for FpSemigroupByPairs
 #include "libsemigroups/fpsemi-intf.hpp"      // for FpSemigroupInterface
 #include "libsemigroups/fpsemi.hpp"           // for FpSemigroup
