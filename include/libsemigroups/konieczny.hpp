@@ -28,7 +28,6 @@
 //
 // TODO(now):
 // 4) Constructors
-// 5) codecov - script in code coverage - FLS
 // 7) noexcept - FLS
 // 8) linting - later
 // 9) formatting - last
@@ -458,7 +457,7 @@ namespace libsemigroups {
     //! the iterator returned may be invalidated by any call to a non-const
     //! member function of the Konieczny class.
     typename std::vector<RegularDClass*>::const_iterator
-    cend_regular_D_classes() const {
+    cend_regular_D_classes() const noexcept {
       return _regular_D_classes.cend();
     }
 
@@ -482,7 +481,8 @@ namespace libsemigroups {
     //! This member function does not perform any enumeration of the semigroup;
     //! the iterator returned may be invalidated by any call to a non-const
     //! member function of the Konieczny class.
-    typename std::vector<BaseDClass*>::const_iterator cend_D_classes() const {
+    typename std::vector<BaseDClass*>::const_iterator cend_D_classes() const
+        noexcept {
       return _D_classes.cend();
     }
 
@@ -617,12 +617,12 @@ namespace libsemigroups {
     void add_D_class(Konieczny::NonRegularDClass* D);
 
     typename std::vector<internal_element_type>::const_iterator
-    cbegin_generators() const {
+    cbegin_generators() const noexcept {
       return _gens.cbegin();
     }
 
     typename std::vector<internal_element_type>::const_iterator
-    cend_generators() const {
+    cend_generators() const noexcept {
       return _gens.cend();
     }
 
@@ -983,11 +983,11 @@ namespace libsemigroups {
       return _H_class.cend();
     }
 
-    const_iterator cbegin_H_class_NC() const {
+    const_iterator cbegin_H_class_NC() const noexcept {
       return _H_class.cbegin();
     }
 
-    const_iterator cend_H_class_NC() const {
+    const_iterator cend_H_class_NC() const noexcept {
       return _H_class.cend();
     }
 
@@ -1006,15 +1006,15 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
     // BaseDClass - accessor member functions - protected
     ////////////////////////////////////////////////////////////////////////
-    size_t nr_left_reps_NC() const {
+    size_t nr_left_reps_NC() const noexcept {
       return _left_reps.size();
     }
 
-    size_t nr_right_reps_NC() const {
+    size_t nr_right_reps_NC() const noexcept {
       return _right_reps.size();
     }
 
-    size_t size_H_class_NC() const {
+    size_t size_H_class_NC() const noexcept {
       return _H_class.size();
     }
 
@@ -1152,39 +1152,39 @@ namespace libsemigroups {
 #endif
     }
 
-    bool class_computed() const {
+    bool class_computed() const noexcept {
       return _class_computed;
     }
 
-    bool mults_computed() const {
+    bool mults_computed() const noexcept {
       return _mults_computed;
     }
 
-    bool reps_computed() const {
+    bool reps_computed() const noexcept {
       return _reps_computed;
     }
 
-    bool H_class_computed() const {
+    bool H_class_computed() const noexcept {
       return _H_class_computed;
     }
 
-    void set_class_computed(bool x) {
+    void set_class_computed(bool x) noexcept {
       _class_computed = x;
     }
 
-    void set_mults_computed(bool x) {
+    void set_mults_computed(bool x) noexcept {
       _mults_computed = x;
     }
 
-    void set_reps_computed(bool x) {
+    void set_reps_computed(bool x) noexcept {
       _reps_computed = x;
     }
 
-    void set_H_class_computed(bool x) {
+    void set_H_class_computed(bool x) noexcept {
       _H_class_computed = x;
     }
 
-    Konieczny* parent() const {
+    Konieczny* parent() const noexcept {
       return _parent;
     }
 
@@ -1193,42 +1193,42 @@ namespace libsemigroups {
       _H_class.push_back(x);
     }
 
-    lambda_value_type& tmp_lambda_value() const {
+    lambda_value_type& tmp_lambda_value() const noexcept {
       return _tmp_lambda_value;
     }
 
-    rho_value_type& tmp_rho_value() const {
+    rho_value_type& tmp_rho_value() const noexcept {
       return _tmp_rho_value;
     }
 
-    internal_element_type& tmp_element() const {
+    internal_element_type& tmp_element() const noexcept {
       return _tmp_element;
     }
 
-    internal_element_type& tmp_element2() const {
+    internal_element_type& tmp_element2() const noexcept {
       return _tmp_element2;
     }
 
-    internal_element_type& tmp_element3() const {
+    internal_element_type& tmp_element3() const noexcept {
       return _tmp_element3;
     }
 
-    internal_element_type& tmp_element4() const {
+    internal_element_type& tmp_element4() const noexcept {
       return _tmp_element4;
     }
 
     std::unordered_set<internal_element_type,
                        InternalElementHash,
                        InternalEqualTo>&
-    internal_set() const {
+    internal_set() const noexcept {
       return _tmp_internal_set;
     }
 
-    std::vector<internal_element_type>& internal_vec() const {
+    std::vector<internal_element_type>& internal_vec() const noexcept {
       return _tmp_internal_vec;
     }
 
-    internal_reference unsafe_rep() {
+    internal_reference unsafe_rep() noexcept {
       return _rep;
     }
 
