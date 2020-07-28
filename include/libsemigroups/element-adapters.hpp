@@ -76,14 +76,13 @@ namespace libsemigroups {
     }
   };
 
-  //! Specialization of the adapter Degree for subclasses of
-  //! Element.
+  //! Specialization of the adapter Degree for subclasses of Element.
   //!
   //! \sa Degree.
   template <typename TSubclass>
   struct Degree<TSubclass,
                 typename std::enable_if<
-                    std::is_base_of<Element, TSubclass>::value>::type> {
+                    std::is_base_of<Element, TSubclass>::value, void>::type> {
     //! Returns \p x.degree().
     inline size_t operator()(TSubclass const& x) const {
       return x.degree();
