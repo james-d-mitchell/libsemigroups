@@ -363,7 +363,7 @@ namespace libsemigroups {
           BooleanMat,
           detail::StaticVector1<BitSet<5>, 5>,
           ImageRightAction<BooleanMat, detail::StaticVector1<BitSet<5>, 5>>>
-                                           o;
+                                          o;
       detail::StaticVector1<BitSet<5>, 5> seed;
       for (size_t i = 0; i < 5; ++i) {
         BitSet<5> x;

@@ -80,9 +80,10 @@ namespace libsemigroups {
   //!
   //! \sa Degree.
   template <typename TSubclass>
-  struct Degree<TSubclass,
-                typename std::enable_if<
-                    std::is_base_of<Element, TSubclass>::value, void>::type> {
+  struct Degree<
+      TSubclass,
+      typename std::enable_if<std::is_base_of<Element, TSubclass>::value,
+                              void>::type> {
     //! Returns \p x.degree().
     inline size_t operator()(TSubclass const& x) const {
       return x.degree();
@@ -560,7 +561,7 @@ namespace libsemigroups {
     // TODO(now): noexcept
     void operator()(std::vector<std::vector<bool>>&       res,
                     std::vector<std::vector<bool>> const& pt,
-                    BooleanMat const& x) const {
+                    BooleanMat const&                     x) const {
       std::vector<std::vector<bool>> out;
       for (auto it = pt.cbegin(); it < pt.cend(); ++it) {
         std::vector<bool> cup(x.degree(), false);
@@ -651,7 +652,7 @@ namespace libsemigroups {
   struct ImageLeftAction<BooleanMat, std::vector<std::vector<bool>>> {
     void operator()(std::vector<std::vector<bool>>&       res,
                     std::vector<std::vector<bool>> const& pt,
-                    BooleanMat&                     x) const {
+                    BooleanMat&                           x) const {
       x.transpose_in_place();
       ImageRightAction<BooleanMat, std::vector<std::vector<bool>>>()(
           res, pt, x);
@@ -659,8 +660,7 @@ namespace libsemigroups {
     }
 
     std::vector<std::vector<bool>>
-    operator()(std::vector<std::vector<bool>> const& pt,
-               BooleanMat&                     x) const {
+    operator()(std::vector<std::vector<bool>> const& pt, BooleanMat& x) const {
       std::vector<std::vector<bool>> res;
       this->                         operator()(res, pt, x);
       return res;

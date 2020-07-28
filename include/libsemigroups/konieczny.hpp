@@ -24,8 +24,10 @@
 // 4) maps to D classes containing given L/R values
 // 5) more reporting
 // 6) remove pointers
+// 7) 0-parameter constructor
 //
 // TODO(now):
+// 4) Constructors
 // 5) codecov - script in code coverage - FLS
 // 6) const - FLS
 // 7) noexcept - FLS
@@ -50,6 +52,7 @@
 #include "libsemigroups-exception.hpp"  // for LIBSEMIGROUPS_EXCEPTION
 #include "report.hpp"                   // for REPORT_DEFAULT
 #include "runner.hpp"                   // for Runner
+#include "timer.hpp"                    // for Timer
 
 namespace libsemigroups {
 
@@ -1015,7 +1018,7 @@ namespace libsemigroups {
                   this->to_external_const(x));
         LIBSEMIGROUPS_ASSERT(Lambda()(this->to_external(_tmp_element))
                              == Lambda()(this->to_external_const(
-                                    _left_reps[_left_mults.size() - 1])));
+                                 _left_reps[_left_mults.size() - 1])));
       }
       if (_left_mults_inv.size() >= _left_mults.size()) {
         Product()(this->to_external(_tmp_element),
@@ -1062,7 +1065,7 @@ namespace libsemigroups {
                   this->to_external_const(_rep));
         LIBSEMIGROUPS_ASSERT(Rho()(this->to_external(_tmp_element))
                              == Rho()(this->to_external_const(
-                                    _right_reps[_right_mults.size() - 1])));
+                                 _right_reps[_right_mults.size() - 1])));
       }
       if (_right_mults_inv.size() >= _right_mults.size()) {
         Product()(this->to_external(_tmp_element),
@@ -1440,7 +1443,7 @@ namespace libsemigroups {
                = this->parent()->_rho_orb.digraph().cbegin_scc(rval_scc_id);
                !found
                && it2 < this->parent()->_rho_orb.digraph().cend_scc(
-                            rval_scc_id);
+                      rval_scc_id);
                it2++) {
             Product()(this->to_external(this->tmp_element2()),
                       this->parent()->_rho_orb.multiplier_from_scc_root(*it2),
@@ -1893,6 +1896,7 @@ namespace libsemigroups {
     //!
     //! \throws LibsemigroupsException if \p rep is a regular element of the
     //! semigroup represented by \p parent.
+    // TODO(later): should be a const reference
     NonRegularDClass(Konieczny* parent, element_type& rep)
         : Konieczny::BaseDClass(parent, rep),
           _H_set(),

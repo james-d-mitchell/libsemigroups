@@ -285,7 +285,11 @@ test_all_SOURCES += tests/test-knuth-bendix-3.cpp
 test_all_SOURCES += tests/test-knuth-bendix-4.cpp
 test_all_SOURCES += tests/test-knuth-bendix-5.cpp
 test_all_SOURCES += tests/test-knuth-bendix-6.cpp
-test_all_SOURCES += tests/test-konieczny.cpp
+test_all_SOURCES += tests/test-konieczny-bmat8-1.cpp
+test_all_SOURCES += tests/test-konieczny-bmat8-2.cpp
+test_all_SOURCES += tests/test-konieczny-bmat8-3.cpp
+test_all_SOURCES += tests/test-konieczny-transf.cpp
+test_all_SOURCES += tests/test-konieczny-booleanmat.cpp
 test_all_SOURCES += tests/test-main.cpp
 test_all_SOURCES += tests/test-order.cpp
 test_all_SOURCES += tests/test-race.cpp
@@ -397,7 +401,11 @@ test_knuth_bendix_SOURCES += tests/test-knuth-bendix-5.cpp
 test_knuth_bendix_SOURCES += tests/test-knuth-bendix-6.cpp
 test_knuth_bendix_SOURCES += tests/test-main.cpp
 
-test_konieczny_SOURCES =  tests/test-konieczny.cpp
+test_konieczny_SOURCES =  tests/test-konieczny-bmat8-1.cpp
+test_konieczny_SOURCES += tests/test-konieczny-bmat8-2.cpp
+test_konieczny_SOURCES += tests/test-konieczny-bmat8-3.cpp
+test_konieczny_SOURCES += tests/test-konieczny-transf.cpp
+test_konieczny_SOURCES += tests/test-konieczny-booleanmat.cpp
 test_konieczny_SOURCES += tests/test-main.cpp
 
 test_order_SOURCES =  tests/test-order.cpp
