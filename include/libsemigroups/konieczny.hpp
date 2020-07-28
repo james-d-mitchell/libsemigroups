@@ -28,7 +28,6 @@
 //
 // TODO(now):
 // 4) Constructors
-// 7) noexcept - FLS
 // 8) linting - later
 // 9) formatting - last
 
@@ -366,12 +365,15 @@ namespace libsemigroups {
       size_t const deg = Degree()(gens[0]);
 
       for (const_reference x : gens) {
-        _gens.push_back(this->internal_copy(this->to_internal_const(x)));
         size_t const xdeg = Degree()(x);
         if (deg != xdeg) {
           LIBSEMIGROUPS_EXCEPTION(
               "element has degree %d but should have degree %d", xdeg, deg);
         }
+      }
+
+      for (const_reference x : gens) {
+        _gens.push_back(this->internal_copy(this->to_internal_const(x)));
       }
 
       _one = this->to_internal(One()(gens[0]));
@@ -1027,7 +1029,7 @@ namespace libsemigroups {
                   this->to_external_const(x));
         LIBSEMIGROUPS_ASSERT(Lambda()(this->to_external(_tmp_element))
                              == Lambda()(this->to_external_const(
-                                 _left_reps[_left_mults.size() - 1])));
+                                    _left_reps[_left_mults.size() - 1])));
       }
       if (_left_mults_inv.size() >= _left_mults.size()) {
         Product()(this->to_external(_tmp_element),
@@ -1074,7 +1076,7 @@ namespace libsemigroups {
                   this->to_external_const(_rep));
         LIBSEMIGROUPS_ASSERT(Rho()(this->to_external(_tmp_element))
                              == Rho()(this->to_external_const(
-                                 _right_reps[_right_mults.size() - 1])));
+                                    _right_reps[_right_mults.size() - 1])));
       }
       if (_right_mults_inv.size() >= _right_mults.size()) {
         Product()(this->to_external(_tmp_element),
@@ -2458,9 +2460,7 @@ namespace libsemigroups {
       delete D;
     }
     // _one is included in _gens
-    for (internal_element_type x : _gens) {
-      this->internal_free(x);
-    }
+    InternalVecFree()(_gens);
     this->internal_free(_tmp_element1);
     this->internal_free(_tmp_element2);
     this->internal_free(_tmp_element3);
