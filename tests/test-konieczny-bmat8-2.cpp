@@ -544,4 +544,49 @@ namespace libsemigroups {
     }
     REQUIRE(idems == 73023);
   }
+
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "026",
+                          "exceptions",
+                          "[quick][bmat8]") {
+    auto                     rg   = ReportGuard(REPORT);
+    const std::vector<BMat8> gens  = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
+                                     BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
+                                     BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
+                                     BMat8({{1, 1, 0}, {0, 1, 1}, {1, 0, 1}})};
+    const std::vector<BMat8> idems = {BMat8({{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}),
+                                      BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),
+                                      BMat8({{1, 0, 0}, {1, 1, 1}, {0, 0, 1}}),
+                                      BMat8({{1, 0, 0}, {1, 1, 0}, {1, 0, 1}}),
+                                      BMat8({{1, 0, 0}, {1, 1, 0}, {1, 1, 1}}),
+                                      BMat8({{1, 1, 0}, {1, 1, 0}, {0, 0, 1}}),
+                                      BMat8({{1, 0, 0}, {1, 1, 1}, {1, 1, 1}}),
+                                      BMat8({{1, 1, 0}, {1, 1, 0}, {1, 1, 1}}),
+                                      BMat8({{1, 1, 1}, {1, 1, 1}, {1, 1, 1}})};
+    const std::vector<BMat8> non_reg_reps
+        = {BMat8({{0, 0, 1}, {1, 0, 1}, {1, 1, 0}}),
+           BMat8({{0, 0, 1}, {1, 1, 1}, {1, 1, 0}}),
+           BMat8({{0, 1, 1}, {1, 0, 1}, {1, 1, 1}}),
+           BMat8({{0, 1, 1}, {1, 1, 0}, {1, 0, 1}}),
+           BMat8({{1, 0, 1}, {1, 0, 1}, {1, 1, 0}}),
+           BMat8({{1, 1, 0}, {1, 1, 1}, {1, 1, 1}})};
+
+    REQUIRE_THROWS_AS(Konieczny<BMat8>({}), LibsemigroupsException);
+
+    Konieczny<BMat8> KS(gens);
+    KS.run();
+
+    REQUIRE(KS.cend_regular_D_classes() - KS.cbegin_regular_D_classes()
+            == idems.size());
+
+    for (BMat8 id : idems) {
+      REQUIRE_THROWS_AS(Konieczny<BMat8>::NonRegularDClass(&KS, id),
+                        LibsemigroupsException);
+    }
+
+    for (BMat8 x : non_reg_reps) {
+      REQUIRE_THROWS_AS(Konieczny<BMat8>::RegularDClass(&KS, x),
+                        LibsemigroupsException);
+    }
+  }
 }  // namespace libsemigroups

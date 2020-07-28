@@ -68,4 +68,36 @@ namespace libsemigroups {
   //   // S.run();
   //   // REQUIRE(S.size() == 33554432);
   // }
+
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "027",
+                          "exceptions",
+                          "[quick][booleanmat][boolmat]") {
+    auto                     rg   = ReportGuard(REPORT);
+    REQUIRE_THROWS_AS(
+        Konieczny<BooleanMat>(
+            {BooleanMat(
+                 {{1, 0, 0, 0}, {0, 0, 1, 0}, {1, 0, 0, 1}, {0, 1, 0, 0}}),
+             BooleanMat({{1, 0, 0}, {1, 0, 0}, {1, 1, 1}})}),
+        LibsemigroupsException);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Konieczny",
+                          "028",
+                          "code coverage",
+                          "[quick][boolmat][booleanmat][no-valgrind]") {
+    auto                    rg   = ReportGuard(REPORT);
+    std::vector<BooleanMat> gens
+        = {BooleanMat({0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0,
+                       1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1}),
+           BooleanMat({0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0,
+                       0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1}),
+           BooleanMat({0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1,
+                       1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0}),
+           BooleanMat({0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1,
+                       0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1})};
+
+    Konieczny<BooleanMat> S(gens);
+    REQUIRE(S.size() == 513);
+  }
 }  // namespace libsemigroups
