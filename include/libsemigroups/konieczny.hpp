@@ -142,19 +142,23 @@ namespace libsemigroups {
   //! The class template Konieczny implements %Konieczny's algorithm as
   //! described in the article 'Green's equivalences in finite semigroups of
   //! binary relations' by Janusz %Konieczny; see [here] for more details.
+  //! This algorithm is similar to that of Lallement and McFadden; see [this]
+  //! paper for more details. It differs in being applicable to subsemigroups of
+  //! a non-regular semigroup, though is essentially the same algorithm for
+  //! elements which happen to be regular.
   //!
   //! A Konieczny instance is defined by a generating set, and the main
   //! member function is Konieczny::run, which implements
-  //! %Konieczny's Algorithm.  If Konieczny::run is invoked and
+  //! %Konieczny's Algorithm. If Konieczny::run is invoked and
   //! Konieczny::finished returns \c true, then the size, partial order of
   //! D-classes, and complete frames for each D class are known.
   //!
   //! \sa KoniecznyTraits, BaseDClass, RegularDClass, and NonRegularDClass
   //!
   //! [here]:  https://link.springer.com/article/10.1007/BF02573672
-  //!
+  //! [this]:
+  //! https://www.sciencedirect.com/science/article/pii/S0747717108800570
   // TODO(??) Example
-  // TODO add Lallement and McFadden, and ref to bib
   template <typename TElementType,
             typename TTraits = KoniecznyTraits<TElementType>>
   class Konieczny : public Runner,
@@ -434,11 +438,11 @@ namespace libsemigroups {
     //! Returns a const iterator referring to a pointer to the first regular D-
     //! class of the semigroup.
     //!
-    //! This member function involves fully
-    //! enumerating the semigroup, if it is not already fully enumerated.
+    //! This member function does not perform any enumeration of the semigroup;
+    //! the iterator returned may be invalidated by any call to a non-const
+    //! member function of the Konieczny class.
     typename std::vector<RegularDClass*>::const_iterator
     cbegin_regular_D_classes() {
-      run();
       auto it = _regular_D_classes.cbegin();
       if (!_adjoined_identity_contained) {
         it++;
@@ -449,19 +453,20 @@ namespace libsemigroups {
     //! Returns a const iterator referring to past the pointer to the last
     //! regular D-class of the semigroup.
     //!
-    //! This member function involves fully
-    //! enumerating the semigroup, if it is not already fully enumerated.
+    //! This member function does not perform any enumeration of the semigroup;
+    //! the iterator returned may be invalidated by any call to a non-const
+    //! member function of the Konieczny class.
     typename std::vector<RegularDClass*>::const_iterator
     cend_regular_D_classes() {
-      run();
       return _regular_D_classes.cend();
     }
 
     //! Returns a const iterator referring to a pointer to the first D-class
     //! of the semigroup.
     //!
-    //! This member function involves fully
-    //! enumerating the semigroup, if it is not already fully enumerated.
+    //! This member function does not perform any enumeration of the semigroup;
+    //! the iterator returned may be invalidated by any call to a non-const
+    //! member function of the Konieczny class.
     typename std::vector<BaseDClass*>::const_iterator cbegin_D_classes() {
       auto it = _D_classes.cbegin();
       if (!_adjoined_identity_contained) {
@@ -473,8 +478,9 @@ namespace libsemigroups {
     //! Returns a const iterator referring to past the pointer to the last
     //! D-class of the semigroup.
     //!
-    //! This member function involves fully
-    //! enumerating the semigroup, if it is not already fully enumerated.
+    //! This member function does not perform any enumeration of the semigroup;
+    //! the iterator returned may be invalidated by any call to a non-const
+    //! member function of the Konieczny class.
     typename std::vector<BaseDClass*>::const_iterator cend_D_classes() {
       return _D_classes.cend();
     }
