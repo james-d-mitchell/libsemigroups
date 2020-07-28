@@ -26,15 +26,14 @@
 // 6) remove pointers
 //
 // TODO(now):
-// 4) IWYU - manually - JDM
 // 5) codecov - script in code coverage - FLS
 // 6) const - FLS
 // 7) noexcept - FLS
 // 8) linting - later
 // 9) formatting - last
 
-#ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
-#define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
+#ifndef LIBSEMIGROUPS_KONIECZNY_HPP_
+#define LIBSEMIGROUPS_KONIECZNY_HPP_
 
 #include <cstddef>        // for size_t
 #include <set>            // for set
@@ -1129,7 +1128,6 @@ namespace libsemigroups {
         Product()(this->to_external(_tmp_element),
                   this->to_external(_right_mults_inv[_right_reps.size() - 1]),
                   this->to_external_const(x));
-        ;
         LIBSEMIGROUPS_ASSERT(Rho()(this->to_external_const(_rep))
                              == Rho()(this->to_external(_tmp_element)));
       }
@@ -2643,4 +2641,4 @@ namespace libsemigroups {
     report_why_we_stopped();
   }
 }  // namespace libsemigroups
-#endif  // LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
+#endif  // LIBSEMIGROUPS_KONIECZNY_HPP_
