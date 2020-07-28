@@ -18,13 +18,16 @@
 
 // TODO(now):
 // 1) tests
-// 2) IWYU
 // 3) make this intrinsic proof
+//
+// TODO(later)
+// 1) doc
 
 #ifndef LIBSEMIGROUPS_BITSET_HPP_
 #define LIBSEMIGROUPS_BITSET_HPP_
 
 #include <climits>  // for CHAR_BIT
+#include <cstddef>  // for size_t
 #include <utility>  // for hash
 
 #include "libsemigroups-debug.hpp"  // for LIBSEMIGROUPS_ASSERT
@@ -58,27 +61,19 @@ namespace libsemigroups {
     }
 
     bool operator<(BitSet const& that) const noexcept {
-      if (size() != that.size()) {
-        return (size() < that.size());
-      }
       clear_hi_bits();
       that.clear_hi_bits();
       return _block < that._block;
     }
 
     bool operator==(BitSet const& that) const noexcept {
-      if (size() != that.size()) {
-        return false;
-      }
       clear_hi_bits();
       that.clear_hi_bits();
       return _block == that._block;
     }
 
     bool operator!=(BitSet const& that) const noexcept {
-      clear_hi_bits();
-      that.clear_hi_bits();
-      return size() != that.size() || _block != that._block;
+      return !(*this == that);
     }
 
     void operator&=(BitSet const& that) const noexcept {
@@ -123,14 +118,16 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(first < N);
       LIBSEMIGROUPS_ASSERT(last <= N);
       LIBSEMIGROUPS_ASSERT(first < last);
+      block_type m = ~0;
+      m = (m >> first);
+      m = (m << (first + (block_count() - last)));
+      m = (m >> (block_count() - last));
       if (value) {
-        block_type m
-            = ((~0 >> first) << (first + (size() - last))) >> (size() - last);
         _block |= m;
-        return *this;
       } else {
-        return reset(first, last);
+        _block &= ~m;
       }
+      return *this;
     }
 
     BitSet& reset() noexcept {
@@ -148,11 +145,7 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(first < N);
       LIBSEMIGROUPS_ASSERT(last <= N);
       LIBSEMIGROUPS_ASSERT(first < last);
-
-      block_type m
-          = ~(((~0 >> first) << (first + (size() - last))) >> (size() - last));
-      _block &= m;
-      return *this;
+      return set(first, last, false);
     }
 
     size_t count() const noexcept {
@@ -174,7 +167,7 @@ namespace libsemigroups {
       }
     }
 
-    operator block_type() const noexcept {
+    block_type to_int() const noexcept {
       clear_hi_bits();
       return _block;
     }
@@ -183,8 +176,13 @@ namespace libsemigroups {
     explicit BitSet<N>(block_type const block) : _block(block) {}
 
     void clear_hi_bits() const noexcept {
-      size_t s = (sizeof(block_type) * CHAR_BIT) - N;
-      _block   = (_block << s) >> s;
+      size_t s = block_count() - N;
+      _block = _block << s;
+      _block = _block >> s;
+    }
+
+    constexpr size_t block_count() const noexcept {
+      return sizeof(block_type) * CHAR_BIT;
     }
 
     constexpr block_type mask(size_t const i) const noexcept {
@@ -265,11 +263,12 @@ namespace libsemigroups {
 }  // namespace libsemigroups
 
 namespace std {
+  // TODO noexcept
   template <size_t N>
   struct hash<libsemigroups::BitSet<N>> {
     size_t operator()(libsemigroups::BitSet<N> const& bs) const {
       using block_type = typename libsemigroups::BitSet<N>::block_type;
-      return hash<block_type>()(static_cast<block_type>(bs));
+      return hash<block_type>()(bs.to_int());
     }
   };
 }  // namespace std
