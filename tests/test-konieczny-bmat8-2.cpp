@@ -545,11 +545,8 @@ namespace libsemigroups {
     REQUIRE(idems == 73023);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                          "026",
-                          "exceptions",
-                          "[quick][bmat8]") {
-    auto                     rg   = ReportGuard(REPORT);
+  LIBSEMIGROUPS_TEST_CASE("Konieczny", "026", "exceptions", "[quick][bmat8]") {
+    auto                     rg    = ReportGuard(REPORT);
     const std::vector<BMat8> gens  = {BMat8({{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}),
                                      BMat8({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}}),
                                      BMat8({{1, 0, 0}, {1, 1, 0}, {0, 0, 1}}),

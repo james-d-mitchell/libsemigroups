@@ -119,9 +119,9 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(last <= N);
       LIBSEMIGROUPS_ASSERT(first < last);
       block_type m = ~0;
-      m = (m >> first);
-      m = (m << (first + (block_count() - last)));
-      m = (m >> (block_count() - last));
+      m            = (m >> first);
+      m            = (m << (first + (block_count() - last)));
+      m            = (m >> (block_count() - last));
       if (value) {
         _block |= m;
       } else {
@@ -177,8 +177,8 @@ namespace libsemigroups {
 
     void clear_hi_bits() const noexcept {
       size_t s = block_count() - N;
-      _block = _block << s;
-      _block = _block >> s;
+      _block   = _block << s;
+      _block   = _block >> s;
     }
 
     constexpr size_t block_count() const noexcept {

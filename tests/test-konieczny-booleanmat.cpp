@@ -73,7 +73,7 @@ namespace libsemigroups {
                           "027",
                           "exceptions",
                           "[quick][booleanmat][boolmat]") {
-    auto                     rg   = ReportGuard(REPORT);
+    auto rg = ReportGuard(REPORT);
     REQUIRE_THROWS_AS(
         Konieczny<BooleanMat>(
             {BooleanMat(
@@ -86,7 +86,7 @@ namespace libsemigroups {
                           "028",
                           "code coverage",
                           "[quick][boolmat][booleanmat][no-valgrind]") {
-    auto                    rg   = ReportGuard(REPORT);
+    auto                    rg = ReportGuard(REPORT);
     std::vector<BooleanMat> gens
         = {BooleanMat({0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0,
                        1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1}),
