@@ -16,16 +16,17 @@
 //
 
 // TODO(now) IWYU
-#include "libsemigroups/bmat8.hpp"
-#include "libsemigroups/element-adapters.hpp"
-#include "libsemigroups/element.hpp"
-#include "libsemigroups/froidure-pin.hpp"
-#include "libsemigroups/konieczny.hpp"
+
+#include <cstddef> // for size_t
 
 #include "catch.hpp"
 #include "test-main.hpp"
 
-#include "data/test-konieczny-data.hpp"
+#include "libsemigroups/bmat8.hpp"             // for BMat8
+#include "libsemigroups/element-adapters.hpp"  // for Degree etc
+#include "libsemigroups/element.hpp"           // for Transformation
+#include "libsemigroups/froidure-pin.hpp"      // for FroidurePin
+#include "libsemigroups/konieczny.hpp"         // for Konieczny
 
 namespace libsemigroups {
 
@@ -1392,14 +1393,14 @@ namespace libsemigroups {
     REQUIRE(T.size() == 33554432);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Konieczny",
-                          "025",
-                          "generators from Sean Clark",
-                          "[extreme]") {
-    auto rg = ReportGuard(REPORT);
-    // actual size unknown, this is more of an aspirational test for now...
-    // Konieczny<BooleanMat> S(konieczny_data::clark_gens);
-    // S.run();
-    // REQUIRE(S.size() == 33554432);
-  }
+  // LIBSEMIGROUPS_TEST_CASE("Konieczny",
+  //                         "025",
+  //                         "generators from Sean Clark",
+  //                         "[extreme]") {
+  //   auto rg = ReportGuard(REPORT);
+  //   // actual size unknown, this is more of an aspirational test for now...
+  //   // Konieczny<BooleanMat> S(konieczny_data::clark_gens);
+  //   // S.run();
+  //   // REQUIRE(S.size() == 33554432);
+  // }
 }  // namespace libsemigroups

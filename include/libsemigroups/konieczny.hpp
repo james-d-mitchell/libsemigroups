@@ -1,6 +1,6 @@
 //
 // libsemigroups - C++ library for semigroups and monoids
-// Copyright (C) 2019 Finn Smith
+// Copyright (C) 2019-20 Finn Smith
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 // 3) expose iterators to relevant things in D classes
 // 4) maps to D classes containing given L/R values
 // 5) more reporting
+// 6) remove pointers
 //
 // TODO(now):
 // 4) IWYU - manually - JDM
@@ -35,19 +36,21 @@
 #ifndef LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 #define LIBSEMIGROUPS_INCLUDE_KONIECZNY_HPP_
 
-#include <algorithm>
-#include <map>
-#include <set>
-#include <tuple>
-#include <unordered_set>
-#include <vector>
+#include <cstddef>        // for size_t
+#include <set>            // for set
+#include <type_traits>    // for is_pointer
+#include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
+#include <utility>        // for pair, make_pair
+#include <vector>         // for vector
 
-#include "action.hpp"
-#include "bruidhinn-traits.hpp"  // for BruidhinnTraits
-#include "constants.hpp"
-#include "libsemigroups-config.hpp"     // for LIBSEMIGROUPS_ASSERT
+#include "action.hpp"                   // for LeftAction, RightAction
+#include "bruidhinn-traits.hpp"         // for BruidhinnTraits
+#include "constants.hpp"                // for UNDEFINED
 #include "libsemigroups-debug.hpp"      // for LIBSEMIGROUPS_ASSERT
-#include "libsemigroups-exception.hpp"  // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups-exception.hpp"  // for LIBSEMIGROUPS_EXCEPTION
+#include "report.hpp"                   // for REPORT_DEFAULT
+#include "runner.hpp"                   // for Runner
 
 namespace libsemigroups {
 
@@ -461,7 +464,6 @@ namespace libsemigroups {
     //! This member function involves fully
     //! enumerating the semigroup, if it is not already fully enumerated.
     typename std::vector<BaseDClass*>::const_iterator cbegin_D_classes() {
-      run();
       auto it = _D_classes.cbegin();
       if (!_adjoined_identity_contained) {
         it++;
@@ -475,7 +477,6 @@ namespace libsemigroups {
     //! This member function involves fully
     //! enumerating the semigroup, if it is not already fully enumerated.
     typename std::vector<BaseDClass*>::const_iterator cend_D_classes() {
-      run();
       return _D_classes.cend();
     }
 
