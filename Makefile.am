@@ -636,6 +636,7 @@ EXTRA_PROGRAMS += test_word
 
 EXTRA_PROGRAMS += bench_all
 EXTRA_PROGRAMS += bench_action
+EXTRA_PROGRAMS += bench_booleanmat
 EXTRA_PROGRAMS += bench_digraph
 EXTRA_PROGRAMS += bench_froidure_pin
 EXTRA_PROGRAMS += bench_knuth_bendix
@@ -876,6 +877,9 @@ bench_all_SOURCES += benchmarks/bench-wislo.cpp
 
 bench_action_SOURCES =  benchmarks/bench-action.cpp
 bench_action_SOURCES += benchmarks/bench-main.cpp
+
+bench_booleanmat_SOURCES =  benchmarks/bench-booleanmat.cpp
+bench_booleanmat_SOURCES += benchmarks/bench-main.cpp
 
 bench_digraph_SOURCES =  benchmarks/bench-digraph.cpp
 bench_digraph_SOURCES += benchmarks/bench-main.cpp

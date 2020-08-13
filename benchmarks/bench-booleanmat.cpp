@@ -20,42 +20,93 @@
 #include "catch.hpp"       // for REQUIRE, REQUIRE_NOTHROW, REQUIRE_THROWS_AS
 
 #include "libsemigroups/element.hpp" // for BooleanMat
+#include "libsemigroups/semiring.hpp" // for Semiring
 
-#include "examples/generators.hpp"
+#include "../tests/test-konieczny-booleanmat-data.hpp"
 
 namespace libsemigroups {
 
+  int myproduct(int x, int* y) {
+    return x & *y;
+  }
 
-  TEST_CASE("const_panilo_iterator", "[quick][000]") {
-    using node_type = size_t;
-    auto   ad       = test_digraph();
-    size_t N        = 20;
+  int mysum(int x, int y) {
+    return x | y;
+  }
 
-    BENCHMARK("const_panilo_iterator") {
-      std::vector<std::pair<word_type, node_type>> v(ad.cbegin_panilo(0, 0, N),
-                                                     ad.cend_panilo());
-      REQUIRE(v.size() == 1048575);
-    };
+  void mymatmult(std::vector<int>& res, std::vector<int>& A, std::vector<int>& B) {
+    size_t m = 40;
+    // init res with right size
+    // res.resize(m * m);
+    // get a pointer array for the entire column in B matrix
+    static std::vector<int*> colPtr;
+    colPtr.clear();
+    for (size_t i = 0; i < m; i++) {
+      colPtr.push_back(&B[i * m]);
+    }
+    // loop over output columns first, because column element addresses are not
+    // continuous
+    for (size_t c = 0; c < m; c++) {
+      for (size_t r = 0; r < m - 1; r++) {
+        res[r * m + c] = std::inner_product(A.begin() + r * m,
+                                            A.begin() + (r + 1) * m,
+                                            colPtr.begin(),
+                                            0,
+                                            mysum,
+                                            myproduct);
+      }
+      res[(m - 1) * m + c] = std::inner_product(A.begin() + (m - 1) * m,
+                                                A.end(),
+                                                colPtr.begin(),
+                                                0,
+                                                mysum,
+                                                myproduct);
+      // move column pointer array to the next column
+      std::transform(colPtr.begin(), colPtr.end(), colPtr.begin(), [](int* x) {
+        return ++x;
+      });
+    }
+  }
 
-    BENCHMARK("free function for comparison with const_panilo_iterator") {
-      std::pair<std::vector<word_type>, std::vector<node_type>> v
-          = paths_in_lex_order(ad, 0, 0, N);
-      REQUIRE(v.first.size() == 1048575);
+  std::vector<int> booleanmat_to_vec(BooleanMat const& x) {
+    std::vector<int> vec;
+    for (size_t i = 0; i < x.degree() * x.degree(); ++i) {
+      vec.push_back(x[i]);
+    }
+    return vec;
+  }
+
+  TEST_CASE("BooleanMat1", "[quick][000]") {
+    BENCHMARK("redefine") {
+      BooleanMat result1(size_t(40));
+      BooleanMat result2 = konieczny_data::clark_gens.back();
+      REQUIRE(konieczny_data::clark_gens.size() == 6);
+      for (size_t i = 0; i < 500; ++i) {
+        for (auto const& y : konieczny_data::clark_gens) {
+          result1.redefine(result2, y);
+          std::swap(result1, result2);
+        }
+      }
     };
   }
 
-  LIBSEMIGROUPS_BENCHMARK("cbegin/end_rules",
-                          "[FroidurePin][002]",
-                          before_bench_rules<Transf>,
-                          bench_const_rule_iterator<Transf>,
-                          after_bench<Transf>,
-                          {transf_examples(0x9806816B9D761476)});
+  TEST_CASE("BooleanMat2", "[quick][001]") {
+    std::vector<int> result1(40 * 40, false);
+    std::vector<std::vector<int>> clark;
+    for (auto const& x : konieczny_data::clark_gens) {
+      clark.push_back(booleanmat_to_vec(x));
+    }
+    std::vector<int> result2 = clark.back();
+    REQUIRE(clark.size() == 6);
+    REQUIRE(result2.size() == 1600);
 
-  LIBSEMIGROUPS_BENCHMARK("relations",
-                          "[FroidurePin][003]",
-                          before_bench_rules<Transf>,
-                          bench_relations<Transf>,
-                          after_bench<Transf>,
-                          {transf_examples(0x9806816B9D761476)});
-
+    BENCHMARK("inner product") {
+      for (size_t i = 0; i < 500; ++i) {
+        for (auto& y : clark) {
+          mymatmult(result1, result2, y);
+          std::swap(result1, result2);
+        }
+      }
+    };
+  }
 }  // namespace libsemigroups
