@@ -619,6 +619,7 @@ EXTRA_PROGRAMS += test_iterator
 EXTRA_PROGRAMS += test_kbe
 EXTRA_PROGRAMS += test_knuth_bendix
 EXTRA_PROGRAMS += test_konieczny
+EXTRA_PROGRAMS += test_matrix
 EXTRA_PROGRAMS += test_obvinf
 EXTRA_PROGRAMS += test_order
 EXTRA_PROGRAMS += test_pool
@@ -696,6 +697,7 @@ test_all_SOURCES += tests/test-konieczny-transf.cpp
 test_all_SOURCES += tests/test-konieczny-booleanmat.cpp
 test_all_SOURCES += tests/test-konieczny-pperm.cpp
 test_all_SOURCES += tests/test-main.cpp
+test_all_SOURCES += tests/test-matrix.cpp
 test_all_SOURCES += tests/test-obvinf.cpp
 test_all_SOURCES += tests/test-order.cpp
 test_all_SOURCES += tests/test-race.cpp
@@ -817,6 +819,9 @@ test_konieczny_SOURCES += tests/test-konieczny-transf.cpp
 test_konieczny_SOURCES += tests/test-konieczny-booleanmat.cpp
 test_konieczny_SOURCES += tests/test-konieczny-pperm.cpp
 test_konieczny_SOURCES += tests/test-main.cpp
+
+test_matrix_SOURCES =  tests/test-matrix.cpp
+test_matrix_SOURCES += tests/test-main.cpp
 
 test_obvinf_SOURCES =  tests/test-obvinf.cpp
 test_obvinf_SOURCES += tests/test-main.cpp

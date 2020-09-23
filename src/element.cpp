@@ -71,12 +71,11 @@ namespace libsemigroups {
 
     for (size_t i = 0; i < dim; i++) {
       for (size_t j = 0; j < dim; j++) {
+        bool val = false;
         for (k = 0; k < dim; k++) {
-          if (xx[i * dim + k] && yy[k * dim + j]) {
-            break;
-          }
+          val |= xx[i * dim + k] && yy[k * dim + j];
         }
-        _vector[i * dim + j] = (k < dim);
+        _vector[i * dim + j] = val;
       }
     }
     this->reset_hash_value();
