@@ -19,8 +19,9 @@
 #include "bench-main.hpp"  // for LIBSEMIGROUPS_BENCHMARK
 #include "catch.hpp"       // for REQUIRE, REQUIRE_NOTHROW, REQUIRE_THROWS_AS
 
-#include "libsemigroups/element.hpp" // for BooleanMat
-#include "libsemigroups/semiring.hpp" // for Semiring
+#include "libsemigroups/element.hpp"   // for BooleanMat
+#include "libsemigroups/matrix.hpp"    // for BMat
+#include "libsemigroups/semiring.hpp"  // for Semiring
 
 #include "../tests/test-konieczny-booleanmat-data.hpp"
 
@@ -34,7 +35,9 @@ namespace libsemigroups {
     return x | y;
   }
 
-  void mymatmult(std::vector<int>& res, std::vector<int>& A, std::vector<int>& B) {
+  void mymatmult(std::vector<int>& res,
+                 std::vector<int>& A,
+                 std::vector<int>& B) {
     size_t m = 40;
     // init res with right size
     // res.resize(m * m);
@@ -76,6 +79,17 @@ namespace libsemigroups {
     return vec;
   }
 
+  template <size_t N>
+  BMat<N> booleanmat_to_bmat(BooleanMat const& x) {
+    BMat<N> xx;
+    for (size_t r = 0; r < x.degree(); ++r) {
+      for (size_t c = 0; c < x.degree(); ++c) {
+        xx(r, c, x.at(r * N + c));
+      }
+    }
+    return xx;
+  }
+
   TEST_CASE("BooleanMat1", "[quick][000]") {
     BENCHMARK("redefine") {
       BooleanMat result1(size_t(40));
@@ -91,7 +105,7 @@ namespace libsemigroups {
   }
 
   TEST_CASE("BooleanMat2", "[quick][001]") {
-    std::vector<int> result1(40 * 40, false);
+    std::vector<int>              result1(40 * 40, false);
     std::vector<std::vector<int>> clark;
     for (auto const& x : konieczny_data::clark_gens) {
       clark.push_back(booleanmat_to_vec(x));
@@ -104,6 +118,25 @@ namespace libsemigroups {
       for (size_t i = 0; i < 500; ++i) {
         for (auto& y : clark) {
           mymatmult(result1, result2, y);
+          std::swap(result1, result2);
+        }
+      }
+    };
+  }
+
+  TEST_CASE("BooleanMat3", "[quick][002]") {
+    BMat<40>              result1;
+    std::vector<BMat<40>> clark;
+    for (auto const& x : konieczny_data::clark_gens) {
+      clark.push_back(booleanmat_to_bmat<40>(x));
+    }
+    auto result2 = clark.back();
+    REQUIRE(clark.size() == 6);
+
+    BENCHMARK("inner product") {
+      for (size_t i = 0; i < 500; ++i) {
+        for (auto& y : clark) {
+          result1.product_inplace(result2, y);
           std::swap(result1, result2);
         }
       }
