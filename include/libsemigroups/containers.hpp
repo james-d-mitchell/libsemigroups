@@ -30,6 +30,22 @@
 
 namespace libsemigroups {
   namespace detail {
+    template <typename T, typename A = std::allocator<T>>
+    class DUTA {
+     public:
+      DUTA(size_t n) : _data(n * (n + 1) / 2, 0) {}
+
+      T get(size_t i, size_t j) {
+        return _data[i + j];
+      }
+
+      void set(size_t i, size_t j, T val) {
+        _data[i + j] = val;
+      }
+
+     private:
+      std::vector<T, A> _data;
+    };
 
     // Template class for 2-dimnensional dynamic arrays.
     template <typename T, typename A = std::allocator<T>>
@@ -286,10 +302,10 @@ namespace libsemigroups {
         add_rows(copy._nr_rows);
 
         if (copy._nr_unused_cols == _nr_unused_cols) {
-          std::copy(copy._vec.begin(),
-                    copy._vec.end(),
-                    _vec.begin()
-                        + (_nr_used_cols + _nr_unused_cols) * old_nr_rows);
+          std::copy(
+              copy._vec.begin(),
+              copy._vec.end(),
+              _vec.begin() + (_nr_used_cols + _nr_unused_cols) * old_nr_rows);
         } else {  // TODO(later) improve this
           for (size_type i = old_nr_rows; i < _nr_rows; i++) {
             for (size_type j = 0; j < _nr_used_cols; j++) {

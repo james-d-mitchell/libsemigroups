@@ -1601,6 +1601,14 @@ namespace libsemigroups {
       REQUIRE(std::vector<size_t>(rry.begin(2), rry.end(2))
               == std::vector<size_t>({11, 11, 11}));
     }
+
+    LIBSEMIGROUPS_TEST_CASE("DUTA", "044", "all", "[containers][quick]") {
+      DUTA<int> x(10);
+      x.set(0, 0, -1);
+      REQUIRE(x.get(0, 0) == -1);
+      x.set(0, 1, 42);
+      REQUIRE(x.get(0, 1) == 42);
+    }
   }  // namespace detail
 
 }  // namespace libsemigroups
