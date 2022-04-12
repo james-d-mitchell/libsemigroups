@@ -139,7 +139,7 @@ namespace libsemigroups {
     // Add d to the list of preimages of c under x, i.e.
     // _word_graph.target(d, x) = c
     void add_source(node_type c, letter_type x, node_type d) noexcept {
-      LIBSEMIGROUPS_ASSERT(x < out_degree());
+      LIBSEMIGROUPS_ASSERT(x < this->out_degree());
       // c -> e -> ... -->  c -> d -> e -> ..
       _preim_next.set(d, x, _preim_init.get(c, x));
       _preim_init.set(c, x, d);

@@ -51,7 +51,7 @@ namespace libsemigroups {
 
     void add_relations(word_iterator first, word_iterator last) {
       size_t number_of_words = 0;
-      LIBSEMIGROUPS_ASSERT(rels.size() % 2 == 0);
+      LIBSEMIGROUPS_ASSERT(std::distance(first, last) % 2 == 0);
       for (auto wit = first; wit != last; ++wit) {
         // For every prefix [wit->cbegin(), last)
         for (auto last = wit->cend(); last > wit->cbegin(); --last) {

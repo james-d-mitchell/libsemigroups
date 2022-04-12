@@ -49,11 +49,14 @@ namespace libsemigroups {
    public:
     using Deduction = std::pair<coset_type, letter_type>;
     struct Edge {
-      Edge(coset_type s, letter_type g, coset_type t)
-          : source(s), generator(g), target(t) {}
+      Edge(coset_type s, letter_type g, coset_type t, size_t e, size_t n)
+          : source(s), generator(g), target(t), num_edges(e), num_nodes(n) {}
       coset_type  source;
       letter_type generator;
       coset_type  target;
+      size_t num_edges;  // Number of edges in the graph when *this was added to
+                         // the stack
+      size_t num_nodes;  // Same as above but for nodes
     };
     using PendingDefs = std::vector<Edge>;
     using Deductions  = std::vector<Deduction>;
@@ -204,68 +207,63 @@ namespace libsemigroups {
     size_t run(size_t n) {
       size_t      nr = 0;
       PendingDefs pending;
-      pending.push_back(Edge(0, 0, UNDEFINED));
-      pending.push_back(Edge(0, 0, 0));
+      pending.push_back(Edge(0, 0, UNDEFINED, 0, 1));
+      pending.push_back(Edge(0, 0, 0, 0, 1));
       while (!pending.empty()) {
-      start:
+      dive:
         auto current = pending.back();
         pending.pop_back();
-        coset_type old_target
-            = _word_graph.unsafe_neighbor(current.source, current.generator);
 
-        if (old_target != UNDEFINED) {
-          _word_graph.remove_edge_nc(current.source, current.generator);
-          if (old_target != _id_coset) {
-            bool delete_coset = true;
-            for (letter_type a = 0; a < number_of_generators(); ++a) {
-              if (_word_graph.first_source(old_target, a) != UNDEFINED) {
-                delete_coset = false;
-                break;
-              }
-            }
-            if (delete_coset) {
-              free_coset(old_target);
-            }
-          }
+        // Backtrack if necessary
+        while (_deduct.size() > current.num_edges) {
+          auto const& p = _deduct.back();
+          _word_graph.remove_edge_nc(p.first, p.second);
+          _deduct.pop_back();
+        }
+        while (number_of_cosets_active() > current.num_nodes) {
+          free_coset(number_of_cosets_active() - 1);
         }
 
-        size_t start = _deduct.size();
+        LIBSEMIGROUPS_ASSERT(
+            _word_graph.unsafe_neighbor(current.source, current.generator)
+            == UNDEFINED);
+        {
+          size_t start = _deduct.size();
 
-        if (current.target != UNDEFINED) {
-          def_edge(current.source, current.generator, current.target);
-        } else {
-          def_edge(current.source, current.generator, new_coset());
-        }
+          if (current.target != UNDEFINED) {
+            def_edge(current.source, current.generator, current.target);
+          } else {
+            if (number_of_cosets_active() == n - 1) {
+              continue;
+            }
+            def_edge(current.source, current.generator, new_coset());
+          }
 
-        if (!process_deductions(start)) {
-          if (current.target == UNDEFINED) {
-            free_coset(
-                _word_graph.unsafe_neighbor(current.source, current.generator));
-          }
-          // Bad word graph
-          while (_deduct.size() > start) {
-            auto const& p = _deduct.back();
-            _word_graph.remove_edge_nc(p.first, p.second);
-            _deduct.pop_back();
-          }
-        } else {
-          coset_type  next = current.source;
-          letter_type a    = current.generator + 1;
-          while (number_of_cosets_active() < n && next != first_free_coset()) {
-            for (; a < number_of_generators(); ++a) {
-              if (_word_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                pending.emplace_back(next, a, UNDEFINED);
-                for (coset_type b = _id_coset; b != first_free_coset();
-                     b            = next_active_coset(b)) {
-                  pending.emplace_back(next, a, b);
+          if (process_deductions(start)) {
+            coset_type  next = current.source;
+            letter_type a    = current.generator + 1;
+            while (next != first_free_coset()) {
+              for (; a < number_of_generators(); ++a) {
+                if (_word_graph.unsafe_neighbor(next, a) == UNDEFINED) {
+                  pending.emplace_back(next,
+                                       a,
+                                       UNDEFINED,
+                                       _deduct.size(),
+                                       number_of_cosets_active());
+                  for (coset_type b = _id_coset; b != first_free_coset();
+                       b            = next_active_coset(b)) {
+                    pending.emplace_back(
+                        next, a, b, _deduct.size(), number_of_cosets_active());
+                  }
+                  goto dive;
                 }
-                goto start;
               }
+              next = next_active_coset(next);
+              a    = 0;
             }
-            next = next_active_coset(next);
-            a    = 0;
+            // No undefined edges, word graph is complete
+            nr++;
           }
-          nr++;
         }
       }
       return nr;

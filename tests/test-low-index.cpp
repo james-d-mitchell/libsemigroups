@@ -57,7 +57,7 @@ namespace libsemigroups {
     presentation::add_pair(p, {0, 1, 0, 1}, {0});
 
     LowIndexCongruences lic(p);
-    REQUIRE(lic.run(4) == 6);
+    REQUIRE(lic.run(5) == 6);
     /*REQUIRE(lic.number_of_cosets_active() == 1);
     REQUIRE(lic.word_graph().neighbor(0, 0) == 0);
     REQUIRE(lic.word_graph().neighbor(0, 1) == 0);
@@ -99,7 +99,16 @@ namespace libsemigroups {
     presentation::add_pair(p, {1, 1}, {1});
     presentation::add_pair(p, {0, 2}, {0, 0});
     LowIndexCongruences lic(p);
+    REQUIRE(lic.run(2) == 1);
+    REQUIRE(lic.run(3) == 3);
     REQUIRE(lic.run(4) == 13);
+    REQUIRE(lic.run(5) == 36);
+    REQUIRE(lic.run(6) == 82);
+    REQUIRE(lic.run(7) == 135);
+    REQUIRE(lic.run(8) == 166);
+    REQUIRE(lic.run(9) == 175);
+    REQUIRE(lic.run(10) == 176);
+    REQUIRE(lic.run(11) == 176);
   }
 
 }  // namespace libsemigroups
@@ -119,9 +128,9 @@ namespace libsemigroups {
 //   [[1, 2, 1], [1, 1, 1], [1, 2, 1]]]
 //
 // [[[0, 0]],                           #1#
-// [[1, 0], [1, 1]],
-// [[1, 1], [1, 1]],
-// [[1, 2], [1, 1], [1, 2]],
-// [[1, 2], [1, 1], [2, 2]],
+// [[1, 0], [1, 1]],                    #3#
+// [[1, 1], [1, 1]],                    #2#
+// [[1, 2], [1, 1], [1, 2]],            #5#
+// [[1, 2], [1, 1], [2, 2]],            #4#
 // [[1, 2], [1, 1], [3, 2], [3, 3]]]
 //
