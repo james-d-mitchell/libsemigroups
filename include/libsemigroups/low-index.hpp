@@ -270,69 +270,6 @@ namespace libsemigroups {
       }
       return nr;
     }
-
-    // i.e. find the next congruence
-    bool run_old(size_t n) {
-      coset_type _current = _id_coset;
-      coset_type b = (_starts.empty() ? 0 : static_cast<coset_type>(UNDEFINED));
-      letter_type a = 0;
-      while (!_starts.empty() && b == UNDEFINED) {
-        auto start = _starts.top();
-        _starts.pop();
-        _current = _deduct[start].first;
-        a        = _deduct[start].second;
-        b        = _word_graph.neighbor(_current, a);
-        if (b < number_of_cosets_active()) {
-          ++b;
-        } else {
-          // backtrack
-          free_coset(b);
-          b = UNDEFINED;
-        }
-        while (_deduct.size() > start) {
-          auto const& p = _deduct.back();
-          _word_graph.remove_edge_nc(p.first, p.second);
-          _deduct.pop_back();
-        }
-      }
-      if (b == UNDEFINED) {
-        return false;
-      }
-      while (number_of_cosets_active() < n && _current != first_free_coset()) {
-        for (; a < number_of_generators(); ++a) {
-          if (_word_graph.unsafe_neighbor(_current, a) == UNDEFINED) {
-            size_t const N = number_of_cosets_active();
-            for (; b <= N; ++b) {
-              if (b == N) {
-                b = new_coset();
-              }
-              size_t start = _deduct.size();
-              def_edge(_current, a, b);
-              if (!process_deductions(start)) {
-                if (b == N) {
-                  free_coset(b);
-                }
-                // Bad word graph
-                while (_deduct.size() > start) {
-                  auto const& p = _deduct.back();
-                  _word_graph.remove_edge_nc(p.first, p.second);
-                  _deduct.pop_back();
-                }
-                continue;  // to the next value of b
-              } else {
-                _starts.push(start);
-                break;  // to the next value of a or _current
-              }
-            }
-          }
-        }
-        _current = next_active_coset(_current);
-        a        = 0;
-        b        = 0;
-      }
-      return true;  // FIXME should return false when finished,
-                    // urhurm
-    }
   };
 
 }  // namespace libsemigroups
