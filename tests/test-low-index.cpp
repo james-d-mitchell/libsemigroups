@@ -48,7 +48,7 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
                           "000",
-                          "string",
+                          "TODO",
                           "[quick][presentation]") {
     Presentation<word_type> p;
     p.alphabet({0, 1});
@@ -57,8 +57,8 @@ namespace libsemigroups {
     presentation::add_pair(p, {0, 1, 0, 1}, {0});
 
     LowIndexCongruences lic(p);
-    REQUIRE(lic.run(4) == 0);
-    REQUIRE(lic.number_of_cosets_active() == 1);
+    REQUIRE(lic.run(4) == 6);
+    /*REQUIRE(lic.number_of_cosets_active() == 1);
     REQUIRE(lic.word_graph().neighbor(0, 0) == 0);
     REQUIRE(lic.word_graph().neighbor(0, 1) == 0);
 
@@ -74,7 +74,7 @@ namespace libsemigroups {
     REQUIRE(lic.word_graph().neighbor(0, 0) == 1);
     REQUIRE(lic.word_graph().neighbor(0, 1) == 0);
     REQUIRE(lic.word_graph().neighbor(1, 0) == 1);
-    REQUIRE(lic.word_graph().neighbor(1, 1) == 1);
+    REQUIRE(lic.word_graph().neighbor(1, 1) == 1); */
     // check_compatibility(lic);
 
     // REQUIRE(lic.run(4));
@@ -85,4 +85,43 @@ namespace libsemigroups {
     // REQUIRE(lic.word_graph().neighbor(1, 1) == 1);
   }
 
+  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+                          "001",
+                          "TODO",
+                          "[quick][presentation]") {
+    Presentation<word_type> p;
+    p.alphabet({0, 1, 2});
+    presentation::add_pair(p, {0, 1, 0}, {0, 0});
+    presentation::add_pair(p, {2, 2}, {0, 0});
+    presentation::add_pair(p, {0, 0, 0}, {0, 0});
+    presentation::add_pair(p, {2, 1}, {1, 2});
+    presentation::add_pair(p, {2, 0}, {0, 0});
+    presentation::add_pair(p, {1, 1}, {1});
+    presentation::add_pair(p, {0, 2}, {0, 0});
+    LowIndexCongruences lic(p);
+    REQUIRE(lic.run(4) == 13);
+  }
+
 }  // namespace libsemigroups
+
+// [[[0, 0, 0]],                        #1#
+//   [[1, 0, 1], [1, 1, 1]],
+//   [[1, 0, 2], [1, 1, 1], [1, 2, 1]],
+//   [[1, 1, 1], [1, 1, 1]],            #2#
+//   [[1, 1, 2], [1, 1, 1], [1, 1, 1]], #4#
+//   [[1, 0, 1], [2, 1, 2], [2, 2, 2]],
+//   [[1, 0, 2], [2, 1, 2], [2, 2, 2]],
+//   [[1, 1, 2], [2, 1, 2], [2, 2, 2]], #3#
+//   [[1, 2, 2], [2, 1, 2], [2, 2, 2]],
+//   [[1, 0, 2], [2, 2, 2], [2, 2, 2]],
+//   [[1, 2, 1], [2, 2, 2], [2, 2, 2]],
+//   [[1, 2, 2], [2, 2, 2], [2, 2, 2]],
+//   [[1, 2, 1], [1, 1, 1], [1, 2, 1]]]
+//
+// [[[0, 0]],                           #1#
+// [[1, 0], [1, 1]],
+// [[1, 1], [1, 1]],
+// [[1, 2], [1, 1], [1, 2]],
+// [[1, 2], [1, 1], [2, 2]],
+// [[1, 2], [1, 1], [3, 2], [3, 3]]]
+//
