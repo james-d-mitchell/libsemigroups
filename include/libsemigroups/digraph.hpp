@@ -499,6 +499,11 @@ namespace libsemigroups {
       reset();
     }
 
+    void inline remove_edge_nc(node_type i, label_type lbl) {
+      _dynamic_array_2.set(i, lbl, UNDEFINED);
+      reset();
+    }
+
     //! Ensures that the digraph has capacity for a given number of nodes, and
     //! out-degree.
     //!

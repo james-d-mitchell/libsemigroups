@@ -2098,6 +2098,7 @@ namespace libsemigroups {
         TPreferredDef()(this, x, a, y, b);
       }
     }
+
     template <typename TStackDeduct>
     void ToddCoxeter::process_coincidences() {
       if (_coinc.empty()) {

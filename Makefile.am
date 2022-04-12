@@ -649,11 +649,13 @@ EXTRA_PROGRAMS += test_kambites
 EXTRA_PROGRAMS += test_kbe
 EXTRA_PROGRAMS += test_knuth_bendix
 EXTRA_PROGRAMS += test_konieczny
+EXTRA_PROGRAMS += test_low_index
 EXTRA_PROGRAMS += test_matrix
 EXTRA_PROGRAMS += test_obvinf
 EXTRA_PROGRAMS += test_order
 EXTRA_PROGRAMS += test_pbr
 EXTRA_PROGRAMS += test_pool
+EXTRA_PROGRAMS += test_present
 EXTRA_PROGRAMS += test_race
 EXTRA_PROGRAMS += test_runner
 EXTRA_PROGRAMS += test_schreier_sims
@@ -737,12 +739,14 @@ test_all_SOURCES += tests/test-konieczny-bmat8-3.cpp
 test_all_SOURCES += tests/test-konieczny-transf.cpp
 test_all_SOURCES += tests/test-konieczny-bmat.cpp
 test_all_SOURCES += tests/test-konieczny-pperm.cpp
+test_all_SOURCES += tests/test-low-index.cpp
 test_all_SOURCES += tests/test-main.cpp
 test_all_SOURCES += tests/test-matrix.cpp
 test_all_SOURCES += tests/test-obvinf.cpp
 test_all_SOURCES += tests/test-order.cpp
 test_all_SOURCES += tests/test-pbr.cpp
 test_all_SOURCES += tests/test-pool.cpp
+test_all_SOURCES += tests/test-present.cpp
 test_all_SOURCES += tests/test-race.cpp
 test_all_SOURCES += tests/test-runner.cpp
 test_all_SOURCES += tests/test-schreier-sims.cpp
@@ -791,7 +795,6 @@ test_digraph_helper_SOURCES += tests/test-main.cpp
 
 test_digraph_SOURCES =  tests/test-digraph.cpp
 test_digraph_SOURCES += tests/test-main.cpp
-
 
 test_forest_SOURCES =  tests/test-forest.cpp
 test_forest_SOURCES += tests/test-main.cpp
@@ -872,6 +875,9 @@ test_konieczny_SOURCES += tests/test-konieczny-pperm.cpp
 test_konieczny_SOURCES += tests/bmat-data.cpp
 test_konieczny_SOURCES += tests/test-main.cpp
 
+test_low_index_SOURCES =  tests/test-low-index.cpp
+test_low_index_SOURCES += tests/test-main.cpp
+
 test_matrix_SOURCES =  tests/test-matrix.cpp
 test_matrix_SOURCES += tests/test-main.cpp
 
@@ -886,6 +892,9 @@ test_pbr_SOURCES += tests/test-main.cpp
 
 test_pool_SOURCES =  tests/test-pool.cpp
 test_pool_SOURCES += tests/test-main.cpp
+
+test_present_SOURCES =  tests/test-present.cpp
+test_present_SOURCES += tests/test-main.cpp
 
 test_race_SOURCES =  tests/test-race.cpp
 test_race_SOURCES += tests/test-main.cpp
