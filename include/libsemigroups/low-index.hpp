@@ -90,6 +90,11 @@ namespace libsemigroups {
       return _word_graph;
     }
 
+    Presentation<word_type> const& presentation() const noexcept {
+      return _presentation;
+    }
+
+   private:
     inline bool push_definition_felsch(node_type const& c, size_t i) noexcept {
       auto j = (i % 2 == 0 ? i + 1 : i - 1);
       return push_definition_felsch(
@@ -112,32 +117,21 @@ namespace libsemigroups {
       if (y == UNDEFINED) {
         return true;
       }
-      return push_definition(x, u.back(), y, v.back());
-    }
-
-    bool
-    push_definition(node_type x, letter_type a, node_type y, letter_type b) {
       LIBSEMIGROUPS_ASSERT(x < _num_active_nodes);
       LIBSEMIGROUPS_ASSERT(y < _num_active_nodes);
-      LIBSEMIGROUPS_ASSERT(a < _presentation.alphabet().size());
-      LIBSEMIGROUPS_ASSERT(b < _presentation.alphabet().size());
-
-      node_type const xa = _word_graph.unsafe_neighbor(x, a);
-      node_type const yb = _word_graph.unsafe_neighbor(y, b);
+      LIBSEMIGROUPS_ASSERT(u.back() < _presentation.alphabet().size());
+      LIBSEMIGROUPS_ASSERT(v.back() < _presentation.alphabet().size());
+      node_type const xa = _word_graph.unsafe_neighbor(x, u.back());
+      node_type const yb = _word_graph.unsafe_neighbor(y, v.back());
 
       if (xa == UNDEFINED && yb != UNDEFINED) {
-        def_edge(x, a, yb);
+        def_edge(x, u.back(), yb);
       } else if (xa != UNDEFINED && yb == UNDEFINED) {
-        def_edge(y, b, xa);
+        def_edge(y, v.back(), xa);
       } else if (xa != UNDEFINED && yb != UNDEFINED && xa != yb) {
         return false;
       }
       return true;
-    }
-
-   public:
-    Presentation<word_type> const& presentation() const noexcept {
-      return _presentation;
     }
 
     bool process_definitionsions(size_t start) {
@@ -186,6 +180,7 @@ namespace libsemigroups {
       _word_graph.add_edge_nc(c, d, x);
     }
 
+   public:
     // Returns the number of right congruences with up to n (inclusive)
     // classes.
     size_t number_of_congruences(size_t n) {
