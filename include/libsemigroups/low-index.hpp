@@ -84,7 +84,6 @@ namespace libsemigroups {
           _presentation(p),
           _word_graph() {
       _felsch_tree.add_relations(_presentation.cbegin(), _presentation.cend());
-      _word_graph.add_nodes(1);
       _word_graph.add_to_out_degree(_presentation.alphabet().size());
     }
 
@@ -148,13 +147,9 @@ namespace libsemigroups {
     bool process_definitions(size_t start) {
       for (size_t i = start; i < _definitions.size(); ++i) {
         auto const& d = _definitions[i];
-        if (d.first
-            < _num_active_nodes) {  // TODO try removing this check, think it
-                                    // always has to be the case
-          _felsch_tree.push_back(d.second);
-          if (!process_definitions_dfs_v1(d.first)) {
-            return false;
-          }
+        _felsch_tree.push_back(d.second);
+        if (!process_definitions_dfs_v1(d.first)) {
+          return false;
         }
       }
       return true;
@@ -184,18 +179,13 @@ namespace libsemigroups {
     }
 
    public:
-    void next(size_t n) {}
-
-    // Returns the number of right congruences with up to n (inclusive)
-    // classes.
-    size_t number_of_congruences(size_t n) {
+    bool next(size_t n) {
       if (_word_graph.number_of_nodes() < n) {
         _word_graph.add_nodes(n - _word_graph.number_of_nodes());
+        LIBSEMIGROUPS_ASSERT(_pending.empty());
+        _pending.emplace_back(0, 0, UNDEFINED, 0, 1);
+        _pending.emplace_back(0, 0, 0, 0, 1);
       }
-
-      size_t nr = 0;
-      _pending.emplace_back(0, 0, UNDEFINED, 0, 1);
-      _pending.emplace_back(0, 0, 0, 0, 1);
 
       while (!_pending.empty()) {
       dive:
@@ -217,7 +207,7 @@ namespace libsemigroups {
         {
           size_t start = _definitions.size();
 
-          if (current.target != UNDEFINED) {
+          if (current.target < _num_active_nodes) {
             def_edge(current.source, current.generator, current.target);
           } else {
             if (_num_active_nodes == n) {
@@ -232,12 +222,7 @@ namespace libsemigroups {
                  ++next) {
               for (; a < _presentation.alphabet().size(); ++a) {
                 if (_word_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                  _pending.emplace_back(next,
-                                        a,
-                                        UNDEFINED,
-                                        _definitions.size(),
-                                        _num_active_nodes);
-                  for (node_type b = 0; b < _num_active_nodes; ++b) {
+                  for (node_type b = 0; b <= _num_active_nodes; ++b) {
                     _pending.emplace_back(
                         next, a, b, _definitions.size(), _num_active_nodes);
                   }
@@ -248,9 +233,19 @@ namespace libsemigroups {
             }
             // No undefined edges, word graph is complete
             // check_compatibility(_word_graph, _presentation);
-            nr++;
+            return true;
           }
         }
+      }
+      return false;
+    }
+
+    // Returns the number of right congruences with up to n (inclusive)
+    // classes.
+    size_t number_of_congruences(size_t n) {
+      size_t nr = 0;
+      while (next(n)) {
+        nr++;
       }
       return nr;
     }
