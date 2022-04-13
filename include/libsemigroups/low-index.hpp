@@ -95,13 +95,22 @@ namespace libsemigroups {
     }
 
    private:
+    inline void def_edge(node_type c, letter_type x, node_type d) noexcept {
+      LIBSEMIGROUPS_ASSERT(c < _num_active_nodes);
+      LIBSEMIGROUPS_ASSERT(x < _presentation.alphabet().size());
+      LIBSEMIGROUPS_ASSERT(d < _num_active_nodes);
+      LIBSEMIGROUPS_ASSERT(_word_graph.unsafe_neighbor(c, x) == UNDEFINED);
+      _definitions.emplace_back(c, x);
+      _word_graph.add_edge_nc(c, d, x);
+    }
+
     inline bool push_definition_felsch(node_type const& c, size_t i) noexcept {
       auto j = (i % 2 == 0 ? i + 1 : i - 1);
       return push_definition_felsch(
           c, *(_presentation.cbegin() + i), *(_presentation.cbegin() + j));
     }
 
-    bool push_definition_felsch(node_type const& c,
+    bool push_definition_felsch(node_type        c,
                                 word_type const& u,
                                 word_type const& v) noexcept {
       LIBSEMIGROUPS_ASSERT(c < _num_active_nodes);
@@ -134,14 +143,14 @@ namespace libsemigroups {
       return true;
     }
 
-    bool process_definitionsions(size_t start) {
+    bool process_definitions(size_t start) {
       for (size_t i = start; i < _definitions.size(); ++i) {
         auto const& d = _definitions[i];
         if (d.first
             < _num_active_nodes) {  // TODO try removing this check, think it
                                     // always has to be the case
           _felsch_tree.push_back(d.second);
-          if (!process_definitionsions_dfs_v1(d.first)) {
+          if (!process_definitions_dfs_v1(d.first)) {
             return false;
           }
         }
@@ -149,7 +158,7 @@ namespace libsemigroups {
       return true;
     }
 
-    bool process_definitionsions_dfs_v1(node_type c) {
+    bool process_definitions_dfs_v1(node_type c) {
       for (auto it = _felsch_tree.cbegin(); it < _felsch_tree.cend(); ++it) {
         if (!push_definition_felsch(c, *it)) {
           return false;
@@ -161,7 +170,7 @@ namespace libsemigroups {
         if (_felsch_tree.push_front(x)) {
           node_type e = _word_graph.first_source(c, x);
           while (e != UNDEFINED) {
-            if (!process_definitionsions_dfs_v1(e)) {
+            if (!process_definitions_dfs_v1(e)) {
               return false;
             }
             e = _word_graph.next_source(e, x);
@@ -170,14 +179,6 @@ namespace libsemigroups {
         }
       }
       return true;
-    }
-
-    inline void def_edge(node_type c, letter_type x, node_type d) noexcept {
-      LIBSEMIGROUPS_ASSERT(c < _num_active_nodes);
-      LIBSEMIGROUPS_ASSERT(x < _presentation.alphabet().size());
-      LIBSEMIGROUPS_ASSERT(d < _num_active_nodes);
-      _definitions.emplace_back(c, x);
-      _word_graph.add_edge_nc(c, d, x);
     }
 
    public:
@@ -222,7 +223,7 @@ namespace libsemigroups {
             def_edge(current.source, current.generator, _num_active_nodes++);
           }
 
-          if (process_definitionsions(start)) {
+          if (process_definitions(start)) {
             letter_type a = current.generator + 1;
             for (node_type next = current.source; next < _num_active_nodes;
                  ++next) {
