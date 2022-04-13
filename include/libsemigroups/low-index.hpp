@@ -30,20 +30,6 @@
 #include "felsch-tree.hpp"
 #include "present.hpp"
 
-// * have an object that can take a presentation (like CongruenceInterface
-// or FpSemigroupInterface);
-// * the object has cbegin(size_t n), cend(size_t n) mem fns that allow
-// iteration through the congruences with at most n classes;
-// * these will use some of the code from ToddCoxeter (mostly
-// push_definition, and process_deductions (these parts of ToddCoxeter
-// should then be refactored out into a separate base class for ToddCoxeter
-// + LowIndexCongruences);
-// * they perform a DFS trying to fill in the "graph" such that it is
-// compatible with the relations. We backtrack when two paths labelled by
-// relation words lead to different places. Dereferencing the iterator just
-// points to the reference for the "graph", and incrementing continues the
-// search for the next "graph"
-
 namespace libsemigroups {
   namespace {
 
@@ -92,11 +78,7 @@ namespace libsemigroups {
           _presentation(p) {
       _felsch_tree.add_relations(_presentation.cbegin(), _presentation.cend());
       _word_graph.add_nodes(1);
-      _word_graph.add_to_out_degree(number_of_generators());
-    }
-
-    size_t number_of_generators() const noexcept {
-      return _presentation.alphabet().size();
+      _word_graph.add_to_out_degree(_presentation.alphabet().size());
     }
 
     CollapsibleWordGraph<uint32_t> const& word_graph() const {
@@ -141,8 +123,8 @@ namespace libsemigroups {
     push_definition(coset_type x, letter_type a, coset_type y, letter_type b) {
       LIBSEMIGROUPS_ASSERT(is_valid_coset(x));
       LIBSEMIGROUPS_ASSERT(is_valid_coset(y));
-      LIBSEMIGROUPS_ASSERT(a < number_of_generators());
-      LIBSEMIGROUPS_ASSERT(b < number_of_generators());
+      LIBSEMIGROUPS_ASSERT(a < _presentation.alphabet().size());
+      LIBSEMIGROUPS_ASSERT(b < _presentation.alphabet().size());
 
       coset_type const xa = _word_graph.unsafe_neighbor(x, a);
       coset_type const yb = _word_graph.unsafe_neighbor(y, b);
@@ -194,7 +176,7 @@ namespace libsemigroups {
         }
       }
 
-      size_t const n = number_of_generators();
+      size_t const n = _presentation.alphabet().size();
       for (size_t x = 0; x < n; ++x) {
         if (_felsch_tree.push_front(x)) {
           coset_type e = _word_graph.first_source(c, x);
@@ -212,7 +194,7 @@ namespace libsemigroups {
 
     inline void def_edge(coset_type c, letter_type x, coset_type d) noexcept {
       LIBSEMIGROUPS_ASSERT(is_valid_coset(c));
-      LIBSEMIGROUPS_ASSERT(x < number_of_generators());
+      LIBSEMIGROUPS_ASSERT(x < _presentation.alphabet().size());
       LIBSEMIGROUPS_ASSERT(is_valid_coset(d));
       _deduct.emplace_back(c, x);
       _word_graph.add_edge_nc(c, d, x);
@@ -259,7 +241,7 @@ namespace libsemigroups {
             coset_type  next = current.source;
             letter_type a    = current.generator + 1;
             while (next != first_free_coset()) {
-              for (; a < number_of_generators(); ++a) {
+              for (; a < _presentation.alphabet().size(); ++a) {
                 if (_word_graph.unsafe_neighbor(next, a) == UNDEFINED) {
                   pending.emplace_back(next,
                                        a,
