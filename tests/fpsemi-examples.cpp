@@ -643,6 +643,11 @@ namespace libsemigroups {
 
   // From Theorem 41 in doi:10.1016/j.jalgebra.2011.04.008
   std::vector<relation_type> PartitionMonoidEast41(size_t n) {
+    if (n < 4) {
+      LIBSEMIGROUPS_EXCEPTION(
+          "the 1st argument (size_t) must be at least 4, found %llu",
+          uint64_t(n));
+    }
     word_type s  = {0};
     word_type c  = {1};
     word_type e  = {2};

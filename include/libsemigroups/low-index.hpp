@@ -45,6 +45,22 @@
 // search for the next "graph"
 
 namespace libsemigroups {
+  namespace {
+
+    template <typename T>
+    void check_compatibility(ActionDigraph<T> const&        d,
+                             Presentation<word_type> const& p) {
+      for (size_t i = 0; i < d.number_of_nodes(); ++i) {
+        for (auto it = p.cbegin(); it != p.cend(); it += 2) {
+          if (action_digraph_helper::follow_path_nc(d, i, *it)
+              != action_digraph_helper::follow_path_nc(d, i, *(it + 1))) {
+            LIBSEMIGROUPS_EXCEPTION("incompatible digraph!")
+          }
+        }
+      }
+    }
+  }  // namespace
+
   class LowIndexCongruences : public detail::CosetManager {
    public:
     using Deduction = std::pair<coset_type, letter_type>;
@@ -66,7 +82,6 @@ namespace libsemigroups {
     FelschTree                     _felsch_tree;
     CollapsibleWordGraph<uint32_t> _word_graph;
     Presentation<word_type>        _presentation;
-    std::stack<size_t>             _starts;
     // TODO stats?
 
    public:
@@ -203,8 +218,9 @@ namespace libsemigroups {
       _word_graph.add_edge_nc(c, d, x);
     }
 
-    // i.e. find the next congruence
-    size_t run(size_t n) {
+    // Returns the number of right congruences with up to n (inclusive)
+    // classes.
+    size_t number_of_congruences(size_t n) {
       size_t      nr = 0;
       PendingDefs pending;
       pending.push_back(Edge(0, 0, UNDEFINED, 0, 1));
@@ -233,7 +249,7 @@ namespace libsemigroups {
           if (current.target != UNDEFINED) {
             def_edge(current.source, current.generator, current.target);
           } else {
-            if (number_of_cosets_active() == n - 1) {
+            if (number_of_cosets_active() == n) {
               continue;
             }
             def_edge(current.source, current.generator, new_coset());
@@ -262,6 +278,7 @@ namespace libsemigroups {
               a    = 0;
             }
             // No undefined edges, word graph is complete
+            // check_compatibility(_word_graph, _presentation);
             nr++;
           }
         }

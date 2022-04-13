@@ -877,6 +877,7 @@ test_konieczny_SOURCES += tests/test-main.cpp
 
 test_low_index_SOURCES =  tests/test-low-index.cpp
 test_low_index_SOURCES += tests/test-main.cpp
+test_low_index_SOURCES += tests/fpsemi-examples.cpp
 
 test_matrix_SOURCES =  tests/test-matrix.cpp
 test_matrix_SOURCES += tests/test-main.cpp

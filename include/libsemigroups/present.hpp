@@ -36,6 +36,7 @@ namespace libsemigroups {
     using word_type      = WordType;
     using letter_type    = typename WordType::value_type;
     using const_iterator = typename std::vector<word_type>::const_iterator;
+    using const_alphabet_iterator = typename WordType::const_iterator;
 
     enum class empty_word { yes, no };
 
@@ -77,8 +78,16 @@ namespace libsemigroups {
       return _alphabet;
     }
 
+    const_alphabet_iterator cbegin_alphabet() const noexcept {
+      return _alphabet.cbegin();
+    }
+
+    const_alphabet_iterator cend_alphabet() const noexcept {
+      return _alphabet.cend();
+    }
+
     template <typename T>
-    Presentation& add_pair(T lhs_begin, T lhs_end, T rhs_begin, T rhs_end) {
+    Presentation& add_rule(T lhs_begin, T lhs_end, T rhs_begin, T rhs_end) {
       _relations.emplace_back(lhs_begin, lhs_end);
       _relations.emplace_back(rhs_begin, rhs_end);
       return *this;
@@ -86,10 +95,10 @@ namespace libsemigroups {
 
     template <typename T>
     Presentation&
-    add_pair_and_check(T lhs_begin, T lhs_end, T rhs_begin, T rhs_end) {
+    add_rule_and_check(T lhs_begin, T lhs_end, T rhs_begin, T rhs_end) {
       validate_word(lhs_begin, lhs_end);
       validate_word(rhs_begin, rhs_end);
-      return add_pair(lhs_begin, lhs_end, rhs_begin, rhs_end);
+      return add_rule(lhs_begin, lhs_end, rhs_begin, rhs_end);
     }
 
     const_iterator cbegin() const noexcept {
@@ -123,47 +132,83 @@ namespace libsemigroups {
   };
 
   namespace presentation {
+    // TODO emplace_rule, emplace_rule_and_check
 
     template <typename WordType, typename TContainer>
-    void add_pair(Presentation<WordType>& p,
+    void add_rule(Presentation<WordType>& p,
                   TContainer const&       lhop,
                   TContainer const&       rhop) {
-      p.add_pair(lhop.begin(), lhop.end(), rhop.begin(), rhop.end());
+      p.add_rule(lhop.begin(), lhop.end(), rhop.begin(), rhop.end());
     }
 
     template <typename WordType>
-    void add_pair(Presentation<WordType>& p,
+    void add_rule(Presentation<WordType>& p,
                   char const*             lhop,
                   char const*             rhop) {
-      add_pair(p, std::string(lhop), std::string(rhop));
+      add_rule(p, std::string(lhop), std::string(rhop));
     }
 
     template <typename WordType, typename T>
-    void add_pair(Presentation<WordType>&  p,
+    void add_rule(Presentation<WordType>&  p,
                   std::initializer_list<T> lhop,
                   std::initializer_list<T> rhop) {
-      p.add_pair(lhop.begin(), lhop.end(), rhop.begin(), rhop.end());
+      p.add_rule(lhop.begin(), lhop.end(), rhop.begin(), rhop.end());
     }
 
     template <typename WordType, typename TContainer>
-    void add_pair_and_check(Presentation<WordType>& p,
+    void add_rule_and_check(Presentation<WordType>& p,
                             TContainer const&       lhop,
                             TContainer const&       rhop) {
-      p.add_pair_and_check(lhop.begin(), lhop.end(), rhop.begin(), rhop.end());
+      p.add_rule_and_check(lhop.begin(), lhop.end(), rhop.begin(), rhop.end());
     }
 
     template <typename WordType>
-    void add_pair_and_check(Presentation<WordType>& p,
+    void add_rule_and_check(Presentation<WordType>& p,
                             char const*             lhop,
                             char const*             rhop) {
-      add_pair_and_check(p, std::string(lhop), std::string(rhop));
+      add_rule_and_check(p, std::string(lhop), std::string(rhop));
     }
 
     template <typename WordType, typename T>
-    void add_pair_and_check(Presentation<WordType>&  p,
+    void add_rule_and_check(Presentation<WordType>&  p,
                             std::initializer_list<T> lhop,
                             std::initializer_list<T> rhop) {
-      p.add_pair_and_check(lhop.begin(), lhop.end(), rhop.begin(), rhop.end());
+      p.add_rule_and_check(lhop.begin(), lhop.end(), rhop.begin(), rhop.end());
+    }
+
+    template <typename WordType>
+    typename Presentation<WordType>::letter_type
+    alphabet(Presentation<WordType> const& p, size_t i) {
+      return *(p.cbegin_alphabet() + i);
+    }
+
+    template <typename WordType>
+    void identity(Presentation<WordType>&                      p,
+                  typename Presentation<WordType>::letter_type id) {
+      for (auto it = p.cbegin_alphabet(); it != p.cend_alphabet(); ++it) {
+        WordType       lhs = {*it, id};
+        WordType const rhs = {*it};
+        add_rule(p, lhs, rhs);
+        if (*it != id) {
+          lhs = {id, *it};
+          add_rule(p, lhs, rhs);
+        }
+      }
+    }
+
+    template <typename WordType>
+    void inverses(Presentation<WordType>&                      p,
+                  WordType const&                              inverses,
+                  typename Presentation<WordType>::letter_type id) {
+      word_type const rhs = {id};
+      for (size_t i = 0; i < p.alphabet().size(); ++i) {
+        word_type lhs = {alphabet(p, i), inverses[i]};
+        add_rule(p, lhs, rhs);
+        if (alphabet(p, i) != id) {
+          std::swap(lhs[0], lhs[1]);
+          add_rule(p, lhs, rhs);
+        }
+      }
     }
   }  // namespace presentation
 }  // namespace libsemigroups
