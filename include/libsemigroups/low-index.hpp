@@ -69,18 +69,20 @@ namespace libsemigroups {
 
     Definitions                    _definitions;
     FelschTree                     _felsch_tree;
-    CollapsibleWordGraph<uint32_t> _word_graph;
-    Presentation<word_type>        _presentation;
     size_type                      _num_active_nodes;
+    PendingDefinitions             _pending;
+    Presentation<word_type>        _presentation;
+    CollapsibleWordGraph<uint32_t> _word_graph;
     // TODO stats?
 
    public:
     LowIndexCongruences(Presentation<word_type> const& p)
         : _definitions(),
           _felsch_tree(p.alphabet().size()),
-          _word_graph(),
+          _num_active_nodes(1),
+          _pending(),
           _presentation(p),
-          _num_active_nodes(1) {
+          _word_graph() {
       _felsch_tree.add_relations(_presentation.cbegin(), _presentation.cend());
       _word_graph.add_nodes(1);
       _word_graph.add_to_out_degree(_presentation.alphabet().size());
@@ -182,6 +184,8 @@ namespace libsemigroups {
     }
 
    public:
+    void next(size_t n) {}
+
     // Returns the number of right congruences with up to n (inclusive)
     // classes.
     size_t number_of_congruences(size_t n) {
@@ -189,15 +193,14 @@ namespace libsemigroups {
         _word_graph.add_nodes(n - _word_graph.number_of_nodes());
       }
 
-      size_t             nr = 0;
-      PendingDefinitions pending;
-      pending.emplace_back(0, 0, UNDEFINED, 0, 1);
-      pending.emplace_back(0, 0, 0, 0, 1);
+      size_t nr = 0;
+      _pending.emplace_back(0, 0, UNDEFINED, 0, 1);
+      _pending.emplace_back(0, 0, 0, 0, 1);
 
-      while (!pending.empty()) {
+      while (!_pending.empty()) {
       dive:
-        auto current = pending.back();
-        pending.pop_back();
+        auto current = _pending.back();
+        _pending.pop_back();
 
         // Backtrack if necessary
         while (_definitions.size() > current.num_edges) {
@@ -229,13 +232,13 @@ namespace libsemigroups {
                  ++next) {
               for (; a < _presentation.alphabet().size(); ++a) {
                 if (_word_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                  pending.emplace_back(next,
-                                       a,
-                                       UNDEFINED,
-                                       _definitions.size(),
-                                       _num_active_nodes);
+                  _pending.emplace_back(next,
+                                        a,
+                                        UNDEFINED,
+                                        _definitions.size(),
+                                        _num_active_nodes);
                   for (node_type b = 0; b < _num_active_nodes; ++b) {
-                    pending.emplace_back(
+                    _pending.emplace_back(
                         next, a, b, _definitions.size(), _num_active_nodes);
                   }
                   goto dive;
