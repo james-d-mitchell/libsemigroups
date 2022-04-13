@@ -558,6 +558,10 @@ namespace libsemigroups {
       _dynamic_array_2.swap(u, a, v, a);
     }
 
+    bool operator==(ActionDigraph const& that) const {
+      return _dynamic_array_2 == that._dynamic_array_2;
+    }
+
     ////////////////////////////////////////////////////////////////////////
     // ActionDigraph - nodes, neighbors, etc - public
     ////////////////////////////////////////////////////////////////////////
@@ -2599,6 +2603,7 @@ namespace libsemigroups {
                                     size_t    min,
                                     size_t    max) const {
       auto am = detail::adjacency_matrix<adjacency_matrix_type>(*this);
+
 #ifdef LIBSEMIGROUPS_EIGEN_ENABLED
       auto     acc   = detail::pow(am, min);
       uint64_t total = 0;
@@ -3110,5 +3115,48 @@ namespace libsemigroups {
       return mat;
     }
   }  // namespace detail
+
+  template <typename T>
+  std::ostream& operator<<(std::ostream& os, ActionDigraph<T> const& ad) {
+    if (ad.number_of_nodes() == 0) {
+      os << "{}";
+      return os;
+    }
+    os << "{";
+    for (auto n = ad.cbegin_nodes(); n != ad.cend_nodes() - 1; ++n) {
+      os << "{";
+      for (auto e = ad.cbegin_edges(*n); e != ad.cend_edges(*n) - 1; ++e) {
+        if (*e == UNDEFINED) {
+          os << "-, ";
+        } else {
+          os << *e << ", ";
+        }
+      }
+      auto e = ad.cend_edges(*n) - 1;
+      if (*e == UNDEFINED) {
+        os << "-";
+      } else {
+        os << *e;
+      }
+      os << "}, ";
+    }
+    os << "{";
+    auto n = ad.cend_nodes() - 1;
+    for (auto e = ad.cbegin_edges(*n); e != ad.cend_edges(*n) - 1; ++e) {
+      if (*e == UNDEFINED) {
+        os << "-, ";
+      } else {
+        os << *e << ", ";
+      }
+    }
+    auto e = ad.cend_edges(*n) - 1;
+    if (*e == UNDEFINED) {
+      os << "-";
+    } else {
+      os << *e;
+    }
+    os << "}}";
+    return os;
+  }
 }  // namespace libsemigroups
 #endif  // LIBSEMIGROUPS_DIGRAPH_HPP_

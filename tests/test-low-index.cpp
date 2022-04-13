@@ -27,8 +27,9 @@
 #include "fpsemi-examples.hpp"
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
 
-#include "libsemigroups/low-index.hpp"  // for Presentation
-#include "libsemigroups/types.hpp"      // for word_type
+#include "libsemigroups/digraph-helper.hpp"  // for make
+#include "libsemigroups/low-index.hpp"       // for Presentation
+#include "libsemigroups/types.hpp"           // for word_type
 
 namespace libsemigroups {
 
@@ -52,6 +53,9 @@ namespace libsemigroups {
                           "000",
                           "fp example 1",
                           "[quick][presentation]") {
+    using WordGraph = typename LowIndexCongruences::word_graph_type;
+    using node_type = typename WordGraph::node_type;
+
     Presentation<word_type> p;
     p.alphabet({0, 1});
     presentation::add_rule_and_check(p, {0, 0, 0}, {0});
@@ -60,37 +64,39 @@ namespace libsemigroups {
 
     LowIndexCongruences lic(p);
     REQUIRE(lic.number_of_congruences(5) == 6);
-    /*REQUIRE(lic.number_of_cosets_active() == 1);
-    REQUIRE(lic.word_graph().neighbor(0, 0) == 0);
-    REQUIRE(lic.word_graph().neighbor(0, 1) == 0);
 
-    ActionDigraph<size_t> ad(2, 2);
-    ad.add_edge(0, 1, 0);
-    ad.add_edge(0, 0, 1);
-    ad.add_edge(1, 1, 0);
-    ad.add_edge(1, 1, 1);
-    check_compatibility(ad, p);
-
-    REQUIRE(lic.number_of_congruences(4) == 0);
-    REQUIRE(lic.number_of_cosets_active() == 2);
-    REQUIRE(lic.word_graph().neighbor(0, 0) == 1);
-    REQUIRE(lic.word_graph().neighbor(0, 1) == 0);
-    REQUIRE(lic.word_graph().neighbor(1, 0) == 1);
-    REQUIRE(lic.word_graph().neighbor(1, 1) == 1); */
-    // check_compatibility(lic);
-
-    // REQUIRE(lic.number_of_congruences(4));
-    // REQUIRE(lic.number_of_cosets_active() == 3);
-    // REQUIRE(lic.word_graph().neighbor(0, 0) == 1);
-    // REQUIRE(lic.word_graph().neighbor(0, 1) == 1);
-    // REQUIRE(lic.word_graph().neighbor(1, 0) == 1);
-    // REQUIRE(lic.word_graph().neighbor(1, 1) == 1);
+    auto it = lic.cbegin(5);
+    REQUIRE(*(it++) == action_digraph_helper::make<node_type>(5, {{0, 0}}));
+    REQUIRE(*(it++)
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 2}, {1, 1}, {3, 2}, {3, 3}}));
+    REQUIRE(
+        *(it++)
+        == action_digraph_helper::make<node_type>(5, {{1, 2}, {1, 1}, {2, 2}}));
+    REQUIRE(
+        *(it++)
+        == action_digraph_helper::make<node_type>(5, {{1, 2}, {1, 1}, {1, 2}}));
+    REQUIRE(*(it++)
+            == action_digraph_helper::make<node_type>(5, {{1, 1}, {1, 1}}));
+    REQUIRE(*(it++)
+            == action_digraph_helper::make<node_type>(5, {{1, 0}, {1, 1}}));
+    REQUIRE(*(it++) == WordGraph(0, 2));
+    REQUIRE(*(it++) == WordGraph(0, 2));
+    // [[[0, 0]],
+    // [[1, 2], [1, 1], [3, 2], [3, 3]],
+    // [[1, 2], [1, 1], [2, 2]],
+    // [[1, 2], [1, 1], [1, 2]],
+    // [[1, 1], [1, 1]],
+    // [[1, 0], [1, 1]]]
   }
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
                           "001",
                           "fp example 2",
                           "[quick][presentation]") {
+    using WordGraph = typename LowIndexCongruences::word_graph_type;
+    using node_type = typename WordGraph::node_type;
+
     Presentation<word_type> p;
     p.alphabet({0, 1, 2});
     presentation::add_rule_and_check(p, {0, 1, 0}, {0, 0});
@@ -112,6 +118,17 @@ namespace libsemigroups {
     REQUIRE(lic.number_of_congruences(8) == 175);
     REQUIRE(lic.number_of_congruences(9) == 176);
     REQUIRE(lic.number_of_congruences(10) == 176);
+
+    auto it = lic.cbegin(2);
+    REQUIRE(*(it++) == action_digraph_helper::make<node_type>(2, {{0, 0, 0}}));
+    REQUIRE(
+        *(it++)
+        == action_digraph_helper::make<node_type>(2, {{1, 1, 1}, {1, 1, 1}}));
+    REQUIRE(
+        *(it++)
+        == action_digraph_helper::make<node_type>(2, {{1, 0, 1}, {1, 1, 1}}));
+    REQUIRE(*(it++) == WordGraph(0, 3));
+    REQUIRE(*(it++) == WordGraph(0, 3));
   }
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
@@ -270,6 +287,109 @@ namespace libsemigroups {
     REQUIRE(lic.number_of_congruences(10) == 223);
   }
 
+  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+                          "005",
+                          "PartitionMonoid(3)",
+                          "[extreme][presentation]") {
+    // This is the partition monoid with an additional redundant identity
+    // adjoined.
+    Presentation<word_type> p;
+    p.alphabet({0, 1, 2, 3, 4});
+    presentation::add_rule_and_check(p, {0, 0}, {0});
+    presentation::add_rule_and_check(p, {0, 1}, {1});
+    presentation::add_rule_and_check(p, {0, 2}, {2});
+    presentation::add_rule_and_check(p, {0, 3}, {3});
+    presentation::add_rule_and_check(p, {0, 4}, {4});
+    presentation::add_rule_and_check(p, {1, 0}, {1});
+    presentation::add_rule_and_check(p, {2, 0}, {2});
+    presentation::add_rule_and_check(p, {2, 2}, {0});
+    presentation::add_rule_and_check(p, {2, 4}, {4});
+    presentation::add_rule_and_check(p, {3, 0}, {3});
+    presentation::add_rule_and_check(p, {3, 3}, {3});
+    presentation::add_rule_and_check(p, {4, 0}, {4});
+    presentation::add_rule_and_check(p, {4, 2}, {4});
+    presentation::add_rule_and_check(p, {4, 4}, {4});
+    presentation::add_rule_and_check(p, {1, 1, 1}, {0});
+    presentation::add_rule_and_check(p, {1, 1, 2}, {2, 1});
+    presentation::add_rule_and_check(p, {1, 2, 1}, {2});
+    presentation::add_rule_and_check(p, {2, 1, 1}, {1, 2});
+    presentation::add_rule_and_check(p, {2, 1, 2}, {1, 1});
+    presentation::add_rule_and_check(p, {2, 1, 4}, {1, 1, 4});
+    presentation::add_rule_and_check(p, {3, 1, 2}, {1, 2, 3});
+    presentation::add_rule_and_check(p, {3, 4, 3}, {3});
+    presentation::add_rule_and_check(p, {4, 1, 2}, {4, 1, 1});
+    presentation::add_rule_and_check(p, {4, 3, 4}, {4});
+    presentation::add_rule_and_check(p, {1, 1, 3, 1}, {2, 3, 2});
+    presentation::add_rule_and_check(p, {1, 1, 3, 2}, {2, 3, 1});
+    presentation::add_rule_and_check(p, {1, 2, 3, 1}, {3, 2});
+    presentation::add_rule_and_check(p, {1, 2, 3, 2}, {3, 1});
+    presentation::add_rule_and_check(p, {1, 2, 3, 4}, {3, 1, 4});
+    presentation::add_rule_and_check(p, {1, 3, 2, 3}, {3, 1, 3});
+    presentation::add_rule_and_check(p, {1, 4, 1, 4}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {2, 1, 3, 1}, {1, 3, 2});
+    presentation::add_rule_and_check(p, {2, 1, 3, 2}, {1, 3, 1});
+    presentation::add_rule_and_check(p, {2, 1, 3, 4}, {1, 3, 1, 4});
+    presentation::add_rule_and_check(p, {2, 3, 1, 3}, {1, 3, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 1, 4}, {1, 1, 3, 4});
+    presentation::add_rule_and_check(p, {2, 3, 2, 3}, {3, 2, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 2}, {3, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 4, 3}, {1, 2, 3});
+    presentation::add_rule_and_check(p, {3, 2, 3, 2}, {3, 2, 3});
+    presentation::add_rule_and_check(p, {4, 1, 1, 4}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 2}, {4, 1, 3, 1});
+    presentation::add_rule_and_check(p, {4, 1, 4, 1}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {1, 3, 1, 1, 3}, {3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {1, 3, 4, 1, 4}, {4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {2, 3, 1, 1, 3}, {3, 1, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 2, 1, 3}, {1, 3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 4, 1, 3}, {1, 3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 4, 1, 4}, {1, 4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {3, 1, 1, 4, 1}, {1, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 1, 1}, {3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {3, 2, 3, 1, 1}, {3, 1, 1, 3});
+    presentation::add_rule_and_check(p, {3, 4, 1, 1, 3}, {1, 2, 3});
+    presentation::add_rule_and_check(p, {3, 4, 1, 4, 3}, {1, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {4, 1, 1, 3, 4}, {4, 3, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 1, 1}, {1, 3, 1, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 1, 3}, {4, 3, 1, 3});
+    presentation::add_rule_and_check(p, {4, 1, 3, 1, 4}, {4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 4, 1}, {4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {4, 1, 4, 3, 2}, {4, 1, 4, 3, 1});
+    presentation::add_rule_and_check(p, {1, 1, 3, 4, 1, 3}, {3, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {1, 1, 4, 1, 3, 4}, {3, 4, 1, 4});
+    presentation::add_rule_and_check(p, {1, 3, 1, 1, 4, 3}, {4, 3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {1, 3, 1, 3, 1, 3}, {3, 1, 3, 1, 3});
+    presentation::add_rule_and_check(p, {1, 3, 1, 4, 1, 3}, {3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {1, 4, 3, 1, 1, 4}, {4, 3, 1, 1, 4});
+    presentation::add_rule_and_check(p, {2, 3, 1, 1, 4, 3}, {1, 4, 3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 1, 3, 4, 1}, {3, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 1, 4, 3, 1}, {1, 1, 4, 3, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 1, 3, 1}, {3, 1, 3, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 1, 4, 1}, {3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 4, 1, 1, 3}, {3});
+    presentation::add_rule_and_check(p, {4, 1, 4, 3, 1, 1}, {4, 3, 1, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 4, 3, 1, 4}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {4, 3, 1, 3, 1, 4}, {1, 3, 1, 1, 4});
+    presentation::add_rule_and_check(
+        p, {1, 1, 4, 3, 1, 3, 1}, {3, 1, 1, 4, 3, 2});
+    presentation::add_rule_and_check(p, {1, 1, 4, 3, 2, 1, 3}, {3, 1, 1, 4, 3});
+    presentation::add_rule_and_check(
+        p, {1, 3, 1, 3, 4, 1, 3}, {3, 1, 3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 1, 4, 3, 2, 1}, {3, 1, 1, 4, 3});
+    presentation::add_rule_and_check(
+        p, {3, 1, 3, 1, 3, 4, 1}, {3, 1, 3, 4, 1, 3});
+    presentation::add_rule_and_check(
+        p, {4, 3, 1, 1, 4, 3, 2}, {4, 1, 4, 3, 1, 3, 1});
+    presentation::add_rule_and_check(
+        p, {3, 1, 1, 4, 3, 2, 3, 1}, {3, 1, 1, 4, 3, 2, 3});
+    presentation::add_rule_and_check(
+        p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
+
+    LowIndexCongruences lic(p);
+    auto                rg = ReportGuard(true);
+    REQUIRE(lic.number_of_congruences(202) == 223);
+  }
+
 }  // namespace libsemigroups
 
 // [[[0, 0, 0]],            #1#
@@ -290,11 +410,3 @@ namespace libsemigroups {
 //   [[1, 2, 1], [2, 2, 2], [2, 2, 2]],
 //   [[1, 2, 2], [2, 2, 2], [2, 2, 2]],
 //   [[1, 2, 1], [1, 1, 1], [1, 2, 1]]]
-//
-// [[[0, 0]],                           #1#
-// [[1, 0], [1, 1]],                    #3#
-// [[1, 1], [1, 1]],                    #2#
-// [[1, 2], [1, 1], [1, 2]],            #5#
-// [[1, 2], [1, 1], [2, 2]],            #4#
-// [[1, 2], [1, 1], [3, 2], [3, 3]]]
-//

@@ -86,6 +86,7 @@ namespace libsemigroups {
         }
       }
     }
+
     void add_monoid_relations(std::vector<word_type> const& alphabet,
                               word_type                     id,
                               std::vector<relation_type>&   relations) {

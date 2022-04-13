@@ -44,10 +44,10 @@ namespace libsemigroups {
    public:
     using ActionDigraph<T>::ActionDigraph;
 
-    explicit CollapsibleWordGraph()
-        : ActionDigraph<node_type>(0, 0),
-          _preim_init(0, 0, UNDEFINED),
-          _preim_next(0, 0, UNDEFINED) {}
+    explicit CollapsibleWordGraph(size_type m = 0, size_type n = 0)
+        : ActionDigraph<node_type>(m, n),
+          _preim_init(n, m, UNDEFINED),
+          _preim_next(n, m, UNDEFINED) {}
 
     CollapsibleWordGraph(CollapsibleWordGraph&&)      = default;
     CollapsibleWordGraph(CollapsibleWordGraph const&) = default;
