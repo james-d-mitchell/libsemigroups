@@ -28,10 +28,14 @@
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
 
 #include "libsemigroups/digraph-helper.hpp"  // for make
-#include "libsemigroups/low-index.hpp"       // for Presentation
-#include "libsemigroups/types.hpp"           // for word_type
+#include "libsemigroups/froidure-pin.hpp"
+#include "libsemigroups/low-index.hpp"  // for Presentation
+#include "libsemigroups/make.hpp"
+#include "libsemigroups/transf.hpp"
+#include "libsemigroups/types.hpp"  // for word_type
 
 namespace libsemigroups {
+  using empty_word = Presentation<word_type>::empty_word;
 
   /*namespace {
 
@@ -56,7 +60,7 @@ namespace libsemigroups {
     using WordGraph = typename LowIndexCongruences::word_graph_type;
     using node_type = typename WordGraph::node_type;
 
-    Presentation<word_type> p;
+    Presentation<word_type> p(empty_word::yes);
     p.alphabet({0, 1});
     presentation::add_rule_and_check(p, {0, 0, 0}, {0});
     presentation::add_rule_and_check(p, {1, 1}, {1});
@@ -97,7 +101,7 @@ namespace libsemigroups {
     using WordGraph = typename LowIndexCongruences::word_graph_type;
     using node_type = typename WordGraph::node_type;
 
-    Presentation<word_type> p;
+    Presentation<word_type> p(empty_word::yes);
     p.alphabet({0, 1, 2});
     presentation::add_rule_and_check(p, {0, 1, 0}, {0, 0});
     presentation::add_rule_and_check(p, {2, 2}, {0, 0});
@@ -135,7 +139,7 @@ namespace libsemigroups {
                           "002",
                           "ToddCoxeter failing example",
                           "[quick][presentation]") {
-    Presentation<word_type> p;
+    Presentation<word_type> p(empty_word::yes);
     //          a  A  b  B  c  C  e
     p.alphabet({0, 1, 2, 3, 4, 5, 6});
     presentation::identity(p, 6);
@@ -149,10 +153,8 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
                           "003",
-                          "PartitionMonoid(2)",
+                          "PartitionMonoid(2) right",
                           "[quick][presentation]") {
-    // This is the partition monoid with an additional redundant identity
-    // adjoined.
     Presentation<word_type> p;
     p.alphabet({0, 1, 2, 3});
     presentation::identity(p, 0);
@@ -167,31 +169,78 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {2, 1, 2, 1}, {2, 1, 2});
 
     LowIndexCongruences lic(p);
-    REQUIRE(lic.number_of_congruences(2) == 5);
-    REQUIRE(lic.number_of_congruences(3) == 11);
-    REQUIRE(lic.number_of_congruences(4) == 21);
-    REQUIRE(lic.number_of_congruences(5) == 37);
-    REQUIRE(lic.number_of_congruences(6) == 59);
-    REQUIRE(lic.number_of_congruences(7) == 87);
-    REQUIRE(lic.number_of_congruences(8) == 113);
-    REQUIRE(lic.number_of_congruences(9) == 136);
-    REQUIRE(lic.number_of_congruences(10) == 160);
-    REQUIRE(lic.number_of_congruences(11) == 181);
-    REQUIRE(lic.number_of_congruences(12) == 195);
-    REQUIRE(lic.number_of_congruences(13) == 202);
-    REQUIRE(lic.number_of_congruences(14) == 206);
-    REQUIRE(lic.number_of_congruences(15) == 209);
-    REQUIRE(lic.number_of_congruences(16) == 210);
-    REQUIRE(lic.number_of_congruences(17) == 210);
+    REQUIRE(lic.number_of_congruences(2) == 4);
+    REQUIRE(lic.number_of_congruences(3) == 7);
+    REQUIRE(lic.number_of_congruences(4) == 14);
+    REQUIRE(lic.number_of_congruences(5) == 23);
+    REQUIRE(lic.number_of_congruences(6) == 36);
+    REQUIRE(lic.number_of_congruences(7) == 51);
+    REQUIRE(lic.number_of_congruences(8) == 62);
+    REQUIRE(lic.number_of_congruences(9) == 74);
+    REQUIRE(lic.number_of_congruences(10) == 86);
+    REQUIRE(lic.number_of_congruences(11) == 95);
+    REQUIRE(lic.number_of_congruences(12) == 100);
+    REQUIRE(lic.number_of_congruences(13) == 102);
+    REQUIRE(lic.number_of_congruences(14) == 104);
+    REQUIRE(lic.number_of_congruences(15) == 105);
+    REQUIRE(lic.number_of_congruences(16) == 105);
+    REQUIRE(lic.number_of_congruences(17) == 105);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+                          "006",
+                          "PartitionMonoid(2) 2-sided",
+                          "[quick][presentation]") {
+    // This is the partition monoid with an additional redundant identity
+    // adjoined.
+    Presentation<word_type> p;
+    p.alphabet({0, 1, 2, 3});
+    presentation::add_rule_and_check(p, {1, 1}, {0});
+    presentation::add_rule_and_check(p, {1, 3}, {3});
+    presentation::add_rule_and_check(p, {2, 2}, {2});
+    presentation::add_rule_and_check(p, {3, 1}, {3});
+    presentation::add_rule_and_check(p, {3, 3}, {3});
+    presentation::add_rule_and_check(p, {2, 3, 2}, {2});
+    presentation::add_rule_and_check(p, {3, 2, 3}, {3});
+    presentation::add_rule_and_check(p, {1, 2, 1, 2}, {2, 1, 2});
+    presentation::add_rule_and_check(p, {2, 1, 2, 1}, {2, 1, 2});
+    presentation::identity(p, 0);
+    REQUIRE(std::distance(p.cbegin(), p.cend()) == 32);
+
+    LowIndexCongruences lic(p, congruence_kind::twosided);
+    REQUIRE(
+        std::distance(lic.presentation().cbegin(), lic.presentation().cend())
+        == 64);
+    REQUIRE(std::equal(lic.presentation().cbegin(),
+                       lic.presentation().cbegin() + 32,
+                       p.cbegin(),
+                       p.cend()));
+    REQUIRE(*(lic.presentation().cbegin() + 32) == word_type({1, 1}));
+    REQUIRE(*(lic.presentation().cbegin() + 33) == word_type({0}));
+    REQUIRE(*(lic.presentation().cbegin() + 34) == word_type({3, 1}));
+    REQUIRE(lic.number_of_congruences(2) == 4);
+    REQUIRE(lic.number_of_congruences(3) == 7);
+    REQUIRE(lic.number_of_congruences(4) == 14);
+    REQUIRE(lic.number_of_congruences(5) == 23);
+    REQUIRE(lic.number_of_congruences(6) == 36);
+    REQUIRE(lic.number_of_congruences(7) == 51);
+    REQUIRE(lic.number_of_congruences(8) == 62);
+    REQUIRE(lic.number_of_congruences(9) == 74);
+    REQUIRE(lic.number_of_congruences(10) == 86);
+    REQUIRE(lic.number_of_congruences(11) == 95);
+    REQUIRE(lic.number_of_congruences(12) == 100);
+    REQUIRE(lic.number_of_congruences(13) == 102);
+    REQUIRE(lic.number_of_congruences(14) == 104);
+    REQUIRE(lic.number_of_congruences(15) == 105);
+    REQUIRE(lic.number_of_congruences(16) == 105);
+    REQUIRE(lic.number_of_congruences(17) == 105);
   }
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
                           "004",
                           "PartitionMonoid(3)",
                           "[quick][presentation]") {
-    // This is the partition monoid with an additional redundant identity
-    // adjoined.
-    Presentation<word_type> p;
+    Presentation<word_type> p(empty_word::no);
     p.alphabet({0, 1, 2, 3, 4});
     presentation::add_rule_and_check(p, {0, 0}, {0});
     presentation::add_rule_and_check(p, {0, 1}, {1});
@@ -284,7 +333,7 @@ namespace libsemigroups {
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
 
     LowIndexCongruences lic(p);
-    REQUIRE(lic.number_of_congruences(10) == 223);
+    REQUIRE(lic.number_of_congruences(10) == 135);
   }
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
@@ -388,6 +437,53 @@ namespace libsemigroups {
     LowIndexCongruences lic(p);
     auto                rg = ReportGuard(true);
     REQUIRE(lic.number_of_congruences(202) == 223);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+                          "007",
+                          "FullTransformationMonoid(3) right",
+                          "[quick][presentation]") {
+    FroidurePin<Transf<3>> S({Transf<3>::make({1, 2, 0}),
+                              Transf<3>::make({1, 0, 2}),
+                              Transf<3>::make({0, 1, 0})});
+    REQUIRE(S.size() == 27);
+    REQUIRE(S.number_of_generators() == 3);
+    REQUIRE(S.number_of_rules() == 16);
+    auto p = make<word_type>(S);
+    p.contains_empty_word(empty_word::no);
+    REQUIRE(std::distance(p.cbegin(), p.cend()) == 2 * S.number_of_rules());
+    // FIXME currently the return value is for the semigroup S with an
+    // additional identity adjoined.
+    LowIndexCongruences lic(p);
+    REQUIRE(lic.number_of_congruences(27) == 574);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+                          "008",
+                          "FullTransformationMonoid(3) left",
+                          "[quick][presentation]") {
+    FroidurePin<Transf<3>> S(
+        {Transf<3>({1, 2, 0}), Transf<3>({1, 0, 2}), Transf<3>({0, 1, 0})});
+    REQUIRE(S.size() == 27);
+    auto p = make<word_type>(S);
+    // FIXME currently the return value is for the semigroup S with an
+    // additional identity adjoined.
+    LowIndexCongruences lic(p, congruence_kind::left);
+    REQUIRE(lic.number_of_congruences(28) == 240);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+                          "009",
+                          "FullTransformationMonoid(3) 2-sided",
+                          "[quick][presentation]") {
+    FroidurePin<Transf<3>> S(
+        {Transf<3>({1, 2, 0}), Transf<3>({1, 0, 2}), Transf<3>({0, 1, 0})});
+    REQUIRE(S.size() == 27);
+    auto p = make<word_type>(S);
+    // FIXME currently the return value is for the semigroup S with an
+    // additional identity adjoined.
+    LowIndexCongruences lic(p, congruence_kind::twosided);
+    REQUIRE(lic.number_of_congruences(28) == 14);
   }
 
 }  // namespace libsemigroups
