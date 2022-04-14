@@ -18,6 +18,21 @@
 
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoid.
+// TODO:
+// * Implement left and two-sided versions
+// * Templatize for "node_type"
+// * add option for "only those congruences containing a given set of pairs"?
+// * Stats and reporting
+// * Split into two hpp and tpp files
+// * const + noexcept
+// * iwyu
+// * parallelise?
+//
+// TODO(maths):
+// * containment of congruences defined by "action digraph"
+// * generating pairs for congruences defined by "action digraph"
+// * minimum degree transformation representations of semigroups/monoids
+// *
 
 #ifndef LIBSEMIGROUPS_LOW_INDEX_HPP_
 #define LIBSEMIGROUPS_LOW_INDEX_HPP_
@@ -34,8 +49,8 @@ namespace libsemigroups {
   namespace {
 
     template <typename T>
-    void check_compatibility(ActionDigraph<T> const&        d,
-                             Presentation<word_type> const& p) {
+    void check_compatibility(ActionDigraph<T> const &       d,
+                             Presentation<word_type> const &p) {
       for (size_t i = 0; i < d.number_of_nodes(); ++i) {
         for (auto it = p.cbegin(); it != p.cend(); it += 2) {
           if (action_digraph_helper::follow_path_nc(d, i, *it)
@@ -60,9 +75,9 @@ namespace libsemigroups {
     // TODO reporting
 
    public:
-    LowIndexCongruences(Presentation<word_type> const& p) : _presentation(p) {}
+    LowIndexCongruences(Presentation<word_type> const &p) : _presentation(p) {}
 
-    Presentation<word_type> const& presentation() const noexcept {
+    Presentation<word_type> const &presentation() const noexcept {
       return _presentation;
     }
     //! No doc
@@ -108,7 +123,6 @@ namespace libsemigroups {
 
       Definitions                    _definitions;
       FelschTree                     _felsch_tree;
-      LowIndexCongruences*           _lic;
       size_type                      _max_num_classes;
       size_type                      _num_active_nodes;
       PendingDefinitions             _pending;
@@ -121,16 +135,16 @@ namespace libsemigroups {
       //! No doc
       const_iterator() = delete;
       //! No doc
-      const_iterator(const_iterator const&) = default;
+      const_iterator(const_iterator const &) = default;
       //! No doc
-      const_iterator(const_iterator&&) = default;
+      const_iterator(const_iterator &&) = default;
       //! No doc
-      const_iterator& operator=(const_iterator const&) = default;
+      const_iterator &operator=(const_iterator const &) = default;
       //! No doc
-      const_iterator& operator=(const_iterator&&) = default;
+      const_iterator &operator=(const_iterator &&) = default;
 
       //! No doc
-      const_iterator(Presentation<word_type> const& p, size_type n)
+      const_iterator(Presentation<word_type> const &p, size_type n)
           : _definitions(),
             _felsch_tree(p.alphabet().size()),
             _max_num_classes(n),
@@ -141,7 +155,7 @@ namespace libsemigroups {
             _word_graph(n, _presentation.alphabet().size()) {
         _felsch_tree.add_relations(_presentation.cbegin(),
                                    _presentation.cend());
-        _pending.emplace_back(0, 0, UNDEFINED, 0, 1);
+        _pending.emplace_back(0, 0, 1, 0, 1);
         _pending.emplace_back(0, 0, 0, 0, 1);
         if (n != 0) {
           ++(*this);
@@ -155,7 +169,7 @@ namespace libsemigroups {
       ~const_iterator() = default;
 
       //! No doc
-      bool operator==(const_iterator const& that) const noexcept {
+      bool operator==(const_iterator const &that) const noexcept {
         if (_num_active_nodes == 0 && that._num_active_nodes == 0) {
           return true;
         }
@@ -164,7 +178,7 @@ namespace libsemigroups {
       }
 
       //! No doc
-      bool operator!=(const_iterator const& that) const noexcept {
+      bool operator!=(const_iterator const &that) const noexcept {
         return !(this->operator==(that));
       }
 
@@ -180,7 +194,7 @@ namespace libsemigroups {
 
       // prefix
       //! No doc
-      const_iterator const& operator++() noexcept {
+      const_iterator const &operator++() noexcept {
         while (!_pending.empty()) {
         dive:
           auto current = _pending.back();
@@ -188,7 +202,7 @@ namespace libsemigroups {
 
           // Backtrack if necessary
           while (_definitions.size() > current.num_edges) {
-            auto const& p = _definitions.back();
+            auto const &p = _definitions.back();
             _word_graph.remove_edge_nc(p.first, p.second);
             _definitions.pop_back();
           }
@@ -245,9 +259,8 @@ namespace libsemigroups {
       }
 
       //! No doc
-      void swap(const_iterator& that) noexcept {
+      void swap(const_iterator &that) noexcept {
         std::swap(_definitions, that._definitions);
-        std::swap(_lic, that._lic);
         std::swap(_num_active_nodes, that._num_active_nodes);
         std::swap(_pending, that._pending);
         std::swap(_word_graph, that._word_graph);
@@ -263,7 +276,7 @@ namespace libsemigroups {
         _word_graph.add_edge_nc(c, d, x);
       }
 
-      inline bool push_definition_felsch(node_type const& c,
+      inline bool push_definition_felsch(node_type const &c,
                                          size_t           i) noexcept {
         auto j = (i % 2 == 0 ? i + 1 : i - 1);
         return push_definition_felsch(
@@ -271,8 +284,8 @@ namespace libsemigroups {
       }
 
       bool push_definition_felsch(node_type        c,
-                                  word_type const& u,
-                                  word_type const& v) noexcept {
+                                  word_type const &u,
+                                  word_type const &v) noexcept {
         LIBSEMIGROUPS_ASSERT(c < _num_active_nodes);
         LIBSEMIGROUPS_ASSERT(!u.empty());
         LIBSEMIGROUPS_ASSERT(!v.empty());
@@ -305,7 +318,7 @@ namespace libsemigroups {
 
       bool process_definitions(size_t start) {
         for (size_t i = start; i < _definitions.size(); ++i) {
-          auto const& d = _definitions[i];
+          auto const &d = _definitions[i];
           _felsch_tree.push_back(d.second);
           if (!process_definitions_dfs_v1(d.first)) {
             return false;
@@ -350,6 +363,8 @@ namespace libsemigroups {
     // Returns the number of right congruences with up to n (inclusive)
     // classes.
     size_t number_of_congruences(size_t n) {
+      // return std::distance(cbegin(n), cend(n));
+
       size_t                                         result = 0;
       std::chrono::high_resolution_clock::time_point last_report
           = std::chrono::high_resolution_clock::now();
