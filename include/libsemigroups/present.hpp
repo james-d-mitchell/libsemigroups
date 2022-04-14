@@ -17,6 +17,11 @@
 //
 
 // TODO
+// * write file description
+// * only allow alphabets consisting of initial segments of the naturals, or
+// handle non-consecutive values better internally (or maybe just enforce this
+// where needed elsewhere).
+// * identity_check, inverse_check
 
 #ifndef LIBSEMIGROUPS_PRESENT_HPP_
 #define LIBSEMIGROUPS_PRESENT_HPP_
@@ -56,6 +61,13 @@ namespace libsemigroups {
     Presentation(Presentation&&)      = default;
     Presentation& operator=(Presentation const&) = default;
     Presentation& operator=(Presentation&&) = default;
+
+    Presentation& alphabet(size_t n) {
+      word_type lphbt(n, 0);
+      std::iota(lphbt.begin(), lphbt.end(), 0);
+      alphabet(lphbt);
+      return *this;
+    }
 
     Presentation& alphabet(word_type const& alphabet) {
       if (alphabet.empty()) {
@@ -107,6 +119,15 @@ namespace libsemigroups {
 
     const_iterator cend() const noexcept {
       return _relations.cend();
+    }
+
+    bool contains_empty_word() const noexcept {
+      return _empty_word == empty_word::yes;
+    }
+
+    Presentation& contains_empty_word(empty_word val) {
+      _empty_word = val;
+      return *this;
     }
 
    private:

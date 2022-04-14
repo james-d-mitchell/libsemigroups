@@ -19,20 +19,24 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoid.
 // TODO:
-// * Implement left and two-sided versions
+// * Implement left and two-sided versions [DONE, sort of]
+// * Fix issue with adjoined identity
+// * add option for "only those congruences containing a given set of pairs"
+// * Rename to Sims or SimsLIC
 // * Templatize for "node_type"
-// * add option for "only those congruences containing a given set of pairs"?
 // * Stats and reporting
 // * Split into two hpp and tpp files
 // * const + noexcept
 // * iwyu
 // * parallelise?
+// * use the separated out FelschTree in ToddCoxeter
+// * use standardization to get "isomorphic" actions
+// * doc + code coverage
 //
 // TODO(maths):
 // * containment of congruences defined by "action digraph"
 // * generating pairs for congruences defined by "action digraph"
 // * minimum degree transformation representations of semigroups/monoids
-// *
 
 #ifndef LIBSEMIGROUPS_LOW_INDEX_HPP_
 #define LIBSEMIGROUPS_LOW_INDEX_HPP_
@@ -44,6 +48,7 @@
 #include "felsch-tree.hpp"
 #include "present.hpp"
 #include "report.hpp"
+#include "types.hpp"  // for word_type, relation_type, letter_type, tril
 
 namespace libsemigroups {
   namespace {
@@ -75,7 +80,24 @@ namespace libsemigroups {
     // TODO reporting
 
    public:
-    LowIndexCongruences(Presentation<word_type> const &p) : _presentation(p) {}
+    LowIndexCongruences(Presentation<word_type> const &p,
+                        congruence_kind ck = congruence_kind::right)
+        : _presentation() {
+      if (ck == congruence_kind::right || ck == congruence_kind::twosided) {
+        _presentation = p;
+      } else {
+        _presentation.alphabet(p.alphabet());
+      }
+      if (ck == congruence_kind::left || ck == congruence_kind::twosided) {
+        for (auto it = p.cbegin(); it != p.cend(); it += 2) {
+          _presentation.add_rule(it->crbegin(),
+                                 it->crend(),
+                                 (it + 1)->crbegin(),
+                                 (it + 1)->crend());
+        }
+        // TODO if ck == twosided, then avoid adding duplicate relations
+      }
+    }
 
     Presentation<word_type> const &presentation() const noexcept {
       return _presentation;
@@ -113,9 +135,9 @@ namespace libsemigroups {
         node_type   source;
         letter_type generator;
         node_type   target;
-        size_t num_edges;  // Number of edges in the graph when *this was added
-                           // to the stack
-        size_t num_nodes;  // Same as above but for nodes
+        size_t      num_edges;  // Number of edges in the graph when *this was
+                                // added to the stack
+        size_t num_nodes;       // Same as above but for nodes
       };
       using Definition         = std::pair<node_type, letter_type>;
       using Definitions        = std::vector<Definition>;
