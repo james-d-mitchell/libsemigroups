@@ -146,6 +146,7 @@ namespace libsemigroups {
       Definitions                    _definitions;
       FelschTree                     _felsch_tree;
       size_type                      _max_num_classes;
+      size_type                      _min_target_node;
       size_type                      _num_active_nodes;
       PendingDefinitions             _pending;
       Presentation<word_type>        _presentation;
@@ -170,15 +171,26 @@ namespace libsemigroups {
           : _definitions(),
             _felsch_tree(p.alphabet().size()),
             _max_num_classes(n),
+            _min_target_node(),
             _num_active_nodes(n == 0 ? 0
                                      : 1),  // = 0 indicates iterator is done
             _pending(),
             _presentation(p),
             _word_graph(n, _presentation.alphabet().size()) {
+        if (_num_active_nodes == 0) {
+          return;
+        }
         _felsch_tree.add_relations(_presentation.cbegin(),
                                    _presentation.cend());
         _pending.emplace_back(0, 0, 1, 0, 1);
-        _pending.emplace_back(0, 0, 0, 0, 1);
+        if (_presentation.contains_empty_word()) {
+          _pending.emplace_back(0, 0, 0, 0, 1);
+          _min_target_node = 0;
+        } else {
+          _word_graph.add_nodes(1);
+          _max_num_classes++;
+          _min_target_node = 1;
+        }
         if (n != 0) {
           ++(*this);
         }
@@ -252,7 +264,8 @@ namespace libsemigroups {
                    ++next) {
                 for (; a < _presentation.alphabet().size(); ++a) {
                   if (_word_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                    for (node_type b = 0; b <= _num_active_nodes; ++b) {
+                    for (node_type b = _min_target_node; b <= _num_active_nodes;
+                         ++b) {
                       _pending.emplace_back(
                           next, a, b, _definitions.size(), _num_active_nodes);
                     }

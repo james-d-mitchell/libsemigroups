@@ -67,32 +67,42 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {1, 1}, {1});
     presentation::add_rule_and_check(p, {0, 1, 0, 1}, {0});
 
-    LowIndexCongruences lic(p);
-    REQUIRE(lic.number_of_congruences(5) == 6);
+    {
+      LowIndexCongruences lic(p);
+      REQUIRE(lic.number_of_congruences(5) == 6);
 
-    auto it = lic.cbegin(5);
-    REQUIRE(*(it++) == action_digraph_helper::make<node_type>(5, {{0, 0}}));
-    REQUIRE(*(it++)
-            == action_digraph_helper::make<node_type>(
-                5, {{1, 2}, {1, 1}, {3, 2}, {3, 3}}));
-    REQUIRE(
-        *(it++)
-        == action_digraph_helper::make<node_type>(5, {{1, 2}, {1, 1}, {2, 2}}));
-    REQUIRE(
-        *(it++)
-        == action_digraph_helper::make<node_type>(5, {{1, 2}, {1, 1}, {1, 2}}));
-    REQUIRE(*(it++)
-            == action_digraph_helper::make<node_type>(5, {{1, 1}, {1, 1}}));
-    REQUIRE(*(it++)
-            == action_digraph_helper::make<node_type>(5, {{1, 0}, {1, 1}}));
-    REQUIRE(*(it++) == WordGraph(0, 2));
-    REQUIRE(*(it++) == WordGraph(0, 2));
+      auto it = lic.cbegin(5);
+      REQUIRE(*(it++) == action_digraph_helper::make<node_type>(5, {{0, 0}}));
+      REQUIRE(*(it++)
+              == action_digraph_helper::make<node_type>(
+                  5, {{1, 2}, {1, 1}, {3, 2}, {3, 3}}));
+      REQUIRE(*(it++)
+              == action_digraph_helper::make<node_type>(
+                  5, {{1, 2}, {1, 1}, {2, 2}}));
+      REQUIRE(*(it++)
+              == action_digraph_helper::make<node_type>(
+                  5, {{1, 2}, {1, 1}, {1, 2}}));
+      REQUIRE(*(it++)
+              == action_digraph_helper::make<node_type>(5, {{1, 1}, {1, 1}}));
+      REQUIRE(*(it++)
+              == action_digraph_helper::make<node_type>(5, {{1, 0}, {1, 1}}));
+      REQUIRE(*(it++) == WordGraph(0, 2));
+      REQUIRE(*(it++) == WordGraph(0, 2));
+    }
     // [[[0, 0]],
     // [[1, 2], [1, 1], [3, 2], [3, 3]],
     // [[1, 2], [1, 1], [2, 2]],
     // [[1, 2], [1, 1], [1, 2]],
     // [[1, 1], [1, 1]],
     // [[1, 0], [1, 1]]]
+    {
+      LowIndexCongruences lic(p, congruence_kind::left);
+      // REQUIRE(lic.number_of_congruences(5) == 6);
+      for (auto it = lic.cbegin(5); it != lic.cend(5); ++it) {
+        REQUIRE(action_digraph_helper::follow_path_nc(*it, 0, {1, 0, 1, 0})
+                == action_digraph_helper::follow_path_nc(*it, 0, {0}));
+      }
+    }
   }
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
@@ -170,21 +180,21 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {2, 1, 2, 1}, {2, 1, 2});
 
     LowIndexCongruences lic(p);
-    REQUIRE(lic.number_of_congruences(2) == 4);
-    REQUIRE(lic.number_of_congruences(3) == 7);
-    REQUIRE(lic.number_of_congruences(4) == 14);
-    REQUIRE(lic.number_of_congruences(5) == 23);
-    REQUIRE(lic.number_of_congruences(6) == 36);
-    REQUIRE(lic.number_of_congruences(7) == 51);
-    REQUIRE(lic.number_of_congruences(8) == 62);
-    REQUIRE(lic.number_of_congruences(9) == 74);
-    REQUIRE(lic.number_of_congruences(10) == 86);
-    REQUIRE(lic.number_of_congruences(11) == 95);
-    REQUIRE(lic.number_of_congruences(12) == 100);
-    REQUIRE(lic.number_of_congruences(13) == 102);
-    REQUIRE(lic.number_of_congruences(14) == 104);
-    REQUIRE(lic.number_of_congruences(15) == 105);
-    REQUIRE(lic.number_of_congruences(16) == 105);
+    // REQUIRE(lic.number_of_congruences(2) == 4);
+    // REQUIRE(lic.number_of_congruences(3) == 7);
+    // REQUIRE(lic.number_of_congruences(4) == 14);
+    // REQUIRE(lic.number_of_congruences(5) == 23);
+    // REQUIRE(lic.number_of_congruences(6) == 36);
+    // REQUIRE(lic.number_of_congruences(7) == 51);
+    // REQUIRE(lic.number_of_congruences(8) == 62);
+    // REQUIRE(lic.number_of_congruences(9) == 74);
+    // REQUIRE(lic.number_of_congruences(10) == 86);
+    // REQUIRE(lic.number_of_congruences(11) == 95);
+    // REQUIRE(lic.number_of_congruences(12) == 100);
+    // REQUIRE(lic.number_of_congruences(13) == 102);
+    // REQUIRE(lic.number_of_congruences(14) == 104);
+    // REQUIRE(lic.number_of_congruences(15) == 105);
+    // REQUIRE(lic.number_of_congruences(16) == 105);
     REQUIRE(lic.number_of_congruences(17) == 105);
   }
 
@@ -217,21 +227,21 @@ namespace libsemigroups {
     REQUIRE(*(lic.presentation().cbegin() + 32) == word_type({1, 1}));
     REQUIRE(*(lic.presentation().cbegin() + 33) == word_type({0}));
     REQUIRE(*(lic.presentation().cbegin() + 34) == word_type({3, 1}));
-    REQUIRE(lic.number_of_congruences(2) == 4);
-    REQUIRE(lic.number_of_congruences(3) == 7);
-    REQUIRE(lic.number_of_congruences(4) == 14);
-    REQUIRE(lic.number_of_congruences(5) == 23);
-    REQUIRE(lic.number_of_congruences(6) == 36);
-    REQUIRE(lic.number_of_congruences(7) == 51);
-    REQUIRE(lic.number_of_congruences(8) == 62);
-    REQUIRE(lic.number_of_congruences(9) == 74);
-    REQUIRE(lic.number_of_congruences(10) == 86);
-    REQUIRE(lic.number_of_congruences(11) == 95);
-    REQUIRE(lic.number_of_congruences(12) == 100);
-    REQUIRE(lic.number_of_congruences(13) == 102);
-    REQUIRE(lic.number_of_congruences(14) == 104);
-    REQUIRE(lic.number_of_congruences(15) == 105);
-    REQUIRE(lic.number_of_congruences(16) == 105);
+    // REQUIRE(lic.number_of_congruences(2) == 4);
+    // REQUIRE(lic.number_of_congruences(3) == 7);
+    // REQUIRE(lic.number_of_congruences(4) == 14);
+    // REQUIRE(lic.number_of_congruences(5) == 23);
+    // REQUIRE(lic.number_of_congruences(6) == 36);
+    // REQUIRE(lic.number_of_congruences(7) == 51);
+    // REQUIRE(lic.number_of_congruences(8) == 62);
+    // REQUIRE(lic.number_of_congruences(9) == 74);
+    // REQUIRE(lic.number_of_congruences(10) == 86);
+    // REQUIRE(lic.number_of_congruences(11) == 95);
+    // REQUIRE(lic.number_of_congruences(12) == 100);
+    // REQUIRE(lic.number_of_congruences(13) == 102);
+    // REQUIRE(lic.number_of_congruences(14) == 104);
+    // REQUIRE(lic.number_of_congruences(15) == 105);
+    // REQUIRE(lic.number_of_congruences(16) == 105);
     // FIXME This isn't right, there are only 13 2-sided congruences, but at
     // the same time the presentation is symmetric so I can't see how this
     // would be any different (i.e. the relations in lic in this case are just
@@ -438,7 +448,7 @@ namespace libsemigroups {
 
     LowIndexCongruences lic(p, congruence_kind::twosided);
     auto                rg = ReportGuard(true);
-    REQUIRE(lic.number_of_congruences(203) == 16);
+    REQUIRE(lic.number_of_congruences(204) == 16);
     // FIXME should be 16!
   }
 
@@ -454,7 +464,8 @@ namespace libsemigroups {
     REQUIRE(S.number_of_rules() == 16);
     auto p = make<Presentation<word_type>>(S);
     p.contains_empty_word(empty_word::no);
-    REQUIRE(std::distance(p.cbegin(), p.cend()) == 2 * S.number_of_rules());
+    REQUIRE(static_cast<size_t>(std::distance(p.cbegin(), p.cend()))
+            == 2 * S.number_of_rules());
     LowIndexCongruences lic(p);
     REQUIRE(lic.number_of_congruences(27) == 287);
   }
@@ -480,7 +491,7 @@ namespace libsemigroups {
     REQUIRE(S.size() == 27);
     auto                p = make<Presentation<word_type>>(S);
     LowIndexCongruences lic(p, congruence_kind::twosided);
-    REQUIRE(lic.number_of_congruences(28) == 7);
+    REQUIRE(lic.number_of_congruences(27) == 7);
   }
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
@@ -497,14 +508,40 @@ namespace libsemigroups {
     REQUIRE(std::distance(p.cbegin(), p.cend()) == 32);
 
     LowIndexCongruences lic(p, congruence_kind::twosided);
-    REQUIRE(lic.number_of_congruences(15) == 13);
+    REQUIRE(lic.number_of_congruences(16) == 13);
   }
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
                           "011",
-                          "TemperleyLieb(3) right from presentation",
+                          "TemperleyLieb(3) from presentation",
                           "[quick][presentation]") {
     Presentation<word_type> p;
+    p.alphabet(2);
+    for (auto const& rel : TemperleyLieb(3)) {
+      p.add_rule_and_check(rel.first.cbegin(),
+                           rel.first.cend(),
+                           rel.second.cbegin(),
+                           rel.second.cend());
+    }
+    {
+      LowIndexCongruences lic(p, congruence_kind::right);
+      REQUIRE(lic.number_of_congruences(14) == 9);
+    }
+    {
+      LowIndexCongruences lic(p, congruence_kind::left);
+      REQUIRE(lic.number_of_congruences(14) == 9);
+    }
+    {
+      LowIndexCongruences lic(p, congruence_kind::twosided);
+      REQUIRE(lic.number_of_congruences(14) == 5);
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+                          "012",
+                          "TemperleyLieb(4) from presentation",
+                          "[quick][presentation]") {
+    Presentation<word_type> p(empty_word::yes);
     p.alphabet(3);
     for (auto const& rel : TemperleyLieb(4)) {
       p.add_rule_and_check(rel.first.cbegin(),
@@ -512,8 +549,18 @@ namespace libsemigroups {
                            rel.second.cbegin(),
                            rel.second.cend());
     }
-    LowIndexCongruences lic(p, congruence_kind::right);
-    REQUIRE(lic.number_of_congruences(14) == 14);
+    {
+      LowIndexCongruences lic(p, congruence_kind::right);
+      REQUIRE(lic.number_of_congruences(14) == 79);
+    }
+    {
+      LowIndexCongruences lic(p, congruence_kind::left);
+      REQUIRE(lic.number_of_congruences(14) == 79);
+    }
+    {
+      LowIndexCongruences lic(p, congruence_kind::twosided);
+      REQUIRE(lic.number_of_congruences(14) == 9);
+    }
   }
 
 }  // namespace libsemigroups
