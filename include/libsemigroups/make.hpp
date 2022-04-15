@@ -23,10 +23,11 @@
 #include "present.hpp"
 
 namespace libsemigroups {
-  // TODO make return type T so that we can see it in the call to make<T>
-  template <typename T>
-  Presentation<T> make(FroidurePinBase const& fp) {
-    Presentation<T> p;
+  template <typename T,
+            typename = std::enable_if_t<
+                std::is_base_of<PresentationPolymorphicBase, T>::value>>
+  T make(FroidurePinBase const& fp) {
+    T p;
     p.alphabet(fp.number_of_generators());
     for (auto it = fp.cbegin_rules(); it != fp.cend_rules(); ++it) {
       p.add_rule(it->first.cbegin(),

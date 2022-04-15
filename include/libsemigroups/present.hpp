@@ -34,9 +34,10 @@
 #include "types.hpp"
 
 namespace libsemigroups {
+  struct PresentationPolymorphicBase {};
 
   template <typename WordType>
-  class Presentation {
+  class Presentation : PresentationPolymorphicBase {
    public:
     using word_type      = WordType;
     using letter_type    = typename WordType::value_type;
