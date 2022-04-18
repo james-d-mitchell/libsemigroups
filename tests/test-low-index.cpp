@@ -58,6 +58,7 @@ namespace libsemigroups {
                           "000",
                           "fp example 1",
                           "[quick][presentation]") {
+    auto rg         = ReportGuard(false);
     using WordGraph = typename LowIndexCongruences::word_graph_type;
     using node_type = typename WordGraph::node_type;
 
@@ -97,11 +98,25 @@ namespace libsemigroups {
     // [[1, 0], [1, 1]]]
     {
       LowIndexCongruences lic(p, congruence_kind::left);
-      // REQUIRE(lic.number_of_congruences(5) == 6);
+      REQUIRE(lic.number_of_congruences(5) == 9);
       for (auto it = lic.cbegin(5); it != lic.cend(5); ++it) {
         REQUIRE(action_digraph_helper::follow_path_nc(*it, 0, {1, 0, 1, 0})
                 == action_digraph_helper::follow_path_nc(*it, 0, {0}));
       }
+    }
+    {
+      /*LowIndexCongruences lic(p, congruence_kind::twosided);
+      // REQUIRE(lic.number_of_congruences(5) == 6); # THIS IS CORRECT for
+      // 2-sided congruences!!!
+      REQUIRE(std::count_if(lic.cbegin(5),
+                            lic.cend(5),
+                            [](auto const& d) {
+                              return action_digraph_helper::follow_path_nc(
+                                         d, 0, {1, 0, 1, 0})
+                                     == action_digraph_helper::follow_path_nc(
+                                         d, 0, {0});
+                            })
+              == 0);*/
     }
   }
 
@@ -109,6 +124,7 @@ namespace libsemigroups {
                           "001",
                           "fp example 2",
                           "[quick][presentation]") {
+    auto rg         = ReportGuard(false);
     using WordGraph = typename LowIndexCongruences::word_graph_type;
     using node_type = typename WordGraph::node_type;
 
@@ -122,34 +138,46 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {1, 1}, {1});
     presentation::add_rule_and_check(p, {0, 2}, {0, 0});
 
-    LowIndexCongruences lic(p);
-    REQUIRE(lic.number_of_congruences(1) == 1);
-    REQUIRE(lic.number_of_congruences(2) == 3);
-    REQUIRE(lic.number_of_congruences(3) == 13);
-    REQUIRE(lic.number_of_congruences(4) == 36);
-    REQUIRE(lic.number_of_congruences(5) == 82);
-    REQUIRE(lic.number_of_congruences(6) == 135);
-    REQUIRE(lic.number_of_congruences(7) == 166);
-    REQUIRE(lic.number_of_congruences(8) == 175);
-    REQUIRE(lic.number_of_congruences(9) == 176);
-    REQUIRE(lic.number_of_congruences(10) == 176);
+    {
+      LowIndexCongruences lic(p);
+      REQUIRE(lic.number_of_congruences(1) == 1);
+      REQUIRE(lic.number_of_congruences(2) == 3);
+      REQUIRE(lic.number_of_congruences(3) == 13);
+      REQUIRE(lic.number_of_congruences(4) == 36);
+      REQUIRE(lic.number_of_congruences(5) == 82);
+      REQUIRE(lic.number_of_congruences(6) == 135);
+      REQUIRE(lic.number_of_congruences(7) == 166);
+      REQUIRE(lic.number_of_congruences(8) == 175);
+      REQUIRE(lic.number_of_congruences(9) == 176);
+      REQUIRE(lic.number_of_congruences(10) == 176);
 
-    auto it = lic.cbegin(2);
-    REQUIRE(*(it++) == action_digraph_helper::make<node_type>(2, {{0, 0, 0}}));
-    REQUIRE(
-        *(it++)
-        == action_digraph_helper::make<node_type>(2, {{1, 1, 1}, {1, 1, 1}}));
-    REQUIRE(
-        *(it++)
-        == action_digraph_helper::make<node_type>(2, {{1, 0, 1}, {1, 1, 1}}));
-    REQUIRE(*(it++) == WordGraph(0, 3));
-    REQUIRE(*(it++) == WordGraph(0, 3));
+      auto it = lic.cbegin(2);
+      REQUIRE(*(it++)
+              == action_digraph_helper::make<node_type>(2, {{0, 0, 0}}));
+      REQUIRE(
+          *(it++)
+          == action_digraph_helper::make<node_type>(2, {{1, 1, 1}, {1, 1, 1}}));
+      REQUIRE(
+          *(it++)
+          == action_digraph_helper::make<node_type>(2, {{1, 0, 1}, {1, 1, 1}}));
+      REQUIRE(*(it++) == WordGraph(0, 3));
+      REQUIRE(*(it++) == WordGraph(0, 3));
+    }
+    {
+      LowIndexCongruences lic(p, congruence_kind::left);
+      REQUIRE(lic.number_of_congruences(11) == 176);
+    }
+    {
+      // LowIndexCongruences lic(p, congruence_kind::twosided);
+      // REQUIRE(lic.number_of_congruences(10) == 83);
+    }
   }
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
                           "002",
                           "ToddCoxeter failing example",
                           "[quick][presentation]") {
+    auto                    rg = ReportGuard(false);
     Presentation<word_type> p(empty_word::yes);
     //          a  A  b  B  c  C  e
     p.alphabet({0, 1, 2, 3, 4, 5, 6});
@@ -166,7 +194,8 @@ namespace libsemigroups {
                           "003",
                           "PartitionMonoid(2) right",
                           "[quick][presentation]") {
-    Presentation<word_type> p;
+    auto                    rg = ReportGuard(false);
+    Presentation<word_type> p(empty_word::no);
     p.alphabet({0, 1, 2, 3});
     presentation::identity(p, 0);
     presentation::add_rule_and_check(p, {1, 1}, {0});
@@ -180,28 +209,28 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {2, 1, 2, 1}, {2, 1, 2});
 
     LowIndexCongruences lic(p);
-    // REQUIRE(lic.number_of_congruences(2) == 4);
-    // REQUIRE(lic.number_of_congruences(3) == 7);
-    // REQUIRE(lic.number_of_congruences(4) == 14);
-    // REQUIRE(lic.number_of_congruences(5) == 23);
-    // REQUIRE(lic.number_of_congruences(6) == 36);
-    // REQUIRE(lic.number_of_congruences(7) == 51);
-    // REQUIRE(lic.number_of_congruences(8) == 62);
-    // REQUIRE(lic.number_of_congruences(9) == 74);
-    // REQUIRE(lic.number_of_congruences(10) == 86);
-    // REQUIRE(lic.number_of_congruences(11) == 95);
-    // REQUIRE(lic.number_of_congruences(12) == 100);
-    // REQUIRE(lic.number_of_congruences(13) == 102);
-    // REQUIRE(lic.number_of_congruences(14) == 104);
-    // REQUIRE(lic.number_of_congruences(15) == 105);
-    // REQUIRE(lic.number_of_congruences(16) == 105);
+    REQUIRE(lic.number_of_congruences(2) == 4);
+    REQUIRE(lic.number_of_congruences(3) == 7);
+    REQUIRE(lic.number_of_congruences(4) == 14);
+    REQUIRE(lic.number_of_congruences(5) == 23);
+    REQUIRE(lic.number_of_congruences(6) == 36);
+    REQUIRE(lic.number_of_congruences(7) == 51);
+    REQUIRE(lic.number_of_congruences(8) == 62);
+    REQUIRE(lic.number_of_congruences(9) == 74);
+    REQUIRE(lic.number_of_congruences(10) == 86);
+    REQUIRE(lic.number_of_congruences(11) == 95);
+    REQUIRE(lic.number_of_congruences(12) == 100);
+    REQUIRE(lic.number_of_congruences(13) == 102);
+    REQUIRE(lic.number_of_congruences(14) == 104);
+    REQUIRE(lic.number_of_congruences(15) == 105);
+    REQUIRE(lic.number_of_congruences(16) == 105);
     REQUIRE(lic.number_of_congruences(17) == 105);
   }
 
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
                           "006",
                           "PartitionMonoid(2) 2-sided",
-                          "[quick][presentation]") {
+                          "[fail][presentation]") {
     Presentation<word_type> p;
     p.alphabet({0, 1, 2, 3});
     presentation::add_rule_and_check(p, {1, 1}, {0});
@@ -254,6 +283,7 @@ namespace libsemigroups {
                           "004",
                           "PartitionMonoid(3)",
                           "[quick][presentation]") {
+    auto                    rg = ReportGuard(false);
     Presentation<word_type> p(empty_word::no);
     p.alphabet({0, 1, 2, 3, 4});
     presentation::add_rule_and_check(p, {0, 0}, {0});
@@ -354,6 +384,7 @@ namespace libsemigroups {
                           "005",
                           "PartitionMonoid(3)",
                           "[extreme][presentation]") {
+    auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
     p.alphabet({0, 1, 2, 3, 4});
     presentation::add_rule_and_check(p, {0, 0}, {0});
@@ -447,7 +478,6 @@ namespace libsemigroups {
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
 
     LowIndexCongruences lic(p, congruence_kind::twosided);
-    auto                rg = ReportGuard(true);
     REQUIRE(lic.number_of_congruences(204) == 16);
     // FIXME should be 16!
   }
@@ -456,6 +486,7 @@ namespace libsemigroups {
                           "007",
                           "FullTransformationMonoid(3) right",
                           "[quick][presentation]") {
+    auto                   rg = ReportGuard(false);
     FroidurePin<Transf<3>> S({Transf<3>::make({1, 2, 0}),
                               Transf<3>::make({1, 0, 2}),
                               Transf<3>::make({0, 1, 0})});
@@ -463,7 +494,6 @@ namespace libsemigroups {
     REQUIRE(S.number_of_generators() == 3);
     REQUIRE(S.number_of_rules() == 16);
     auto p = make<Presentation<word_type>>(S);
-    p.contains_empty_word(empty_word::no);
     REQUIRE(static_cast<size_t>(std::distance(p.cbegin(), p.cend()))
             == 2 * S.number_of_rules());
     LowIndexCongruences lic(p);
@@ -474,6 +504,7 @@ namespace libsemigroups {
                           "008",
                           "FullTransformationMonoid(3) left",
                           "[quick][presentation]") {
+    auto                   rg = ReportGuard(false);
     FroidurePin<Transf<3>> S(
         {Transf<3>({1, 2, 0}), Transf<3>({1, 0, 2}), Transf<3>({0, 1, 0})});
     REQUIRE(S.size() == 27);
@@ -485,10 +516,12 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
                           "009",
                           "FullTransformationMonoid(3) 2-sided",
-                          "[quick][presentation]") {
+                          "[fail][presentation]") {
+    auto                   rg = ReportGuard(false);
     FroidurePin<Transf<3>> S(
         {Transf<3>({1, 2, 0}), Transf<3>({1, 0, 2}), Transf<3>({0, 1, 0})});
     REQUIRE(S.size() == 27);
+    REQUIRE(S.is_monoid());
     auto                p = make<Presentation<word_type>>(S);
     LowIndexCongruences lic(p, congruence_kind::twosided);
     REQUIRE(lic.number_of_congruences(27) == 7);
@@ -497,7 +530,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
                           "010",
                           "PartitionMonoid(2) 2-sided from FroidurePin",
-                          "[quick][presentation]") {
+                          "[fail][presentation]") {
     FroidurePin<Bipartition> S({Bipartition::make({{1, -1}, {2, -2}}),
                                 Bipartition::make({{1, -2}, {2, -1}}),
                                 Bipartition::make({{1}, {2, -2}, {-1}}),
@@ -515,7 +548,8 @@ namespace libsemigroups {
                           "011",
                           "TemperleyLieb(3) from presentation",
                           "[quick][presentation]") {
-    Presentation<word_type> p;
+    auto                    rg = ReportGuard(false);
+    Presentation<word_type> p(empty_word::yes);
     p.alphabet(2);
     for (auto const& rel : TemperleyLieb(3)) {
       p.add_rule_and_check(rel.first.cbegin(),
@@ -532,8 +566,8 @@ namespace libsemigroups {
       REQUIRE(lic.number_of_congruences(14) == 9);
     }
     {
-      LowIndexCongruences lic(p, congruence_kind::twosided);
-      REQUIRE(lic.number_of_congruences(14) == 5);
+      // LowIndexCongruences lic(p, congruence_kind::twosided);
+      // REQUIRE(lic.number_of_congruences(14) == 5);
     }
   }
 
@@ -541,6 +575,7 @@ namespace libsemigroups {
                           "012",
                           "TemperleyLieb(4) from presentation",
                           "[quick][presentation]") {
+    auto                    rg = ReportGuard(false);
     Presentation<word_type> p(empty_word::yes);
     p.alphabet(3);
     for (auto const& rel : TemperleyLieb(4)) {
@@ -558,8 +593,8 @@ namespace libsemigroups {
       REQUIRE(lic.number_of_congruences(14) == 79);
     }
     {
-      LowIndexCongruences lic(p, congruence_kind::twosided);
-      REQUIRE(lic.number_of_congruences(14) == 9);
+      // LowIndexCongruences lic(p, congruence_kind::twosided);
+      // REQUIRE(lic.number_of_congruences(14) == 9);
     }
   }
 

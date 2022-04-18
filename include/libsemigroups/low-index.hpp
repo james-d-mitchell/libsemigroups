@@ -30,7 +30,8 @@
 // * iwyu
 // * parallelise?
 // * use the separated out FelschTree in ToddCoxeter
-// * use standardization to get "isomorphic" actions
+// * use standardization to get "isomorphic" actions (this is "conjugation" in
+// Sims)
 // * doc + code coverage
 //
 // TODO(maths):
@@ -83,19 +84,22 @@ namespace libsemigroups {
     LowIndexCongruences(Presentation<word_type> const &p,
                         congruence_kind ck = congruence_kind::right)
         : _presentation() {
-      if (ck == congruence_kind::right || ck == congruence_kind::twosided) {
+      using empty_word = typename Presentation<word_type>::empty_word;
+      if (ck == congruence_kind::twosided) {
+        LIBSEMIGROUPS_EXCEPTION("Not yet implemented");
+      }
+      if (ck == congruence_kind::right) {
         _presentation = p;
       } else {
         _presentation.alphabet(p.alphabet());
-      }
-      if (ck == congruence_kind::left || ck == congruence_kind::twosided) {
         for (auto it = p.cbegin(); it != p.cend(); it += 2) {
           _presentation.add_rule(it->crbegin(),
                                  it->crend(),
                                  (it + 1)->crbegin(),
                                  (it + 1)->crend());
         }
-        // TODO if ck == twosided, then avoid adding duplicate relations
+        _presentation.contains_empty_word(
+            p.contains_empty_word() ? empty_word::yes : empty_word::no);
       }
     }
 
@@ -170,30 +174,23 @@ namespace libsemigroups {
       const_iterator(Presentation<word_type> const &p, size_type n)
           : _definitions(),
             _felsch_tree(p.alphabet().size()),
-            _max_num_classes(n),
-            _min_target_node(),
+            _max_num_classes(p.contains_empty_word() ? n : n + 1),
+            _min_target_node(p.contains_empty_word() ? 0 : 1),
             _num_active_nodes(n == 0 ? 0
                                      : 1),  // = 0 indicates iterator is done
             _pending(),
             _presentation(p),
-            _word_graph(n, _presentation.alphabet().size()) {
+            _word_graph(_max_num_classes, _presentation.alphabet().size()) {
         if (_num_active_nodes == 0) {
           return;
         }
         _felsch_tree.add_relations(_presentation.cbegin(),
                                    _presentation.cend());
         _pending.emplace_back(0, 0, 1, 0, 1);
-        if (_presentation.contains_empty_word()) {
+        if (_min_target_node == 0) {
           _pending.emplace_back(0, 0, 0, 0, 1);
-          _min_target_node = 0;
-        } else {
-          _word_graph.add_nodes(1);
-          _max_num_classes++;
-          _min_target_node = 1;
         }
-        if (n != 0) {
-          ++(*this);
-        }
+        ++(*this);
         // The increment above is required so that when dereferencing any
         // pointer of this type we obtain a valid word graph (o/w the value
         // pointed to here is empty).

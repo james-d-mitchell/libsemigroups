@@ -34,17 +34,17 @@
 #include "types.hpp"
 
 namespace libsemigroups {
-  struct PresentationPolymorphicBase {};
+  struct PresentationPolymorphicBase {
+    enum class empty_word { yes, no };
+  };
 
   template <typename WordType>
-  class Presentation : PresentationPolymorphicBase {
+  class Presentation : public PresentationPolymorphicBase {
    public:
     using word_type      = WordType;
     using letter_type    = typename WordType::value_type;
     using const_iterator = typename std::vector<word_type>::const_iterator;
     using const_alphabet_iterator = typename WordType::const_iterator;
-
-    enum class empty_word { yes, no };
 
    private:
     word_type                       _alphabet;

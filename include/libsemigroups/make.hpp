@@ -26,8 +26,9 @@ namespace libsemigroups {
   template <typename T,
             typename = std::enable_if_t<
                 std::is_base_of<PresentationPolymorphicBase, T>::value>>
-  T make(FroidurePinBase const& fp) {
-    T p;
+  T make(FroidurePinBase& fp) {
+    using empty_word = typename PresentationPolymorphicBase::empty_word;
+    T p(empty_word::no);
     p.alphabet(fp.number_of_generators());
     for (auto it = fp.cbegin_rules(); it != fp.cend_rules(); ++it) {
       p.add_rule(it->first.cbegin(),
@@ -35,6 +36,7 @@ namespace libsemigroups {
                  it->second.cbegin(),
                  it->second.cend());
     }
+
     return p;
   }
 
