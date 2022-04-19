@@ -28,10 +28,10 @@
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
 
 #include "libsemigroups/bipart.hpp"
-#include "libsemigroups/digraph-helper.hpp"  // for make
+#include "libsemigroups/digraph-helper.hpp"
 #include "libsemigroups/froidure-pin.hpp"
-#include "libsemigroups/low-index.hpp"  // for Presentation
 #include "libsemigroups/make.hpp"
+#include "libsemigroups/sims1.hpp"  // for Sims1
 #include "libsemigroups/transf.hpp"
 #include "libsemigroups/types.hpp"  // for word_type
 
@@ -54,12 +54,12 @@ namespace libsemigroups {
     }
   }  // namespace */
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "000",
                           "fp example 1",
                           "[quick][presentation]") {
     auto rg         = ReportGuard(false);
-    using WordGraph = typename LowIndexCongruences::word_graph_type;
+    using WordGraph = typename Sims1::word_graph_type;
     using node_type = typename WordGraph::node_type;
 
     Presentation<word_type> p(empty_word::yes);
@@ -69,7 +69,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 1, 0, 1}, {0});
 
     {
-      LowIndexCongruences lic(p);
+      Sims1 lic(p);
       REQUIRE(lic.number_of_congruences(5) == 6);
 
       auto it = lic.cbegin(5);
@@ -97,7 +97,7 @@ namespace libsemigroups {
     // [[1, 1], [1, 1]],
     // [[1, 0], [1, 1]]]
     {
-      LowIndexCongruences lic(p, congruence_kind::left);
+      Sims1 lic(p, congruence_kind::left);
       REQUIRE(lic.number_of_congruences(5) == 9);
       for (auto it = lic.cbegin(5); it != lic.cend(5); ++it) {
         REQUIRE(action_digraph_helper::follow_path_nc(*it, 0, {1, 0, 1, 0})
@@ -105,7 +105,7 @@ namespace libsemigroups {
       }
     }
     {
-      /*LowIndexCongruences lic(p, congruence_kind::twosided);
+      /*Sims1 lic(p, congruence_kind::twosided);
       // REQUIRE(lic.number_of_congruences(5) == 6); # THIS IS CORRECT for
       // 2-sided congruences!!!
       REQUIRE(std::count_if(lic.cbegin(5),
@@ -120,12 +120,12 @@ namespace libsemigroups {
     }
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "001",
                           "fp example 2",
                           "[quick][presentation]") {
     auto rg         = ReportGuard(false);
-    using WordGraph = typename LowIndexCongruences::word_graph_type;
+    using WordGraph = typename Sims1::word_graph_type;
     using node_type = typename WordGraph::node_type;
 
     Presentation<word_type> p(empty_word::yes);
@@ -139,7 +139,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 2}, {0, 0});
 
     {
-      LowIndexCongruences lic(p);
+      Sims1 lic(p);
       REQUIRE(lic.number_of_congruences(1) == 1);
       REQUIRE(lic.number_of_congruences(2) == 3);
       REQUIRE(lic.number_of_congruences(3) == 13);
@@ -164,16 +164,16 @@ namespace libsemigroups {
       REQUIRE(*(it++) == WordGraph(0, 3));
     }
     {
-      LowIndexCongruences lic(p, congruence_kind::left);
+      Sims1 lic(p, congruence_kind::left);
       REQUIRE(lic.number_of_congruences(11) == 176);
     }
     {
-      // LowIndexCongruences lic(p, congruence_kind::twosided);
+      // Sims1 lic(p, congruence_kind::twosided);
       // REQUIRE(lic.number_of_congruences(10) == 83);
     }
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "002",
                           "ToddCoxeter failing example",
                           "[quick][presentation]") {
@@ -186,11 +186,11 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 0, 5, 0, 4}, {6});
     presentation::add_rule_and_check(p, {0, 4, 2, 2, 1, 5, 2}, {6});
     presentation::add_rule_and_check(p, {1, 3, 0, 2, 4, 4, 4}, {6});
-    LowIndexCongruences lic(p);
+    Sims1 lic(p);
     REQUIRE(lic.number_of_congruences(3) == 15);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "003",
                           "PartitionMonoid(2) right",
                           "[quick][presentation]") {
@@ -208,7 +208,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {1, 2, 1, 2}, {2, 1, 2});
     presentation::add_rule_and_check(p, {2, 1, 2, 1}, {2, 1, 2});
 
-    LowIndexCongruences lic(p);
+    Sims1 lic(p);
     REQUIRE(lic.number_of_congruences(2) == 4);
     REQUIRE(lic.number_of_congruences(3) == 7);
     REQUIRE(lic.number_of_congruences(4) == 14);
@@ -227,7 +227,7 @@ namespace libsemigroups {
     REQUIRE(lic.number_of_congruences(17) == 105);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "006",
                           "PartitionMonoid(2) 2-sided",
                           "[fail][presentation]") {
@@ -245,7 +245,7 @@ namespace libsemigroups {
     presentation::identity(p, 0);
     REQUIRE(std::distance(p.cbegin(), p.cend()) == 32);
 
-    LowIndexCongruences lic(p, congruence_kind::twosided);
+    Sims1 lic(p, congruence_kind::twosided);
     REQUIRE(
         std::distance(lic.presentation().cbegin(), lic.presentation().cend())
         == 64);
@@ -279,7 +279,7 @@ namespace libsemigroups {
     REQUIRE(lic.number_of_congruences(17) == 13);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "004",
                           "PartitionMonoid(3)",
                           "[quick][presentation]") {
@@ -376,11 +376,11 @@ namespace libsemigroups {
     presentation::add_rule_and_check(
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
 
-    LowIndexCongruences lic(p);
+    Sims1 lic(p);
     REQUIRE(lic.number_of_congruences(10) == 135);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "005",
                           "PartitionMonoid(3)",
                           "[extreme][presentation]") {
@@ -477,12 +477,12 @@ namespace libsemigroups {
     presentation::add_rule_and_check(
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
 
-    LowIndexCongruences lic(p, congruence_kind::twosided);
+    Sims1 lic(p, congruence_kind::twosided);
     REQUIRE(lic.number_of_congruences(204) == 16);
     // FIXME should be 16!
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "007",
                           "FullTransformationMonoid(3) right",
                           "[quick][presentation]") {
@@ -496,11 +496,11 @@ namespace libsemigroups {
     auto p = make<Presentation<word_type>>(S);
     REQUIRE(static_cast<size_t>(std::distance(p.cbegin(), p.cend()))
             == 2 * S.number_of_rules());
-    LowIndexCongruences lic(p);
+    Sims1 lic(p);
     REQUIRE(lic.number_of_congruences(27) == 287);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "008",
                           "FullTransformationMonoid(3) left",
                           "[quick][presentation]") {
@@ -508,12 +508,12 @@ namespace libsemigroups {
     FroidurePin<Transf<3>> S(
         {Transf<3>({1, 2, 0}), Transf<3>({1, 0, 2}), Transf<3>({0, 1, 0})});
     REQUIRE(S.size() == 27);
-    auto                p = make<Presentation<word_type>>(S);
-    LowIndexCongruences lic(p, congruence_kind::left);
+    auto  p = make<Presentation<word_type>>(S);
+    Sims1 lic(p, congruence_kind::left);
     REQUIRE(lic.number_of_congruences(28) == 120);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "009",
                           "FullTransformationMonoid(3) 2-sided",
                           "[fail][presentation]") {
@@ -522,12 +522,12 @@ namespace libsemigroups {
         {Transf<3>({1, 2, 0}), Transf<3>({1, 0, 2}), Transf<3>({0, 1, 0})});
     REQUIRE(S.size() == 27);
     REQUIRE(S.is_monoid());
-    auto                p = make<Presentation<word_type>>(S);
-    LowIndexCongruences lic(p, congruence_kind::twosided);
+    auto  p = make<Presentation<word_type>>(S);
+    Sims1 lic(p, congruence_kind::twosided);
     REQUIRE(lic.number_of_congruences(27) == 7);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "010",
                           "PartitionMonoid(2) 2-sided from FroidurePin",
                           "[fail][presentation]") {
@@ -540,11 +540,11 @@ namespace libsemigroups {
     auto p = make<Presentation<word_type>>(S);
     REQUIRE(std::distance(p.cbegin(), p.cend()) == 32);
 
-    LowIndexCongruences lic(p, congruence_kind::twosided);
+    Sims1 lic(p, congruence_kind::twosided);
     REQUIRE(lic.number_of_congruences(16) == 13);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "011",
                           "TemperleyLieb(3) from presentation",
                           "[quick][presentation]") {
@@ -558,20 +558,20 @@ namespace libsemigroups {
                            rel.second.cend());
     }
     {
-      LowIndexCongruences lic(p, congruence_kind::right);
+      Sims1 lic(p, congruence_kind::right);
       REQUIRE(lic.number_of_congruences(14) == 9);
     }
     {
-      LowIndexCongruences lic(p, congruence_kind::left);
+      Sims1 lic(p, congruence_kind::left);
       REQUIRE(lic.number_of_congruences(14) == 9);
     }
     {
-      // LowIndexCongruences lic(p, congruence_kind::twosided);
+      // Sims1 lic(p, congruence_kind::twosided);
       // REQUIRE(lic.number_of_congruences(14) == 5);
     }
   }
 
-  LIBSEMIGROUPS_TEST_CASE("LowIndexCongruences",
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "012",
                           "TemperleyLieb(4) from presentation",
                           "[quick][presentation]") {
@@ -585,15 +585,15 @@ namespace libsemigroups {
                            rel.second.cend());
     }
     {
-      LowIndexCongruences lic(p, congruence_kind::right);
+      Sims1 lic(p, congruence_kind::right);
       REQUIRE(lic.number_of_congruences(14) == 79);
     }
     {
-      LowIndexCongruences lic(p, congruence_kind::left);
+      Sims1 lic(p, congruence_kind::left);
       REQUIRE(lic.number_of_congruences(14) == 79);
     }
     {
-      // LowIndexCongruences lic(p, congruence_kind::twosided);
+      // Sims1 lic(p, congruence_kind::twosided);
       // REQUIRE(lic.number_of_congruences(14) == 9);
     }
   }

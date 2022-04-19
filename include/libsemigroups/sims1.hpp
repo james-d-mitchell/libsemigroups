@@ -21,15 +21,15 @@
 // TODO:
 // * Implement two-sided versions
 // * add option for "only those congruences containing a given set of pairs"
-// * Rename to Sims
+// * use standardization to get "isomorphic" actions (this is "conjugation" in
+// Sims)
 // * Templatize for "node_type"
 // * use the separated out FelschTree in ToddCoxeter
 // * Stats and reporting
 // * Split into two hpp and tpp files
-// * use standardization to get "isomorphic" actions (this is "conjugation" in
-// Sims)
 // * const + noexcept
-// * doc + code coverage
+// * doc
+// * code coverage
 // * iwyu
 // * parallelise?
 //
@@ -37,9 +37,10 @@
 // * containment of congruences defined by "action digraph"
 // * generating pairs for congruences defined by "action digraph"
 // * minimum degree transformation representations of semigroups/monoids
+// * Meets and joins of congruences represented by action digraphs?
 
-#ifndef LIBSEMIGROUPS_LOW_INDEX_HPP_
-#define LIBSEMIGROUPS_LOW_INDEX_HPP_
+#ifndef LIBSEMIGROUPS_SIMS1_HPP_
+#define LIBSEMIGROUPS_SIMS1_HPP_
 
 #include <cstddef>
 
@@ -67,7 +68,7 @@ namespace libsemigroups {
     }
   }  // namespace
 
-  class LowIndexCongruences {
+  class Sims1 {
    public:
     using node_type       = uint32_t;
     using letter_type     = uint16_t;
@@ -80,8 +81,8 @@ namespace libsemigroups {
     // TODO reporting
 
    public:
-    LowIndexCongruences(Presentation<word_type> const &p,
-                        congruence_kind ck = congruence_kind::right)
+    Sims1(Presentation<word_type> const &p,
+          congruence_kind                ck = congruence_kind::right)
         : _presentation() {
       using empty_word = typename Presentation<word_type>::empty_word;
       if (ck == congruence_kind::twosided) {
@@ -421,4 +422,4 @@ namespace libsemigroups {
 
 }  // namespace libsemigroups
 
-#endif  // LIBSEMIGROUPS_LOW_INDEX_HPP_
+#endif  // LIBSEMIGROUPS_SIMS1_HPP_
