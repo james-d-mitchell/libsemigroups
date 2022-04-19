@@ -659,6 +659,7 @@ EXTRA_PROGRAMS += test_race
 EXTRA_PROGRAMS += test_runner
 EXTRA_PROGRAMS += test_schreier_sims
 EXTRA_PROGRAMS += test_sims1
+EXTRA_PROGRAMS += test_sims2
 EXTRA_PROGRAMS += test_siso
 EXTRA_PROGRAMS += test_string
 EXTRA_PROGRAMS += test_string_view
@@ -750,6 +751,7 @@ test_all_SOURCES += tests/test-race.cpp
 test_all_SOURCES += tests/test-runner.cpp
 test_all_SOURCES += tests/test-schreier-sims.cpp
 test_all_SOURCES += tests/test-sims1.cpp
+test_all_SOURCES += tests/test-sims2.cpp
 test_all_SOURCES += tests/test-siso.cpp
 test_all_SOURCES += tests/test-string.cpp
 test_all_SOURCES += tests/test-string-view.cpp
@@ -878,6 +880,10 @@ test_konieczny_SOURCES += tests/test-main.cpp
 test_sims1_SOURCES =  tests/test-sims1.cpp
 test_sims1_SOURCES += tests/test-main.cpp
 test_sims1_SOURCES += tests/fpsemi-examples.cpp
+
+test_sims2_SOURCES =  tests/test-sims2.cpp
+test_sims2_SOURCES += tests/test-main.cpp
+test_sims2_SOURCES += tests/fpsemi-examples.cpp
 
 test_matrix_SOURCES =  tests/test-matrix.cpp
 test_matrix_SOURCES += tests/test-main.cpp
