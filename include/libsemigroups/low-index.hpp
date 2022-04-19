@@ -19,20 +19,19 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoid.
 // TODO:
-// * Implement left and two-sided versions [DONE, sort of]
-// * Fix issue with adjoined identity
+// * Implement two-sided versions
 // * add option for "only those congruences containing a given set of pairs"
-// * Rename to Sims or SimsLIC
+// * Rename to Sims
 // * Templatize for "node_type"
+// * use the separated out FelschTree in ToddCoxeter
 // * Stats and reporting
 // * Split into two hpp and tpp files
-// * const + noexcept
-// * iwyu
-// * parallelise?
-// * use the separated out FelschTree in ToddCoxeter
 // * use standardization to get "isomorphic" actions (this is "conjugation" in
 // Sims)
+// * const + noexcept
 // * doc + code coverage
+// * iwyu
+// * parallelise?
 //
 // TODO(maths):
 // * containment of congruences defined by "action digraph"
@@ -293,8 +292,12 @@ namespace libsemigroups {
       //! No doc
       void swap(const_iterator &that) noexcept {
         std::swap(_definitions, that._definitions);
+        std::swap(_felsch_tree, that._felsch_tree);
+        std::swap(_max_num_classes, that._max_num_classes);
+        std::swap(_min_target_node, that._min_target_node);
         std::swap(_num_active_nodes, that._num_active_nodes);
         std::swap(_pending, that._pending);
+        std::swap(_presentation, that._presentation);
         std::swap(_word_graph, that._word_graph);
       }
 
