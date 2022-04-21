@@ -69,6 +69,22 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 1, 0, 1}, {0});
 
     Sims2 s(p);
-    REQUIRE(s.number_of_congruences(2) == 6);
+    // REQUIRE(s.number_of_congruences(2) == 3);
+    REQUIRE(s.number_of_congruences(3) == 5);
   }
 }  // namespace libsemigroups
+
+// [ [ [ [ 1, 2 ], [ 1, 1 ], [ 3, 2 ], [ 3, 3 ] ],
+//     [ [ 1, 2 ], [ 1, 3 ], [ 1, 2 ], [ 1, 3 ] ] ],
+//
+//   [ [ [ 0, 0 ] ], [ [ 0, 0 ] ] ],
+//
+//   [ [ [ 1, 0 ], [ 1, 1 ] ], [ [ 1, 0 ], [ 1, 1 ] ] ],
+//
+//   [ [ [ 1, 1 ], [ 1, 1 ] ], [ [ 1, 1 ], [ 1, 1 ] ] ],
+//
+//   [ [ [ 1, 2 ], [ 1, 1 ], [ 1, 2 ] ],
+//     [ [ 1, 2 ], [ 1, 1 ], [ 1, 2 ] ] ],
+//
+//   [ [ [ 1, 2 ], [ 1, 1 ], [ 2, 2 ] ],
+//     [ [ 1, 2 ], [ 1, 2 ], [ 1, 2 ] ] ] ]

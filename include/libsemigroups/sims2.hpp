@@ -104,6 +104,24 @@ namespace libsemigroups {
       }
     }
 
+    Definition first_undefined_edge() const {
+      for (auto n = cbegin_nodes(); n != cend_nodes(); ++n) {
+        for (auto e = cbegin_edges(*n); e != cend_edges(*n); ++e) {
+          if (*e == UNDEFINED) {
+            return std::make_pair(n - cbegin_nodes(), e - cbegin_edges(*n));
+          }
+        }
+      }
+      return std::make_pair(UNDEFINED, UNDEFINED);
+    }
+
+    Definition last_defined_edge() const {
+      if (_definitions.empty()) {
+        return std::make_pair(UNDEFINED, UNDEFINED);
+      }
+      return _definitions.back();
+    }
+
     Definitions const &definitions() const noexcept {
       return _definitions;
     }
@@ -204,11 +222,14 @@ namespace libsemigroups {
                Presentation<word_type> const &right,
                size_t                         n)
         : _left(left, n),
-          _lenindex({0, 1}),
+          _lenindex({0, 1}),  // _lenindex[i] is the position in _nodes of the
+                              // first word of length i
           _nodes(),
           _reduced(left.alphabet().size(), n),
           _right(right, n),
-          _wordlen(0) {
+          _wordlen(UNDEFINED)  // is the 1 + maximum length of a word that has
+                               // all of its left and right multiples installed
+    {
       // node corresponding to the identity
       _nodes.emplace_back(UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED);
     }
@@ -229,11 +250,9 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(c < _nodes.size());
       LIBSEMIGROUPS_ASSERT(x < _right.out_degree());
       LIBSEMIGROUPS_ASSERT(d <= _nodes.size());
-      LIBSEMIGROUPS_ASSERT(_lenindex[_wordlen] <= c);
-      LIBSEMIGROUPS_ASSERT(_lenindex[_wordlen + 1] > c);
 
       // TODO assertions
-      size_t start = _right.number_of_edges();
+      size_type start = _right.number_of_edges();
       if (!_right.def_edge(c, x, d) || !_right.process_definitions(start)) {
         return false;
       }
@@ -256,51 +275,60 @@ namespace libsemigroups {
         _nodes.emplace_back(b, x, c, _right.unsafe_neighbor(s, x));
         _reduced.set(c, x, true);
       }
-
-      bool install_left = true;
-      for (node_type v = _lenindex[_wordlen]; v < _lenindex[_wordlen + 1];
-           ++v) {
-        if (!std::all_of(_right.cbegin_edges(v),
-                         _right.cend_edges(v),
-                         [](auto val) { return val != UNDEFINED; })) {
-          install_left = false;
-          break;
-        }
+      // FIXME Is this right??
+      if (_nodes.size() > _lenindex.back()) {
+        _lenindex.push_back(_nodes.size());
       }
-      if (install_left) {
+
+      // Every value in _right before the one in position (c, x) is defined, so
+      // we check if (c is the last node corresponding to a word of current
+      // length, and x is the last generator) or (the length of word
+      // corresponding to c is longer than the current _wordlen). The latter
+      // can happen when, for example, if we have two letters/generators and x
+      // = 0, and (c, 1) is defined when we do process_definitions in _right at
+      // the start of this function, then the first check fails, but the next
+      // time we define an edge we will know that the row of the current value
+      // of c is complete, because the next value will be at least
+      // _lenindex.back().
+
+      LIBSEMIGROUPS_ASSERT(_wordlen + 1 < _lenindex.size());
+      // FIXME simplify
+      if ((_wordlen != UNDEFINED
+           && (c >= _lenindex[_wordlen + 1]
+               || (x == _right.out_degree() - 1
+                   && c == _lenindex[_wordlen + 1] - 1)))
+          || (_wordlen == UNDEFINED && x == _right.out_degree() - 1)) {
+        auto c_wordlen = length(c);
         // Finished multiplying all words of current length by all generators
-        size_type start = _left.number_of_edges();
-        if (_wordlen == 0) {
+        start = _left.number_of_edges();
+        if (_wordlen == UNDEFINED) {
           // TODO can we remove this special case?
           for (letter_type j = 0; j != _left.out_degree(); ++j) {
             if (!_left.def_edge(0, j, _right.unsafe_neighbor(0, j))) {
               return false;
             }
           }
-        } else {
-          for (size_type i = _lenindex[_wordlen]; i != _lenindex[_wordlen + 1];
-               ++i) {
-            auto p = _nodes[i].prefix;
-            auto b = _nodes[i].last;
-            for (letter_type j = 0; j != _left.out_degree(); ++j) {
-              // TODO check that _left(i, j) isn't already set to a different
-              // value, return false if it is!
-              if (!_left.def_edge(
-                      i,
-                      j,
-                      _right.unsafe_neighbor(_left.unsafe_neighbor(p, j), b))) {
-                return false;
-              }
+          _wordlen++;
+        }
+        LIBSEMIGROUPS_ASSERT(_wordlen < _lenindex.size());
+        LIBSEMIGROUPS_ASSERT(_wordlen <= c_wordlen);
+        for (size_type i = _lenindex[_wordlen + 1]; i < _lenindex[c_wordlen];
+             ++i) {
+          auto p = _nodes[i].prefix;
+          auto b = _nodes[i].last;
+          for (letter_type j = 0; j != _left.out_degree(); ++j) {
+            if (!_left.def_edge(
+                    i,
+                    j,
+                    _right.unsafe_neighbor(_left.unsafe_neighbor(p, j), b))) {
+              return false;
             }
           }
         }
-        if (_nodes.size() > _lenindex.back()) {
-          _wordlen++;
-          _lenindex.push_back(_nodes.size());
-        }
+        _wordlen = c_wordlen;
+        // TODO can _left fail to be good in other ways (like not every node
+        // is reachable from the first node etc)?
         return _left.process_definitions(start);
-        // TODO _left can fail to be good in other ways (like not every node is
-        // reachable from the first node etc)
       }
       return true;
     }
@@ -321,18 +349,36 @@ namespace libsemigroups {
       _left.reduce_number_of_edges_to(l);
     }
 
+    // FIXME Combine with reduce_number_of_edges_to since this must be called
+    // before calling reduce_number_of_nodes_to
     void reduce_number_of_nodes_to(size_type n) {
       LIBSEMIGROUPS_ASSERT(n >= 1);
-      if (n >= _nodes.size()) {
+      LIBSEMIGROUPS_ASSERT(_right.number_of_edges() <= n * _right.out_degree());
+      LIBSEMIGROUPS_ASSERT(_left.number_of_edges() <= n * _left.out_degree());
+      if (n >= _nodes.size()) {  // TODO is this necessary?
         return;
       }
-
       _nodes.erase(_nodes.begin() + n, _nodes.end());
+      LIBSEMIGROUPS_ASSERT(_nodes.size() == n);
 
-      while (_lenindex.size() > 2 && _lenindex[_lenindex.size() - 1] > n) {
-        _lenindex.pop_back();
-        --_wordlen;
+      auto le = _left.first_undefined_edge();
+
+      // Reset _wordlen and _lenindex to reflect that we have left multiplied
+      // every word of length ?? by every generator
+
+      LIBSEMIGROUPS_ASSERT(le.first != UNDEFINED);
+      LIBSEMIGROUPS_ASSERT(le.second != UNDEFINED);
+      auto undef_length = length(le.first);
+      // Every row before le.first is complete
+      _wordlen = undef_length - 1;
+      auto re  = _right.last_defined_edge();
+      if (re.first != UNDEFINED && _lenindex.size() > 2) {
+        LIBSEMIGROUPS_ASSERT(_lenindex.begin() + length(re.first) + 2
+                             <= _lenindex.end());
+        _lenindex.erase(_lenindex.begin() + length(re.first) + 2,
+                        _lenindex.end());
       }
+      LIBSEMIGROUPS_ASSERT(le.first <= _lenindex.back());
       LIBSEMIGROUPS_ASSERT(number_of_nodes() == n);
     }
 
@@ -344,6 +390,17 @@ namespace libsemigroups {
     void restrict(size_type n) {
       _left.restrict(n);
       _right.restrict(n);
+    }
+
+    size_type length(node_type c) const noexcept {
+      return *std::find_if(_lenindex.crbegin(),
+                           _lenindex.crend(),
+                           [&c](auto val) { return val <= c; });
+    }
+
+   private:
+    bool validate() const noexcept {
+      // TODO
     }
   };
 
@@ -413,8 +470,8 @@ namespace libsemigroups {
         node_type   target;
         size_t num_edges_left;   // Number of edges in the graph when *this was
                                  // added to the stack
-        size_t num_edges_right;  // Number of edges in the graph when *this was
-                                 // added to the stack
+        size_t num_edges_right;  // Number of edges in the graph when *this
+                                 // was added to the stack
         size_t num_nodes;        // Same as above but for nodes
       };
 
@@ -502,11 +559,16 @@ namespace libsemigroups {
                                                  current.num_edges_left);
           _word_graphs.reduce_number_of_nodes_to(current.num_nodes);
 
+          LIBSEMIGROUPS_ASSERT(_word_graphs.number_of_nodes()
+                                   == current.num_nodes
+                               || current.num_nodes == _max_num_classes);
+          LIBSEMIGROUPS_ASSERT(_word_graphs.right().number_of_edges()
+                               == current.num_edges_right);
+          LIBSEMIGROUPS_ASSERT(_word_graphs.left().number_of_edges()
+                               == current.num_edges_left);
           LIBSEMIGROUPS_ASSERT(_word_graphs.right().unsafe_neighbor(
                                    current.source, current.generator)
                                == UNDEFINED);
-          LIBSEMIGROUPS_ASSERT(_word_graphs.number_of_nodes()
-                               == current.num_nodes);
 
           _num_active_nodes = current.num_nodes;
 
