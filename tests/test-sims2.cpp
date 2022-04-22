@@ -113,6 +113,7 @@ namespace libsemigroups {
       REQUIRE(it->right()
               == action_digraph_helper::make<node_type>(4, {{0, 0}}));
       ++it;
+      /*
       REQUIRE(it->left()
               == action_digraph_helper::make<node_type>(
                   3, {{1, 2}, {1, 2}, {1, 2}}));
@@ -138,7 +139,7 @@ namespace libsemigroups {
               == action_digraph_helper::make<node_type>(3, {{1, 0}, {1, 1}}));
 
       // REQUIRE(s.number_of_congruences(5) == 6);
-      // REQUIRE(s.number_of_congruences(6) == 6);
+      // REQUIRE(s.number_of_congruences(6) == 6);*/
     }
   }
 }  // namespace libsemigroups
