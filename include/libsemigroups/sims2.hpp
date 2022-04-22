@@ -204,12 +204,14 @@ namespace libsemigroups {
       FroidurePinNode(letter_type frst,
                       letter_type lst,
                       node_type   prfx,
-                      node_type   sffx)
-          : first(frst), last(lst), prefix(prfx), suffix(sffx) {}
+                      node_type   sffx,
+                      size_type   lngth)
+          : first(frst), last(lst), prefix(prfx), suffix(sffx), length(lngth) {}
       letter_type first;
       letter_type last;
       node_type   prefix;
       node_type   suffix;
+      size_type   length;
     };
 
     SimsGraph1                   _left;
@@ -237,7 +239,7 @@ namespace libsemigroups {
                              // at least one right multiple (only) installed
     {
       // node corresponding to the identity
-      _nodes.emplace_back(UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED);
+      _nodes.emplace_back(UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, 0);
     }
 
     SimsGraph1 &left() {
@@ -286,7 +288,8 @@ namespace libsemigroups {
       if (s == UNDEFINED) {
         if (d >= _nodes.size()) {
           LIBSEMIGROUPS_ASSERT(c == 0);
-          _nodes.emplace_back(x, x, c, c);
+          // first, last, prefix, suffix, length
+          _nodes.emplace_back(x, x, c, c, 1);
           _reduced.set(c, x, true);
         }
       } else if (d == _nodes.size()) {
@@ -294,8 +297,9 @@ namespace libsemigroups {
           // TODO could check if the definition required by FroidurePin is the
           // same as the one we are trying to make, and return false if it is
           // not.
-          // first, last, prefix, suffix
-          _nodes.emplace_back(b, x, c, _right.unsafe_neighbor(s, x));
+          // first, last, prefix, suffix, length
+          _nodes.emplace_back(
+              b, x, c, _right.unsafe_neighbor(s, x), node.length + 1);
           _reduced.set(c, x, true);
         } else {
           // It should be the case that d being a new value is reduced, but
