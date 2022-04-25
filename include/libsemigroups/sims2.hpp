@@ -230,7 +230,8 @@ namespace libsemigroups {
           _lenindex({0, 1}),  // _lenindex[i] is the position in _nodes of the
                               // first word of length i
           _nodes(),
-          _reduced(left.alphabet().size(), n),
+          _reduced(left.alphabet().size(),
+                   left.contains_empty_word() ? n : n + 1),
           _right(right, n),
           _wordlen_left(
               UNDEFINED),    // is the maximum length of a word that has
@@ -239,7 +240,7 @@ namespace libsemigroups {
                              // at least one right multiple (only) installed
     {
       // node corresponding to the identity
-      _nodes.emplace_back(UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, 0);
+      _nodes.emplace_back(UNDEFINED, 0, 0, UNDEFINED, 0);
     }
 
     SimsGraph1 &left() {
@@ -274,7 +275,9 @@ namespace libsemigroups {
       }
 
       bool current_wordlen_right_done = false;
-      if (c > _lenindex[_wordlen_right + 1]) {
+      // LIBSEMIGROUPS_ASSERT(_wordlen_right + 1 < _lenindex.size());
+      if (_wordlen_right + 1 < _lenindex.size()
+          && c > _lenindex[_wordlen_right + 1]) {
         LIBSEMIGROUPS_ASSERT(_wordlen_right == length(c));
         _wordlen_right++;  // = length(c);
         _lenindex.push_back(_nodes.size());
@@ -311,18 +314,18 @@ namespace libsemigroups {
 
       LIBSEMIGROUPS_ASSERT(d != _nodes.size());
 
-      if (c == _lenindex[_wordlen_right + 1] - 1
+      if (_wordlen_right + 1 < _lenindex.size()
+          && c == _lenindex[_wordlen_right + 1] - 1
           && x == _right.out_degree() - 1) {
-        LIBSEMIGROUPS_ASSERT(_wordlen_right == length(c));
+        // LIBSEMIGROUPS_ASSERT(_wordlen_right == length(c));
         _wordlen_right++;
-        if (_nodes.size() != _lenindex.back()) {
-          _lenindex.push_back(_nodes.size());
-        }
+        _lenindex.push_back(_nodes.size());
         current_wordlen_right_done = true;
       } else if (_right.number_of_edges()
                  == number_of_nodes() * _right.out_degree()) {
-        LIBSEMIGROUPS_ASSERT(_wordlen_right == length(c));
+        // LIBSEMIGROUPS_ASSERT(_wordlen_right == length(c));
         _wordlen_right++;
+        _lenindex.push_back(_nodes.size());
         current_wordlen_right_done = true;
       }
 
@@ -412,20 +415,12 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(le.first != UNDEFINED);
       LIBSEMIGROUPS_ASSERT(le.second != UNDEFINED);
       // Every row before le.first is complete
-      _wordlen_left = length(le.first) - 1;
-      auto re       = _right.last_defined_edge();
-      if (re.first != UNDEFINED) {
-        if (_lenindex.size() > 2) {
-          LIBSEMIGROUPS_ASSERT(_lenindex.begin() + length(re.first) + 2
-                               <= _lenindex.end());
-          _lenindex.erase(_lenindex.begin() + length(re.first) + 2,
-                          _lenindex.end());
-        }
-        _wordlen_right = length(_right.first_undefined_edge().first);
-      } else {
-        _wordlen_right = 0;
-      }
-      LIBSEMIGROUPS_ASSERT(le.first <= _lenindex.back());
+      _wordlen_left  = length(le.first) - 1;
+      _wordlen_right = length(_right.first_undefined_edge().first);
+      _lenindex.erase(_lenindex.begin()
+                          + std::max(_wordlen_right + 1, size_type(2)),
+                      _lenindex.end());
+      // LIBSEMIGROUPS_ASSERT(le.first <= _lenindex.back());
       LIBSEMIGROUPS_ASSERT(number_of_nodes() == n);
       validate();
     }
@@ -441,9 +436,36 @@ namespace libsemigroups {
     }
 
     size_type length(node_type c) const noexcept {
+      if (c >= number_of_nodes()) {
+        return UNDEFINED;
+      }
       return *std::find_if(_lenindex.crbegin(),
                            _lenindex.crend(),
                            [&c](auto val) { return val <= c; });
+    }
+
+    // Should only be invoked on a complete instance.
+    bool check_froidure_pin() {
+      for (size_t i = 0; i < number_of_nodes(); ++i) {
+        auto const &node = _nodes[i];
+        auto        b    = node.first;
+        auto        s    = node.suffix;
+        if (s != UNDEFINED) {
+          LIBSEMIGROUPS_ASSERT(b != UNDEFINED);
+          for (letter_type j = 0; j != _right.out_degree(); ++j) {
+            if (!_reduced.get(s, j)) {
+              auto r = _right.unsafe_neighbor(s, j);
+              if (_right.unsafe_neighbor(i, j)
+                  != _right.unsafe_neighbor(
+                      _left.unsafe_neighbor(_nodes[r].prefix, b),
+                      _nodes[r].last)) {
+                return false;
+              }
+            }
+          }
+        }
+      }
+      return true;
     }
 
 #ifdef LIBSEMIGROUPS_DEBUG
@@ -468,9 +490,14 @@ namespace libsemigroups {
       num_targets++;
       LIBSEMIGROUPS_ASSERT(
           _left.first_undefined_edge().first == UNDEFINED
+          || length(_left.first_undefined_edge().first) == UNDEFINED
+          // The previous happens if the graph is complete, then the
+          // first undefined edge can be for incident to a larger
+          // node, whose length isn't defined
           || _wordlen_left == length(_left.first_undefined_edge().first) - 1);
       LIBSEMIGROUPS_ASSERT(
           _right.first_undefined_edge().first == UNDEFINED
+          || length(_right.first_undefined_edge().first) == UNDEFINED
           || _wordlen_right == length(_right.first_undefined_edge().first));
       LIBSEMIGROUPS_ASSERT(num_sources <= _nodes.size());
       LIBSEMIGROUPS_ASSERT(num_targets == _nodes.size());
@@ -511,6 +538,13 @@ namespace libsemigroups {
           p.contains_empty_word() ? empty_word::yes : empty_word::no);
     }
 
+    Presentation<word_type> const &left_presentation() const noexcept {
+      return _left_presentation;
+    }
+    Presentation<word_type> const &right_presentation() const noexcept {
+      return _right_presentation;
+    }
+
     //! No doc
     class const_iterator {
      public:
@@ -548,11 +582,11 @@ namespace libsemigroups {
         node_type   source;
         letter_type generator;
         node_type   target;
-        size_t num_edges_left;   // Number of edges in the graph when *this was
-                                 // added to the stack
-        size_t num_edges_right;  // Number of edges in the graph when *this
-                                 // was added to the stack
-        size_t num_nodes;        // Same as above but for nodes
+        size_t      num_edges_left;  // Number of edges in the graph when
+                                     // *this was added to the stack
+        size_t num_edges_right;      // Number of edges in the graph when
+                                     // *this was added to the stack
+        size_t num_nodes;            // Same as above but for nodes
       };
 
       using PendingDefinitions = std::vector<Edge>;
@@ -563,8 +597,9 @@ namespace libsemigroups {
       SimsGraph2         _word_graphs;
 
      public:
-      // None of the constructors are noexcept because the corresponding
-      // constructors for std::vector aren't (until C++17).
+      // None of the constructors are noexcept because the
+      // corresponding constructors for std::vector aren't (until
+      // C++17).
       //! No doc
       const_iterator() = delete;
       //! No doc
@@ -594,9 +629,9 @@ namespace libsemigroups {
           _pending.emplace_back(0, 0, 0, 0, 0, 1);
         }
         ++(*this);
-        // The increment above is required so that when dereferencing any
-        // pointer of this type we obtain a valid word graph (o/w the value
-        // pointed to here is empty).
+        // The increment above is required so that when dereferencing
+        // any pointer of this type we obtain a valid word graph (o/w
+        // the value pointed to here is empty).
       }
 
       //! No doc
@@ -691,7 +726,11 @@ namespace libsemigroups {
           }
           // No undefined edges, word graph is complete
           // check_compatibility(_word_graph, _presentation);
-          _word_graphs.validate();
+          // _word_graphs.validate();
+          if (!_word_graphs.check_froidure_pin()) {
+            continue;
+          }
+
           return *this;
         }
         _num_active_nodes = 0;  // indicates that the iterator is done
@@ -722,8 +761,8 @@ namespace libsemigroups {
       return const_iterator(_left_presentation, _right_presentation, 0);
     }
 
-    // Returns the number of right congruences with up to n (inclusive)
-    // classes.
+    // Returns the number of right congruences with up to n
+    // (inclusive) classes.
     size_t number_of_congruences(size_t n) {
       // return std::distance(cbegin(n), cend(n));
 

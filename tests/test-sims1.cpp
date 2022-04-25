@@ -514,20 +514,6 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "009",
-                          "FullTransformationMonoid(3) 2-sided",
-                          "[fail][presentation]") {
-    auto                   rg = ReportGuard(false);
-    FroidurePin<Transf<3>> S(
-        {Transf<3>({1, 2, 0}), Transf<3>({1, 0, 2}), Transf<3>({0, 1, 0})});
-    REQUIRE(S.size() == 27);
-    REQUIRE(S.is_monoid());
-    auto  p = make<Presentation<word_type>>(S);
-    Sims1 lic(p, congruence_kind::twosided);
-    REQUIRE(lic.number_of_congruences(27) == 7);
-  }
-
-  LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "010",
                           "PartitionMonoid(2) 2-sided from FroidurePin",
                           "[fail][presentation]") {
