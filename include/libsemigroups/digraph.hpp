@@ -3118,44 +3118,19 @@ namespace libsemigroups {
 
   template <typename T>
   std::ostream& operator<<(std::ostream& os, ActionDigraph<T> const& ad) {
-    if (ad.number_of_nodes() == 0) {
-      os << "{}";
-      return os;
-    }
     os << "{";
-    for (auto n = ad.cbegin_nodes(); n != ad.cend_nodes() - 1; ++n) {
-      os << "{";
-      for (auto e = ad.cbegin_edges(*n); e != ad.cend_edges(*n) - 1; ++e) {
-        if (*e == UNDEFINED) {
-          os << "-, ";
-        } else {
-          os << *e << ", ";
-        }
+    std::string sep_n;
+    for (auto n = ad.cbegin_nodes(); n != ad.cend_nodes(); ++n) {
+      std::string sep_e;
+      os << sep_n << "{";
+      for (auto e = ad.cbegin_edges(*n); e != ad.cend_edges(*n); ++e) {
+        os << sep_e << (*e == UNDEFINED ? "-" : std::to_string(*e));
+        sep_e = ", ";
       }
-      auto e = ad.cend_edges(*n) - 1;
-      if (*e == UNDEFINED) {
-        os << "-";
-      } else {
-        os << *e;
-      }
-      os << "}, ";
+      os << "}";
+      sep_n = ", ";
     }
-    os << "{";
-    auto n = ad.cend_nodes() - 1;
-    for (auto e = ad.cbegin_edges(*n); e != ad.cend_edges(*n) - 1; ++e) {
-      if (*e == UNDEFINED) {
-        os << "-, ";
-      } else {
-        os << *e << ", ";
-      }
-    }
-    auto e = ad.cend_edges(*n) - 1;
-    if (*e == UNDEFINED) {
-      os << "-";
-    } else {
-      os << *e;
-    }
-    os << "}}";
+    os << "}";
     return os;
   }
 }  // namespace libsemigroups

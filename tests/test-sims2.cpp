@@ -193,14 +193,13 @@ namespace libsemigroups {
     }
     REQUIRE(s.number_of_congruences(1) == 1);
     REQUIRE(s.number_of_congruences(2) == 3);
-    // Numbers from here down are probably wrong
-    // REQUIRE(s.number_of_congruences(3) == 11);  // 10
-    // REQUIRE(s.number_of_congruences(4) == 23);  // 20
-    // REQUIRE(s.number_of_congruences(5) == 47);   // 39
-    // REQUIRE(s.number_of_congruences(6) == 80);   // 61
-    // REQUIRE(s.number_of_congruences(7) == 100);  // 76
-    // REQUIRE(s.number_of_congruences(8) == 106);  // 82
-    REQUIRE(s.number_of_congruences(9) == 83);  // 83
+    REQUIRE(s.number_of_congruences(3) == 10);
+    REQUIRE(s.number_of_congruences(4) == 20);
+    REQUIRE(s.number_of_congruences(5) == 39);
+    REQUIRE(s.number_of_congruences(6) == 61);
+    REQUIRE(s.number_of_congruences(7) == 76);
+    REQUIRE(s.number_of_congruences(8) == 82);
+    REQUIRE(s.number_of_congruences(9) == 83);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims2",
@@ -402,12 +401,12 @@ namespace libsemigroups {
     auto it = s.cbegin(14);
     // FIXME the following does not appear to be correct (just the first
     // example) the others are verified with GAP
-    REQUIRE(
-        it->left()
-        == action_digraph_helper::make<node_type>(14, {{0, 1, 0}, {0, 1, 0}}));
-    REQUIRE(it->right() == it->left());
+    // REQUIRE(
+    //     it->left()
+    //     == action_digraph_helper::make<node_type>(14, {{0, 1, 0}, {0, 1,
+    //     0}}));
+    // REQUIRE(it->right() == it->left());
 
-    ++it;
     REQUIRE(it->left()
             == action_digraph_helper::make<node_type>(14, {{0, 0, 0}}));
     REQUIRE(it->right() == it->left());

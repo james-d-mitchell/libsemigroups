@@ -35,6 +35,7 @@
 #define LIBSEMIGROUPS_SIMS2_HPP_
 
 #include <cstddef>
+#include <stack>
 
 #include "collapsible-word-graph.hpp"
 #include "digraph.hpp"
@@ -42,6 +43,7 @@
 #include "present.hpp"
 #include "report.hpp"
 #include "types.hpp"  // for word_type, relation_type, letter_type, tril
+#include "uf.hpp"
 
 namespace libsemigroups {
   class SimsGraph1 : public CollapsibleWordGraph<uint32_t> {
@@ -468,6 +470,40 @@ namespace libsemigroups {
       return true;
     }
 
+    bool hopcroft_karp() {
+      detail::Duf<>                               uf(number_of_nodes());
+      std::stack<std::pair<node_type, node_type>> stck;
+      stck.emplace(0, 0);
+      while (!stck.empty()) {
+        auto q = stck.top();
+        stck.pop();
+        for (letter_type a = 0; a < _right.out_degree(); ++a) {
+          auto r1 = uf.find(_right.unsafe_neighbor(q.first, a));
+          auto r2 = uf.find(_left.unsafe_neighbor(q.second, a));
+          if (r1 != r2) {
+            uf.unite(r1, r2);
+            stck.emplace(r1, r2);
+          }
+        }
+      }
+      return uf.number_of_blocks() == uf.size();
+    }
+
+    bool alt() {
+      size_type N = _right.out_degree();
+      for (node_type n = 0; n < number_of_nodes(); ++n) {
+        for (letter_type a = 0; a < N; ++a) {
+          for (letter_type b = 0; b < N; ++b) {
+            if (_left.unsafe_neighbor(_right.unsafe_neighbor(n, a), b)
+                != _right.unsafe_neighbor(_left.unsafe_neighbor(n, b), a)) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    }
+
 #ifdef LIBSEMIGROUPS_DEBUG
     void validate() const noexcept {
       size_type num_sources = 1;
@@ -727,7 +763,7 @@ namespace libsemigroups {
           // No undefined edges, word graph is complete
           // check_compatibility(_word_graph, _presentation);
           // _word_graphs.validate();
-          if (!_word_graphs.check_froidure_pin()) {
+          if (!_word_graphs.alt()) {
             continue;
           }
 
