@@ -19,18 +19,17 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoid.
 
-#ifndef LIBSEMIGROUPS_WORD_GRAPH_HPP_
-#define LIBSEMIGROUPS_WORD_GRAPH_HPP_
+#ifndef LIBSEMIGROUPS_DIGRAPH_WITH_SOURCES_HPP_
+#define LIBSEMIGROUPS_DIGRAPH_WITH_SOURCES_HPP_
 
 #include "digraph.hpp"  // for ActionDigraph
 
 namespace libsemigroups {
   template <typename T>
-  class CollapsibleWordGraph : public ActionDigraph<T> {
+  class DigraphWithSources : public ActionDigraph<T> {
    public:
-    using node_type  = T;
-    using size_type  = node_type;
-    using table_type = detail::DynamicArray2<node_type>;
+    using node_type = T;
+    using size_type = node_type;
 
     using Coincidence  = std::pair<node_type, node_type>;
     using Coincidences = std::stack<Coincidence>;
@@ -38,21 +37,22 @@ namespace libsemigroups {
     class Deductions;  // Forward declaration
 
    private:
+    using table_type = detail::DynamicArray2<node_type>;
     table_type _preim_init;
     table_type _preim_next;
 
    public:
     using ActionDigraph<T>::ActionDigraph;
 
-    explicit CollapsibleWordGraph(size_type m = 0, size_type n = 0)
+    explicit DigraphWithSources(size_type m = 0, size_type n = 0)
         : ActionDigraph<node_type>(m, n),
           _preim_init(n, m, UNDEFINED),
           _preim_next(n, m, UNDEFINED) {}
 
-    CollapsibleWordGraph(CollapsibleWordGraph&&)      = default;
-    CollapsibleWordGraph(CollapsibleWordGraph const&) = default;
-    CollapsibleWordGraph& operator=(CollapsibleWordGraph const&) = default;
-    CollapsibleWordGraph& operator=(CollapsibleWordGraph&&) = default;
+    DigraphWithSources(DigraphWithSources&&)      = default;
+    DigraphWithSources(DigraphWithSources const&) = default;
+    DigraphWithSources& operator=(DigraphWithSources const&) = default;
+    DigraphWithSources& operator=(DigraphWithSources&&) = default;
 
     void add_edge_nc(node_type c, node_type d, letter_type x) noexcept {
       ActionDigraph<node_type>::add_edge_nc(c, d, x);
@@ -90,6 +90,8 @@ namespace libsemigroups {
       return _preim_next.get(c, x);
     }
 
+    // TODO(Sims) move to .tpp file + make the actions on Conincicdences and
+    // Deductions less prescriptive.
     template <typename TStackDeduct>
     void merge_nodes(Coincidences& coinc,
                      Deductions&   deduct,
@@ -150,75 +152,8 @@ namespace libsemigroups {
     void replace_target(node_type c, node_type d, size_t x);
     void replace_source(node_type c, node_type d, size_t x, node_type cx);
   };
-
-  template <typename T>
-  void CollapsibleWordGraph<T>::remove_source(node_type   cx,
-                                              letter_type x,
-                                              node_type   d) {
-    node_type e = _preim_init.get(cx, x);
-    if (e == d) {
-      _preim_init.set(cx, x, _preim_next.get(d, x));
-    } else {
-      while (_preim_next.get(e, x) != d) {
-        e = _preim_next.get(e, x);
-      }
-      LIBSEMIGROUPS_ASSERT(_preim_next.get(e, x) == d);
-      _preim_next.set(e, x, _preim_next.get(d, x));
-    }
-  }
-
-  template <typename T>
-  void CollapsibleWordGraph<T>::clear_sources_and_targets(node_type c) {
-    for (letter_type i = 0; i < this->out_degree(); i++) {
-      ActionDigraph<T>::add_edge_nc(c, UNDEFINED, i);
-      _preim_init.set(c, i, UNDEFINED);
-    }
-  }
-
-  template <typename T>
-  void CollapsibleWordGraph<T>::clear_sources(node_type c) {
-    for (letter_type i = 0; i < this->out_degree(); i++) {
-      _preim_init.set(c, i, UNDEFINED);
-    }
-  }
-
-  // All edges of the form e - x -> c are replaced with e - x -> d,
-  template <typename T>
-  void CollapsibleWordGraph<T>::replace_target(node_type c,
-                                               node_type d,
-                                               size_t    x) {
-    if (is_active_coset(c)) {
-      node_type e = _preim_init.get(c, x);
-      while (e != UNDEFINED) {
-        LIBSEMIGROUPS_ASSERT(unsafe_neighbor(e, x) == c);
-        ActionDigraph<T>::add_edge_nc(e, d, x);
-        e = _preim_next.get(e, x);
-      }
-    }
-  }
-
-  template <typename T>
-  void CollapsibleWordGraph<T>::replace_source(node_type c,
-                                               node_type d,
-                                               size_t    x,
-                                               node_type cx) {
-    if (is_active_coset(c) && cx != UNDEFINED) {
-      // Replace c <-- d in preimages of cx, and d is not a preimage of cx
-      // under x
-      node_type e = _preim_init.get(cx, x);
-      if (e == c) {
-        _preim_init.set(cx, x, d);
-        return;
-      }
-      while (e != UNDEFINED) {
-        node_type f = _preim_next.get(e, x);
-        if (f == c) {
-          _preim_next.set(e, x, d);
-          return;
-        }
-        e = f;
-      }
-    }
-  }
 }  // namespace libsemigroups
-#endif  // LIBSEMIGROUPS_WORD_GRAPH_HPP_
+
+#include "digraph-with-sources.tpp"
+
+#endif  // LIBSEMIGROUPS_DIGRAPH_WITH_SOURCES_HPP_

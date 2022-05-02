@@ -19,7 +19,6 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoid.
 // TODO:
-// * Implement two-sided versions
 // * add option for "only those congruences containing a given set of pairs"
 // * use standardization to get "isomorphic" actions (this is "conjugation" in
 // Sims)
@@ -44,7 +43,7 @@
 
 #include <cstddef>
 
-#include "collapsible-word-graph.hpp"
+#include "digraph-with-sources.hpp"
 #include "digraph.hpp"
 #include "felsch-tree.hpp"
 #include "present.hpp"
@@ -73,7 +72,7 @@ namespace libsemigroups {
     using node_type       = uint32_t;
     using letter_type     = uint16_t;
     using size_type       = size_t;  // TODO use WordGraph::size_type instead
-    using word_graph_type = CollapsibleWordGraph<node_type>;
+    using word_graph_type = DigraphWithSources<node_type>;
 
    private:
     Presentation<word_type> _presentation;
@@ -111,24 +110,24 @@ namespace libsemigroups {
      public:
       //! No doc
       using size_type =
-          typename std::vector<CollapsibleWordGraph<uint32_t>>::size_type;
+          typename std::vector<DigraphWithSources<uint32_t>>::size_type;
       //! No doc
       using difference_type =
-          typename std::vector<CollapsibleWordGraph<uint32_t>>::difference_type;
+          typename std::vector<DigraphWithSources<uint32_t>>::difference_type;
       //! No doc
       using const_pointer =
-          typename std::vector<CollapsibleWordGraph<uint32_t>>::const_pointer;
+          typename std::vector<DigraphWithSources<uint32_t>>::const_pointer;
       //! No doc
       using pointer =
-          typename std::vector<CollapsibleWordGraph<uint32_t>>::pointer;
+          typename std::vector<DigraphWithSources<uint32_t>>::pointer;
       //! No doc
       using const_reference =
-          typename std::vector<CollapsibleWordGraph<uint32_t>>::const_reference;
+          typename std::vector<DigraphWithSources<uint32_t>>::const_reference;
       //! No doc
       using reference =
-          typename std::vector<CollapsibleWordGraph<uint32_t>>::reference;
+          typename std::vector<DigraphWithSources<uint32_t>>::reference;
       //! No doc
-      using value_type = CollapsibleWordGraph<uint32_t>;
+      using value_type = DigraphWithSources<uint32_t>;
       //! No doc
       using iterator_category = std::forward_iterator_tag;
 
@@ -147,14 +146,14 @@ namespace libsemigroups {
       using Definitions        = std::vector<Definition>;
       using PendingDefinitions = std::vector<Edge>;
 
-      Definitions                    _definitions;
-      FelschTree                     _felsch_tree;
-      size_type                      _max_num_classes;
-      size_type                      _min_target_node;
-      size_type                      _num_active_nodes;
-      PendingDefinitions             _pending;
-      Presentation<word_type>        _presentation;
-      CollapsibleWordGraph<uint32_t> _word_graph;
+      Definitions                  _definitions;
+      FelschTree                   _felsch_tree;
+      size_type                    _max_num_classes;
+      size_type                    _min_target_node;
+      size_type                    _num_active_nodes;
+      PendingDefinitions           _pending;
+      Presentation<word_type>      _presentation;
+      DigraphWithSources<uint32_t> _word_graph;
 
      public:
       // None of the constructors are noexcept because the corresponding
