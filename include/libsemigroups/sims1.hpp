@@ -45,6 +45,7 @@
 
 #include "digraph-with-sources.hpp"
 #include "digraph.hpp"
+#include "felsch-digraph.hpp"
 #include "felsch-tree.hpp"
 #include "present.hpp"
 #include "report.hpp"
@@ -85,7 +86,8 @@ namespace libsemigroups {
         : _presentation() {
       using empty_word = typename Presentation<word_type>::empty_word;
       if (ck == congruence_kind::twosided) {
-        LIBSEMIGROUPS_EXCEPTION("Not yet implemented");
+        LIBSEMIGROUPS_EXCEPTION(
+            "expected congruence_kind::right or congruence_kind::left");
       }
       if (ck == congruence_kind::right) {
         _presentation = p;
@@ -132,8 +134,8 @@ namespace libsemigroups {
       using iterator_category = std::forward_iterator_tag;
 
      private:
-      struct Edge {
-        Edge(node_type s, letter_type g, node_type t, size_t e, size_t n)
+      struct PendingDef {
+        PendingDef(node_type s, letter_type g, node_type t, size_t e, size_t n)
             : source(s), generator(g), target(t), num_edges(e), num_nodes(n) {}
         node_type   source;
         letter_type generator;
@@ -142,18 +144,15 @@ namespace libsemigroups {
                                 // added to the stack
         size_t num_nodes;       // Same as above but for nodes
       };
-      using Definition         = std::pair<node_type, letter_type>;
-      using Definitions        = std::vector<Definition>;
-      using PendingDefinitions = std::vector<Edge>;
 
-      Definitions                  _definitions;
-      FelschTree                   _felsch_tree;
-      size_type                    _max_num_classes;
-      size_type                    _min_target_node;
-      size_type                    _num_active_nodes;
-      PendingDefinitions           _pending;
-      Presentation<word_type>      _presentation;
-      DigraphWithSources<uint32_t> _word_graph;
+      size_type               _max_num_classes;
+      size_type               _min_target_node;
+      size_type               _num_active_nodes;
+      std::vector<PendingDef> _pending;
+      Presentation<word_type>
+          _presentation;  // TODO maybe only require the number of generators
+      FelschDigraph _felsch_graph;  // This is not in alphabetical order because
+                                    // it depends on _max_num_classes
 
      public:
       // None of the constructors are noexcept because the corresponding
@@ -171,20 +170,16 @@ namespace libsemigroups {
 
       //! No doc
       const_iterator(Presentation<word_type> const &p, size_type n)
-          : _definitions(),
-            _felsch_tree(p.alphabet().size()),
-            _max_num_classes(p.contains_empty_word() ? n : n + 1),
+          : _max_num_classes(p.contains_empty_word() ? n : n + 1),
             _min_target_node(p.contains_empty_word() ? 0 : 1),
             _num_active_nodes(n == 0 ? 0
                                      : 1),  // = 0 indicates iterator is done
             _pending(),
             _presentation(p),
-            _word_graph(_max_num_classes, _presentation.alphabet().size()) {
+            _felsch_graph(_presentation, _max_num_classes) {
         if (_num_active_nodes == 0) {
           return;
         }
-        _felsch_tree.add_relations(_presentation.cbegin(),
-                                   _presentation.cend());
         _pending.emplace_back(0, 0, 1, 0, 1);
         if (_min_target_node == 0) {
           _pending.emplace_back(0, 0, 0, 0, 1);
@@ -204,7 +199,7 @@ namespace libsemigroups {
           return true;
         }
         return _num_active_nodes == that._num_active_nodes
-               && _word_graph == that._word_graph;
+               && _felsch_graph == that._felsch_graph;
       }
 
       //! No doc
@@ -214,12 +209,12 @@ namespace libsemigroups {
 
       //! No doc
       const_reference operator*() const noexcept {
-        return _word_graph;
+        return _felsch_graph;
       }
 
       //! No doc
       const_pointer operator->() const noexcept {
-        return &_word_graph;
+        return &_felsch_graph;
       }
 
       // prefix
@@ -231,39 +226,41 @@ namespace libsemigroups {
           _pending.pop_back();
 
           // Backtrack if necessary
-          while (_definitions.size() > current.num_edges) {
-            auto const &p = _definitions.back();
-            _word_graph.remove_edge_nc(p.first, p.second);
-            _definitions.pop_back();
-          }
-
+          _felsch_graph.reduce_number_of_edges_to(current.num_edges);
           _num_active_nodes = current.num_nodes;
 
           LIBSEMIGROUPS_ASSERT(
-              _word_graph.unsafe_neighbor(current.source, current.generator)
+              _felsch_graph.unsafe_neighbor(current.source, current.generator)
               == UNDEFINED);
           {
-            size_t start = _definitions.size();
+            size_t start = _felsch_graph.number_of_edges();
 
             if (current.target < _num_active_nodes) {
-              def_edge(current.source, current.generator, current.target);
+              // TODO move the current.target < _num_active_nodes below and
+              // never put them in the stack in the first place
+              _felsch_graph.def_edge(
+                  current.source, current.generator, current.target);
             } else {
               if (_num_active_nodes == _max_num_classes) {
                 continue;
               }
-              def_edge(current.source, current.generator, _num_active_nodes++);
+              _felsch_graph.def_edge(
+                  current.source, current.generator, _num_active_nodes++);
             }
 
-            if (process_definitions(start)) {
+            if (_felsch_graph.process_definitions(start)) {
               letter_type a = current.generator + 1;
               for (node_type next = current.source; next < _num_active_nodes;
                    ++next) {
                 for (; a < _presentation.alphabet().size(); ++a) {
-                  if (_word_graph.unsafe_neighbor(next, a) == UNDEFINED) {
+                  if (_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
                     for (node_type b = _min_target_node; b <= _num_active_nodes;
                          ++b) {
-                      _pending.emplace_back(
-                          next, a, b, _definitions.size(), _num_active_nodes);
+                      _pending.emplace_back(next,
+                                            a,
+                                            b,
+                                            _felsch_graph.number_of_edges(),
+                                            _num_active_nodes);
                     }
                     goto dive;
                   }
@@ -271,13 +268,12 @@ namespace libsemigroups {
                 a = 0;
               }
               // No undefined edges, word graph is complete
-              // check_compatibility(_word_graph, _presentation);
               return *this;
             }
           }
         }
         _num_active_nodes = 0;  // indicates that the iterator is done
-        _word_graph.restrict(0);
+        _felsch_graph.restrict(0);
         return *this;
       }
 
@@ -291,98 +287,12 @@ namespace libsemigroups {
 
       //! No doc
       void swap(const_iterator &that) noexcept {
-        std::swap(_definitions, that._definitions);
-        std::swap(_felsch_tree, that._felsch_tree);
         std::swap(_max_num_classes, that._max_num_classes);
         std::swap(_min_target_node, that._min_target_node);
         std::swap(_num_active_nodes, that._num_active_nodes);
         std::swap(_pending, that._pending);
         std::swap(_presentation, that._presentation);
-        std::swap(_word_graph, that._word_graph);
-      }
-
-     private:
-      inline void def_edge(node_type c, letter_type x, node_type d) noexcept {
-        LIBSEMIGROUPS_ASSERT(c < _num_active_nodes);
-        LIBSEMIGROUPS_ASSERT(x < _presentation.alphabet().size());
-        LIBSEMIGROUPS_ASSERT(d < _num_active_nodes);
-        LIBSEMIGROUPS_ASSERT(_word_graph.unsafe_neighbor(c, x) == UNDEFINED);
-        _definitions.emplace_back(c, x);
-        _word_graph.add_edge_nc(c, d, x);
-      }
-
-      inline bool push_definition_felsch(node_type const &c,
-                                         size_t           i) noexcept {
-        auto j = (i % 2 == 0 ? i + 1 : i - 1);
-        return push_definition_felsch(
-            c, *(_presentation.cbegin() + i), *(_presentation.cbegin() + j));
-      }
-
-      bool push_definition_felsch(node_type        c,
-                                  word_type const &u,
-                                  word_type const &v) noexcept {
-        LIBSEMIGROUPS_ASSERT(c < _num_active_nodes);
-        LIBSEMIGROUPS_ASSERT(!u.empty());
-        LIBSEMIGROUPS_ASSERT(!v.empty());
-        node_type x = action_digraph_helper::follow_path_nc(
-            _word_graph, c, u.cbegin(), u.cend() - 1);
-        if (x == UNDEFINED) {
-          return true;
-        }
-        node_type y = action_digraph_helper::follow_path_nc(
-            _word_graph, c, v.cbegin(), v.cend() - 1);
-        if (y == UNDEFINED) {
-          return true;
-        }
-        LIBSEMIGROUPS_ASSERT(x < _num_active_nodes);
-        LIBSEMIGROUPS_ASSERT(y < _num_active_nodes);
-        LIBSEMIGROUPS_ASSERT(u.back() < _presentation.alphabet().size());
-        LIBSEMIGROUPS_ASSERT(v.back() < _presentation.alphabet().size());
-        node_type const xa = _word_graph.unsafe_neighbor(x, u.back());
-        node_type const yb = _word_graph.unsafe_neighbor(y, v.back());
-
-        if (xa == UNDEFINED && yb != UNDEFINED) {
-          def_edge(x, u.back(), yb);
-        } else if (xa != UNDEFINED && yb == UNDEFINED) {
-          def_edge(y, v.back(), xa);
-        } else if (xa != UNDEFINED && yb != UNDEFINED && xa != yb) {
-          return false;
-        }
-        return true;
-      }
-
-      bool process_definitions(size_t start) {
-        for (size_t i = start; i < _definitions.size(); ++i) {
-          auto const &d = _definitions[i];
-          _felsch_tree.push_back(d.second);
-          if (!process_definitions_dfs_v1(d.first)) {
-            return false;
-          }
-        }
-        return true;
-      }
-
-      bool process_definitions_dfs_v1(node_type c) {
-        for (auto it = _felsch_tree.cbegin(); it < _felsch_tree.cend(); ++it) {
-          if (!push_definition_felsch(c, *it)) {
-            return false;
-          }
-        }
-
-        size_t const n = _presentation.alphabet().size();
-        for (size_t x = 0; x < n; ++x) {
-          if (_felsch_tree.push_front(x)) {
-            node_type e = _word_graph.first_source(c, x);
-            while (e != UNDEFINED) {
-              if (!process_definitions_dfs_v1(e)) {
-                return false;
-              }
-              e = _word_graph.next_source(e, x);
-            }
-            _felsch_tree.pop_front();
-          }
-        }
-        return true;
+        std::swap(_felsch_graph, that._felsch_graph);
       }
     };
 

@@ -37,8 +37,9 @@
 #include <cstddef>
 #include <stack>
 
-#include "collapsible-word-graph.hpp"
+#include "digraph-with-sources.hpp"
 #include "digraph.hpp"
+#include "felsch-digraph.hpp"
 #include "felsch-tree.hpp"
 #include "present.hpp"
 #include "report.hpp"
@@ -46,160 +47,13 @@
 #include "uf.hpp"
 
 namespace libsemigroups {
-  class SimsGraph1 : public CollapsibleWordGraph<uint32_t> {
+
+  class Sims2Graph {
    public:
     using node_type       = uint32_t;
     using letter_type     = uint16_t;
     using size_type       = size_t;  // TODO use WordGraph::size_type instead
-    using word_graph_type = CollapsibleWordGraph<node_type>;
-
-   private:
-    using Definition  = std::pair<node_type, letter_type>;
-    using Definitions = std::vector<Definition>;
-
-    Definitions             _definitions;
-    FelschTree              _felsch_tree;
-    Presentation<word_type> _presentation;
-
-   public:
-    using CollapsibleWordGraph<node_type>::CollapsibleWordGraph;
-
-    SimsGraph1(Presentation<word_type> const &p, size_type n)
-        : CollapsibleWordGraph(p.contains_empty_word() ? n : n + 1,
-                               p.alphabet().size()),
-          _definitions(),
-          _felsch_tree(p.alphabet().size()),
-          _presentation(p) {
-      _felsch_tree.add_relations(_presentation.cbegin(), _presentation.cend());
-    }
-
-    inline bool def_edge(node_type c, letter_type x, node_type d) noexcept {
-      // TODO more assertions
-      auto cx = unsafe_neighbor(c, x);
-      if (cx == UNDEFINED) {
-        _definitions.emplace_back(c, x);
-        add_edge_nc(c, d, x);
-        return true;
-      } else {
-        return cx == d;
-      }
-    }
-
-    bool process_definitions(size_t start) {
-      for (size_t i = start; i < _definitions.size(); ++i) {
-        auto const &d = _definitions[i];
-        _felsch_tree.push_back(d.second);
-        if (!process_definitions_dfs_v1(d.first)) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    size_type number_of_edges() const noexcept {
-      return _definitions.size();
-    }
-
-    void reduce_number_of_edges_to(size_type n) {
-      while (_definitions.size() > n) {
-        auto const &p = _definitions.back();
-        remove_edge_nc(p.first, p.second);
-        _definitions.pop_back();
-      }
-    }
-
-    Definition first_undefined_edge() const {
-      for (auto n = cbegin_nodes(); n != cend_nodes(); ++n) {
-        for (auto e = cbegin_edges(*n); e != cend_edges(*n); ++e) {
-          if (*e == UNDEFINED) {
-            return std::make_pair(n - cbegin_nodes(), e - cbegin_edges(*n));
-          }
-        }
-      }
-      return std::make_pair(UNDEFINED, UNDEFINED);
-    }
-
-    Definition last_defined_edge() const {
-      if (_definitions.empty()) {
-        return std::make_pair(UNDEFINED, UNDEFINED);
-      }
-      return _definitions.back();
-    }
-
-    Definitions const &definitions() const noexcept {
-      return _definitions;
-    }
-
-   private:
-    inline bool push_definition_felsch(node_type const &c, size_t i) noexcept {
-      auto j = (i % 2 == 0 ? i + 1 : i - 1);
-      return push_definition_felsch(
-          c, *(_presentation.cbegin() + i), *(_presentation.cbegin() + j));
-    }
-
-    bool push_definition_felsch(node_type        c,
-                                word_type const &u,
-                                word_type const &v) noexcept {
-      // LIBSEMIGROUPS_ASSERT(c < _num_active_nodes);
-      LIBSEMIGROUPS_ASSERT(!u.empty());
-      LIBSEMIGROUPS_ASSERT(!v.empty());
-      node_type x = action_digraph_helper::follow_path_nc(
-          *this, c, u.cbegin(), u.cend() - 1);
-      if (x == UNDEFINED) {
-        return true;
-      }
-      node_type y = action_digraph_helper::follow_path_nc(
-          *this, c, v.cbegin(), v.cend() - 1);
-      if (y == UNDEFINED) {
-        return true;
-      }
-      // LIBSEMIGROUPS_ASSERT(x < _num_active_nodes);
-      // LIBSEMIGROUPS_ASSERT(y < _num_active_nodes);
-      LIBSEMIGROUPS_ASSERT(u.back() < _presentation.alphabet().size());
-      LIBSEMIGROUPS_ASSERT(v.back() < _presentation.alphabet().size());
-      node_type const xa = unsafe_neighbor(x, u.back());
-      node_type const yb = unsafe_neighbor(y, v.back());
-
-      if (xa == UNDEFINED && yb != UNDEFINED) {
-        return def_edge(x, u.back(), yb);
-      } else if (xa != UNDEFINED && yb == UNDEFINED) {
-        return def_edge(y, v.back(), xa);
-      } else if (xa != UNDEFINED && yb != UNDEFINED && xa != yb) {
-        return false;
-      }
-      return true;
-    }
-
-    bool process_definitions_dfs_v1(node_type c) {
-      for (auto it = _felsch_tree.cbegin(); it < _felsch_tree.cend(); ++it) {
-        if (!push_definition_felsch(c, *it)) {
-          return false;
-        }
-      }
-
-      size_t const n = _presentation.alphabet().size();
-      for (size_t x = 0; x < n; ++x) {
-        if (_felsch_tree.push_front(x)) {
-          node_type e = first_source(c, x);
-          while (e != UNDEFINED) {
-            if (!process_definitions_dfs_v1(e)) {
-              return false;
-            }
-            e = next_source(e, x);
-          }
-          _felsch_tree.pop_front();
-        }
-      }
-      return true;
-    }
-  };
-
-  class SimsGraph2 {
-   public:
-    using node_type       = uint32_t;
-    using letter_type     = uint16_t;
-    using size_type       = size_t;  // TODO use WordGraph::size_type instead
-    using word_graph_type = CollapsibleWordGraph<node_type>;
+    using word_graph_type = DigraphWithSources<node_type>;
 
    private:
     struct FroidurePinNode {
@@ -216,16 +70,16 @@ namespace libsemigroups {
       size_type   length;
     };
 
-    SimsGraph1                   _left;
+    FelschDigraph                _left;
     std::vector<size_type>       _lenindex;
     std::vector<FroidurePinNode> _nodes;
     detail::DynamicArray2<bool>  _reduced;
-    SimsGraph1                   _right;
+    FelschDigraph                _right;
     size_type                    _wordlen_left;
     size_type                    _wordlen_right;
 
    public:
-    SimsGraph2(Presentation<word_type> const &left,
+    Sims2Graph(Presentation<word_type> const &left,
                Presentation<word_type> const &right,
                size_t                         n)
         : _left(left, n),
@@ -245,19 +99,19 @@ namespace libsemigroups {
       _nodes.emplace_back(UNDEFINED, 0, 0, UNDEFINED, 0);
     }
 
-    SimsGraph1 &left() {
+    FelschDigraph &left() {
       return _left;
     }
 
-    SimsGraph1 &right() {
+    FelschDigraph &right() {
       return _right;
     }
 
-    SimsGraph1 const &left() const {
+    FelschDigraph const &left() const {
       return _left;
     }
 
-    SimsGraph1 const &right() const {
+    FelschDigraph const &right() const {
       return _right;
     }
 
@@ -427,7 +281,7 @@ namespace libsemigroups {
       validate();
     }
 
-    bool operator==(SimsGraph2 const &that) const noexcept {
+    bool operator==(Sims2Graph const &that) const noexcept {
       return _right == that._right;
     }
 
@@ -552,7 +406,7 @@ namespace libsemigroups {
     using node_type       = uint32_t;
     using letter_type     = uint16_t;
     using size_type       = size_t;  // TODO use WordGraph::size_type instead
-    using word_graph_type = SimsGraph1;
+    using word_graph_type = FelschDigraph;
 
    private:
     Presentation<word_type> _left_presentation;
@@ -585,19 +439,19 @@ namespace libsemigroups {
     class const_iterator {
      public:
       //! No doc
-      using size_type = typename std::vector<SimsGraph2>::size_type;
+      using size_type = typename std::vector<Sims2Graph>::size_type;
       //! No doc
-      using difference_type = typename std::vector<SimsGraph2>::difference_type;
+      using difference_type = typename std::vector<Sims2Graph>::difference_type;
       //! No doc
-      using const_pointer = typename std::vector<SimsGraph2>::const_pointer;
+      using const_pointer = typename std::vector<Sims2Graph>::const_pointer;
       //! No doc
-      using pointer = typename std::vector<SimsGraph2>::pointer;
+      using pointer = typename std::vector<Sims2Graph>::pointer;
       //! No doc
-      using const_reference = typename std::vector<SimsGraph2>::const_reference;
+      using const_reference = typename std::vector<Sims2Graph>::const_reference;
       //! No doc
-      using reference = typename std::vector<SimsGraph2>::reference;
+      using reference = typename std::vector<Sims2Graph>::reference;
       //! No doc
-      using value_type = SimsGraph2;
+      using value_type = Sims2Graph;
       //! No doc
       using iterator_category = std::forward_iterator_tag;
 
@@ -630,7 +484,7 @@ namespace libsemigroups {
       size_type          _min_target_node;
       size_type          _num_active_nodes;
       PendingDefinitions _pending;
-      SimsGraph2         _word_graphs;
+      Sims2Graph         _word_graphs;
 
      public:
       // None of the constructors are noexcept because the
