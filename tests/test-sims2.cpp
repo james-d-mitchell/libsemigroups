@@ -449,6 +449,108 @@ namespace libsemigroups {
             == 9);  // 9 is the correct answer verified with GAP
   }
 
+  LIBSEMIGROUPS_TEST_CASE("Sims2",
+                          "005",
+                          "PartitionMonoid(3)",
+                          "[extreme][presentation]") {
+    auto                    rg = ReportGuard(true);
+    Presentation<word_type> p;
+    p.alphabet({0, 1, 2, 3, 4});
+    presentation::add_rule_and_check(p, {0, 0}, {0});
+    presentation::add_rule_and_check(p, {0, 1}, {1});
+    presentation::add_rule_and_check(p, {0, 2}, {2});
+    presentation::add_rule_and_check(p, {0, 3}, {3});
+    presentation::add_rule_and_check(p, {0, 4}, {4});
+    presentation::add_rule_and_check(p, {1, 0}, {1});
+    presentation::add_rule_and_check(p, {2, 0}, {2});
+    presentation::add_rule_and_check(p, {2, 2}, {0});
+    presentation::add_rule_and_check(p, {2, 4}, {4});
+    presentation::add_rule_and_check(p, {3, 0}, {3});
+    presentation::add_rule_and_check(p, {3, 3}, {3});
+    presentation::add_rule_and_check(p, {4, 0}, {4});
+    presentation::add_rule_and_check(p, {4, 2}, {4});
+    presentation::add_rule_and_check(p, {4, 4}, {4});
+    presentation::add_rule_and_check(p, {1, 1, 1}, {0});
+    presentation::add_rule_and_check(p, {1, 1, 2}, {2, 1});
+    presentation::add_rule_and_check(p, {1, 2, 1}, {2});
+    presentation::add_rule_and_check(p, {2, 1, 1}, {1, 2});
+    presentation::add_rule_and_check(p, {2, 1, 2}, {1, 1});
+    presentation::add_rule_and_check(p, {2, 1, 4}, {1, 1, 4});
+    presentation::add_rule_and_check(p, {3, 1, 2}, {1, 2, 3});
+    presentation::add_rule_and_check(p, {3, 4, 3}, {3});
+    presentation::add_rule_and_check(p, {4, 1, 2}, {4, 1, 1});
+    presentation::add_rule_and_check(p, {4, 3, 4}, {4});
+    presentation::add_rule_and_check(p, {1, 1, 3, 1}, {2, 3, 2});
+    presentation::add_rule_and_check(p, {1, 1, 3, 2}, {2, 3, 1});
+    presentation::add_rule_and_check(p, {1, 2, 3, 1}, {3, 2});
+    presentation::add_rule_and_check(p, {1, 2, 3, 2}, {3, 1});
+    presentation::add_rule_and_check(p, {1, 2, 3, 4}, {3, 1, 4});
+    presentation::add_rule_and_check(p, {1, 3, 2, 3}, {3, 1, 3});
+    presentation::add_rule_and_check(p, {1, 4, 1, 4}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {2, 1, 3, 1}, {1, 3, 2});
+    presentation::add_rule_and_check(p, {2, 1, 3, 2}, {1, 3, 1});
+    presentation::add_rule_and_check(p, {2, 1, 3, 4}, {1, 3, 1, 4});
+    presentation::add_rule_and_check(p, {2, 3, 1, 3}, {1, 3, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 1, 4}, {1, 1, 3, 4});
+    presentation::add_rule_and_check(p, {2, 3, 2, 3}, {3, 2, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 2}, {3, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 4, 3}, {1, 2, 3});
+    presentation::add_rule_and_check(p, {3, 2, 3, 2}, {3, 2, 3});
+    presentation::add_rule_and_check(p, {4, 1, 1, 4}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 2}, {4, 1, 3, 1});
+    presentation::add_rule_and_check(p, {4, 1, 4, 1}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {1, 3, 1, 1, 3}, {3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {1, 3, 4, 1, 4}, {4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {2, 3, 1, 1, 3}, {3, 1, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 2, 1, 3}, {1, 3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 4, 1, 3}, {1, 3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 4, 1, 4}, {1, 4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {3, 1, 1, 4, 1}, {1, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 1, 1}, {3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {3, 2, 3, 1, 1}, {3, 1, 1, 3});
+    presentation::add_rule_and_check(p, {3, 4, 1, 1, 3}, {1, 2, 3});
+    presentation::add_rule_and_check(p, {3, 4, 1, 4, 3}, {1, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {4, 1, 1, 3, 4}, {4, 3, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 1, 1}, {1, 3, 1, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 1, 3}, {4, 3, 1, 3});
+    presentation::add_rule_and_check(p, {4, 1, 3, 1, 4}, {4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 4, 1}, {4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {4, 1, 4, 3, 2}, {4, 1, 4, 3, 1});
+    presentation::add_rule_and_check(p, {1, 1, 3, 4, 1, 3}, {3, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {1, 1, 4, 1, 3, 4}, {3, 4, 1, 4});
+    presentation::add_rule_and_check(p, {1, 3, 1, 1, 4, 3}, {4, 3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {1, 3, 1, 3, 1, 3}, {3, 1, 3, 1, 3});
+    presentation::add_rule_and_check(p, {1, 3, 1, 4, 1, 3}, {3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {1, 4, 3, 1, 1, 4}, {4, 3, 1, 1, 4});
+    presentation::add_rule_and_check(p, {2, 3, 1, 1, 4, 3}, {1, 4, 3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 1, 3, 4, 1}, {3, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 1, 4, 3, 1}, {1, 1, 4, 3, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 1, 3, 1}, {3, 1, 3, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 1, 4, 1}, {3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 4, 1, 1, 3}, {3});
+    presentation::add_rule_and_check(p, {4, 1, 4, 3, 1, 1}, {4, 3, 1, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 4, 3, 1, 4}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {4, 3, 1, 3, 1, 4}, {1, 3, 1, 1, 4});
+    presentation::add_rule_and_check(
+        p, {1, 1, 4, 3, 1, 3, 1}, {3, 1, 1, 4, 3, 2});
+    presentation::add_rule_and_check(p, {1, 1, 4, 3, 2, 1, 3}, {3, 1, 1, 4, 3});
+    presentation::add_rule_and_check(
+        p, {1, 3, 1, 3, 4, 1, 3}, {3, 1, 3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 1, 4, 3, 2, 1}, {3, 1, 1, 4, 3});
+    presentation::add_rule_and_check(
+        p, {3, 1, 3, 1, 3, 4, 1}, {3, 1, 3, 4, 1, 3});
+    presentation::add_rule_and_check(
+        p, {4, 3, 1, 1, 4, 3, 2}, {4, 1, 4, 3, 1, 3, 1});
+    presentation::add_rule_and_check(
+        p, {3, 1, 1, 4, 3, 2, 3, 1}, {3, 1, 1, 4, 3, 2, 3});
+    presentation::add_rule_and_check(
+        p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
+
+    Sims1 S(p, congruence_kind::twosided);
+    REQUIRE(S.number_of_congruences(204) == 16);
+    // FIXME should be 16!
+  }
+
   //   [ [ [ 0, 0, 0 ] ],
   //     [ [ 0, 0, 0 ] ] ]
   //

@@ -19,13 +19,13 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoid.
 // TODO:
+// * Split into two hpp and tpp files
 // * add option for "only those congruences containing a given set of pairs"
 // * use standardization to get "isomorphic" actions (this is "conjugation" in
 // Sims)
 // * Templatize for "node_type"
 // * use the separated out FelschTree in ToddCoxeter
 // * Stats and reporting
-// * Split into two hpp and tpp files
 // * const + noexcept
 // * doc
 // * code coverage
@@ -53,7 +53,7 @@
 
 namespace libsemigroups {
   namespace {
-
+    // TODO remove or move this
     template <typename T>
     void check_compatibility(ActionDigraph<T> const &       d,
                              Presentation<word_type> const &p) {
@@ -72,7 +72,7 @@ namespace libsemigroups {
    public:
     using node_type       = uint32_t;
     using letter_type     = uint16_t;
-    using size_type       = size_t;  // TODO use WordGraph::size_type instead
+    using size_type       = typename DigraphWithSources<node_type>::size_type;
     using word_graph_type = DigraphWithSources<node_type>;
 
    private:
@@ -81,10 +81,8 @@ namespace libsemigroups {
     // TODO reporting
 
    public:
-    Sims1(Presentation<word_type> const &p,
-          congruence_kind                ck = congruence_kind::right)
+    Sims1(Presentation<word_type> const &p, congruence_kind ck)
         : _presentation() {
-      using empty_word = typename Presentation<word_type>::empty_word;
       if (ck == congruence_kind::twosided) {
         LIBSEMIGROUPS_EXCEPTION(
             "expected congruence_kind::right or congruence_kind::left");
@@ -99,14 +97,18 @@ namespace libsemigroups {
                                  (it + 1)->crbegin(),
                                  (it + 1)->crend());
         }
+        using empty_word = typename Presentation<word_type>::empty_word;
         _presentation.contains_empty_word(
             p.contains_empty_word() ? empty_word::yes : empty_word::no);
       }
     }
 
+    // TODO define standard constructors
+
     Presentation<word_type> const &presentation() const noexcept {
       return _presentation;
     }
+
     //! No doc
     class const_iterator {
      public:
@@ -135,22 +137,25 @@ namespace libsemigroups {
 
      private:
       struct PendingDef {
-        PendingDef(node_type s, letter_type g, node_type t, size_t e, size_t n)
+        PendingDef(node_type   s,
+                   letter_type g,
+                   node_type   t,
+                   size_type   e,
+                   size_type   n)
             : source(s), generator(g), target(t), num_edges(e), num_nodes(n) {}
         node_type   source;
         letter_type generator;
         node_type   target;
-        size_t      num_edges;  // Number of edges in the graph when *this was
+        size_type   num_edges;  // Number of edges in the graph when *this was
                                 // added to the stack
-        size_t num_nodes;       // Same as above but for nodes
+        size_type num_nodes;    // Same as above but for nodes
       };
 
       size_type               _max_num_classes;
       size_type               _min_target_node;
       size_type               _num_active_nodes;
+      size_type               _num_gens;
       std::vector<PendingDef> _pending;
-      Presentation<word_type>
-          _presentation;  // TODO maybe only require the number of generators
       FelschDigraph _felsch_graph;  // This is not in alphabetical order because
                                     // it depends on _max_num_classes
 
@@ -174,9 +179,11 @@ namespace libsemigroups {
             _min_target_node(p.contains_empty_word() ? 0 : 1),
             _num_active_nodes(n == 0 ? 0
                                      : 1),  // = 0 indicates iterator is done
+            // TODO sink _num_active_nodes into DigraphWithSources or
+            // FelschDigraph
+            _num_gens(p.alphabet().size()),
             _pending(),
-            _presentation(p),
-            _felsch_graph(_presentation, _max_num_classes) {
+            _felsch_graph(p, _max_num_classes) {
         if (_num_active_nodes == 0) {
           return;
         }
@@ -233,7 +240,7 @@ namespace libsemigroups {
               _felsch_graph.unsafe_neighbor(current.source, current.generator)
               == UNDEFINED);
           {
-            size_t start = _felsch_graph.number_of_edges();
+            size_type start = _felsch_graph.number_of_edges();
 
             if (current.target < _num_active_nodes) {
               // TODO move the current.target < _num_active_nodes below and
@@ -252,7 +259,7 @@ namespace libsemigroups {
               letter_type a = current.generator + 1;
               for (node_type next = current.source; next < _num_active_nodes;
                    ++next) {
-                for (; a < _presentation.alphabet().size(); ++a) {
+                for (; a < _num_gens; ++a) {
                   if (_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
                     for (node_type b = _min_target_node; b <= _num_active_nodes;
                          ++b) {
@@ -290,8 +297,8 @@ namespace libsemigroups {
         std::swap(_max_num_classes, that._max_num_classes);
         std::swap(_min_target_node, that._min_target_node);
         std::swap(_num_active_nodes, that._num_active_nodes);
+        std::swap(_num_gens, that._num_gens);
         std::swap(_pending, that._pending);
-        std::swap(_presentation, that._presentation);
         std::swap(_felsch_graph, that._felsch_graph);
       }
     };
@@ -307,10 +314,10 @@ namespace libsemigroups {
 
     // Returns the number of right congruences with up to n (inclusive)
     // classes.
-    size_t number_of_congruences(size_t n) {
+    uint64_t number_of_congruences(size_type n) {
       // return std::distance(cbegin(n), cend(n));
 
-      size_t                                         result = 0;
+      u_int64_t                                      result = 0;
       std::chrono::high_resolution_clock::time_point last_report
           = std::chrono::high_resolution_clock::now();
       auto const last = cend(n);
