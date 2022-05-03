@@ -19,11 +19,10 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoid.
 // TODO:
-// * Split into two hpp and tpp files
+// * Templatize for "node_type"
 // * add option for "only those congruences containing a given set of pairs"
 // * use standardization to get "isomorphic" actions (this is "conjugation" in
 // Sims)
-// * Templatize for "node_type"
 // * use the separated out FelschTree in ToddCoxeter
 // * Stats and reporting
 // * const + noexcept
@@ -81,29 +80,14 @@ namespace libsemigroups {
     // TODO reporting
 
    public:
-    Sims1(Presentation<word_type> const &p, congruence_kind ck)
-        : _presentation() {
-      if (ck == congruence_kind::twosided) {
-        LIBSEMIGROUPS_EXCEPTION(
-            "expected congruence_kind::right or congruence_kind::left");
-      }
-      if (ck == congruence_kind::right) {
-        _presentation = p;
-      } else {
-        _presentation.alphabet(p.alphabet());
-        for (auto it = p.cbegin(); it != p.cend(); it += 2) {
-          _presentation.add_rule(it->crbegin(),
-                                 it->crend(),
-                                 (it + 1)->crbegin(),
-                                 (it + 1)->crend());
-        }
-        using empty_word = typename Presentation<word_type>::empty_word;
-        _presentation.contains_empty_word(
-            p.contains_empty_word() ? empty_word::yes : empty_word::no);
-      }
-    }
+    Sims1(Presentation<word_type> const &p, congruence_kind ck);
+    Sims1()              = default;
+    Sims1(Sims1 const &) = default;
+    Sims1(Sims1 &)       = default;
+    Sims1 &operator=(Sims1 const &) = default;
+    Sims1 &operator=(Sims1 &&) = default;
 
-    // TODO define standard constructors
+    ~Sims1();
 
     Presentation<word_type> const &presentation() const noexcept {
       return _presentation;
@@ -141,7 +125,7 @@ namespace libsemigroups {
                    letter_type g,
                    node_type   t,
                    size_type   e,
-                   size_type   n)
+                   size_type   n) noexcept
             : source(s), generator(g), target(t), num_edges(e), num_nodes(n) {}
         node_type   source;
         letter_type generator;
@@ -160,6 +144,9 @@ namespace libsemigroups {
                                     // it depends on _max_num_classes
 
      public:
+      //! No doc
+      const_iterator(Presentation<word_type> const &p, size_type n);
+
       // None of the constructors are noexcept because the corresponding
       // constructors for std::vector aren't (until C++17).
       //! No doc
@@ -172,30 +159,6 @@ namespace libsemigroups {
       const_iterator &operator=(const_iterator const &) = default;
       //! No doc
       const_iterator &operator=(const_iterator &&) = default;
-
-      //! No doc
-      const_iterator(Presentation<word_type> const &p, size_type n)
-          : _max_num_classes(p.contains_empty_word() ? n : n + 1),
-            _min_target_node(p.contains_empty_word() ? 0 : 1),
-            _num_active_nodes(n == 0 ? 0
-                                     : 1),  // = 0 indicates iterator is done
-            // TODO sink _num_active_nodes into DigraphWithSources or
-            // FelschDigraph
-            _num_gens(p.alphabet().size()),
-            _pending(),
-            _felsch_graph(p, _max_num_classes) {
-        if (_num_active_nodes == 0) {
-          return;
-        }
-        _pending.emplace_back(0, 0, 1, 0, 1);
-        if (_min_target_node == 0) {
-          _pending.emplace_back(0, 0, 0, 0, 1);
-        }
-        ++(*this);
-        // The increment above is required so that when dereferencing any
-        // pointer of this type we obtain a valid word graph (o/w the value
-        // pointed to here is empty).
-      }
 
       //! No doc
       ~const_iterator() = default;
@@ -226,63 +189,7 @@ namespace libsemigroups {
 
       // prefix
       //! No doc
-      const_iterator const &operator++() noexcept {
-        while (!_pending.empty()) {
-        dive:
-          auto current = _pending.back();
-          _pending.pop_back();
-
-          // Backtrack if necessary
-          _felsch_graph.reduce_number_of_edges_to(current.num_edges);
-          _num_active_nodes = current.num_nodes;
-
-          LIBSEMIGROUPS_ASSERT(
-              _felsch_graph.unsafe_neighbor(current.source, current.generator)
-              == UNDEFINED);
-          {
-            size_type start = _felsch_graph.number_of_edges();
-
-            if (current.target < _num_active_nodes) {
-              // TODO move the current.target < _num_active_nodes below and
-              // never put them in the stack in the first place
-              _felsch_graph.def_edge(
-                  current.source, current.generator, current.target);
-            } else {
-              if (_num_active_nodes == _max_num_classes) {
-                continue;
-              }
-              _felsch_graph.def_edge(
-                  current.source, current.generator, _num_active_nodes++);
-            }
-
-            if (_felsch_graph.process_definitions(start)) {
-              letter_type a = current.generator + 1;
-              for (node_type next = current.source; next < _num_active_nodes;
-                   ++next) {
-                for (; a < _num_gens; ++a) {
-                  if (_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                    for (node_type b = _min_target_node; b <= _num_active_nodes;
-                         ++b) {
-                      _pending.emplace_back(next,
-                                            a,
-                                            b,
-                                            _felsch_graph.number_of_edges(),
-                                            _num_active_nodes);
-                    }
-                    goto dive;
-                  }
-                }
-                a = 0;
-              }
-              // No undefined edges, word graph is complete
-              return *this;
-            }
-          }
-        }
-        _num_active_nodes = 0;  // indicates that the iterator is done
-        _felsch_graph.restrict(0);
-        return *this;
-      }
+      const_iterator const &operator++();
 
       //! No doc
       // postfix
@@ -314,28 +221,11 @@ namespace libsemigroups {
 
     // Returns the number of right congruences with up to n (inclusive)
     // classes.
-    uint64_t number_of_congruences(size_type n) {
-      // return std::distance(cbegin(n), cend(n));
-
-      u_int64_t                                      result = 0;
-      std::chrono::high_resolution_clock::time_point last_report
-          = std::chrono::high_resolution_clock::now();
-      auto const last = cend(n);
-      for (auto it = cbegin(n); it != last; ++it) {
-        ++result;
-        auto now     = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            now - last_report);
-        if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::seconds(1))) {
-          std::swap(now, last_report);
-          REPORT_DEFAULT("found %llu congruences so far!\n", uint64_t(result));
-        }
-      }
-      return result;
-    }
+    uint64_t number_of_congruences(size_type n);
   };
 
 }  // namespace libsemigroups
+
+#include "sims1.tpp"
 
 #endif  // LIBSEMIGROUPS_SIMS1_HPP_
