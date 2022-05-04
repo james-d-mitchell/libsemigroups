@@ -711,6 +711,11 @@ namespace libsemigroups {
       }
       return result;
     }
+
+    template <typename T>
+    ActionDigraph<T> make(size_t num_nodes, size_t out_degree) {
+      return ActionDigraph<T>(num_nodes, out_degree);
+    }
   }  // namespace action_digraph_helper
 }  // namespace libsemigroups
 #endif  // LIBSEMIGROUPS_DIGRAPH_HELPER_HPP_

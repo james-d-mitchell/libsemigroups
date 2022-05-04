@@ -21,9 +21,11 @@
 
 namespace libsemigroups {
 
-  Sims1::~Sims1() = default;
+  template <typename T>
+  Sims1<T>::~Sims1() = default;
 
-  Sims1::Sims1(Presentation<word_type> const &p, congruence_kind ck)
+  template <typename T>
+  Sims1<T>::Sims1(Presentation<word_type> const &p, congruence_kind ck)
       : _presentation() {
     if (ck == congruence_kind::twosided) {
       LIBSEMIGROUPS_EXCEPTION(
@@ -43,7 +45,8 @@ namespace libsemigroups {
     }
   }
 
-  uint64_t Sims1::number_of_congruences(size_type n) {
+  template <typename T>
+  uint64_t Sims1<T>::number_of_congruences(size_type n) {
     // return std::distance(cbegin(n), cend(n));
 
     u_int64_t                                      result = 0;
@@ -64,8 +67,9 @@ namespace libsemigroups {
     return result;
   }
 
-  Sims1::const_iterator::const_iterator(Presentation<word_type> const &p,
-                                        size_type                      n)
+  template <typename T>
+  Sims1<T>::const_iterator::const_iterator(Presentation<word_type> const &p,
+                                           size_type                      n)
       : _max_num_classes(p.contains_empty_word() ? n : n + 1),
         _min_target_node(p.contains_empty_word() ? 0 : 1),
         _num_active_nodes(n == 0 ? 0 : 1),  // = 0 indicates iterator is done
@@ -87,7 +91,9 @@ namespace libsemigroups {
     // pointed to here is empty).
   }
 
-  Sims1::const_iterator const &Sims1::const_iterator::operator++() {
+  template <typename T>
+  typename Sims1<T>::const_iterator const &
+  Sims1<T>::const_iterator::operator++() {
     while (!_pending.empty()) {
     dive:
       auto current = _pending.back();

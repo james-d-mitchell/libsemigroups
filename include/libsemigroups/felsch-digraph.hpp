@@ -29,15 +29,16 @@
 #include "digraph.hpp"
 #include "felsch-tree.hpp"
 #include "present.hpp"
-#include "types.hpp"  // for word_type, relation_type, letter_type, tril
 
 namespace libsemigroups {
-  class FelschDigraph : public DigraphWithSources<uint32_t> {
+  template <typename WordType, typename NodeType>
+  class FelschDigraph : public DigraphWithSources<NodeType> {
    public:
-    using node_type       = uint32_t;
-    using letter_type     = uint16_t;
-    using size_type       = size_t;  // TODO use WordGraph::size_type instead
-    using word_graph_type = DigraphWithSources<node_type>;
+    using node_type    = NodeType;
+    using word_type    = WordType;
+    using letter_type  = typename WordType::value_type;
+    using digraph_type = DigraphWithSources<node_type>;
+    using size_type    = typename digraph_type::size_type;
 
    private:
     using Definition  = std::pair<node_type, letter_type>;
@@ -52,8 +53,8 @@ namespace libsemigroups {
     using DigraphWithSources<node_type>::DigraphWithSources;
 
     FelschDigraph(Presentation<word_type> const &p, size_type n)
-        : DigraphWithSources(p.contains_empty_word() ? n : n + 1,
-                             p.alphabet().size()),
+        : DigraphWithSources<node_type>(p.contains_empty_word() ? n : n + 1,
+                                        p.alphabet().size()),
           _definitions(),
           _felsch_tree(p.alphabet().size()),
           _presentation(p) {
@@ -62,10 +63,10 @@ namespace libsemigroups {
 
     inline bool def_edge(node_type c, letter_type x, node_type d) noexcept {
       // TODO more assertions
-      auto cx = unsafe_neighbor(c, x);
+      auto cx = this->unsafe_neighbor(c, x);
       if (cx == UNDEFINED) {
         _definitions.emplace_back(c, x);
-        add_edge_nc(c, d, x);
+        this->add_edge_nc(c, d, x);
         return true;
       } else {
         return cx == d;
@@ -90,16 +91,17 @@ namespace libsemigroups {
     void reduce_number_of_edges_to(size_type n) {
       while (_definitions.size() > n) {
         auto const &p = _definitions.back();
-        remove_edge_nc(p.first, p.second);
+        this->remove_edge_nc(p.first, p.second);
         _definitions.pop_back();
       }
     }
 
     Definition first_undefined_edge() const {
-      for (auto n = cbegin_nodes(); n != cend_nodes(); ++n) {
-        for (auto e = cbegin_edges(*n); e != cend_edges(*n); ++e) {
+      for (auto n = this->cbegin_nodes(); n != this->cend_nodes(); ++n) {
+        for (auto e = this->cbegin_edges(*n); e != this->cend_edges(*n); ++e) {
           if (*e == UNDEFINED) {
-            return std::make_pair(n - cbegin_nodes(), e - cbegin_edges(*n));
+            return std::make_pair(n - this->cbegin_nodes(),
+                                  e - cbegin_edges(*n));
           }
         }
       }
@@ -144,8 +146,8 @@ namespace libsemigroups {
       // LIBSEMIGROUPS_ASSERT(y < _num_active_nodes);
       LIBSEMIGROUPS_ASSERT(u.back() < _presentation.alphabet().size());
       LIBSEMIGROUPS_ASSERT(v.back() < _presentation.alphabet().size());
-      node_type const xa = unsafe_neighbor(x, u.back());
-      node_type const yb = unsafe_neighbor(y, v.back());
+      node_type const xa = this->unsafe_neighbor(x, u.back());
+      node_type const yb = this->unsafe_neighbor(y, v.back());
 
       if (xa == UNDEFINED && yb != UNDEFINED) {
         return def_edge(x, u.back(), yb);
@@ -167,12 +169,12 @@ namespace libsemigroups {
       size_t const n = _presentation.alphabet().size();
       for (size_t x = 0; x < n; ++x) {
         if (_felsch_tree.push_front(x)) {
-          node_type e = first_source(c, x);
+          node_type e = this->first_source(c, x);
           while (e != UNDEFINED) {
             if (!process_definitions_dfs_v1(e)) {
               return false;
             }
-            e = next_source(e, x);
+            e = this->next_source(e, x);
           }
           _felsch_tree.pop_front();
         }
@@ -180,6 +182,8 @@ namespace libsemigroups {
       return true;
     }
   };
+
+  // TODO tpp file
 }  // namespace libsemigroups
 
 #endif  // LIBSEMIGROUPS_FELSCH_DIGRAPH_HPP_

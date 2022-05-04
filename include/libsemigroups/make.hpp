@@ -40,6 +40,30 @@ namespace libsemigroups {
     return p;
   }
 
+  template <typename T,
+            typename = std::enable_if_t<
+                std::is_base_of<PresentationPolymorphicBase, T>::value>>
+  Presentation<word_type> make(T const& p) {
+    using empty_word = typename PresentationPolymorphicBase::empty_word;
+
+    Presentation<word_type> result(p.contains_empty_word() ? empty_word::yes
+                                                           : empty_word::no);
+    result.alphabet(p.alphabet().size());
+    word_type lhs = {}, rhs = {};
+    for (auto it = p.cbegin(); it != p.cend(); ++it) {
+      auto to_letter = [&p](auto val) { return p.letter_index(val); };
+      lhs.resize(it->size());
+      std::transform(it->cbegin(), it->cend(), lhs.begin(), to_letter);
+      ++it;
+      rhs.resize(it->size());
+      std::transform(it->cbegin(), it->cend(), rhs.begin(), to_letter);
+      presentation::add_rule(result, lhs, rhs);
+      lhs.clear();
+      rhs.clear();
+    }
+    return result;
+  }
+
 }  // namespace libsemigroups
 
-#endif
+#endif  // LIBSEMIGROUPS_MAKE_HPP_

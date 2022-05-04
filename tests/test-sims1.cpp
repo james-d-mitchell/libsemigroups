@@ -31,20 +31,21 @@
 #include "libsemigroups/digraph-helper.hpp"
 #include "libsemigroups/froidure-pin.hpp"
 #include "libsemigroups/make.hpp"
-#include "libsemigroups/sims1.hpp"  // for Sims1
+#include "libsemigroups/sims1.hpp"  // for Sims1_
 #include "libsemigroups/transf.hpp"
 #include "libsemigroups/types.hpp"  // for word_type
 
 namespace libsemigroups {
-  using empty_word = Presentation<word_type>::empty_word;
+  using empty_word   = Presentation<word_type>::empty_word;
+  using Sims1_       = Sims1<uint32_t>;
+  using digraph_type = typename Sims1_::digraph_type;
+  using node_type    = typename digraph_type::node_type;
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "000",
                           "fp example 1",
                           "[quick][presentation]") {
-    auto rg         = ReportGuard(false);
-    using WordGraph = typename Sims1::word_graph_type;
-    using node_type = typename WordGraph::node_type;
+    auto rg = ReportGuard(false);
 
     Presentation<word_type> p(empty_word::yes);
     p.alphabet({0, 1});
@@ -53,7 +54,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 1, 0, 1}, {0});
 
     {
-      Sims1 S(p, congruence_kind::right);
+      Sims1_ S(p, congruence_kind::right);
       REQUIRE(S.number_of_congruences(5) == 6);
 
       auto it = S.cbegin(5);
@@ -71,8 +72,8 @@ namespace libsemigroups {
               == action_digraph_helper::make<node_type>(5, {{1, 1}, {1, 1}}));
       REQUIRE(*(it++)
               == action_digraph_helper::make<node_type>(5, {{1, 0}, {1, 1}}));
-      REQUIRE(*(it++) == WordGraph(0, 2));
-      REQUIRE(*(it++) == WordGraph(0, 2));
+      REQUIRE(*(it++) == action_digraph_helper::make<node_type>(0, 2));
+      REQUIRE(*(it++) == action_digraph_helper::make<node_type>(0, 2));
     }
     // [[[0, 0]],
     // [[1, 2], [1, 1], [3, 2], [3, 3]],
@@ -81,7 +82,7 @@ namespace libsemigroups {
     // [[1, 1], [1, 1]],
     // [[1, 0], [1, 1]]]
     {
-      Sims1 S(p, congruence_kind::left);
+      Sims1_ S(p, congruence_kind::left);
       REQUIRE(S.number_of_congruences(5) == 9);
       for (auto it = S.cbegin(5); it != S.cend(5); ++it) {
         REQUIRE(action_digraph_helper::follow_path_nc(*it, 0, {1, 0, 1, 0})
@@ -94,10 +95,7 @@ namespace libsemigroups {
                           "001",
                           "fp example 2",
                           "[quick][presentation]") {
-    auto rg         = ReportGuard(false);
-    using WordGraph = typename Sims1::word_graph_type;
-    using node_type = typename WordGraph::node_type;
-
+    auto                    rg = ReportGuard(false);
     Presentation<word_type> p(empty_word::yes);
     p.alphabet({0, 1, 2});
     presentation::add_rule_and_check(p, {0, 1, 0}, {0, 0});
@@ -109,7 +107,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 2}, {0, 0});
 
     {
-      Sims1 S(p, congruence_kind::right);
+      Sims1_ S(p, congruence_kind::right);
       REQUIRE(S.number_of_congruences(1) == 1);
       REQUIRE(S.number_of_congruences(2) == 3);
       REQUIRE(S.number_of_congruences(3) == 13);
@@ -130,11 +128,11 @@ namespace libsemigroups {
       REQUIRE(
           *(it++)
           == action_digraph_helper::make<node_type>(2, {{1, 0, 1}, {1, 1, 1}}));
-      REQUIRE(*(it++) == WordGraph(0, 3));
-      REQUIRE(*(it++) == WordGraph(0, 3));
+      REQUIRE(*(it++) == action_digraph_helper::make<node_type>(0, 3));
+      REQUIRE(*(it++) == action_digraph_helper::make<node_type>(0, 3));
     }
     {
-      Sims1 S(p, congruence_kind::left);
+      Sims1_ S(p, congruence_kind::left);
       REQUIRE(S.number_of_congruences(11) == 176);
     }
   }
@@ -144,7 +142,7 @@ namespace libsemigroups {
                           "ToddCoxeter failing example",
                           "[quick][presentation]") {
     auto                    rg = ReportGuard(false);
-    Presentation<word_type> p(empty_word::yes);
+    Presentation<word_type> p(empty_word::no);
     //          a  A  b  B  c  C  e
     p.alphabet({0, 1, 2, 3, 4, 5, 6});
     presentation::identity(p, 6);
@@ -152,8 +150,25 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 0, 5, 0, 4}, {6});
     presentation::add_rule_and_check(p, {0, 4, 2, 2, 1, 5, 2}, {6});
     presentation::add_rule_and_check(p, {1, 3, 0, 2, 4, 4, 4}, {6});
-    Sims1 S(p, congruence_kind::right);
-    REQUIRE(S.number_of_congruences(3) == 15);
+    Sims1_ S(p, congruence_kind::right);
+    REQUIRE(S.number_of_congruences(3) == 14);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "009",
+                          "ToddCoxeter failing example",
+                          "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p(empty_word::no);
+    p.alphabet("aAbBcCe");
+    presentation::identity(p, 'e');
+
+    presentation::inverses(p, "AaBbCce", 'e');
+    presentation::add_rule_and_check(p, "aaCac", "e");
+    presentation::add_rule_and_check(p, "acbbACb", "e");
+    presentation::add_rule_and_check(p, "ABabccc", "e");
+    Sims1_ S(p, congruence_kind::right);
+    REQUIRE(S.number_of_congruences(3) == 14);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -174,7 +189,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {1, 2, 1, 2}, {2, 1, 2});
     presentation::add_rule_and_check(p, {2, 1, 2, 1}, {2, 1, 2});
 
-    Sims1 S(p, congruence_kind::right);
+    Sims1_ S(p, congruence_kind::right);
     REQUIRE(S.number_of_congruences(2) == 4);
     REQUIRE(S.number_of_congruences(3) == 7);
     REQUIRE(S.number_of_congruences(4) == 14);
@@ -290,7 +305,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
 
-    Sims1 S(p, congruence_kind::right);
+    Sims1_ S(p, congruence_kind::right);
     REQUIRE(S.number_of_congruences(10) == 135);
   }
 
@@ -308,7 +323,7 @@ namespace libsemigroups {
     auto p = make<Presentation<word_type>>(S);
     REQUIRE(static_cast<size_t>(std::distance(p.cbegin(), p.cend()))
             == 2 * S.number_of_rules());
-    Sims1 C(p, congruence_kind::right);
+    Sims1_ C(p, congruence_kind::right);
     REQUIRE(C.number_of_congruences(27) == 287);
   }
 
@@ -320,8 +335,8 @@ namespace libsemigroups {
     FroidurePin<Transf<3>> S(
         {Transf<3>({1, 2, 0}), Transf<3>({1, 0, 2}), Transf<3>({0, 1, 0})});
     REQUIRE(S.size() == 27);
-    auto  p = make<Presentation<word_type>>(S);
-    Sims1 C(p, congruence_kind::left);
+    auto   p = make<Presentation<word_type>>(S);
+    Sims1_ C(p, congruence_kind::left);
     REQUIRE(C.number_of_congruences(28) == 120);
   }
 
@@ -339,11 +354,11 @@ namespace libsemigroups {
                            rel.second.cend());
     }
     {
-      Sims1 S(p, congruence_kind::right);
+      Sims1_ S(p, congruence_kind::right);
       REQUIRE(S.number_of_congruences(14) == 9);
     }
     {
-      Sims1 S(p, congruence_kind::left);
+      Sims1_ S(p, congruence_kind::left);
       REQUIRE(S.number_of_congruences(14) == 9);
     }
   }
@@ -362,11 +377,11 @@ namespace libsemigroups {
                            rel.second.cend());
     }
     {
-      Sims1 S(p, congruence_kind::right);
+      Sims1_ S(p, congruence_kind::right);
       REQUIRE(S.number_of_congruences(14) == 79);
     }
     {
-      Sims1 S(p, congruence_kind::left);
+      Sims1_ S(p, congruence_kind::left);
       REQUIRE(S.number_of_congruences(14) == 79);
     }
   }

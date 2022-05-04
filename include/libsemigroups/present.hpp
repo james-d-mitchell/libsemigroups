@@ -42,19 +42,20 @@ namespace libsemigroups {
   class Presentation : public PresentationPolymorphicBase {
    public:
     using word_type      = WordType;
-    using letter_type    = typename WordType::value_type;
+    using letter_type    = typename word_type::value_type;
     using const_iterator = typename std::vector<word_type>::const_iterator;
-    using const_alphabet_iterator = typename WordType::const_iterator;
+    using const_alphabet_iterator = typename word_type::const_iterator;
+    using size_type               = size_t;
 
    private:
-    word_type                       _alphabet;
-    std::unordered_set<letter_type> _alphabet_set;
-    empty_word                      _empty_word;
-    std::vector<word_type>          _relations;
+    word_type                                  _alphabet;
+    std::unordered_map<letter_type, size_type> _alphabet_map;
+    empty_word                                 _empty_word;
+    std::vector<word_type>                     _relations;
 
    public:
     explicit Presentation(empty_word ew)
-        : _alphabet(), _alphabet_set(), _empty_word(ew), _relations() {}
+        : _alphabet(), _alphabet_map(), _empty_word(ew), _relations() {}
 
     Presentation() : Presentation(empty_word::no) {}
 
@@ -73,22 +74,31 @@ namespace libsemigroups {
     Presentation& alphabet(word_type const& alphabet) {
       if (alphabet.empty()) {
         LIBSEMIGROUPS_EXCEPTION("the alphabet must be non-empty");
+      } else if (!_alphabet_map.empty()) {
+        LIBSEMIGROUPS_EXCEPTION("the alphabet has already been set");
       }
-      auto alphabet_set = _alphabet_set;
+
+      // We copy the _alphabet_map for exception safety
+      auto      alphabet_map = _alphabet_map;
+      size_type index        = 0;
       for (auto const& letter : alphabet) {
-        auto it = alphabet_set.emplace(letter);
+        auto it = alphabet_map.emplace(letter, index++);
         if (!it.second) {
           LIBSEMIGROUPS_EXCEPTION("invalid alphabet, duplicate letter %s!",
                                   detail::to_string(letter).c_str());
         }
       }
-      _alphabet_set = std::move(alphabet_set);
+      _alphabet_map = std::move(alphabet_map);
       _alphabet     = alphabet;
       return *this;
     }
 
     word_type const& alphabet() const noexcept {
       return _alphabet;
+    }
+
+    size_type letter_index(size_type val) const {
+      return _alphabet_map.find(val)->second;
     }
 
     const_alphabet_iterator cbegin_alphabet() const noexcept {
@@ -135,7 +145,7 @@ namespace libsemigroups {
     void validate_letter(letter_type c) const {
       if (_alphabet.empty()) {
         LIBSEMIGROUPS_EXCEPTION("no alphabet has been defined");
-      } else if (_alphabet_set.find(c) == _alphabet_set.cend()) {
+      } else if (_alphabet_map.find(c) == _alphabet_map.cend()) {
         LIBSEMIGROUPS_EXCEPTION("invalid letter %llu, valid letter are %s",
                                 uint64_t(c),
                                 detail::to_string(_alphabet).c_str());
@@ -218,19 +228,24 @@ namespace libsemigroups {
       }
     }
 
+    // TODO(now) this adds too many pairs
     template <typename WordType>
     void inverses(Presentation<WordType>&                      p,
-                  WordType const&                              inverses,
+                  WordType const&                              vals,
                   typename Presentation<WordType>::letter_type id) {
-      word_type const rhs = {id};
+      WordType const rhs = {id};
       for (size_t i = 0; i < p.alphabet().size(); ++i) {
-        word_type lhs = {alphabet(p, i), inverses[i]};
+        WordType lhs = {alphabet(p, i), vals[i]};
         add_rule(p, lhs, rhs);
         if (alphabet(p, i) != id) {
           std::swap(lhs[0], lhs[1]);
           add_rule(p, lhs, rhs);
         }
       }
+    }
+
+    void inverses(Presentation<std::string>& p, char const* vals, char id) {
+      inverses(p, std::string(vals), id);
     }
   }  // namespace presentation
 }  // namespace libsemigroups

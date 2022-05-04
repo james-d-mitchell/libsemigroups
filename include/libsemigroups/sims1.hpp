@@ -67,12 +67,13 @@ namespace libsemigroups {
     }
   }  // namespace
 
+  template <typename T>
   class Sims1 {
    public:
-    using node_type       = uint32_t;
-    using letter_type     = uint16_t;
-    using size_type       = typename DigraphWithSources<node_type>::size_type;
-    using word_graph_type = DigraphWithSources<node_type>;
+    using node_type    = T;
+    using letter_type  = typename word_type::value_type;
+    using size_type    = typename DigraphWithSources<node_type>::size_type;
+    using digraph_type = DigraphWithSources<node_type>;
 
    private:
     Presentation<word_type> _presentation;
@@ -81,6 +82,11 @@ namespace libsemigroups {
 
    public:
     Sims1(Presentation<word_type> const &p, congruence_kind ck);
+
+    // TODO static assert that T is derived from PresentationPolymorphicBase
+    template <typename U>
+    Sims1(U const &p, congruence_kind ck) : Sims1(make(p), ck) {}
+
     Sims1()              = default;
     Sims1(Sims1 const &) = default;
     Sims1(Sims1 &)       = default;
@@ -140,8 +146,9 @@ namespace libsemigroups {
       size_type               _num_active_nodes;
       size_type               _num_gens;
       std::vector<PendingDef> _pending;
-      FelschDigraph _felsch_graph;  // This is not in alphabetical order because
-                                    // it depends on _max_num_classes
+      FelschDigraph<word_type, node_type>
+          _felsch_graph;  // This is not in alphabetical order because
+                          // it depends on _max_num_classes
 
      public:
       //! No doc
