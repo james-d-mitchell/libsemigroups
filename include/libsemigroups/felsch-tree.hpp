@@ -29,8 +29,6 @@
 
 namespace libsemigroups {
 
-  // TODO template of word type
-
   class FelschTree {
    public:
     using index_type     = size_t;
@@ -165,6 +163,6 @@ namespace libsemigroups {
     std::vector<state_type>              _parent;
     size_t                               _length;
   };
-
+  // TODO(Sims1) cpp file
 }  // namespace libsemigroups
 #endif  // LIBSEMIGROUPS_FELSCH_TREE_HPP_

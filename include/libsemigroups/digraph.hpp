@@ -137,6 +137,9 @@ namespace libsemigroups {
     //! The type of edge labels in a digraph.
     using label_type = T;
 
+    // TODO(Sims1) doc
+    using size_type = node_type;
+
 #ifdef LIBSEMIGROUPS_EIGEN_ENABLED
     //! The type of the adjacency matrix.
     using adjacency_matrix_type

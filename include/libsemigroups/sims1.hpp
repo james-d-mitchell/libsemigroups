@@ -19,12 +19,11 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoid.
 // TODO:
-// * Templatize for "node_type"
 // * add option for "only those congruences containing a given set of pairs"
 // * use standardization to get "isomorphic" actions (this is "conjugation" in
 // Sims)
+// * Stats
 // * use the separated out FelschTree in ToddCoxeter
-// * Stats and reporting
 // * const + noexcept
 // * doc
 // * code coverage
@@ -36,6 +35,13 @@
 // * generating pairs for congruences defined by "action digraph"
 // * minimum degree transformation representations of semigroups/monoids
 // * Meets and joins of congruences represented by action digraphs?
+//
+// Notes:
+// 1. In 2022, when first writing this file, JDM tried templating the word_type
+//    used by the presentations in Sims1 (so that we could use StaticVector1
+//    for example, using smaller integer types for letters, and the stack to
+//    hold the words rather than the heap), but this didn't seem to give any
+//    performance improvement, and so I backed out the changes.
 
 #ifndef LIBSEMIGROUPS_SIMS1_HPP_
 #define LIBSEMIGROUPS_SIMS1_HPP_
@@ -46,6 +52,7 @@
 #include "digraph.hpp"
 #include "felsch-digraph.hpp"
 #include "felsch-tree.hpp"
+#include "make.hpp"
 #include "present.hpp"
 #include "report.hpp"
 #include "types.hpp"  // for word_type, relation_type, letter_type, tril
@@ -70,21 +77,26 @@ namespace libsemigroups {
   template <typename T>
   class Sims1 {
    public:
-    using node_type    = T;
-    using letter_type  = typename word_type::value_type;
-    using size_type    = typename DigraphWithSources<node_type>::size_type;
-    using digraph_type = DigraphWithSources<node_type>;
+    using node_type   = T;
+    using letter_type = typename word_type::value_type;
+    using size_type   = typename ActionDigraph<node_type>::size_type;
+    // We use ActionDigraph, even though the iterators produced by this class
+    // hold FelschDigraph's, none of the features of FelschDigraph are useful
+    // for the output, only for the implementation
+    using digraph_type = ActionDigraph<node_type>;
 
    private:
     Presentation<word_type> _presentation;
+    // Presentation<word_type> _extra;
     // TODO stats
-    // TODO reporting
+    // Reporting can be handled outside the class in any code using this
 
    public:
     Sims1(Presentation<word_type> const &p, congruence_kind ck);
 
     template <typename U>
-    Sims1(U const &p, congruence_kind ck) : Sims1(make(p), ck) {
+    Sims1(U const &p, congruence_kind ck)
+        : Sims1(make<Presentation<word_type>>(p), ck) {
       static_assert(std::is_base_of<PresentationPolymorphicBase, U>::value,
                     "the template parameter U must be derived from "
                     "PresentationPolymorphicBase");
@@ -106,25 +118,21 @@ namespace libsemigroups {
     class const_iterator {
      public:
       //! No doc
-      using size_type =
-          typename std::vector<DigraphWithSources<uint32_t>>::size_type;
+      using size_type = typename std::vector<digraph_type>::size_type;
       //! No doc
       using difference_type =
-          typename std::vector<DigraphWithSources<uint32_t>>::difference_type;
+          typename std::vector<digraph_type>::difference_type;
       //! No doc
-      using const_pointer =
-          typename std::vector<DigraphWithSources<uint32_t>>::const_pointer;
+      using const_pointer = typename std::vector<digraph_type>::const_pointer;
       //! No doc
-      using pointer =
-          typename std::vector<DigraphWithSources<uint32_t>>::pointer;
+      using pointer = typename std::vector<digraph_type>::pointer;
       //! No doc
       using const_reference =
-          typename std::vector<DigraphWithSources<uint32_t>>::const_reference;
+          typename std::vector<digraph_type>::const_reference;
       //! No doc
-      using reference =
-          typename std::vector<DigraphWithSources<uint32_t>>::reference;
+      using reference = typename std::vector<digraph_type>::reference;
       //! No doc
-      using value_type = DigraphWithSources<uint32_t>;
+      using value_type = digraph_type;
       //! No doc
       using iterator_category = std::forward_iterator_tag;
 
@@ -144,6 +152,8 @@ namespace libsemigroups {
         size_type num_nodes;    // Same as above but for nodes
       };
 
+      // TODO(Sims1) maybe move _num_active_nodes into FelschDigraph or
+      // DigraphWithSources?
       size_type               _max_num_classes;
       size_type               _min_target_node;
       size_type               _num_active_nodes;

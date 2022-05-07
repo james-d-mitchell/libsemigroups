@@ -40,14 +40,16 @@ namespace libsemigroups {
     return p;
   }
 
-  template <typename T,
+  template <typename S,
+            typename T,
             typename = std::enable_if_t<
-                std::is_base_of<PresentationPolymorphicBase, T>::value>>
-  Presentation<word_type> make(T const& p) {
+                std::is_base_of<PresentationPolymorphicBase, S>::value
+                && std::is_base_of<PresentationPolymorphicBase, T>::value>>
+  S make(T const& p) {
     using empty_word = typename PresentationPolymorphicBase::empty_word;
+    using word_type  = typename S::word_type;
 
-    Presentation<word_type> result(p.contains_empty_word() ? empty_word::yes
-                                                           : empty_word::no);
+    S result(p.contains_empty_word() ? empty_word::yes : empty_word::no);
     result.alphabet(p.alphabet().size());
     word_type lhs = {}, rhs = {};
     for (auto it = p.cbegin(); it != p.cend(); ++it) {

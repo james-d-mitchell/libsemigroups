@@ -19,7 +19,6 @@
 // This file contains a declaration of a class called FelschDigraph which is
 // used by the classes Sims1, Sims2, and ToddCoxeter.
 //
-
 #ifndef LIBSEMIGROUPS_FELSCH_DIGRAPH_HPP_
 #define LIBSEMIGROUPS_FELSCH_DIGRAPH_HPP_
 
@@ -44,7 +43,8 @@ namespace libsemigroups {
     using Definition  = std::pair<node_type, letter_type>;
     using Definitions = std::vector<Definition>;
 
-    // TODO definitions could move to DigraphWithSources
+    // TODO(Sims1) definitions could move to DigraphWithSources, and used
+    // instead of deductions in ToddCoxeter
     Definitions             _definitions;
     FelschTree              _felsch_tree;
     Presentation<word_type> _presentation;
@@ -62,7 +62,7 @@ namespace libsemigroups {
     }
 
     inline bool def_edge(node_type c, letter_type x, node_type d) noexcept {
-      // TODO more assertions
+      // TODO(Sims1) assertions
       auto cx = this->unsafe_neighbor(c, x);
       if (cx == UNDEFINED) {
         _definitions.emplace_back(c, x);
@@ -184,7 +184,7 @@ namespace libsemigroups {
     }
   };
 
-  // TODO tpp file
+  // TODO(Sims1) tpp file
 }  // namespace libsemigroups
 
 #endif  // LIBSEMIGROUPS_FELSCH_DIGRAPH_HPP_
