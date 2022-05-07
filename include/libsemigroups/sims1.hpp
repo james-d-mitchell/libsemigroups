@@ -83,9 +83,12 @@ namespace libsemigroups {
    public:
     Sims1(Presentation<word_type> const &p, congruence_kind ck);
 
-    // TODO static assert that T is derived from PresentationPolymorphicBase
     template <typename U>
-    Sims1(U const &p, congruence_kind ck) : Sims1(make(p), ck) {}
+    Sims1(U const &p, congruence_kind ck) : Sims1(make(p), ck) {
+      static_assert(std::is_base_of<PresentationPolymorphicBase, U>::value,
+                    "the template parameter U must be derived from "
+                    "PresentationPolymorphicBase");
+    }
 
     Sims1()              = default;
     Sims1(Sims1 const &) = default;

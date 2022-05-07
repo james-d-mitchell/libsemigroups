@@ -347,7 +347,7 @@ namespace libsemigroups {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p(empty_word::yes);
     p.alphabet(2);
-    for (auto const& rel : TemperleyLieb(3)) {
+    for (auto const &rel : TemperleyLieb(3)) {
       p.add_rule_and_check(rel.first.cbegin(),
                            rel.first.cend(),
                            rel.second.cbegin(),
@@ -370,7 +370,7 @@ namespace libsemigroups {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p(empty_word::yes);
     p.alphabet(3);
-    for (auto const& rel : TemperleyLieb(4)) {
+    for (auto const &rel : TemperleyLieb(4)) {
       p.add_rule_and_check(rel.first.cbegin(),
                            rel.first.cend(),
                            rel.second.cbegin(),

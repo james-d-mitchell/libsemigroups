@@ -98,10 +98,11 @@ namespace libsemigroups {
 
     Definition first_undefined_edge() const {
       for (auto n = this->cbegin_nodes(); n != this->cend_nodes(); ++n) {
-        for (auto e = this->cbegin_edges(*n); e != this->cend_edges(*n); ++e) {
+        for (auto e = this->cbegin_edges_nc(*n); e != this->cend_edges_nc(*n);
+             ++e) {
           if (*e == UNDEFINED) {
             return std::make_pair(n - this->cbegin_nodes(),
-                                  e - cbegin_edges(*n));
+                                  e - this->cbegin_edges(*n));
           }
         }
       }

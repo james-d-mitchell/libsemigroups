@@ -65,11 +65,11 @@ namespace libsemigroups {
 
     // Implemented at end of this file.
     template <typename Mat, typename T>
-    Mat adjacency_matrix(ActionDigraph<T> const& ad);
+    Mat adjacency_matrix(ActionDigraph<T> const &ad);
 
 #ifdef LIBSEMIGROUPS_EIGEN_ENABLED
     static inline Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>
-    pow(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const& x,
+    pow(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const &x,
         size_t                                                       e);
 #endif
   }  // namespace detail
@@ -103,13 +103,13 @@ namespace libsemigroups {
         typename std::vector<std::vector<T>>::const_iterator;
 
     struct Deref {
-      T const& operator()(internal_scc_iterator_type const& it) const noexcept {
+      T const &operator()(internal_scc_iterator_type const &it) const noexcept {
         return *(*it).cbegin();
       };
     };
 
     struct AddressOf {
-      T const* operator()(internal_scc_iterator_type const& it) const noexcept {
+      T const *operator()(internal_scc_iterator_type const &it) const noexcept {
         return &(*(*it).cbegin());
       }
     };
@@ -117,10 +117,10 @@ namespace libsemigroups {
     struct IteratorTraits
         : detail::ConstIteratorTraits<std::vector<std::vector<T>>> {
       using value_type      = T;
-      using reference       = T&;
-      using const_reference = T const&;
-      using const_pointer   = T const*;
-      using pointer         = T*;
+      using reference       = T &;
+      using const_reference = T const &;
+      using const_pointer   = T const *;
+      using pointer         = T *;
 
       using Deref     = ActionDigraph::Deref;
       using AddressOf = ActionDigraph::AddressOf;
@@ -209,16 +209,16 @@ namespace libsemigroups {
     explicit ActionDigraph(T m = 0, T n = 0);
 
     //! Default copy constructor
-    ActionDigraph(ActionDigraph const&);
+    ActionDigraph(ActionDigraph const &);
 
     //! Default move constructor
-    ActionDigraph(ActionDigraph&&);
+    ActionDigraph(ActionDigraph &&);
 
     //! Default copy assignment constructor
-    ActionDigraph& operator=(ActionDigraph const&);
+    ActionDigraph &operator=(ActionDigraph const &);
 
     //! Default move assignment constructor
-    ActionDigraph& operator=(ActionDigraph&&);
+    ActionDigraph &operator=(ActionDigraph &&);
 
     ~ActionDigraph();
 
@@ -558,7 +558,7 @@ namespace libsemigroups {
       _dynamic_array_2.swap(u, a, v, a);
     }
 
-    bool operator==(ActionDigraph const& that) const {
+    bool operator==(ActionDigraph const &that) const {
       return _dynamic_array_2 == that._dynamic_array_2;
     }
 
@@ -868,6 +868,10 @@ namespace libsemigroups {
       return _dynamic_array_2.cbegin_row(i);
     }
 
+    const_iterator_edges cbegin_edges_nc(node_type i) const {
+      return _dynamic_array_2.cbegin_row(i);
+    }
+
     //! Returns a random access iterator pointing one-past-the-last neighbor of
     //! a node.
     //!
@@ -883,6 +887,10 @@ namespace libsemigroups {
     // Not noexcept because validate_node isn't
     const_iterator_edges cend_edges(node_type i) const {
       action_digraph_helper::validate_node(*this, i);
+      return _dynamic_array_2.cend_row(i);
+    }
+
+    const_iterator_edges cend_edges_nc(node_type i) const {
       return _dynamic_array_2.cend_row(i);
     }
 
@@ -1129,7 +1137,7 @@ namespace libsemigroups {
     //!
     //! \par Parameters
     //! (None)
-    Forest const& spanning_forest() const {
+    Forest const &spanning_forest() const {
       if (!_scc_forest._defined) {
         // Validity checked in gabow_scc
         gabow_scc();
@@ -1181,7 +1189,7 @@ namespace libsemigroups {
     //!
     //! \par Parameters
     //! (None)
-    Forest const& reverse_spanning_forest() const {
+    Forest const &reverse_spanning_forest() const {
       if (!_scc_back_forest._defined) {
         // Validity checked in gabow_scc
         gabow_scc();
@@ -1262,18 +1270,18 @@ namespace libsemigroups {
       //! No doc
       const_panilo_iterator();
       //! No doc
-      const_panilo_iterator(const_panilo_iterator const&);
+      const_panilo_iterator(const_panilo_iterator const &);
       //! No doc
-      const_panilo_iterator(const_panilo_iterator&&);
+      const_panilo_iterator(const_panilo_iterator &&);
       //! No doc
-      const_panilo_iterator& operator=(const_panilo_iterator const&);
+      const_panilo_iterator &operator=(const_panilo_iterator const &);
       //! No doc
-      const_panilo_iterator& operator=(const_panilo_iterator&&);
+      const_panilo_iterator &operator=(const_panilo_iterator &&);
       //! No doc
       ~const_panilo_iterator();
 
       //! No doc
-      const_panilo_iterator(ActionDigraph const* ptr,
+      const_panilo_iterator(ActionDigraph const *ptr,
                             node_type const      source,
                             size_type const      min,
                             size_type const      max)
@@ -1294,13 +1302,13 @@ namespace libsemigroups {
       //! No doc
       // noexcept because comparison of std::vector<node_type>'s is noexcept
       // because comparision of node_type's is noexcept
-      bool operator==(const_panilo_iterator const& that) const noexcept {
+      bool operator==(const_panilo_iterator const &that) const noexcept {
         return _nodes == that._nodes;
       }
 
       //! No doc
       // noexcept because operator== is noexcept
-      bool operator!=(const_panilo_iterator const& that) const noexcept {
+      bool operator!=(const_panilo_iterator const &that) const noexcept {
         return !(this->operator==(that));
       }
 
@@ -1316,7 +1324,7 @@ namespace libsemigroups {
 
       //! No doc
       // prefix - not noexcept because std::vector::push_back isn't
-      const_panilo_iterator const& operator++() {
+      const_panilo_iterator const &operator++() {
         if (_nodes.empty()) {
           return *this;
         } else if (_edge == UNDEFINED) {
@@ -1357,7 +1365,7 @@ namespace libsemigroups {
       }
 
       //! No doc
-      void swap(const_panilo_iterator& that) noexcept {
+      void swap(const_panilo_iterator &that) noexcept {
         std::swap(_edges, that._edges);
         std::swap(_digraph, that._digraph);
         std::swap(_edge, that._edge);
@@ -1367,13 +1375,13 @@ namespace libsemigroups {
       }
 
       //! No doc
-      ActionDigraph const& digraph() const noexcept {
+      ActionDigraph const &digraph() const noexcept {
         return *_digraph;
       }
 
      private:
       value_type             _edges;
-      ActionDigraph const*   _digraph;
+      ActionDigraph const *  _digraph;
       label_type             _edge;
       size_t                 _min;
       size_t                 _max;
@@ -1489,19 +1497,19 @@ namespace libsemigroups {
       //! No doc
       const_panislo_iterator() = default;
       //! No doc
-      const_panislo_iterator(const_panislo_iterator const&) = default;
+      const_panislo_iterator(const_panislo_iterator const &) = default;
       //! No doc
-      const_panislo_iterator(const_panislo_iterator&&) = default;
+      const_panislo_iterator(const_panislo_iterator &&) = default;
       //! No doc
-      const_panislo_iterator& operator=(const_panislo_iterator const&)
+      const_panislo_iterator &operator=(const_panislo_iterator const &)
           = default;
       //! No doc
-      const_panislo_iterator& operator=(const_panislo_iterator&&) = default;
+      const_panislo_iterator &operator=(const_panislo_iterator &&) = default;
       //! No doc
       ~const_panislo_iterator() = default;
 
       //! No doc
-      const_panislo_iterator(ActionDigraph const* ptr,
+      const_panislo_iterator(ActionDigraph const *ptr,
                              node_type const      source,
                              size_type const      min,
                              size_type const      max)
@@ -1518,13 +1526,13 @@ namespace libsemigroups {
 
       //! No doc
       // noexcept because comparison of const_panilo_iterator is noexcept
-      bool operator==(const_panislo_iterator const& that) const noexcept {
+      bool operator==(const_panislo_iterator const &that) const noexcept {
         return _length == that._length && _it == that._it;
       }
 
       //! No doc
       // noexcept because operator== is noexcept
-      bool operator!=(const_panislo_iterator const& that) const noexcept {
+      bool operator!=(const_panislo_iterator const &that) const noexcept {
         return !(this->operator==(that));
       }
 
@@ -1540,7 +1548,7 @@ namespace libsemigroups {
 
       //! No doc
       // prefix - not noexcept because cbegin_panilo isn't
-      const_panislo_iterator const& operator++() {
+      const_panislo_iterator const &operator++() {
         ++_it;
         if (_it == _it.digraph().cend_panilo()) {
           if (_length < _max - 1) {
@@ -1565,7 +1573,7 @@ namespace libsemigroups {
       }
 
       //! No doc
-      void swap(const_panislo_iterator& that) noexcept {
+      void swap(const_panislo_iterator &that) noexcept {
         std::swap(_length, that._length);
         std::swap(_it, that._it);
         std::swap(_max, that._max);
@@ -1664,18 +1672,18 @@ namespace libsemigroups {
     struct PiloOrPisloIteratorTraits {
       using internal_iterator_type = R;
       using value_type             = word_type;
-      using reference              = value_type&;
-      using const_reference        = value_type const&;
+      using reference              = value_type &;
+      using const_reference        = value_type const &;
       using difference_type        = std::ptrdiff_t;
       using size_type              = std::size_t;
-      using const_pointer          = value_type const*;
-      using pointer                = value_type*;
+      using const_pointer          = value_type const *;
+      using pointer                = value_type *;
       using iterator_category      = std::forward_iterator_tag;
 
       struct Deref {
         //! No doc
         const_reference
-        operator()(internal_iterator_type const& it) const noexcept {
+        operator()(internal_iterator_type const &it) const noexcept {
           return it->first;
         }
       };
@@ -1683,7 +1691,7 @@ namespace libsemigroups {
       struct AddressOf {
         //! No doc
         const_pointer
-        operator()(internal_iterator_type const& it) const noexcept {
+        operator()(internal_iterator_type const &it) const noexcept {
           return &it->first;
         }
       };
@@ -1872,18 +1880,18 @@ namespace libsemigroups {
       //! No doc
       const_pstilo_iterator();
       //! No doc
-      const_pstilo_iterator(const_pstilo_iterator const&);
+      const_pstilo_iterator(const_pstilo_iterator const &);
       //! No doc
-      const_pstilo_iterator(const_pstilo_iterator&&);
+      const_pstilo_iterator(const_pstilo_iterator &&);
       //! No doc
-      const_pstilo_iterator& operator=(const_pstilo_iterator const&);
+      const_pstilo_iterator &operator=(const_pstilo_iterator const &);
       //! No doc
-      const_pstilo_iterator& operator=(const_pstilo_iterator&&);
+      const_pstilo_iterator &operator=(const_pstilo_iterator &&);
       //! No doc
       ~const_pstilo_iterator();
 
       //! No doc
-      const_pstilo_iterator(ActionDigraph const* ptr,
+      const_pstilo_iterator(ActionDigraph const *ptr,
                             node_type const      source,
                             node_type const      target,
                             size_type const      min,
@@ -1904,13 +1912,13 @@ namespace libsemigroups {
       //! No doc
       // noexcept because comparison of std::vector<node_type> is noexcept
       // because comparision of node_type's is noexcept
-      bool operator==(const_pstilo_iterator const& that) const noexcept {
+      bool operator==(const_pstilo_iterator const &that) const noexcept {
         return _nodes == that._nodes;
       }
 
       //! No doc
       // noexcept because operator== is noexcept
-      bool operator!=(const_pstilo_iterator const& that) const noexcept {
+      bool operator!=(const_pstilo_iterator const &that) const noexcept {
         return !(this->operator==(that));
       }
 
@@ -1927,7 +1935,7 @@ namespace libsemigroups {
       // prefix
       //! No doc
       // not noexcept because std::vector::push_back isn't
-      const_pstilo_iterator const& operator++() {
+      const_pstilo_iterator const &operator++() {
         if (_nodes.empty()) {
           return *this;
         } else if (_edge == UNDEFINED) {
@@ -1978,7 +1986,7 @@ namespace libsemigroups {
       }
 
       //! No doc
-      void swap(const_pstilo_iterator& that) noexcept {
+      void swap(const_pstilo_iterator &that) noexcept {
         std::swap(_edges, that._edges);
         std::swap(_digraph, that._digraph);
         std::swap(_edge, that._edge);
@@ -2006,11 +2014,11 @@ namespace libsemigroups {
 
           _can_reach_target.resize(_digraph->number_of_nodes(), false);
           _can_reach_target[_target]   = true;
-          std::vector<node_type>& todo = in_neighbours[_target];
+          std::vector<node_type> &todo = in_neighbours[_target];
           std::vector<node_type>  next;
 
           while (!todo.empty()) {
-            for (auto& m : todo) {
+            for (auto &m : todo) {
               if (_can_reach_target[m] == 0) {
                 _can_reach_target[m] = true;
                 next.insert(next.end(),
@@ -2026,7 +2034,7 @@ namespace libsemigroups {
 
       std::vector<bool>      _can_reach_target;
       value_type             _edges;
-      ActionDigraph const*   _digraph;
+      ActionDigraph const *  _digraph;
       label_type             _edge;
       size_t                 _min;
       size_t                 _max;
@@ -2116,26 +2124,26 @@ namespace libsemigroups {
                                    const_panislo_iterator /* cend */>;
       using internal_iterator_type = const_panislo_iterator;
       using value_type             = word_type;
-      using reference              = value_type&;
-      using const_reference        = value_type const&;
+      using reference              = value_type &;
+      using const_reference        = value_type const &;
       using difference_type        = std::ptrdiff_t;
       using size_type              = std::size_t;
-      using const_pointer          = value_type const*;
-      using pointer                = value_type*;
+      using const_pointer          = value_type const *;
+      using pointer                = value_type *;
       using iterator_category      = std::forward_iterator_tag;
 
       struct Deref {
         //! No doc
         const_reference
-        operator()(state_type&,
-                   internal_iterator_type const& it) const noexcept {
+        operator()(state_type &,
+                   internal_iterator_type const &it) const noexcept {
           return it->first;
         }
       };
 
       struct AddressOf {
         //! No doc
-        const_pointer operator()(state_type&, internal_iterator_type const& it)
+        const_pointer operator()(state_type &, internal_iterator_type const &it)
             const noexcept {
           return &it->first;
         }
@@ -2144,7 +2152,7 @@ namespace libsemigroups {
       struct PrefixIncrement {
         //! No doc
         // not noexcept because const_panislo_iterator::operator++ isn't
-        void operator()(state_type& st, internal_iterator_type& it) const {
+        void operator()(state_type &st, internal_iterator_type &it) const {
           if (st.first != UNDEFINED) {
             ++it;
             while (it->second != st.first && it != st.second) {
@@ -2534,13 +2542,13 @@ namespace libsemigroups {
 
    protected:
     //! No doc
-    detail::DynamicArray2<T> const& table() const noexcept {
+    detail::DynamicArray2<T> const &table() const noexcept {
       return _dynamic_array_2;
     }
 
     //! No doc
     template <typename S>
-    void apply_row_permutation(S const& p) {
+    void apply_row_permutation(S const &p) {
       reset();
       _dynamic_array_2.apply_row_permutation(p);
     }
@@ -2757,7 +2765,7 @@ namespace libsemigroups {
       }
       // Don't visit nodes that occur after target in "topo".
       std::vector<bool> lookup(number_of_nodes(), true);
-      std::for_each(topo.cbegin(), it, [&lookup](node_type const& n) {
+      std::for_each(topo.cbegin(), it, [&lookup](node_type const &n) {
         lookup[n] = false;
       });
 
@@ -2943,16 +2951,17 @@ namespace libsemigroups {
         _scc() {}
 
   template <typename T>
-  ActionDigraph<T>::ActionDigraph(ActionDigraph const&) = default;
+  ActionDigraph<T>::ActionDigraph(ActionDigraph const &) = default;
 
   template <typename T>
-  ActionDigraph<T>::ActionDigraph(ActionDigraph&&) = default;
+  ActionDigraph<T>::ActionDigraph(ActionDigraph &&) = default;
 
   template <typename T>
-  ActionDigraph<T>& ActionDigraph<T>::operator=(ActionDigraph const&) = default;
+  ActionDigraph<T> &ActionDigraph<T>::operator=(ActionDigraph const &)
+      = default;
 
   template <typename T>
-  ActionDigraph<T>& ActionDigraph<T>::operator=(ActionDigraph&&) = default;
+  ActionDigraph<T> &ActionDigraph<T>::operator=(ActionDigraph &&) = default;
 
   //////////////////////////////////////////////////////////////////////////
   // ActionDigraph - panilo - constructor/destructor implementations
@@ -2963,26 +2972,26 @@ namespace libsemigroups {
 
   template <typename T>
   ActionDigraph<T>::const_panilo_iterator::const_panilo_iterator(
-      const_panilo_iterator const&)
+      const_panilo_iterator const &)
       = default;
 
   template <typename T>
   ActionDigraph<T>::const_panilo_iterator::const_panilo_iterator() = default;
 
   template <typename T>
-  typename ActionDigraph<T>::const_panilo_iterator&
+  typename ActionDigraph<T>::const_panilo_iterator &
   ActionDigraph<T>::const_panilo_iterator::operator=(
-      const_panilo_iterator const&)
+      const_panilo_iterator const &)
       = default;
 
   template <typename T>
-  typename ActionDigraph<T>::const_panilo_iterator&
-  ActionDigraph<T>::const_panilo_iterator::operator=(const_panilo_iterator&&)
+  typename ActionDigraph<T>::const_panilo_iterator &
+  ActionDigraph<T>::const_panilo_iterator::operator=(const_panilo_iterator &&)
       = default;
 
   template <typename T>
   ActionDigraph<T>::const_panilo_iterator::const_panilo_iterator(
-      const_panilo_iterator&&)
+      const_panilo_iterator &&)
       = default;
 
   //////////////////////////////////////////////////////////////////////////
@@ -2993,22 +3002,22 @@ namespace libsemigroups {
   ActionDigraph<T>::const_pstilo_iterator::const_pstilo_iterator() = default;
   template <typename T>
   ActionDigraph<T>::const_pstilo_iterator::const_pstilo_iterator(
-      const_pstilo_iterator const&)
+      const_pstilo_iterator const &)
       = default;
   template <typename T>
   ActionDigraph<T>::const_pstilo_iterator::const_pstilo_iterator(
-      const_pstilo_iterator&&)
+      const_pstilo_iterator &&)
       = default;
 
   template <typename T>
-  typename ActionDigraph<T>::const_pstilo_iterator&
+  typename ActionDigraph<T>::const_pstilo_iterator &
   ActionDigraph<T>::const_pstilo_iterator::operator=(
-      const_pstilo_iterator const&)
+      const_pstilo_iterator const &)
       = default;
 
   template <typename T>
-  typename ActionDigraph<T>::const_pstilo_iterator&
-  ActionDigraph<T>::const_pstilo_iterator::operator=(const_pstilo_iterator&&)
+  typename ActionDigraph<T>::const_pstilo_iterator &
+  ActionDigraph<T>::const_pstilo_iterator::operator=(const_pstilo_iterator &&)
       = default;
 
   template <typename T>
@@ -3050,15 +3059,15 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_EIGEN_ENABLED
     template <typename T>
     void init_adjacency_matrix(
-        ActionDigraph<T> const&                                ad,
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& mat) {
+        ActionDigraph<T> const &                               ad,
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &mat) {
       size_t const N = ad.number_of_nodes();
       mat.resize(N, N);
       mat.fill(0);
     }
 
     static inline void
-    identity(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& x) {
+    identity(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &x) {
       x.fill(0);
       for (size_t i = 0; i < static_cast<size_t>(x.rows()); ++i) {
         x(i, i) = 1;
@@ -3066,7 +3075,7 @@ namespace libsemigroups {
     }
 
     static inline Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>
-    pow(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const& x,
+    pow(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const &x,
         size_t                                                       e) {
       if (x.cols() != x.rows()) {
         LIBSEMIGROUPS_EXCEPTION("expected a square matrix, found %llux%llu",
@@ -3092,8 +3101,8 @@ namespace libsemigroups {
     }
 #else
     template <typename T>
-    void init_adjacency_matrix(ActionDigraph<T> const& ad,
-                               IntMat<0, 0, int64_t>&  mat) {
+    void init_adjacency_matrix(ActionDigraph<T> const &ad,
+                               IntMat<0, 0, int64_t> & mat) {
       size_t const N = ad.number_of_nodes();
       mat            = IntMat<0, 0, int64_t>(N, N);
       std::fill(mat.begin(), mat.end(), 0);
@@ -3101,7 +3110,7 @@ namespace libsemigroups {
 #endif
 
     template <typename Mat, typename T>
-    Mat adjacency_matrix(ActionDigraph<T> const& ad) {
+    Mat adjacency_matrix(ActionDigraph<T> const &ad) {
       Mat mat;
       init_adjacency_matrix(ad, mat);
 
@@ -3117,7 +3126,7 @@ namespace libsemigroups {
   }  // namespace detail
 
   template <typename T>
-  std::ostream& operator<<(std::ostream& os, ActionDigraph<T> const& ad) {
+  std::ostream &operator<<(std::ostream &os, ActionDigraph<T> const &ad) {
     os << "{";
     std::string sep_n;
     for (auto n = ad.cbegin_nodes(); n != ad.cend_nodes(); ++n) {

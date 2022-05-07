@@ -41,8 +41,8 @@ namespace libsemigroups {
   namespace {
 
     template <typename T>
-    void check_compatibility(ActionDigraph<T> const&        d,
-                             Presentation<word_type> const& p) {
+    void check_compatibility(ActionDigraph<T> const &       d,
+                             Presentation<word_type> const &p) {
       for (size_t i = 0; i < d.number_of_nodes(); ++i) {
         for (auto it = p.cbegin(); it != p.cend(); it += 2) {
           // std::cout << " i = " << i << std::endl;
@@ -59,9 +59,9 @@ namespace libsemigroups {
                           "000",
                           "fp example 1",
                           "[quick][presentation]") {
-    auto rg         = ReportGuard(false);
-    using WordGraph = typename Sims2::word_graph_type;
-    using node_type = typename WordGraph::node_type;
+    auto rg            = ReportGuard(false);
+    using digraph_type = typename Sims2Graph::digraph_type;
+    using node_type    = typename digraph_type::node_type;
 
     Presentation<word_type> p(empty_word::yes);
     p.alphabet({0, 1});
@@ -172,9 +172,9 @@ namespace libsemigroups {
                           "001",
                           "fp example 2",
                           "[quick][presentation]") {
-    auto rg         = ReportGuard(false);
-    using WordGraph = typename Sims2::word_graph_type;
-    using node_type = typename WordGraph::node_type;
+    auto rg            = ReportGuard(false);
+    using digraph_type = typename Sims2Graph::digraph_type;
+    using node_type    = typename digraph_type::node_type;
 
     Presentation<word_type> p(empty_word::yes);
     p.alphabet({0, 1, 2});
@@ -206,8 +206,8 @@ namespace libsemigroups {
                           "002",
                           "PartitionMonoid(2) 2-sided",
                           "[quick][presentation]") {
-    using WordGraph = typename Sims2::word_graph_type;
-    using node_type = typename WordGraph::node_type;
+    using digraph_type = typename Sims2Graph::digraph_type;
+    using node_type    = typename digraph_type::node_type;
     Presentation<word_type> p(empty_word::no);
     p.alphabet({0, 1, 2, 3});
     presentation::add_rule_and_check(p, {1, 1}, {0});
@@ -382,12 +382,12 @@ namespace libsemigroups {
                           "012",
                           "TemperleyLieb(4) from presentation",
                           "[quick][sims2]") {
-    using WordGraph            = typename Sims2::word_graph_type;
-    using node_type            = typename WordGraph::node_type;
+    using digraph_type         = typename Sims2Graph::digraph_type;
+    using node_type            = typename digraph_type::node_type;
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p(empty_word::yes);
     p.alphabet(3);
-    for (auto const& rel : TemperleyLieb(4)) {
+    for (auto const &rel : TemperleyLieb(4)) {
       p.add_rule_and_check(rel.first.cbegin(),
                            rel.first.cend(),
                            rel.second.cbegin(),
@@ -546,9 +546,8 @@ namespace libsemigroups {
     presentation::add_rule_and_check(
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
 
-    Sims1 S(p, congruence_kind::twosided);
+    Sims2 S(p);
     REQUIRE(S.number_of_congruences(204) == 16);
-    // FIXME should be 16!
   }
 
   //   [ [ [ 0, 0, 0 ] ],
