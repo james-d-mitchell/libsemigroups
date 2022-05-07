@@ -650,11 +650,28 @@ namespace libsemigroups {
 
       StaticVector1() : _array(), _size(0) {}
 
+      StaticVector1(size_type n, value_type val) : StaticVector1() {
+        LIBSEMIGROUPS_ASSERT(n <= N);
+        for (size_type i = 0; i < n; ++i) {
+          push_back(val);
+        }
+      }
+
+      template <typename It>
+      StaticVector1(It const& first, It const& last) : StaticVector1() {
+        LIBSEMIGROUPS_ASSERT(static_cast<size_type>(std::distance(first, last))
+                             <= N);
+        for (auto it = first; it != last; ++it) {
+          push_back(*it);
+        }
+      }
+
       StaticVector1(StaticVector1 const&) = default;
       StaticVector1(StaticVector1&&)      = default;
       StaticVector1& operator=(StaticVector1 const&) = default;
       StaticVector1& operator=(StaticVector1&&) = default;
-      ~StaticVector1()                          = default;
+
+      ~StaticVector1() = default;
 
       StaticVector1(std::initializer_list<T> il) : StaticVector1() {
         for (auto x : il) {
@@ -714,15 +731,25 @@ namespace libsemigroups {
 
       using iterator       = typename std::array<T, N>::iterator;
       using const_iterator = typename std::array<T, N>::const_iterator;
+      using const_reverse_iterator =
+          typename std::array<T, N>::const_reverse_iterator;
 
       // noexcept because std::array::cbegin is noexcept
       inline const_iterator cbegin() const noexcept {
         return _array.cbegin();
       }
 
+      inline const_reverse_iterator crbegin() const noexcept {
+        return _array.crbegin() + (N - size());
+      }
+
       // noexcept because std::array::cbegin is noexcept
       inline const_iterator cend() const noexcept {
         return _array.cbegin() + _size;
+      }
+
+      inline const_reverse_iterator crend() const noexcept {
+        return _array.crend();
       }
 
       // noexcept because std::array::begin is noexcept
