@@ -81,7 +81,9 @@ namespace libsemigroups {
     if (_num_active_nodes == 0) {
       return;
     }
-    _pending.emplace_back(0, 0, 1, 0, 1);
+    if (n > 1) {
+      _pending.emplace_back(0, 0, 1, 0, 2);
+    }
     if (_min_target_node == 0) {
       _pending.emplace_back(0, 0, 0, 0, 1);
     }
@@ -98,9 +100,15 @@ namespace libsemigroups {
     dive:
       auto current = _pending.back();
       _pending.pop_back();
+      LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
+      LIBSEMIGROUPS_ASSERT(current.num_nodes <= _max_num_classes);
 
       // Backtrack if necessary
       _felsch_graph.reduce_number_of_edges_to(current.num_edges);
+
+      // It might be that current.target is a new node, in which case
+      // _num_active_nodes includes this new node even before the edge
+      // current.source -> current.target is defined.
       _num_active_nodes = current.num_nodes;
 
       LIBSEMIGROUPS_ASSERT(
@@ -109,18 +117,8 @@ namespace libsemigroups {
       {
         size_type start = _felsch_graph.number_of_edges();
 
-        if (current.target < _num_active_nodes) {
-          // TODO move the current.target < _num_active_nodes below and
-          // never put them in the stack in the first place
-          _felsch_graph.def_edge(
-              current.source, current.generator, current.target);
-        } else {
-          if (_num_active_nodes == _max_num_classes) {
-            continue;
-          }
-          _felsch_graph.def_edge(
-              current.source, current.generator, _num_active_nodes++);
-        }
+        _felsch_graph.def_edge(
+            current.source, current.generator, current.target);
 
         if (_felsch_graph.process_definitions(start)) {
           letter_type a = current.generator + 1;
@@ -128,13 +126,20 @@ namespace libsemigroups {
                ++next) {
             for (; a < _num_gens; ++a) {
               if (_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                for (node_type b = _min_target_node; b <= _num_active_nodes;
+                for (node_type b = _min_target_node; b < _num_active_nodes;
                      ++b) {
                   _pending.emplace_back(next,
                                         a,
                                         b,
                                         _felsch_graph.number_of_edges(),
                                         _num_active_nodes);
+                }
+                if (_num_active_nodes < _max_num_classes) {
+                  _pending.emplace_back(next,
+                                        a,
+                                        _num_active_nodes,
+                                        _felsch_graph.number_of_edges(),
+                                        _num_active_nodes + 1);
                 }
                 goto dive;
               }

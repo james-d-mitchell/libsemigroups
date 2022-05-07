@@ -149,7 +149,8 @@ namespace libsemigroups {
         node_type   target;
         size_type   num_edges;  // Number of edges in the graph when *this was
                                 // added to the stack
-        size_type num_nodes;    // Same as above but for nodes
+        size_type num_nodes;    // Number of nodes in the graph after the
+                                // definition is made
       };
 
       // TODO(Sims1) maybe move _num_active_nodes into FelschDigraph or
