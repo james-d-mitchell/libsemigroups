@@ -201,20 +201,19 @@ namespace libsemigroups {
                ++next) {
             for (; a < _num_gens; ++a) {
               if (_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                for (node_type b = _min_target_node; b < _num_active_nodes;
-                     ++b) {
-                  _pending.emplace_back(next,
-                                        a,
-                                        b,
-                                        _felsch_graph.number_of_edges(),
-                                        _num_active_nodes);
-                }
                 if (_num_active_nodes < _max_num_classes) {
                   _pending.emplace_back(next,
                                         a,
                                         _num_active_nodes,
                                         _felsch_graph.number_of_edges(),
                                         _num_active_nodes + 1);
+                }
+                for (node_type b = _num_active_nodes; b-- > _min_target_node;) {
+                  _pending.emplace_back(next,
+                                        a,
+                                        b,
+                                        _felsch_graph.number_of_edges(),
+                                        _num_active_nodes);
                 }
                 goto dive;
               }

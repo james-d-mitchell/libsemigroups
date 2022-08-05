@@ -40,12 +40,15 @@
 #include <type_traits>  // for is_base_of
 #include <vector>       // for vector
 
-#include "config.hpp"          // for LIBSEMIGROUPS_ENABLE_STATS
-#include "digraph.hpp"         // for ActionDigraph
-#include "felsch-digraph.hpp"  // for FelschDigraph
-#include "make-present.hpp"    // for make
-#include "present.hpp"         // for Presentation
-#include "types.hpp"           // for word_type, congruence_kind
+#include <iostream>
+
+#include "config.hpp"             // for LIBSEMIGROUPS_ENABLE_STATS
+#include "digraph.hpp"            // for ActionDigraph
+#include "felsch-digraph.hpp"     // for FelschDigraph
+#include "make-froidure-pin.hpp"  // for make
+#include "make-present.hpp"       // for make
+#include "present.hpp"            // for Presentation
+#include "types.hpp"              // for word_type, congruence_kind
 
 namespace libsemigroups {
 
@@ -493,6 +496,65 @@ namespace libsemigroups {
   std::ostream& operator<<(std::ostream&                os,
                            typename sims1::Stats const& stats);
 #endif  // LIBSEMIGROUPS_ENABLE_STATS
+
+  namespace sims1 {
+    template <typename T, typename W>
+    ActionDigraph<T> representation(Presentation<W> const& p,
+                                    size_t                 deg,
+                                    size_t                 size) {
+      Sims1<T> C(congruence_kind::right, p);
+      using node_type = typename Sims1<T>::digraph_type::node_type;
+      auto   it       = C.cbegin(deg);
+      size_t count    = 0;
+      for (; it != C.cend(deg); ++it) {
+        auto S = make<FroidurePin<Transf<0, node_type>>>(*it);
+        std::cout << "\rat " << ++count << std::flush;
+        if (S.size() == size) {
+          break;
+        }
+      }
+      size_t N = std::distance(
+          it->cbegin_nodes(),
+          std::find_if(it->cbegin_nodes(), it->cend_nodes(), [&it](auto v) {
+            return it->neighbor(v, 0) == UNDEFINED;
+          }));
+      ActionDigraph<T> result(*it);
+      result.restrict(N);
+      std::cout << "\rtotal = " << count << std::endl;
+      return result;
+    }
+
+    template <typename T>
+    ActionDigraph<T> representation(FroidurePinBase& fpb, size_t deg) {
+      return representation<T>(
+          make<Presentation<word_type>>(fpb), deg, fpb.size());
+    }
+
+    template <typename T, typename W>
+    ActionDigraph<T> minimal_representation(Presentation<W> const& p,
+                                            size_t                 size) {
+      auto   d  = representation<T>(p, size, size);
+      size_t hi = d.number_of_nodes();
+      size_t lo = representation<T>(p, 1, size).number_of_nodes();
+      std::cout << "hi = " << hi << ", lo = " << lo << std::endl;
+
+      while (lo != hi) {
+        auto mid = (hi + lo) / 2;
+        std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
+                  << std::endl;
+        d = representation<T>(p, mid, size);
+        if (d.number_of_nodes() == 0) {
+          lo = mid;
+        } else if (d.number_of_nodes() < hi) {
+          hi = d.number_of_nodes();
+        } else {
+          break;
+          // throw std::runtime_error("shouldn't happen");
+        }
+      }
+      return d;
+    }
+  }  // namespace sims1
 
 }  // namespace libsemigroups
 
