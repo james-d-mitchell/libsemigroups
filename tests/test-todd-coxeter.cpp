@@ -2579,6 +2579,18 @@ namespace libsemigroups {
       REQUIRE(tc.number_of_classes() == 105);
     }
 
+    LIBSEMIGROUPS_TEST_CASE("ToddCoxeter",
+                            "113",
+                            "RectangularBand(15, 15) (TODO)",
+                            "[todd-coxeter][quick][no-valgrind][no-coverage]") {
+      auto         rg = ReportGuard(true);
+      size_t const n  = 15;
+      ToddCoxeter  tc(congruence_kind::twosided);
+      setup(tc, 2 * n, RectangularBand, n, n);
+      tc.sort_generating_pairs().remove_duplicate_generating_pairs();
+      REQUIRE(tc.number_of_classes() == 15 * 15);
+    }
+
   }  // namespace congruence
 
   namespace fpsemigroup {

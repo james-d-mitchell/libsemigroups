@@ -31,6 +31,7 @@
 #include "libsemigroups/digraph-helper.hpp"
 #include "libsemigroups/froidure-pin.hpp"
 #include "libsemigroups/knuth-bendix.hpp"  // for redundant_rule
+#include "libsemigroups/make-froidure-pin.hpp"
 #include "libsemigroups/make-present.hpp"
 #include "libsemigroups/sims1.hpp"  // for Sims1_
 #include "libsemigroups/transf.hpp"
@@ -769,9 +770,90 @@ namespace libsemigroups {
     //   last_len = presentation::length(p);
     //   presentation::remove_longest_redundant_rule(p);
     // } while (presentation::length(p) != last_len);
+    {
+      Sims1_ C(congruence_kind::right, p);
+      using node_type = typename Sims1_::digraph_type::node_type;
+      auto   it       = C.cbegin(22);
+      size_t N;
+      for (; it != C.cend(22); ++it) {
+        auto S = make<FroidurePin<Transf<0, node_type>>>(*it);
+        N      = std::distance(
+            it->cbegin_nodes(),
+            std::find_if(it->cbegin_nodes(), it->cend_nodes(), [&it](auto v) {
+              return it->neighbor(v, 0) == UNDEFINED;
+            }));
+        if (S.size() == 105) {
+          break;
+        }
+      }
+      REQUIRE(it != C.cend(22));
+    }
+    {
+      Sims1_ C(congruence_kind::right, p);
+      REQUIRE(C.number_of_congruences(105) == 103'406);
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "036",
+                          "Brauer(5) (Kudryavtseva-Mazorchuk)",
+                          "[extreme][sims1]") {
+    auto rg = ReportGuard(true);
+    auto p  = make<Presentation<word_type>>(Brauer(5));
+    REQUIRE(presentation::length(p) == 295);
+    presentation::remove_duplicate_rules(p);
+    REQUIRE(presentation::length(p) == 253);
+
+    // FroidurePin<Bipartition> S;
+    // S.add_generator(Bipartition({{1, -2}, {2, -3}, {3, -4}, {4, -5}, {5,
+    // -1}})); S.add_generator(Bipartition({{1, -2}, {2, -1}, {3, -3}, {4, -4},
+    // {5, -5}})); S.add_generator(Bipartition({{1, 2}, {3, -3}, {4, -4}, {5,
+    // -5}, {-1, -2}})); REQUIRE(S.size() == 945);
+
+    // auto p = make<Presentation<word_type>>(S);
+    // REQUIRE(presentation::length(p) == 3089);
+    // presentation::remove_duplicate_rules(p);
+    // REQUIRE(presentation::length(p) == 3089);
+    // REQUIRE(p.rules.size() == 370);
+    // REQUIRE(p.alphabet().size() == 3);
+
+    // // presentation::reduce_complements(p);
+    // // REQUIRE(presentation::length(p) == 249);
+    // // presentation::sort_each_rule(p);
+
+    // while (p.alphabet().size() < 9) {
+    //   presentation::replace_subword(p,
+    //   presentation::longest_common_subword(p));
+    // }
+    // REQUIRE(presentation::length(p) == 1'490);
+    // REQUIRE(p.rules.size() == 382);
+    // REQUIRE(p.alphabet().size() == 9);
+
+    // presentation::sort_rules(p);
+    // {
+    //   auto it = presentation::redundant_rule(p,
+    //   std::chrono::milliseconds(10)); while (it != p.rules.cend() &&
+    //   p.rules.size() > 370) {
+    //     p.rules.erase(it, it + 2);
+    //     it = presentation::redundant_rule(p, std::chrono::milliseconds(10));
+    //   }
+    // }
+    // REQUIRE(presentation::length(p) == 1'455);
+    // REQUIRE(p.rules.size() == 374);
+    // REQUIRE(p.alphabet().size() == 9);
 
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(105) == 103'406);
+    using node_type = typename Sims1_::digraph_type::node_type;
+    auto   it       = C.cbegin(55);
+    size_t count    = 0;
+    for (; it != C.cend(55); ++it) {
+      auto S = make<FroidurePin<Transf<0, node_type>>>(*it);
+      std::cout << "at " << ++count << std::endl;
+      if (S.size() == 945) {
+        break;
+      }
+    }
+    REQUIRE(it != C.cend(55));
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1002,6 +1084,20 @@ namespace libsemigroups {
       auto it = S.cbegin(10);
       REQUIRE(it->number_of_nodes() == 10);
     }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "037",
+                          "RectangularBand(15, 15)",
+                          "[extreme][sims1]") {
+    auto rg = ReportGuard(true);
+    auto p  = make<Presentation<word_type>>(RectangularBand(15, 15));
+    presentation::remove_duplicate_rules(p);
+    presentation::sort_each_rule(p);
+    presentation::sort_rules(p);
+
+    Sims1_ C(congruence_kind::right, p);
+    REQUIRE(C.number_of_congruences(225) == 601'265);
   }
 }  // namespace libsemigroups
 
