@@ -1201,13 +1201,56 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "039",
-                          "PartitionMonoid(4) - minimal rep",
+                          "TemperleyLieb(3) - minimal rep",
                           "[extreme][sims1]") {
     auto rg = ReportGuard(false);
-    auto p  = make<Presentation<word_type>>(PartitionMonoidEast41(4));
-    REQUIRE(sims1::minimal_representation<uint32_t>(p, 4140).number_of_nodes()
-            == 23);
+
+    std::array<uint64_t, 11> const sizes
+        = {0, 1, 2, 5, 14, 42, 132, 429, 1'430, 4'862, 16'796};
+    std::array<uint64_t, 11> const min_degrees
+        = {0, 0, 2, 4, 7, 10, 20, 29, 0, 0, 0};
+
+    for (size_t n = 3; n < 8; ++n) {
+      auto p = make<Presentation<word_type>>(TemperleyLieb(n));
+      // There are no relations containing the empty word so we just manually
+      // add it.
+      p.contains_empty_word(true);
+      auto d = sims1::minimal_representation<uint32_t>(p, sizes[n]);
+      auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+      S.add_generator(S.generator(0).identity());
+      REQUIRE(S.size() == sizes[n]);
+      REQUIRE(d.number_of_nodes() == min_degrees[n]);
+    }
   }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "040",
+                          "TransitiveGroup(10,32) - minimal rep",
+                          "[extreme][sims1]") {
+    auto                    rg = ReportGuard(false);
+    Presentation<word_type> p;
+    p.contains_empty_word(true);
+    p.alphabet({0, 1, 2, 3, 4});
+    presentation::add_rule_and_check(p, {0, 0}, {});
+    presentation::add_rule_and_check(p, {1, 1}, {});
+    presentation::add_rule_and_check(p, {2, 2}, {});
+    presentation::add_rule_and_check(p, {3, 3}, {});
+    presentation::add_rule_and_check(p, {4, 4}, {});
+    presentation::add_rule_and_check(p, {0, 1, 0, 1, 0, 1}, {});
+    presentation::add_rule_and_check(p, {0, 2, 0, 2}, {});
+    presentation::add_rule_and_check(p, {0, 3, 0, 3}, {});
+    presentation::add_rule_and_check(p, {0, 4, 0, 4}, {});
+    presentation::add_rule_and_check(p, {1, 2, 1, 2, 1, 2}, {});
+    presentation::add_rule_and_check(p, {1, 3, 1, 3}, {});
+    presentation::add_rule_and_check(p, {1, 4, 1, 4}, {});
+    presentation::add_rule_and_check(p, {2, 3, 2, 3, 2, 3}, {});
+    presentation::add_rule_and_check(p, {2, 4, 2, 4}, {});
+    presentation::add_rule_and_check(p, {3, 4, 3, 4, 3, 4}, {});
+
+    REQUIRE(sims1::minimal_representation<uint32_t>(p, 720).number_of_nodes()
+            == 6);
+  }
+
 }  // namespace libsemigroups
 
 // [[[0, 0, 0]],            #1#

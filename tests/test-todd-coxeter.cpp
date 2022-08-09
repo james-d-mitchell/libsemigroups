@@ -2416,7 +2416,7 @@ namespace libsemigroups {
                             "TemperleyLieb(10) (East)",
                             "[todd-coxeter][quick][no-valgrind][no-coverage]") {
       auto         rg = ReportGuard(REPORT);
-      size_t const n  = 10;
+      size_t const n  = 4;
       ToddCoxeter  tc(congruence_kind::twosided);
       setup(tc, n - 1, TemperleyLieb, n);
       REQUIRE(tc.number_of_classes() == 16'795);

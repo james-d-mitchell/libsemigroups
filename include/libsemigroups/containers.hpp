@@ -199,12 +199,27 @@ namespace libsemigroups {
 
       // Throws if the assignment operator of T throws
       void shrink_rows_to(size_type n) {
+        // TODO use induced_subgraph
         if (n < _nr_rows) {
           _vec.erase(_vec.begin() + n * (_nr_used_cols + _nr_unused_cols),
                      _vec.end());
           _vec.shrink_to_fit();
           _nr_rows = n;
         }
+      }
+
+      void subtable(size_type first, size_type last) {
+        // TODO more exceptions
+        // if (first > last) {
+        //   LIBSEMIGROUPS_EXCEPTION("the 2nd argument (size_type) must not be "
+        //                           "greater than the 1st argument
+        //                           (size_type)");
+        // }
+        auto nr_cols = _nr_used_cols + _nr_unused_cols;
+        _vec.erase(_vec.begin() + last * nr_cols, _vec.end());
+        _vec.erase(_vec.begin(), _vec.begin() + first * nr_cols);
+        _vec.shrink_to_fit();
+        _nr_rows = last - first;
       }
 
       // Throws if the assignment operator of T throws
@@ -287,10 +302,10 @@ namespace libsemigroups {
         add_rows(copy._nr_rows);
 
         if (copy._nr_unused_cols == _nr_unused_cols) {
-          std::copy(copy._vec.begin(),
-                    copy._vec.end(),
-                    _vec.begin()
-                        + (_nr_used_cols + _nr_unused_cols) * old_nr_rows);
+          std::copy(
+              copy._vec.begin(),
+              copy._vec.end(),
+              _vec.begin() + (_nr_used_cols + _nr_unused_cols) * old_nr_rows);
         } else {  // TODO(later) improve this
           for (size_type i = old_nr_rows; i < _nr_rows; i++) {
             for (size_type j = 0; j < _nr_used_cols; j++) {

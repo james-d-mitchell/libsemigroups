@@ -426,6 +426,11 @@ namespace libsemigroups {
       _dynamic_array_2.shrink_rows_to(n);
     }
 
+    void inline induced_subdigraph(node_type first, node_type last) {
+      _nr_nodes = last - first;
+      _dynamic_array_2.subtable(first, last);
+    }
+
     //! Adds to the out-degree.
     //!
     //! \param nr the number of new out-edges for every node.
@@ -658,7 +663,8 @@ namespace libsemigroups {
     //! \c x where:
     //! 1. \c x.first is adjacent to \p v via an edge labelled
     //!    \c x.second;
-    //! 2. \c x.second is the minimum value in the range \f$[i, n)\f$ such that
+    //! 2. \c x.second is the minimum value in the range \f$[i, n)\f$ such
+    //! that
     //!    `neighbor(v, x.second)` is not equal to libsemigroups::UNDEFINED
     //!    where \f$n\f$ is the return value of out_degree(); and
     //!
@@ -702,7 +708,8 @@ namespace libsemigroups {
     //! \c x where:
     //! 1. \c x.first is adjacent to \p v via an edge labelled
     //!    \c x.second;
-    //! 2. \c x.second is the minimum value in the range \f$[i, n)\f$ such that
+    //! 2. \c x.second is the minimum value in the range \f$[i, n)\f$ such
+    //! that
     //!    `neighbor(v, x.second)` is not equal to libsemigroups::UNDEFINED
     //!    where \f$n\f$ is the return value of out_degree(); and
     //!
@@ -865,8 +872,8 @@ namespace libsemigroups {
       return IntegralRange<T>(0, number_of_nodes()).crend();
     }
 
-    //! Returns a random access iterator pointing one-past-the-last node of the
-    //! digraph.
+    //! Returns a random access iterator pointing one-past-the-last node of
+    //! the digraph.
     //!
     //! \returns
     //! An \ref const_iterator_nodes.
@@ -924,8 +931,8 @@ namespace libsemigroups {
       return _dynamic_array_2.cbegin_row(i);
     }
 
-    //! Returns a random access iterator pointing one-past-the-last neighbor of
-    //! a node.
+    //! Returns a random access iterator pointing one-past-the-last neighbor
+    //! of a node.
     //!
     //! \param i a node in the digraph.
     //!
@@ -942,8 +949,8 @@ namespace libsemigroups {
       return cend_edges_nc(i);
     }
 
-    //! Returns a random access iterator pointing one-past-the-last neighbor of
-    //! a node.
+    //! Returns a random access iterator pointing one-past-the-last neighbor
+    //! of a node.
     //!
     //! \param i a node in the digraph.
     //!
@@ -1240,7 +1247,8 @@ namespace libsemigroups {
       return _scc_forest._forest;
     }
 
-    //! Returns a reverse spanning forest of the strongly connected components.
+    //! Returns a reverse spanning forest of the strongly connected
+    //! components.
     //!
     //! Returns a Forest comprised of spanning trees for each
     //! scc of \c this, rooted on the minimum node of that component, with
@@ -1477,13 +1485,14 @@ namespace libsemigroups {
     //! of that path.
     //!
     //! If incremented, the iterator will point to the next least edge
-    //! labelling of a path (in lexicographical order), and its last node, with
-    //! length in the range \f$[min, max)\f$.  Iterators of the type returned
-    //! by this function are equal whenever they point to equal objects.
+    //! labelling of a path (in lexicographical order), and its last node,
+    //! with length in the range \f$[min, max)\f$.  Iterators of the type
+    //! returned by this function are equal whenever they point to equal
+    //! objects.
     //!
     //! \param source the source node
-    //! \param min the minimum length of a path to enumerate (defaults to \c 0)
-    //! \param max the maximum length of a path to enumerate (defaults to
+    //! \param min the minimum length of a path to enumerate (defaults to \c
+    //! 0) \param max the maximum length of a path to enumerate (defaults to
     //!        libsemigroups::POSITIVE_INFINITY).
     //!
     //! \returns
@@ -1493,21 +1502,21 @@ namespace libsemigroups {
     //! * \c it->first is a libsemigroups::word_type consisting of the edge
     //! labels of the first path (in lexicographical order) from \p source of
     //! length in the range \f$[min, max)\f$; and
-    //! * \c it->second is the last node on the path from \p source labelled by
-    //! \c it->first, a value of \ref node_type.
+    //! * \c it->second is the last node on the path from \p source labelled
+    //! by \c it->first, a value of \ref node_type.
     //!
     //! \throws LibsemigroupsException if \p source is not a node in the
     //! digraph.
     //!
     //! \warning
     //! Copying iterators of this type is expensive.  As a consequence, prefix
-    //! incrementing \c ++it the returned  iterator \c it significantly cheaper
-    //! than postfix incrementing \c it++.
+    //! incrementing \c ++it the returned  iterator \c it significantly
+    //! cheaper than postfix incrementing \c it++.
     //!
     //! \warning
     //! If the action digraph represented by \c this contains a cycle that is
-    //! reachable from \p source, then there are infinitely many paths starting
-    //! at \p source, and so \p max should be chosen with some care.
+    //! reachable from \p source, then there are infinitely many paths
+    //! starting at \p source, and so \p max should be chosen with some care.
     //!
     //! \sa
     //! cend_panilo
@@ -1521,8 +1530,8 @@ namespace libsemigroups {
 
     //! Returns an iterator for PANILO (Path And Node In Lex Order).
     //!
-    //! Returns a forward iterator pointing to one after the last path from any
-    //! node in the digraph.
+    //! Returns a forward iterator pointing to one after the last path from
+    //! any node in the digraph.
     //!
     //! The iterator returned by this function may still dereferencable and
     //! incrementable, but may not point to a path in the correct range.
@@ -1539,8 +1548,8 @@ namespace libsemigroups {
 
     // Note that while the complexity of this is bad, it repeatedly does depth
     // first searches, and so will examine every node and edge of the graph
-    // multiple times (if u -a-> v belongs to a path of length 10, then it will
-    // be traversed 10 times). But the performance of this iterator is
+    // multiple times (if u -a-> v belongs to a path of length 10, then it
+    // will be traversed 10 times). But the performance of this iterator is
     // dominated by memory allocation (when creating
     // iterators, at least), and so this doesn't seem that bad.
     //! Return type of cbegin_panislo and cend_panislo.
@@ -1681,8 +1690,8 @@ namespace libsemigroups {
     //! by this function are equal whenever they point to equal objects.
     //!
     //! \param source the source node
-    //! \param min the minimum length of a path to enumerate (defaults to \c 0)
-    //! \param max the maximum length of a path to enumerate (defaults to
+    //! \param min the minimum length of a path to enumerate (defaults to \c
+    //! 0) \param max the maximum length of a path to enumerate (defaults to
     //!        libsemigroups::POSITIVE_INFINITY).
     //!
     //! \returns
@@ -1692,21 +1701,21 @@ namespace libsemigroups {
     //! * \c it->first is a libsemigroups::word_type consisting of the edge
     //! labels of the first path (in short-lex order) from \p source of
     //! length in the range \f$[min, max)\f$; and
-    //! * \c it->second is the last node on the path from \p source labelled by
-    //! \c it->first, a value of \ref node_type.
+    //! * \c it->second is the last node on the path from \p source labelled
+    //! by \c it->first, a value of \ref node_type.
     //!
     //! \throws LibsemigroupsException if \p source is not a node in the
     //! digraph.
     //!
     //! \warning
     //! Copying iterators of this type is expensive.  As a consequence, prefix
-    //! incrementing \c ++it the returned  iterator \c it significantly cheaper
-    //! than postfix incrementing \c it++.
+    //! incrementing \c ++it the returned  iterator \c it significantly
+    //! cheaper than postfix incrementing \c it++.
     //!
     //! \warning
     //! If the action digraph represented by \c this contains a cycle that is
-    //! reachable from \p source, then there are infinitely many paths starting
-    //! at \p source, and so \p max should be chosen with some care.
+    //! reachable from \p source, then there are infinitely many paths
+    //! starting at \p source, and so \p max should be chosen with some care.
     //!
     //! \sa
     //! cend_panislo
@@ -1722,8 +1731,8 @@ namespace libsemigroups {
 
     //! Returns an iterator for PANISLO (Path And Node In Short Lex Order).
     //!
-    //! Returns a forward iterator pointing to one after the last path from any
-    //! node in the digraph.
+    //! Returns a forward iterator pointing to one after the last path from
+    //! any node in the digraph.
     //!
     //! The iterator returned by this function may still dereferencable and
     //! incrementable, but may not point to a path in the correct range.
@@ -1792,8 +1801,8 @@ namespace libsemigroups {
     //! Returns an iterator for PILO (Path In Lex Order).
     //!
     //! Returns a forward iterator pointing to the edge labels of the first
-    //! path (in lexicographical order) starting at \p source with length in the
-    //! range \f$[min, max)\f$.
+    //! path (in lexicographical order) starting at \p source with length in
+    //! the range \f$[min, max)\f$.
     //!
     //! If incremented, the iterator will point to the next least edge
     //! labelling of a path (in lexicographical order), with length in the
@@ -1801,8 +1810,8 @@ namespace libsemigroups {
     //! function are equal whenever they point to equal objects.
     //!
     //! \param source the source node
-    //! \param min the minimum length of a path to enumerate (defaults to \c 0)
-    //! \param max the maximum length of a path to enumerate (defaults to
+    //! \param min the minimum length of a path to enumerate (defaults to \c
+    //! 0) \param max the maximum length of a path to enumerate (defaults to
     //!        libsemigroups::POSITIVE_INFINITY).
     //!
     //! \returns
@@ -1816,13 +1825,13 @@ namespace libsemigroups {
     //!
     //! \warning
     //! Copying iterators of this type is expensive.  As a consequence, prefix
-    //! incrementing \c ++it the returned  iterator \c it significantly cheaper
-    //! than postfix incrementing \c it++.
+    //! incrementing \c ++it the returned  iterator \c it significantly
+    //! cheaper than postfix incrementing \c it++.
     //!
     //! \warning
     //! If the action digraph represented by \c this contains a cycle that is
-    //! reachable from \p source, then there are infinitely many paths starting
-    //! at \p source, and so \p max should be chosen with some care.
+    //! reachable from \p source, then there are infinitely many paths
+    //! starting at \p source, and so \p max should be chosen with some care.
     //!
     //! \sa
     //! cend_pilo
@@ -1836,8 +1845,8 @@ namespace libsemigroups {
 
     //! Returns an iterator for PILO (Path In Lex Order).
     //!
-    //! Returns a forward iterator pointing to one after the last path from any
-    //! node in the digraph.
+    //! Returns a forward iterator pointing to one after the last path from
+    //! any node in the digraph.
     //!
     //! The iterator returned by this function may still dereferencable and
     //! incrementable, but may not point to a path in the correct range.
@@ -1865,8 +1874,8 @@ namespace libsemigroups {
     //! Returns an iterator for PISLO (Path In Short Lex Order).
     //!
     //! Returns a forward iterator pointing to the edge labels of the first
-    //! path (in short-lex order) starting at \p source with length in the range
-    //! \f$[min, max)\f$.
+    //! path (in short-lex order) starting at \p source with length in the
+    //! range \f$[min, max)\f$.
     //!
     //! If incremented, the iterator will point to the next least edge
     //! labelling of a path (in short-lex order), with length in the
@@ -1874,8 +1883,8 @@ namespace libsemigroups {
     //! function are equal whenever they point to equal objects.
     //!
     //! \param source the source node
-    //! \param min the minimum length of a path to enumerate (defaults to \c 0)
-    //! \param max the maximum length of a path to enumerate (defaults to
+    //! \param min the minimum length of a path to enumerate (defaults to \c
+    //! 0) \param max the maximum length of a path to enumerate (defaults to
     //!        libsemigroups::POSITIVE_INFINITY).
     //!
     //! \returns
@@ -1889,13 +1898,13 @@ namespace libsemigroups {
     //!
     //! \warning
     //! Copying iterators of this type is expensive.  As a consequence, prefix
-    //! incrementing \c ++it the returned  iterator \c it significantly cheaper
-    //! than postfix incrementing \c it++.
+    //! incrementing \c ++it the returned  iterator \c it significantly
+    //! cheaper than postfix incrementing \c it++.
     //!
     //! \warning
     //! If the action digraph represented by \c this contains a cycle that is
-    //! reachable from \p source, then there are infinitely many paths starting
-    //! at \p source, and so \p max should be chosen with some care.
+    //! reachable from \p source, then there are infinitely many paths
+    //! starting at \p source, and so \p max should be chosen with some care.
     //!
     //! \sa
     //! cend_pislo
@@ -1909,8 +1918,8 @@ namespace libsemigroups {
 
     //! Returns an iterator for PISLO (Path In Short Lex Order).
     //!
-    //! Returns a forward iterator pointing to one after the last path from any
-    //! node in the digraph.
+    //! Returns a forward iterator pointing to one after the last path from
+    //! any node in the digraph.
     //!
     //! The iterator returned by this function may still dereferencable and
     //! incrementable, but may not point to a path in the correct range.
@@ -2127,7 +2136,8 @@ namespace libsemigroups {
     //!
     //! Returns a forward iterator pointing to the edge labels of the first
     //! path (in lexicographical order) starting at the node \p source and
-    //! ending at the node \p target with length in the range \f$[min, max)\f$.
+    //! ending at the node \p target with length in the range \f$[min,
+    //! max)\f$.
     //!
     //! If incremented, the iterator will point to the next least edge
     //! labelling of a path (in lexicographical order).  Iterators of the type
@@ -2136,8 +2146,8 @@ namespace libsemigroups {
     //!
     //! \param source the first node
     //! \param target the last node
-    //! \param min the minimum length of a path to enumerate (defaults to \c 0)
-    //! \param max the maximum length of a path to enumerate (defaults to
+    //! \param min the minimum length of a path to enumerate (defaults to \c
+    //! 0) \param max the maximum length of a path to enumerate (defaults to
     //!        libsemigroups::POSITIVE_INFINITY).
     //!
     //! \returns
@@ -2151,8 +2161,8 @@ namespace libsemigroups {
     //!
     //! \warning
     //! Copying iterators of this type is expensive.  As a consequence, prefix
-    //! incrementing \c ++it the returned  iterator \c it significantly cheaper
-    //! than postfix incrementing \c it++.
+    //! incrementing \c ++it the returned  iterator \c it significantly
+    //! cheaper than postfix incrementing \c it++.
     //!
     //! \warning
     //! If the action digraph represented by \c this contains a cycle that is
@@ -2175,8 +2185,8 @@ namespace libsemigroups {
 
     //! Returns an iterator for PSTILO (Path Source Target In Lex Order).
     //!
-    //! Returns a forward iterator pointing to one after the last path from any
-    //! node in the digraph.
+    //! Returns a forward iterator pointing to one after the last path from
+    //! any node in the digraph.
     //!
     //! The iterator returned by this function may still dereferencable and
     //! incrementable, but may not point to a path in the correct range.
@@ -2270,23 +2280,23 @@ namespace libsemigroups {
     //!
     //! \param source the first node
     //! \param target the last node
-    //! \param min the minimum length of a path to enumerate (defaults to \c 0)
-    //! \param max the maximum length of a path to enumerate (defaults to
+    //! \param min the minimum length of a path to enumerate (defaults to \c
+    //! 0) \param max the maximum length of a path to enumerate (defaults to
     //!        libsemigroups::POSITIVE_INFINITY).
     //!
     //! \returns
     //! An iterator \c it of type \c const_pstislo_iterator pointing to a
     //! libsemigroups::word_type consisting of the edge labels of the first
-    //! path (in short-lex order) from the node \p source to the node \p target
-    //! with length in the range \f$[min, max)\f$ (if any).
+    //! path (in short-lex order) from the node \p source to the node \p
+    //! target with length in the range \f$[min, max)\f$ (if any).
     //!
     //! \throws LibsemigroupsException if \p target or \p source is not a node
     //! in the digraph.
     //!
     //! \warning
     //! Copying iterators of this type is expensive.  As a consequence, prefix
-    //! incrementing \c ++it the returned  iterator \c it significantly cheaper
-    //! than postfix incrementing \c it++.
+    //! incrementing \c ++it the returned  iterator \c it significantly
+    //! cheaper than postfix incrementing \c it++.
     //!
     //! \warning
     //! If the action digraph represented by \c this contains a cycle that is
@@ -2317,8 +2327,8 @@ namespace libsemigroups {
     //! Returns an iterator for PSTISLO (Path Source Target In Short Lex
     //! Order).
     //!
-    //! Returns a forward iterator pointing to one after the last path from any
-    //! node in the digraph.
+    //! Returns a forward iterator pointing to one after the last path from
+    //! any node in the digraph.
     //!
     //! The iterator returned by this function may still dereferencable and
     //! incrementable, but may not point to a path in the correct range.
@@ -2448,7 +2458,8 @@ namespace libsemigroups {
     //! \param source the first node
     //! \param min the minimum length of a path
     //! \param max the maximum length of a path
-    //! \param lgrthm the algorithm to use (defaults to: algorithm::automatic).
+    //! \param lgrthm the algorithm to use (defaults to:
+    //! algorithm::automatic).
     //!
     //! \returns
     //! A value of type \c uint64_t.
@@ -2470,7 +2481,8 @@ namespace libsemigroups {
     //! * algorithm::trivial: at worst \f$O(nm)\f$ where \f$n\f$ is the number
     //!   of nodes and \f$m\f$ is the out-degree of the digraph (only valid in
     //!   some circumstances)
-    //! * algorithm::automatic: attempts to select the fastest algorithm of the
+    //! * algorithm::automatic: attempts to select the fastest algorithm of
+    //! the
     //!   preceding algorithms and then applies that.
     //!
     //! \warning If \p lgrthm is algorithm::automatic, then it is not always
@@ -2519,8 +2531,8 @@ namespace libsemigroups {
     //! \no_libsemigroups_except
     //!
     //! \complexity
-    //! At worst \f$O(nm)\f$ where \f$n\f$ is the number of nodes and \f$m\f$ is
-    //! the out-degree of the digraph.
+    //! At worst \f$O(nm)\f$ where \f$n\f$ is the number of nodes and \f$m\f$
+    //! is the out-degree of the digraph.
     // Not noexcept because action_digraph_helper::topological_sort isn't
     algorithm number_of_paths_algorithm(node_type source,
                                         node_type target,
@@ -2548,7 +2560,8 @@ namespace libsemigroups {
     //! \param target the last node
     //! \param min the minimum length of a path
     //! \param max the maximum length of a path
-    //! \param lgrthm the algorithm to use (defaults to: algorithm::automatic).
+    //! \param lgrthm the algorithm to use (defaults to:
+    //! algorithm::automatic).
     //!
     //! \returns
     //! A value of type `uint64_t`.
@@ -2569,7 +2582,8 @@ namespace libsemigroups {
     //!   the subdigraph induced by the nodes reachable from \p source is
     //!   acyclic)
     //! * algorithm::trivial: constant (only valid in some circumstances)
-    //! * algorithm::automatic: attempts to select the fastest algorithm of the
+    //! * algorithm::automatic: attempts to select the fastest algorithm of
+    //! the
     //!   preceding algorithms and then applies that.
     //!
     //! \warning If \p lgrthm is algorithm::automatic, then it is not always
@@ -2613,8 +2627,8 @@ namespace libsemigroups {
 
     //! Returns a const reference to the underlying array.
     //!
-    //! This function returns a const reference to the underlying container for
-    //! the edges of a digraph.
+    //! This function returns a const reference to the underlying container
+    //! for the edges of a digraph.
     //!
     //! \parameters (None)
     //!
@@ -2698,6 +2712,7 @@ namespace libsemigroups {
                                     size_t    min,
                                     size_t    max) const {
       auto am = detail::adjacency_matrix<adjacency_matrix_type>(*this);
+
 #ifdef LIBSEMIGROUPS_EIGEN_ENABLED
       auto     acc   = detail::pow(am, min);
       uint64_t total = 0;
@@ -2788,8 +2803,8 @@ namespace libsemigroups {
                                 "from %llu is not acyclic",
                                 static_cast<uint64_t>(source));
       } else if (topo.size() <= min) {
-        // There are fewer than `min` nodes reachable from source, and so there
-        // are no paths of length `min` or greater
+        // There are fewer than `min` nodes reachable from source, and so
+        // there are no paths of length `min` or greater
         return 0;
       }
 
@@ -2809,18 +2824,18 @@ namespace libsemigroups {
             // there are no paths longer than m + 1 from the m-th entry in
             // the topological sort.
             for (size_t i = 1; i < std::min(max, m + 1); ++i) {
-              number_paths.set(topo[m],
-                               i,
-                               number_paths.get(*n, i - 1)
-                                   + number_paths.get(topo[m], i));
+              number_paths.set(
+                  topo[m],
+                  i,
+                  number_paths.get(*n, i - 1) + number_paths.get(topo[m], i));
             }
           }
         }
       }
-      return std::accumulate(number_paths.cbegin_row(source) + min,
-                             number_paths.cbegin_row(source)
-                                 + std::min(topo.size(), max),
-                             0);
+      return std::accumulate(
+          number_paths.cbegin_row(source) + min,
+          number_paths.cbegin_row(source) + std::min(topo.size(), max),
+          0);
     }
 
     uint64_t number_of_paths_acyclic(node_type source,
@@ -2874,18 +2889,18 @@ namespace libsemigroups {
             // there are no paths longer than m + 1 from the m-th entry in
             // the topological sort.
             for (size_t i = 1; i < std::min(max, m + 1); ++i) {
-              number_paths.set(topo[m],
-                               i,
-                               number_paths.get(*n, i - 1)
-                                   + number_paths.get(topo[m], i));
+              number_paths.set(
+                  topo[m],
+                  i,
+                  number_paths.get(*n, i - 1) + number_paths.get(topo[m], i));
             }
           }
         }
       }
-      return std::accumulate(number_paths.cbegin_row(source) + min,
-                             number_paths.cbegin_row(source)
-                                 + std::min(topo.size(), max),
-                             0);
+      return std::accumulate(
+          number_paths.cbegin_row(source) + min,
+          number_paths.cbegin_row(source) + std::min(topo.size(), max),
+          0);
     }
 
     ////////////////////////////////////////////////////////////////////////

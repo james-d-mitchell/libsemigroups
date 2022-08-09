@@ -30,24 +30,18 @@ namespace libsemigroups {
             typename T,
             typename
             = std::enable_if_t<std::is_base_of<FroidurePinBase, S>::value>>
-  S make(ActionDigraph<T> const& ad) {
+  S make(ActionDigraph<T> const& ad, size_t last) {
     using node_type    = typename ActionDigraph<T>::node_type;
     using element_type = typename S::element_type;
 
-    S result;
-
     LIBSEMIGROUPS_ASSERT(ad.out_degree() > 0);
-    size_t N = std::distance(
-        ad.cbegin_nodes(),
-        std::find_if(ad.cbegin_nodes(), ad.cend_nodes(), [&ad](auto v) {
-          return ad.neighbor(v, 0) == UNDEFINED;
-        }));
-
-    element_type x(N);
+    S            result;
+    element_type x(last);
     for (node_type lbl = 0; lbl < ad.out_degree(); ++lbl) {
-      for (size_t i = 0; i < N; ++i) {
+      for (size_t i = 0; i < last; ++i) {
         x[i] = ad.neighbor(i, lbl);
       }
+      validate(x);
       result.add_generator(x);
     }
     return result;
