@@ -2581,14 +2581,16 @@ namespace libsemigroups {
 
     LIBSEMIGROUPS_TEST_CASE("ToddCoxeter",
                             "113",
-                            "RectangularBand(15, 15) (TODO)",
+                            "RectangularBand(4, 3) (Ayik et al)",
                             "[todd-coxeter][quick][no-valgrind][no-coverage]") {
-      auto         rg = ReportGuard(true);
-      size_t const n  = 15;
+      auto         rg = ReportGuard(false);
+      size_t const m  = 4;
+      size_t const n  = 3;
       ToddCoxeter  tc(congruence_kind::twosided);
-      setup(tc, 2 * n, RectangularBand, n, n);
+      setup(tc, m + n, RectangularBand, m, n);
       tc.sort_generating_pairs().remove_duplicate_generating_pairs();
-      REQUIRE(tc.number_of_classes() == 15 * 15);
+      REQUIRE(tc.number_of_classes() == m * n);
+      REQUIRE(tc.quotient_froidure_pin()->number_of_idempotents() == m * n);
     }
 
   }  // namespace congruence

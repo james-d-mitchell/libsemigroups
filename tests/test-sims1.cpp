@@ -1202,7 +1202,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "039",
                           "TemperleyLieb(3) - minimal rep",
-                          "[extreme][sims1]") {
+                          "[standard][sims1]") {
     auto rg = ReportGuard(false);
 
     std::array<uint64_t, 11> const sizes
@@ -1210,7 +1210,7 @@ namespace libsemigroups {
     std::array<uint64_t, 11> const min_degrees
         = {0, 0, 2, 4, 7, 10, 20, 29, 0, 0, 0};
 
-    for (size_t n = 3; n < 8; ++n) {
+    for (size_t n = 3; n < 7; ++n) {
       auto p = make<Presentation<word_type>>(TemperleyLieb(n));
       // There are no relations containing the empty word so we just manually
       // add it.
@@ -1225,7 +1225,7 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "040",
-                          "TransitiveGroup(10,32) - minimal rep",
+                          "TransitiveGroup(10, 32) - minimal rep",
                           "[extreme][sims1]") {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
@@ -1249,6 +1249,48 @@ namespace libsemigroups {
 
     REQUIRE(sims1::minimal_representation<uint32_t>(p, 720).number_of_nodes()
             == 6);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "041",
+                          "RectangularBand(3, 3) - quick",
+                          "[extreme][sims1]") {
+    auto rg = ReportGuard(false);
+    auto p  = make<Presentation<word_type>>(RectangularBand(2, 2));
+    p.contains_empty_word(true);
+    auto d = sims1::minimal_representation<uint32_t>(p, 5);
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+    REQUIRE(S.size() == 4);
+    REQUIRE(d.number_of_nodes() == 4);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "042",
+                          "RectangularBand(4, 5)",
+                          "[extreme][sims1]") {
+    std::vector<std::array<size_t, 6>> results = {{0, 0, 0, 0, 0, 0},
+                                                  {0, 0, 0, 0, 0, 0},
+                                                  {0, 0, 4, 5, 5, 6},
+                                                  {0, 0, 5, 6, 6, 7},
+                                                  {0, 0, 6, 7, 7, 8},
+                                                  {0, 0, 7, 8, 8, 9}};
+
+    auto rg = ReportGuard(false);
+    for (size_t m = 2; m <= 5; ++m) {
+      for (size_t n = 2; n <= 5; ++n) {
+        std::cout << std::string(72, '#') << "\n"
+                  << "CASE m, n = " << m << ", " << n << "\n"
+                  << std::string(72, '#') << std::endl;
+
+        auto p = make<Presentation<word_type>>(RectangularBand(m, n));
+        p.contains_empty_word(true);
+        auto d = sims1::minimal_representation<uint32_t>(p, m * n + 1);
+        auto S
+            = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+        REQUIRE(S.size() == m * n);
+        REQUIRE(d.number_of_nodes() == results[m][n]);
+      }
+    }
   }
 
 }  // namespace libsemigroups

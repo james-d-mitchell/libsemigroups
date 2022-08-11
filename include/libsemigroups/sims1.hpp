@@ -565,7 +565,8 @@ namespace libsemigroups {
     template <typename T, typename W>
     ActionDigraph<T> minimal_representation(Presentation<W> const& p,
                                             size_t                 size) {
-      auto             best = representation<T>(p, 1, size, size);
+      size_t           max  = (p.contains_empty_word() ? size : size + 1);
+      auto             best = representation<T>(p, 1, max, size);
       ActionDigraph<T> next;
       size_t           hi = best.number_of_nodes();
 
@@ -579,13 +580,55 @@ namespace libsemigroups {
       std::cout << "best = " << hi << "\n";
       next = std::move(representation<T>(p, 1, hi - 1, size));
       while (next.number_of_nodes() != 0) {
+        hi = next.number_of_nodes();
         std::cout << "best = " << hi << "\n";
-        hi   = next.number_of_nodes();
         best = std::move(next);
         next = std::move(representation<T>(p, 1, hi - 1, size));
       }
       return best;
     }
+
+    // The following is an alternative implementation that does a sort of
+    // binary search, this might be useful if there are examples where the
+    // minimal degree representation is much smaller than the initial
+    // representation found.
+    /*template <typename T, typename W>
+    ActionDigraph<T> minimal_representation(Presentation<W> const& p,
+                                            size_t                 size) {
+      auto             best = representation<T>(p, 1, size, size);
+      ActionDigraph<T> next;
+      size_t           hi = best.number_of_nodes();
+
+      if (hi == 0) {
+        // No faithful representation on up to <size> points
+        return best;
+      }
+
+      size_t lo = representation<T>(p, 1, 1, size).number_of_nodes();
+
+      // TODO handle the case when there is a 1 degree rep
+      if (lo == 0) {
+        lo = 1;
+      }
+
+      auto mid = (hi + lo) / 2;
+      mid      = (mid == 1 ? 2 : mid);
+      std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
+                << std::endl;
+      while (lo != mid) {
+        next = std::move(representation<T>(p, lo + 1, mid, size));
+        if (next.number_of_nodes() == 0) {
+          lo = mid;
+        } else if (next.number_of_nodes() < hi) {
+          hi   = next.number_of_nodes();
+          best = std::move(next);
+        }
+        mid = (hi + lo) / 2;
+        std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
+                  << std::endl;
+      }
+      return best;
+    }*/
 
   }  // namespace sims1
 
