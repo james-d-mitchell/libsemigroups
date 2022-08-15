@@ -408,6 +408,11 @@ namespace libsemigroups {
         std::swap(_num_active_nodes, that._num_active_nodes);
         std::swap(_num_gens, that._num_gens);
       }
+
+      void clone(const_iterator_base const& that) {
+        _felsch_graph     = that._felsch_graph;
+        _num_active_nodes = that._num_active_nodes;
+      }
     };
 
     //! No doc
@@ -568,165 +573,141 @@ namespace libsemigroups {
     template <typename FunctionType>
     void for_each(size_type n, FunctionType pred) const {}
 
-    /* private:
-      // TODO(Sims1) move to cpp file
-      class work_stealing_const_iterator {
-       public:
-        //! No doc
-        using size_type = typename std::vector<digraph_type>::size_type;
-        //! No doc
-        using difference_type =
-            typename std::vector<digraph_type>::difference_type;
-        //! No doc
-        using const_pointer = typename std::vector<digraph_type>::const_pointer;
-        //! No doc
-        using pointer = typename std::vector<digraph_type>::pointer;
-        //! No doc
-        using const_reference =
-            typename std::vector<digraph_type>::const_reference;
-        //! No doc
-        using reference = typename std::vector<digraph_type>::reference;
-        //! No doc
-        using value_type = digraph_type;
-        //! No doc
-        using iterator_category = std::forward_iterator_tag;
-
-       private:
-        using PendingDef = typename const_iterator::PendingDef;
-
-        Presentation<word_type> _extra;
-        Presentation<word_type> _final;
-        size_type               _min_target_node;
-        size_type               _num_gens;
-
-        FelschDigraph<word_type, node_type> _felsch_graph;
-        size_type                           _num_active_nodes;
-        std::vector<PendingDef>             _pending;
-
-       public:
-        //! No doc
-        work_stealing_const_iterator(Presentation<word_type> const& p,
-                                     Presentation<word_type> const& e,
-                                     Presentation<word_type> const& f,
-                                     size_type                      n);
-
-        // None of the constructors are noexcept because the corresponding
-        // constructors for std::vector aren't (until C++17).
-        //! No doc
-        work_stealing_const_iterator() = delete;
-        //! No doc
-        work_stealing_const_iterator(work_stealing_const_iterator const&)
-            = default;
-        //! No doc
-        work_stealing_const_iterator(work_stealing_const_iterator&&) = default;
-        //! No doc
-        work_stealing_const_iterator&
-        operator=(work_stealing_const_iterator const&)
-            = default;
-        //! No doc
-        work_stealing_const_iterator& operator=(work_stealing_const_iterator&&)
-            = default;
-
-        //! No doc
-        ~work_stealing_const_iterator() = default;
-
-        //! No doc
-        bool operator==(work_stealing_const_iterator const& that) const noexcept
-  { if (_num_active_nodes == 0 && that._num_active_nodes == 0) { return true;
-          }
-          return _num_active_nodes == that._num_active_nodes
-                 && _felsch_graph == that._felsch_graph;
-        }
-
-        //! No doc
-        bool operator!=(work_stealing_const_iterator const& that) const noexcept
-  { return !(this->operator==(that));
-        }
-
-        //! No doc
-        const_reference operator*() const noexcept {
-          return _felsch_graph;
-        }
-
-        //! No doc
-        const_pointer operator->() const noexcept {
-          return &_felsch_graph;
-        }
-
-        // prefix
-        //! No doc
-        work_stealing_const_iterator const& operator++();
-
-        //! No doc
-        // postfix
-        work_stealing_const_iterator operator++(int) {
-          work_stealing_const_iterator copy(*this);
-          ++(*this);
-          return copy;
-        }
-
-        //! No doc
-        void swap(work_stealing_const_iterator& that) noexcept {
-          std::swap(_extra, that._extra);
-          std::swap(_max_num_classes, that._max_num_classes);
-          std::swap(_min_target_node, that._min_target_node);
-          std::swap(_num_active_nodes, that._num_active_nodes);
-          std::swap(_num_gens, that._num_gens);
-          std::swap(_pending, that._pending);
-          std::swap(_felsch_graph, that._felsch_graph);
-        }
-      };
+   private:
+    // TODO(Sims1) move to cpp file
+    class work_stealing_const_iterator : private const_iterator_base {
+     public:
+      //! No doc
+      using size_type = typename const_iterator_base::size_type;
+      //! No doc
+      using difference_type = typename const_iterator_base::difference_type;
+      //! No doc
+      using const_pointer = typename const_iterator_base::const_pointer;
+      //! No doc
+      using pointer = typename const_iterator_base::pointer;
+      //! No doc
+      using const_reference = typename const_iterator_base::const_reference;
+      //! No doc
+      using reference = typename const_iterator_base::reference;
+      //! No doc
+      using value_type = typename const_iterator_base::value_type;
+      //! No doc
+      using iterator_category = typename const_iterator_base::iterator_category;
 
      private:
-      using PendingDef = typename const_iterator::PendingDef;
-      std::deque<PendingDef> _queue;
+      using PendingDef = typename const_iterator_base::PendingDef;
+
+      std::deque<PendingDef> _pending;
       mutable std::mutex     _mutex;
 
      public:
+      //! No doc
+      work_stealing_const_iterator(Presentation<word_type> const& p,
+                                   Presentation<word_type> const& e,
+                                   Presentation<word_type> const& f,
+                                   size_type                      n)
+          : const_iterator_base(p, e, f, n) {
+        if (this->_num_active_nodes == 0) {
+          return;
+        }
+        // TODO(Sims1): the next lines are in the wrong place.
+        // The PendingDefs below should be pushing in to the pool_queue of the
+        // ThreadPool
+        if (n > 1) {
+          push({0, 0, 1, 0, 2});
+        }
+        if (this->_min_target_node == 0) {
+          push({0, 0, 0, 0, 1});
+        }
+        // TODO(Sims1): this should be in the ThreadPool too
+        ++(*this);
+        // The increment above is required so that when dereferencing any
+        // instance of this type we obtain a valid word graph (o/w the value
+        // pointed to here is empty).
+      }
+
+      // None of the constructors are noexcept because the corresponding
+      // constructors for std::vector aren't (until C++17).
+      //! No doc
+      work_stealing_const_iterator() = delete;
+      //! No doc
+      work_stealing_const_iterator(work_stealing_const_iterator const&)
+          = default;
+      //! No doc
+      work_stealing_const_iterator(work_stealing_const_iterator&&) = default;
+      //! No doc
+      work_stealing_const_iterator&
+      operator=(work_stealing_const_iterator const&)
+          = default;
+      //! No doc
+      work_stealing_const_iterator& operator=(work_stealing_const_iterator&&)
+          = default;
+
+      //! No doc
+      ~work_stealing_const_iterator() = default;
+
+      //! No doc
+      // postfix
+      work_stealing_const_iterator operator++(int) {
+        work_stealing_const_iterator copy(*this);
+        ++(*this);
+        return copy;
+      }
+
+      // prefix
+      //! No doc
+      work_stealing_const_iterator const& operator++();
+
+      //! No doc
+      void swap(work_stealing_const_iterator& that) noexcept {
+        const_iterator_base::swap(that);
+        // TODO complete this
+      }
+
+     public:
+      // TODO(Sims1) this should be private, and the pool should be a friend
       using pending_def_iterator = typename std::deque<PendingDef>::iterator;
 
-      work_stealing_const_iterator()                                    =
-  default; work_stealing_const_iterator(work_stealing_const_iterator const&) =
-  delete; work_stealing_const_iterator& operator=(work_stealing_const_iterator
-  const&) = delete;
-      // TODO(Sims1) the move constructors
       // TODO (Sims1) by value, maybe not a good idea?
       void push(PendingDef pd) {
         std::lock_guard<std::mutex> lock(_mutex);
-        _queue.push_front(std::move(pd));
+        _pending.push_front(std::move(pd));
       }
 
       void push(pending_def_iterator first, pending_def_iterator last) {
         std::lock_guard<std::mutex> lock(_mutex);
-        _queue.insert(_queue.cbegin(), first, last);
+        _pending.insert(_pending.cbegin(), first, last);
       }
 
       bool empty() const {
         std::lock_guard<std::mutex> lock(_mutex);
-        return _queue.empty();
+        return _pending.empty();
       }
 
       bool try_pop(PendingDef& pd) {
         std::lock_guard<std::mutex> lock(_mutex);
-        if (_queue.empty()) {
+        if (_pending.empty()) {
           return false;
         }
-        pd = std::move(_queue.front());
-        _queue.pop_front();
+        pd = std::move(_pending.front());
+        _pending.pop_front();
         return true;
       }
 
       bool try_steal(work_stealing_const_iterator& q) {
         std::lock_guard<std::mutex> lock(_mutex);
-        if (_queue.empty()) {
+        if (_pending.empty()) {
           return false;
         }
-        // TODO(Sims1): this probably doesn't do as expected if _queue.size()
+        // TODO(Sims1): this probably doesn't do as expected if _pending.size()
         // == 1
         // TODO(Sims1) could steal in a different way: maybe interlaced (steal
         // every other item); steal a fixed proportion of every queue
-        q._queue.push(_queue.cbegin() + _queue.size() / 2, _queue.cend());
-        _queue.erase(_queue.cbegin() + _queue.size() / 2, _queue.cend());
+        q._pending.push(_pending.cbegin() + _pending.size() / 2,
+                        _pending.cend());
+        _pending.erase(_pending.cbegin() + _pending.size() / 2,
+                       _pending.cend());
+        clone(q);  // Copy the digraph from q into this
         return true;
       }
     };
@@ -810,7 +791,7 @@ namespace libsemigroups {
           std::this_thread::yield();
         }
       }
-    }; */
+    };
   };
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
