@@ -51,6 +51,12 @@ namespace libsemigroups {
 
     FelschDigraph(Presentation<word_type> const& p, size_type n);
 
+    FelschDigraph()                     = default;
+    FelschDigraph(FelschDigraph const&) = default;
+    FelschDigraph(FelschDigraph&&)      = default;
+    FelschDigraph& operator=(FelschDigraph const&) = default;
+    FelschDigraph& operator=(FelschDigraph&&) = default;
+
     bool def_edge(node_type c, letter_type x, node_type d) noexcept;
 
     // Returns true if no contradictions are found.
@@ -66,6 +72,13 @@ namespace libsemigroups {
                     word_type const& u,
                     word_type const& v) noexcept;
 
+    bool operator==(FelschDigraph const& that) const {
+      size_type const m = this->number_of_active_nodes();
+      size_type const n = that.number_of_active_nodes();
+      return (m == 0 && n == 0)
+             || (m == n && this->ActionDigraph<node_type>::operator==(that));
+    }
+
    private:
     bool process_definitions_dfs_v1(node_type c);
 
@@ -74,6 +87,22 @@ namespace libsemigroups {
       return compatible(c, _presentation.rules[i], _presentation.rules[j]);
     }
   };
+
+  namespace felsch_digraph {
+    template <typename W, typename N>
+    bool compatible(FelschDigraph<W, N>&                    fd,
+                    typename FelschDigraph<W, N>::node_type first_node,
+                    typename FelschDigraph<W, N>::node_type last_node,
+                    typename std::vector<W>::const_iterator first_rule,
+                    typename std::vector<W>::const_iterator last_rule) noexcept;
+
+    template <typename W, typename N>
+    bool compatible(FelschDigraph<W, N>&                    fd,
+                    typename FelschDigraph<W, N>::node_type node,
+                    typename std::vector<W>::const_iterator first_rule,
+                    typename std::vector<W>::const_iterator last_rule) noexcept;
+
+  }  // namespace felsch_digraph
 }  // namespace libsemigroups
 
 #include "felsch-digraph.tpp"

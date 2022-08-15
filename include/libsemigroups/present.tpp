@@ -213,7 +213,6 @@ namespace libsemigroups {
 
     template <typename W>
     void remove_duplicate_rules(Presentation<W>& p) {
-      using libsemigroups::shortlex_compare;
       std::unordered_set<std::pair<W, W>, Hash<std::pair<W, W>>> relations_set;
 
       for (auto it = p.rules.begin(); it != p.rules.end(); it += 2) {
@@ -226,6 +225,17 @@ namespace libsemigroups {
       p.rules.clear();
       for (auto const& rel : relations_set) {
         add_rule(p, rel.first, rel.second);
+      }
+    }
+
+    template <typename W>
+    void remove_trivial_rules(Presentation<W>& p) {
+      for (size_t i = 0; i < p.rules.size();) {
+        if (p.rules[i] == p.rules[i + 1]) {
+          p.rules.erase(p.rules.cbegin() + i, p.rules.cbegin() + i + 2);
+        } else {
+          i += 2;
+        }
       }
     }
 
@@ -248,8 +258,6 @@ namespace libsemigroups {
           duf.unite(it->second, i);
         }
       }
-
-      using libsemigroups::shortlex_compare;
 
       // Class index -> index of min. length words in wrt + words
       std::unordered_map<size_t, W> mins;
@@ -292,6 +300,55 @@ namespace libsemigroups {
       }
     }
 
+    // Lex compare of
+    // [first11, last11) + [first12, last12)
+    // and
+    // [first21, last21) + [first22, last22)
+    template <typename W>
+    bool shortlex_compare_concat(W const& prefix1,
+                                 W const& suffix1,
+                                 W const& prefix2,
+                                 W const& suffix2) {
+      if (prefix1.size() + suffix1.size() < prefix2.size() + suffix2.size()) {
+        return true;
+      } else if (prefix1.size() + suffix1.size()
+                 > prefix2.size() + suffix2.size()) {
+        return false;
+      }
+
+      if (prefix1.size() < prefix2.size()) {
+        size_t const k = prefix2.size() - prefix1.size();
+        return std::lexicographical_compare(prefix1.cbegin(),
+                                            prefix1.cend(),
+                                            prefix2.cbegin(),
+                                            prefix2.cbegin() + prefix1.size())
+               || std::lexicographical_compare(suffix1.cbegin(),
+                                               suffix1.cbegin() + k,
+                                               prefix2.cbegin()
+                                                   + prefix1.size(),
+                                               prefix2.cend())
+               || std::lexicographical_compare(suffix1.cbegin() + k,
+                                               suffix1.cend(),
+                                               suffix2.cbegin(),
+                                               suffix2.cend());
+      } else {
+        size_t const k = prefix1.size() - prefix2.size();
+        return std::lexicographical_compare(prefix1.cbegin(),
+                                            prefix1.cbegin() + prefix2.size(),
+                                            prefix2.cbegin(),
+                                            prefix2.cend())
+               || std::lexicographical_compare(prefix1.cbegin()
+                                                   + prefix2.size(),
+                                               prefix1.cend(),
+                                               suffix2.cbegin(),
+                                               suffix2.cbegin() + k)
+               || std::lexicographical_compare(suffix1.cbegin(),
+                                               suffix1.cend(),
+                                               suffix2.cbegin() + k,
+                                               suffix2.cend());
+      }
+    }
+
     template <typename W>
     void sort_rules(Presentation<W>& p) {
       // Create a permutation of the even indexed entries in vec
@@ -302,7 +359,10 @@ namespace libsemigroups {
       perm.resize(n);
       std::iota(perm.begin(), perm.end(), 0);
       std::sort(perm.begin(), perm.end(), [&p](auto x, auto y) -> bool {
-        return shortlex_compare(p.rules[2 * x], p.rules[2 * y]);
+        return shortlex_compare_concat(p.rules[2 * x],
+                                       p.rules[2 * x + 1],
+                                       p.rules[2 * y],
+                                       p.rules[2 * y + 1]);
       });
       // Apply the permutation (adapted from stl.hpp:apply_permutation)
       for (letter_type i = 0; static_cast<decltype(n)>(i) < n; ++i) {
@@ -336,12 +396,17 @@ namespace libsemigroups {
       return W(first, last);
     }
 
-    template <typename W, typename T>
+    // TODO(Sims1) this should replace a subword with another subword
+    template <typename W, typename T, typename>
     void replace_subword(Presentation<W>& p, T first, T last) {
-      using letter_type   = typename Presentation<W>::letter_type;
+      using letter_type = typename Presentation<W>::letter_type;
+      // TODO(Sims1) the next line only really works if p has a
+      // normalize_alphabet
       letter_type const x = static_cast<letter_type>(p.alphabet().size());
-      p.alphabet(p.alphabet().size() + 1);
-      auto replace_subword = [&first, &last, &x](W& word) {
+      W                 new_alphabet = p.alphabet();
+      new_alphabet.push_back(x);
+      p.alphabet(new_alphabet);
+      auto rplc_sbwrd = [&first, &last, &x](W& word) {
         auto it = std::search(word.begin(), word.end(), first, last);
         while (it != word.end()) {
           // found [first, last)
@@ -351,9 +416,32 @@ namespace libsemigroups {
           it = std::search(word.begin() + pos + 1, word.end(), first, last);
         }
       };
-      std::for_each(p.rules.begin(), p.rules.end(), replace_subword);
+      std::for_each(p.rules.begin(), p.rules.end(), rplc_sbwrd);
       p.rules.emplace_back(W({x}));
       p.rules.emplace_back(first, last);
+    }
+
+    template <typename W>
+    void replace_subword(Presentation<W>& p,
+                         W const&         existing,
+                         W const&         replacement) {
+      auto rplc_sbwrd = [&existing, &replacement](W& word) {
+        auto it = std::search(
+            word.begin(), word.end(), existing.cbegin(), existing.cend());
+        while (it != word.end()) {
+          // found existing
+          auto replacement_first = it - word.begin();
+          word.erase(it, it + existing.size());
+          word.insert(word.begin() + replacement_first,
+                      replacement.cbegin(),
+                      replacement.cend());
+          it = std::search(word.begin() + replacement_first + 1,
+                           word.end(),
+                           existing.cbegin(),
+                           existing.cend());
+        }
+      };
+      std::for_each(p.rules.begin(), p.rules.end(), rplc_sbwrd);
     }
 
     template <typename W>
@@ -388,6 +476,82 @@ namespace libsemigroups {
       p.validate();
 #endif
     }
-  }  // namespace presentation
 
+    template <typename W>
+    W commutator(W const& x, W const& X, W const& y, W const& Y) {
+      // TODO(Sims1) checks
+      W XYxy;
+      XYxy.push_back(X);
+      XYxy.push_back(Y);
+      XYxy.push_back(x);
+      XYxy.push_back(y);
+    }
+
+    template <typename T>
+    auto longest_rule(T first, T last) {
+      auto   result = last;
+      size_t max    = 0;
+      for (auto it = first; it != last; it += 2) {
+        size_t val = it->size() + (it + 1)->size();
+        if (val > max) {
+          max    = val;
+          result = it;
+        }
+      }
+      return result;
+    }
+
+    template <typename T>
+    auto longest_rule_length(T first, T last) {
+      auto it = longest_rule(first, last);
+      return it->size() + (it + 1)->size();
+    }
+
+    template <typename T>
+    auto shortest_rule(T first, T last) {
+      auto   result = last;
+      size_t min    = POSITIVE_INFINITY;
+      for (auto it = first; it != last; it += 2) {
+        size_t val = it->size() + (it + 1)->size();
+        if (val < min) {
+          min    = val;
+          result = it;
+        }
+      }
+      return result;
+    }
+
+    template <typename T>
+    auto shortest_rule_length(T first, T last) {
+      auto it = shortest_rule(first, last);
+      return it->size() + (it + 1)->size();
+    }
+
+    template <typename W>
+    void remove_redundant_generators(Presentation<W>& p) {
+      remove_trivial_rules(p);
+      for (size_t i = 0; i != p.rules.size(); i += 2) {
+        auto lhs = p.rules[i];
+        auto rhs = p.rules[i + 1];
+        if (lhs.size() == 1
+            && std::none_of(
+                rhs.cbegin(), rhs.cend(), [&lhs](letter_type const& a) {
+                  return a == lhs[0];
+                })) {
+          if (rhs.size() == 1 && rhs[0] < lhs[0]) {
+            std::swap(lhs, rhs);
+          }
+          replace_subword(p, lhs, rhs);
+        } else if (rhs.size() == 1
+                   && std::none_of(
+                       lhs.cbegin(), lhs.cend(), [&rhs](letter_type const& a) {
+                         return a == rhs[0];
+                       })) {
+          replace_subword(p, rhs, lhs);
+        }
+      }
+      remove_trivial_rules(p);
+      p.alphabet_from_rules();
+    }
+  }  // namespace presentation
 }  // namespace libsemigroups

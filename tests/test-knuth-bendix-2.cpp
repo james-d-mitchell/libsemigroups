@@ -35,18 +35,21 @@
 //
 // 6: contains tests for congruence::KnuthBendix.
 
-// #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
+#define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
 #include <iostream>  // for ostringstream
 #include <string>    // for string
 #include <vector>    // for vector
 
-#include "catch.hpp"      // for REQUIRE, REQUIRE_NOTHROW, REQUIRE_THROWS_AS
-#include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
+#include "catch.hpp"  // for REQUIRE, REQUIRE_NOTHROW, REQUIRE_THROWS_AS
+#include "fpsemi-examples.hpp"  // for SymmetricGroup
+#include "test-main.hpp"        // for LIBSEMIGROUPS_TEST_CASE
 
-#include "libsemigroups/constants.hpp"     // for POSITIVE_INFINITY
-#include "libsemigroups/knuth-bendix.hpp"  // for KnuthBendix, operator<<
-#include "libsemigroups/report.hpp"        // for ReportGuard
+#include "libsemigroups/constants.hpp"          // for POSITIVE_INFINITY
+#include "libsemigroups/knuth-bendix.hpp"       // for KnuthBendix, operator<<
+#include "libsemigroups/make-knuth-bendix.hpp"  // for make
+#include "libsemigroups/make-present.hpp"       // for make
+#include "libsemigroups/report.hpp"             // for ReportGuard
 
 namespace libsemigroups {
   struct LibsemigroupsException;
@@ -1199,5 +1202,160 @@ namespace libsemigroups {
       k.run();
       REQUIRE(k.confluent());
     }
+
+    LIBSEMIGROUPS_TEST_CASE("KnuthBendix",
+                            "013",
+                            "(fpsemi) SymmetricGroup - Carmichael",
+                            "[extreme][knuthbendix][fpsemigroup][fpsemi]") {
+      {
+        auto p = make<Presentation<word_type>>(
+            SymmetricGroup(5, author::Carmichael));
+        auto kb = make<KnuthBendix>(p);
+        REQUIRE(kb.alphabet() == "abcd");
+        //      REQUIRE(std::vector<rule_type>(kb.cbegin_rules(),
+        //      kb.cend_rules())
+        //              == std::vector<rule_type>());
+        REQUIRE(kb.size() == 120);
+      }
+
+      {
+        auto p = make<Presentation<word_type>>(
+            SymmetricGroup(7, author::Carmichael));
+        auto kb = make<KnuthBendix>(p);
+        REQUIRE(kb.size() == 5040);
+      }
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("KnuthBendix",
+                            "014",
+                            "(fpsemi) SymmetricInverseMonoid - Sutov",
+                            "[quick][knuthbendix][fpsemigroup][fpsemi]") {
+      {
+        auto p = make<Presentation<word_type>>(
+            SymmetricInverseMonoid(4, author::Sutov));
+        auto kb = make<KnuthBendix>(p);
+
+        REQUIRE(kb.alphabet() == "abcdefg");
+        // REQUIRE(std::vector<rule_type>(kb.cbegin_rules(), kb.cend_rules())
+        //        == std::vector<rule_type>());
+        REQUIRE(kb.size() == 209);
+      }
+
+      {
+        auto p = make<Presentation<word_type>>(
+            SymmetricInverseMonoid(5, author::Sutov));
+        auto kb = make<KnuthBendix>(p);
+
+        REQUIRE(kb.size() == 1'546);
+      }
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("KnuthBendix",
+                            "020",
+                            "(fpsemi) PartialTransformationMonoid - Aizenstat",
+                            "[fail][knuthbendix][fpsemigroup][fpsemi]") {
+      auto p = make<Presentation<word_type>>(
+          PartialTransformationMonoid(4, author::Aizenstat));
+      presentation::remove_trivial_rules(p);
+      REQUIRE(p.rules
+              == std::vector<word_type>({{0, 0},
+                                         {},
+                                         {1, 1},
+                                         {},
+                                         {2, 2},
+                                         {},
+                                         {0, 1, 0, 1, 0, 1},
+                                         {},
+                                         {1, 2, 1, 2, 1, 2},
+                                         {},
+                                         {2, 0, 2, 0, 2, 0},
+                                         {},
+                                         {0, 1, 0, 2, 0, 1, 0, 2},
+                                         {},
+                                         {1, 2, 1, 0, 1, 2, 1, 0},
+                                         {},
+                                         {2, 0, 2, 1, 2, 0, 2, 1},
+                                         {},
+                                         {4},
+                                         {0, 3, 0},
+                                         {5},
+                                         {1, 3, 1},
+                                         {6},
+                                         {2, 3, 2},
+                                         {3, 3},
+                                         {3},
+                                         {3, 4},
+                                         {4, 3},
+                                         {4, 1},
+                                         {1, 4},
+                                         {5, 0},
+                                         {0, 5},
+                                         {4, 2},
+                                         {2, 4},
+                                         {6, 0},
+                                         {0, 6},
+                                         {0, 3, 4},
+                                         {3, 4},
+                                         {4, 7},
+                                         {7},
+                                         {7, 4},
+                                         {4},
+                                         {3, 7},
+                                         {7, 3, 4},
+                                         {5, 7},
+                                         {7, 5}}));
+      REQUIRE(p.alphabet().size() == 8);
+      REQUIRE(p.rules.size() == 46);
+
+      presentation::remove_redundant_generators(p);
+      REQUIRE(p.rules
+              == std::vector<word_type>({{0, 0},
+                                         {},
+                                         {1, 1},
+                                         {},
+                                         {2, 2},
+                                         {},
+                                         {0, 1, 0, 1, 0, 1},
+                                         {},
+                                         {1, 2, 1, 2, 1, 2},
+                                         {},
+                                         {2, 0, 2, 0, 2, 0},
+                                         {},
+                                         {0, 1, 0, 2, 0, 1, 0, 2},
+                                         {},
+                                         {1, 2, 1, 0, 1, 2, 1, 0},
+                                         {},
+                                         {2, 0, 2, 1, 2, 0, 2, 1},
+                                         {},
+                                         {3, 3},
+                                         {3},
+                                         {3, 0, 3, 0},
+                                         {0, 3, 0, 3},
+                                         {0, 3, 0, 1},
+                                         {1, 0, 3, 0},
+                                         {1, 3, 1, 0},
+                                         {0, 1, 3, 1},
+                                         {0, 3, 0, 2},
+                                         {2, 0, 3, 0},
+                                         {2, 3, 2, 0},
+                                         {0, 2, 3, 2},
+                                         {0, 3, 0, 3, 0},
+                                         {3, 0, 3, 0},
+                                         {0, 3, 0, 7},
+                                         {7},
+                                         {7, 0, 3, 0},
+                                         {0, 3, 0},
+                                         {3, 7},
+                                         {7, 3, 0, 3, 0},
+                                         {1, 3, 1, 7},
+                                         {7, 1, 3, 1}}));
+
+      REQUIRE(p.alphabet().size() == 5);
+      REQUIRE(p.rules.size() == 40);
+
+      auto kb = make<KnuthBendix>(p);
+      REQUIRE(kb.size() == 625);
+    }
+
   }  // namespace fpsemigroup
 }  // namespace libsemigroups
