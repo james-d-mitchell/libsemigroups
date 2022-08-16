@@ -831,15 +831,42 @@ namespace libsemigroups {
       }
 
       bool pop_from_other_thread_queue(PendingDef& pd) {
-        for (size_t i = 0; i < _queues.size(); ++i) {
+        report_queue_sizes("BEFORE: ");
+
+        auto from
+            = std::distance(_queues.cbegin(),
+                            std::max_element(_queues.cbegin(),
+                                             _queues.cend(),
+                                             [](auto const& x, auto const& y) {
+                                               return x->size() < y->size();
+                                             }));
+        if (_queues[from]->try_steal(*local_queue())) {
+          REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index(), from));
+          report_queue_sizes("AFTER: ");
+          return pop_from_local_queue(pd);
+        }
+        return false;
+
+        for (size_t i = 0; i < _queues.size() - 1; ++i) {
           unsigned const index = (my_index() + i + 1) % _queues.size();
           // TODO(Sims1) could always do something different here, like find
           // the largest queue and steal from that.
           if (_queues[index]->try_steal(*local_queue())) {
+            REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index(), index));
+            report_queue_sizes("AFTER: ");
             return pop_from_local_queue(pd);
           }
         }
         return false;
+      }
+
+      void report_queue_sizes(std::string prefix) const {
+        std::string msg = prefix + "Queues have sizes ";
+        for (auto const& q : _queues) {
+          msg += FORMAT("{}, ", q->size());
+        }
+        msg += "\n";
+        REPORT_DEFAULT(msg);
       }
 
       void push_to_pool_queue(PendingDef pd) {
