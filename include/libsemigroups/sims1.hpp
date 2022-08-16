@@ -794,7 +794,6 @@ namespace libsemigroups {
       std::vector<std::unique_ptr<work_stealing_const_iterator>> _queues;
       std::vector<std::thread>                                   _threads;
       detail::JoinThreads                                        _joiner;
-      mutable std::mutex                                         _mutex;
       std::vector<uint64_t>                                      _results;
 
       work_stealing_const_iterator*& local_queue() {
@@ -811,23 +810,15 @@ namespace libsemigroups {
         PendingDef pd;
         my_index()    = my_index_;
         local_queue() = _queues[my_index()].get();
-        while (!_done) {
-          result += run_pending_task(pd);
+        while (pop_from_local_queue(pd) || pop_from_other_thread_queue(pd)) {
+          if (_queues[my_index()]->increment(pd)) {
+            result++;
+          }
         }
       }
 
       bool pop_from_local_queue(PendingDef& pd) {
         return local_queue() && local_queue()->try_pop(pd);
-      }
-
-      bool pop_from_pool_queue(PendingDef& pd) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        if (_pool_queue.empty()) {
-          return false;
-        }
-        pd = std::move(_pool_queue.back());
-        _pool_queue.pop_back();
-        return true;
       }
 
       bool pop_from_other_thread_queue(PendingDef& pd) {
@@ -837,9 +828,11 @@ namespace libsemigroups {
         //     = std::distance(_queues.cbegin(),
         //                     std::max_element(_queues.cbegin(),
         //                                      _queues.cend(),
-        //                                      [](auto const& x, auto const& y)
+        //                                      [](auto const& x, auto const&
+        //                                      y)
         //                                      {
-        //                                        return x->size() < y->size();
+        //                                        return x->size() <
+        //                                        y->size();
         //                                      }));
         // if (!_queues[from]->empty() && _queues[from]->size() < 0) {
         //   pd.source = UNDEFINED;
@@ -877,11 +870,6 @@ namespace libsemigroups {
         }
       }
 
-      void push_to_pool_queue(PendingDef pd) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _pool_queue.push_back(std::move(pd));
-      }
-
      public:
       ThreadPool(Presentation<word_type> const& p,
                  Presentation<word_type> const& e,
@@ -898,10 +886,10 @@ namespace libsemigroups {
           }
 
           if (n > 1) {
-            push_to_pool_queue({0, 0, 1, 0, 2});
+            _queues.front()->push({0, 0, 1, 0, 2});
           }
-          if (_queues.back()->_min_target_node == 0) {
-            push_to_pool_queue({0, 0, 0, 0, 1});
+          if (_queues.front()->_min_target_node == 0) {
+            _queues.front()->push({0, 0, 0, 0, 1});
           }
           for (size_t i = 0; i < thread_count; ++i) {
             _threads.push_back(std::thread(
@@ -924,18 +912,6 @@ namespace libsemigroups {
           _threads[i].join();
           result += _results[i];
         }
-        return result;
-      }
-
-      uint64_t run_pending_task(PendingDef& pd) {
-        uint64_t result = 0;
-        while (pop_from_local_queue(pd) || pop_from_pool_queue(pd)
-               || pop_from_other_thread_queue(pd)) {
-          if (_queues[my_index()]->increment(pd)) {
-            result++;
-          }
-        }
-        _done = true;
         return result;
       }
     };
