@@ -49,6 +49,8 @@
 #include "present.hpp"         // for Presentation
 #include "types.hpp"           // for word_type, congruence_kind
 
+#include "report.hpp"
+
 namespace libsemigroups {
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
@@ -310,6 +312,7 @@ namespace libsemigroups {
     }
 
     struct const_iterator_base {
+      friend class ThreadPool;
       //! No doc
       using size_type = typename std::vector<digraph_type>::size_type;
       //! No doc
@@ -330,6 +333,8 @@ namespace libsemigroups {
       using iterator_category = std::forward_iterator_tag;
 
       struct PendingDef {
+        PendingDef() = default;
+
         PendingDef(node_type   s,
                    letter_type g,
                    node_type   t,
@@ -575,7 +580,7 @@ namespace libsemigroups {
 
    private:
     // TODO(Sims1) move to cpp file
-    class work_stealing_const_iterator : private const_iterator_base {
+    class work_stealing_const_iterator : public const_iterator_base {
      public:
       //! No doc
       using size_type = typename const_iterator_base::size_type;
@@ -606,25 +611,7 @@ namespace libsemigroups {
                                    Presentation<word_type> const& e,
                                    Presentation<word_type> const& f,
                                    size_type                      n)
-          : const_iterator_base(p, e, f, n) {
-        if (this->_num_active_nodes == 0) {
-          return;
-        }
-        // TODO(Sims1): the next lines are in the wrong place.
-        // The PendingDefs below should be pushing in to the pool_queue of the
-        // ThreadPool
-        if (n > 1) {
-          push({0, 0, 1, 0, 2});
-        }
-        if (this->_min_target_node == 0) {
-          push({0, 0, 0, 0, 1});
-        }
-        // TODO(Sims1): this should be in the ThreadPool too
-        ++(*this);
-        // The increment above is required so that when dereferencing any
-        // instance of this type we obtain a valid word graph (o/w the value
-        // pointed to here is empty).
-      }
+          : const_iterator_base(p, e, f, n) {}
 
       // None of the constructors are noexcept because the corresponding
       // constructors for std::vector aren't (until C++17).
@@ -632,51 +619,128 @@ namespace libsemigroups {
       work_stealing_const_iterator() = delete;
       //! No doc
       work_stealing_const_iterator(work_stealing_const_iterator const&)
-          = default;
+          = delete;
       //! No doc
-      work_stealing_const_iterator(work_stealing_const_iterator&&) = default;
+      work_stealing_const_iterator(work_stealing_const_iterator&&) = delete;
       //! No doc
       work_stealing_const_iterator&
       operator=(work_stealing_const_iterator const&)
-          = default;
+          = delete;
       //! No doc
       work_stealing_const_iterator& operator=(work_stealing_const_iterator&&)
-          = default;
+          = delete;
 
       //! No doc
       ~work_stealing_const_iterator() = default;
 
-      //! No doc
-      // postfix
-      work_stealing_const_iterator operator++(int) {
-        work_stealing_const_iterator copy(*this);
-        ++(*this);
-        return copy;
+      size_t size() const {
+        return _pending.size();
       }
 
       // prefix
       //! No doc
-      work_stealing_const_iterator const& operator++();
+      bool increment(PendingDef const& current) {
+        // TODO(Sims1) could be more fine grained with this lock, only locking
+        // when _felsch_graph is modified
+        std::lock_guard<std::mutex> lock(_mutex);
 
-      //! No doc
-      void swap(work_stealing_const_iterator& that) noexcept {
-        const_iterator_base::swap(that);
-        // TODO complete this
+        LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
+        LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
+
+        LIBSEMIGROUPS_ASSERT(this->_felsch_graph.number_of_edges()
+                             >= current.num_edges);
+        // Backtrack if necessary
+        this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
+
+        // It might be that current.target is a new node, in which case
+        // _num_active_nodes includes this new node even before the edge
+        // current.source -> current.target is defined.
+        this->_num_active_nodes = current.num_nodes;
+
+        LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(
+                                 current.source, current.generator)
+                             == UNDEFINED);
+
+#ifdef LIBSEMIGROUPS_DEBUG
+        for (node_type next = 0; next < current.source; ++next) {
+          for (letter_type a = 0; a < this->_num_gens; ++a) {
+            LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(next, a)
+                                 != UNDEFINED);
+          }
+        }
+        for (letter_type a = 0; a < current.generator; ++a) {
+          LIBSEMIGROUPS_ASSERT(
+              this->_felsch_graph.unsafe_neighbor(current.source, a)
+              != UNDEFINED);
+        }
+
+#endif
+        size_type start = this->_felsch_graph.number_of_edges();
+
+        this->_felsch_graph.def_edge(
+            current.source, current.generator, current.target);
+
+        for (auto it = this->_extra.rules.cbegin();
+             it != this->_extra.rules.cend();
+             it += 2) {
+          if (!this->_felsch_graph.compatible(0, *it, *(it + 1))) {
+            return false;
+          }
+        }
+
+        if (!this->_felsch_graph.process_definitions(start)) {
+          return false;
+        }
+
+        letter_type a = current.generator + 1;
+        for (node_type next = current.source; next < this->_num_active_nodes;
+             ++next) {
+          for (; a < this->_num_gens; ++a) {
+            if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
+              for (node_type b = this->_min_target_node;
+                   b < this->_num_active_nodes;
+                   ++b) {
+                _pending.emplace_back(next,
+                                      a,
+                                      b,
+                                      this->_felsch_graph.number_of_edges(),
+                                      this->_num_active_nodes);
+              }
+              if (this->_num_active_nodes < this->_max_num_classes) {
+                _pending.emplace_back(next,
+                                      a,
+                                      this->_num_active_nodes,
+                                      this->_felsch_graph.number_of_edges(),
+                                      this->_num_active_nodes + 1);
+              }
+              return false;
+            }
+          }
+          a = 0;
+        }
+
+        LIBSEMIGROUPS_ASSERT(this->_felsch_graph.number_of_edges()
+                             == this->_num_active_nodes
+                                    * this->_felsch_graph.out_degree());
+        // No undefined edges, word graph is complete
+        for (auto it = this->_final.rules.cbegin();
+             it != this->_final.rules.cend();
+             it += 2) {
+          for (node_type n = 0; n < this->_num_active_nodes; ++n) {
+            if (!this->_felsch_graph.compatible(n, *it, *(it + 1))) {
+              return false;
+            }
+          }
+        }
+        // REPORT_DEFAULT(detail::to_string(this->_felsch_graph) + "\n");
+        return true;
       }
 
      public:
-      // TODO(Sims1) this should be private, and the pool should be a friend
-      using pending_def_iterator = typename std::deque<PendingDef>::iterator;
-
       // TODO (Sims1) by value, maybe not a good idea?
       void push(PendingDef pd) {
         std::lock_guard<std::mutex> lock(_mutex);
-        _pending.push_front(std::move(pd));
-      }
-
-      void push(pending_def_iterator first, pending_def_iterator last) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _pending.insert(_pending.cbegin(), first, last);
+        _pending.push_back(std::move(pd));
       }
 
       bool empty() const {
@@ -689,9 +753,23 @@ namespace libsemigroups {
         if (_pending.empty()) {
           return false;
         }
-        pd = std::move(_pending.front());
-        _pending.pop_front();
+        pd = std::move(_pending.back());
+        _pending.pop_back();
         return true;
+      }
+
+      void clone(work_stealing_const_iterator& that) {
+        std::lock_guard<std::mutex> lock(_mutex);
+        LIBSEMIGROUPS_ASSERT(_pending.empty());
+        // LIBSEMIGROUPS_ASSERT(!that.empty());
+        // TODO(Sims1): this probably doesn't do as expected if _pending.size()
+        // == 1
+        const_iterator_base::clone(that);
+        // TODO(Sims1) could steal in a different way: maybe interlaced (steal
+        // every other item); steal a fixed proportion of every queue
+        _pending.insert(_pending.cbegin(),
+                        that._pending.begin() + that._pending.size() / 2,
+                        that._pending.end());
       }
 
       bool try_steal(work_stealing_const_iterator& q) {
@@ -699,42 +777,47 @@ namespace libsemigroups {
         if (_pending.empty()) {
           return false;
         }
-        // TODO(Sims1): this probably doesn't do as expected if _pending.size()
-        // == 1
-        // TODO(Sims1) could steal in a different way: maybe interlaced (steal
-        // every other item); steal a fixed proportion of every queue
-        q._pending.push(_pending.cbegin() + _pending.size() / 2,
-                        _pending.cend());
+        LIBSEMIGROUPS_ASSERT(q.empty());
+        q.clone(*this);  // Copy the digraph from this into q
         _pending.erase(_pending.cbegin() + _pending.size() / 2,
                        _pending.cend());
-        clone(q);  // Copy the digraph from q into this
         return true;
       }
     };
 
     class ThreadPool {
      private:
-      using PendingDef = typename const_iterator::PendingDef;
+      using PendingDef = typename const_iterator_base::PendingDef;
 
       std::atomic_bool                                           _done;
-      std::queue<PendingDef>                                     _pool_queue;
+      std::deque<PendingDef>                                     _pool_queue;
       std::vector<std::unique_ptr<work_stealing_const_iterator>> _queues;
       std::vector<std::thread>                                   _threads;
       detail::JoinThreads                                        _joiner;
-      work_stealing_const_iterator*                              _local_queue;
-      unsigned                                                   _my_index;
       mutable std::mutex                                         _mutex;
+      std::vector<uint64_t>                                      _results;
 
-      void worker_thread(unsigned my_index) {
-        _my_index    = my_index;
-        _local_queue = _queues[my_index].get();
+      work_stealing_const_iterator*& local_queue() {
+        static thread_local work_stealing_const_iterator* local_queue = nullptr;
+        return local_queue;
+        ;
+      }
+
+      unsigned& my_index() {
+        static thread_local unsigned my_index = 0;
+        return my_index;
+      }
+
+      void worker_thread(unsigned my_index_, uint64_t& result) {
+        my_index()    = my_index_;
+        local_queue() = _queues[my_index()].get();
         while (!_done) {
-          run_pending_task();
+          result += run_pending_task();
         }
       }
 
       bool pop_from_local_queue(PendingDef& pd) {
-        return _local_queue && _local_queue->try_pop(pd);
+        return local_queue() && local_queue()->try_pop(pd);
       }
 
       bool pop_from_pool_queue(PendingDef& pd) {
@@ -742,33 +825,53 @@ namespace libsemigroups {
         if (_pool_queue.empty()) {
           return false;
         }
-        pd = std::move(_pool_queue.front());
-        _pool_queue.pop_front();
+        pd = std::move(_pool_queue.back());
+        _pool_queue.pop_back();
         return true;
       }
 
-      bool pop_from_other_thread_queue() {
+      bool pop_from_other_thread_queue(PendingDef& pd) {
         for (size_t i = 0; i < _queues.size(); ++i) {
-          unsigned const index = (_my_index + i + 1) % _queues.size();
+          unsigned const index = (my_index() + i + 1) % _queues.size();
           // TODO(Sims1) could always do something different here, like find
           // the largest queue and steal from that.
-          if (_queues[index]->try_steal(_local_queue)) {
-            return true;
+          if (_queues[index]->try_steal(*local_queue())) {
+            return pop_from_local_queue(pd);
           }
         }
         return false;
       }
 
+      void push_to_pool_queue(PendingDef pd) {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _pool_queue.push_back(std::move(pd));
+      }
+
      public:
-      ThreadPool() : _done(false), _joiner(_threads) {
-        unsigned const thread_count = std::thread::hardware_concurrency();
+      ThreadPool(Presentation<word_type> const& p,
+                 Presentation<word_type> const& e,
+                 Presentation<word_type> const& f,
+                 size_type                      n)
+          : _done(false),
+            _joiner(_threads),
+            _results(std::thread::hardware_concurrency(), 0) {
+        unsigned const thread_count
+            = 5;  // std::thread::hardware_concurrency();
         try {
           for (size_t i = 0; i < thread_count; ++i) {
             _queues.push_back(std::unique_ptr<work_stealing_const_iterator>(
-                new work_stealing_const_iterator()));
+                new work_stealing_const_iterator(p, e, f, n)));
+          }
+
+          if (n > 1) {
+            push_to_pool_queue({0, 0, 1, 0, 2});
+          }
+          if (_queues.back()->_min_target_node == 0) {
+            push_to_pool_queue({0, 0, 0, 0, 1});
           }
           for (size_t i = 0; i < thread_count; ++i) {
-            _threads.push_back(&ThreadPool::worker_thread, this, i);
+            _threads.push_back(std::thread(
+                &ThreadPool::worker_thread, this, i, std::ref(_results[i])));
           }
         } catch (...) {
           _done = true;
@@ -780,18 +883,36 @@ namespace libsemigroups {
         _done = true;
       }
 
-      void run_pending_task() {
-        PendingDef pd;
-        if (pop_from_local_queue(pd) || pop_from_pool_queue(pd)
-            || pop_from_other_thread_queue()) {
-          // TODO(Sims1) this is where we should be incrementing the iterator
-          // using the relevant data
-
-        } else {
-          std::this_thread::yield();
+      uint64_t yield() {
+        uint64_t       result = 0;
+        unsigned const thread_count
+            = 5;  // std::thread::hardware_concurrency();
+        for (size_t i = 0; i < thread_count; ++i) {
+          _threads[i].join();
+          result += _results[i];
         }
+        return result;
+      }
+
+      uint64_t run_pending_task() {
+        uint64_t   result = 0;
+        PendingDef pd;
+        while (pop_from_local_queue(pd) || pop_from_pool_queue(pd)
+               || pop_from_other_thread_queue(pd)) {
+          if (_queues[my_index()]->increment(pd)) {
+            result++;
+          }
+        }
+        _done = true;
+        return result;
       }
     };
+
+   public:
+    uint64_t parallel_number_of_congruences(size_type n) const {
+      ThreadPool tp(presentation(), _extra, _final, n);
+      return tp.yield();
+    }
   };
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS

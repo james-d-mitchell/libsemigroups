@@ -3228,19 +3228,27 @@ namespace libsemigroups {
   //! \no_libsemigroups_except
   template <typename T>
   std::ostream& operator<<(std::ostream& os, ActionDigraph<T> const& ad) {
-    os << "{";
+#ifdef LIBSEMIGROUPS_FMT_ENABLED
+    std::string const lcurl = "{{";
+    std::string const rcurl = "}}";
+#else
+    std::string const lcurl = "{";
+    std::string const rcurl = "}";
+#endif
+
+    os << lcurl;
     std::string sep_n;
     for (auto n = ad.cbegin_nodes(); n != ad.cend_nodes(); ++n) {
       std::string sep_e;
-      os << sep_n << "{";
+      os << sep_n << lcurl;
       for (auto e = ad.cbegin_edges(*n); e != ad.cend_edges(*n); ++e) {
         os << sep_e << (*e == UNDEFINED ? "-" : std::to_string(*e));
         sep_e = ", ";
       }
-      os << "}";
+      os << rcurl;
       sep_n = ", ";
     }
-    os << "}";
+    os << rcurl;
     return os;
   }
 }  // namespace libsemigroups

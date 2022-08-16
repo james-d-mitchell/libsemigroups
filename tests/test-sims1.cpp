@@ -66,11 +66,8 @@ namespace libsemigroups {
     }
   }  // namespace
 
-  LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "000",
-                          "fp example 1",
-                          "[quick][low-index]") {
-    auto rg = ReportGuard(false);
+  LIBSEMIGROUPS_TEST_CASE("Sims1", "000", "fp example 1", "[fail][low-index]") {
+    auto rg = ReportGuard(true);
 
     Presentation<word_type> p;
     p.contains_empty_word(true);
@@ -81,7 +78,7 @@ namespace libsemigroups {
 
     {
       Sims1_ S(congruence_kind::right, p);
-      REQUIRE(S.number_of_congruences(5) == 6);
+      REQUIRE(S.parallel_number_of_congruences(5) == 6);
 
       auto it = S.cbegin(5);
       REQUIRE(*(it++) == action_digraph_helper::make<node_type>(5, {{0, 0}}));
@@ -474,8 +471,8 @@ namespace libsemigroups {
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
     Sims1_ C(congruence_kind::right, p);
-
-    REQUIRE(C.number_of_congruences(209) == 195'709);
+    REQUIRE(C.parallel_number_of_congruences(209) == 195'709);
+    // REQUIRE(C.number_of_congruences(209) == 195'709);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",

@@ -220,6 +220,9 @@ namespace libsemigroups {
               }
             }
           }
+          LIBSEMIGROUPS_ASSERT(this->_felsch_graph.number_of_edges()
+                               == this->_num_active_nodes
+                                      * this->_felsch_graph.out_degree());
           return *this;
         }
       }
