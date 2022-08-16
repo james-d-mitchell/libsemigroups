@@ -800,7 +800,6 @@ namespace libsemigroups {
       work_stealing_const_iterator*& local_queue() {
         static thread_local work_stealing_const_iterator* local_queue = nullptr;
         return local_queue;
-        ;
       }
 
       unsigned& my_index() {
@@ -809,10 +808,11 @@ namespace libsemigroups {
       }
 
       void worker_thread(unsigned my_index_, uint64_t& result) {
+        PendingDef pd;
         my_index()    = my_index_;
         local_queue() = _queues[my_index()].get();
         while (!_done) {
-          result += run_pending_task();
+          result += run_pending_task(pd);
         }
       }
 
@@ -833,26 +833,32 @@ namespace libsemigroups {
       bool pop_from_other_thread_queue(PendingDef& pd) {
         report_queue_sizes("BEFORE: ");
 
-        auto from
-            = std::distance(_queues.cbegin(),
-                            std::max_element(_queues.cbegin(),
-                                             _queues.cend(),
-                                             [](auto const& x, auto const& y) {
-                                               return x->size() < y->size();
-                                             }));
-        if (_queues[from]->try_steal(*local_queue())) {
-          REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index(), from));
-          report_queue_sizes("AFTER: ");
-          return pop_from_local_queue(pd);
-        }
-        return false;
-
+        // auto from
+        //     = std::distance(_queues.cbegin(),
+        //                     std::max_element(_queues.cbegin(),
+        //                                      _queues.cend(),
+        //                                      [](auto const& x, auto const& y)
+        //                                      {
+        //                                        return x->size() < y->size();
+        //                                      }));
+        // if (!_queues[from]->empty() && _queues[from]->size() < 0) {
+        //   pd.source = UNDEFINED;
+        //   return true;
+        // }
+        // if (_queues[from]->try_steal(*local_queue())) {
+        //   REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index(), from));
+        //   report_queue_sizes("AFTER: ");
+        //   return pop_from_local_queue(pd);
+        // }
+        // return false;
+        auto  N        = my_index();
+        auto& my_queue = local_queue();
         for (size_t i = 0; i < _queues.size() - 1; ++i) {
-          unsigned const index = (my_index() + i + 1) % _queues.size();
+          unsigned const index = (N + i + 1) % _queues.size();
           // TODO(Sims1) could always do something different here, like find
           // the largest queue and steal from that.
-          if (_queues[index]->try_steal(*local_queue())) {
-            REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index(), index));
+          if (_queues[index]->try_steal(*my_queue)) {
+            REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", N, index));
             report_queue_sizes("AFTER: ");
             return pop_from_local_queue(pd);
           }
@@ -861,12 +867,14 @@ namespace libsemigroups {
       }
 
       void report_queue_sizes(std::string prefix) const {
-        std::string msg = prefix + "Queues have sizes ";
-        for (auto const& q : _queues) {
-          msg += FORMAT("{}, ", q->size());
+        if (report::should_report()) {
+          std::string msg = prefix + "Queues have sizes ";
+          for (auto const& q : _queues) {
+            msg += FORMAT("{}, ", q->size());
+          }
+          msg += "\n";
+          REPORT_DEFAULT(msg);
         }
-        msg += "\n";
-        REPORT_DEFAULT(msg);
       }
 
       void push_to_pool_queue(PendingDef pd) {
@@ -882,8 +890,7 @@ namespace libsemigroups {
           : _done(false),
             _joiner(_threads),
             _results(std::thread::hardware_concurrency(), 0) {
-        unsigned const thread_count
-            = 5;  // std::thread::hardware_concurrency();
+        unsigned const thread_count = std::thread::hardware_concurrency();
         try {
           for (size_t i = 0; i < thread_count; ++i) {
             _queues.push_back(std::unique_ptr<work_stealing_const_iterator>(
@@ -911,9 +918,8 @@ namespace libsemigroups {
       }
 
       uint64_t yield() {
-        uint64_t       result = 0;
-        unsigned const thread_count
-            = 5;  // std::thread::hardware_concurrency();
+        uint64_t       result       = 0;
+        unsigned const thread_count = std::thread::hardware_concurrency();
         for (size_t i = 0; i < thread_count; ++i) {
           _threads[i].join();
           result += _results[i];
@@ -921,9 +927,8 @@ namespace libsemigroups {
         return result;
       }
 
-      uint64_t run_pending_task() {
-        uint64_t   result = 0;
-        PendingDef pd;
+      uint64_t run_pending_task(PendingDef& pd) {
+        uint64_t result = 0;
         while (pop_from_local_queue(pd) || pop_from_pool_queue(pd)
                || pop_from_other_thread_queue(pd)) {
           if (_queues[my_index()]->increment(pd)) {

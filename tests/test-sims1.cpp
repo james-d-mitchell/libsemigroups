@@ -456,7 +456,7 @@ namespace libsemigroups {
                           "012",
                           "SymmetricInverseMonoid(4)",
                           "[extreme][low-index]") {
-    auto                    rg = ReportGuard(true);
+    auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.contains_empty_word(false);
 
