@@ -31,6 +31,7 @@
 #include "libsemigroups/digraph-helper.hpp"
 #include "libsemigroups/froidure-pin.hpp"
 #include "libsemigroups/knuth-bendix.hpp"  // for redundant_rule
+#include "libsemigroups/make-froidure-pin.hpp"
 #include "libsemigroups/make-present.hpp"
 #include "libsemigroups/sims1.hpp"  // for Sims1_
 #include "libsemigroups/transf.hpp"
@@ -83,18 +84,19 @@ namespace libsemigroups {
       auto it = S.cbegin(5);
       REQUIRE(*(it++) == action_digraph_helper::make<node_type>(5, {{0, 0}}));
       REQUIRE(*(it++)
+              == action_digraph_helper::make<node_type>(5, {{1, 0}, {1, 1}}));
+      REQUIRE(*(it++)
+              == action_digraph_helper::make<node_type>(5, {{1, 1}, {1, 1}}));
+      REQUIRE(*(it++)
               == action_digraph_helper::make<node_type>(
-                  5, {{1, 2}, {1, 1}, {3, 2}, {3, 3}}));
+                  5, {{1, 2}, {1, 1}, {1, 2}}));
       REQUIRE(*(it++)
               == action_digraph_helper::make<node_type>(
                   5, {{1, 2}, {1, 1}, {2, 2}}));
       REQUIRE(*(it++)
               == action_digraph_helper::make<node_type>(
-                  5, {{1, 2}, {1, 1}, {1, 2}}));
-      REQUIRE(*(it++)
-              == action_digraph_helper::make<node_type>(5, {{1, 1}, {1, 1}}));
-      REQUIRE(*(it++)
-              == action_digraph_helper::make<node_type>(5, {{1, 0}, {1, 1}}));
+                  5, {{1, 2}, {1, 1}, {3, 2}, {3, 3}}));
+      REQUIRE(*(it++) == action_digraph_helper::make<node_type>(0, 2));
       REQUIRE(*(it++) == action_digraph_helper::make<node_type>(0, 2));
       REQUIRE(*(it++) == action_digraph_helper::make<node_type>(0, 2));
 
@@ -152,10 +154,10 @@ namespace libsemigroups {
               == action_digraph_helper::make<node_type>(2, {{0, 0, 0}}));
       REQUIRE(
           *(it++)
-          == action_digraph_helper::make<node_type>(2, {{1, 1, 1}, {1, 1, 1}}));
+          == action_digraph_helper::make<node_type>(2, {{1, 0, 1}, {1, 1, 1}}));
       REQUIRE(
           *(it++)
-          == action_digraph_helper::make<node_type>(2, {{1, 0, 1}, {1, 1, 1}}));
+          == action_digraph_helper::make<node_type>(2, {{1, 1, 1}, {1, 1, 1}}));
       REQUIRE(*(it++) == action_digraph_helper::make<node_type>(0, 3));
       REQUIRE(*(it++) == action_digraph_helper::make<node_type>(0, 3));
     }
@@ -745,7 +747,7 @@ namespace libsemigroups {
                           "024",
                           "Brauer(4) (Kudryavtseva-Mazorchuk)",
                           "[extreme][sims1]") {
-    auto rg = ReportGuard(true);
+    auto rg = ReportGuard(false);
     auto p  = make<Presentation<word_type>>(Brauer(4));
     REQUIRE(presentation::length(p) == 182);
     presentation::remove_duplicate_rules(p);
@@ -769,10 +771,87 @@ namespace libsemigroups {
     //   last_len = presentation::length(p);
     //   presentation::remove_longest_redundant_rule(p);
     // } while (presentation::length(p) != last_len);
+    REQUIRE(sims1::minimal_representation<uint32_t>(p, 105).number_of_nodes()
+            == 23);
+    // {
+    //   Sims1_ C(congruence_kind::right, p);
+    //   using node_type = typename Sims1_::digraph_type::node_type;
+    //   auto   it       = C.cbegin(22);
+    //   size_t N;
+    //   for (; it != C.cend(22); ++it) {
+    //     auto S = make<FroidurePin<Transf<0, node_type>>>(*it);
+    //     N      = std::distance(
+    //         it->cbegin_nodes(),
+    //         std::find_if(it->cbegin_nodes(), it->cend_nodes(), [&it](auto v)
+    //         {
+    //           return it->neighbor(v, 0) == UNDEFINED;
+    //         }));
+    //     if (S.size() == 105) {
+    //       break;
+    //     }
+    //   }
+    //   REQUIRE(it != C.cend(22));
+    // }
+    // {
+    //   Sims1_ C(congruence_kind::right, p);
+    //   REQUIRE(C.number_of_congruences(105) == 103'406);
+    // }
 
     Sims1_ C(congruence_kind::right, p);
     REQUIRE(C.number_of_congruences(105, std::thread::hardware_concurrency())
             == 103'406);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "036",
+                          "Brauer(5) (Kudryavtseva-Mazorchuk)",
+                          "[extreme][sims1]") {
+    auto rg = ReportGuard(false);
+    auto p  = make<Presentation<word_type>>(Brauer(5));
+    REQUIRE(presentation::length(p) == 295);
+    presentation::remove_duplicate_rules(p);
+    REQUIRE(presentation::length(p) == 253);
+
+    // FroidurePin<Bipartition> S;
+    // S.add_generator(Bipartition({{1, -2}, {2, -3}, {3, -4}, {4, -5}, {5,
+    // -1}})); S.add_generator(Bipartition({{1, -2}, {2, -1}, {3, -3}, {4, -4},
+    // {5, -5}})); S.add_generator(Bipartition({{1, 2}, {3, -3}, {4, -4}, {5,
+    // -5}, {-1, -2}})); REQUIRE(S.size() == 945);
+
+    // auto p = make<Presentation<word_type>>(S);
+    // REQUIRE(presentation::length(p) == 3089);
+    // presentation::remove_duplicate_rules(p);
+    // REQUIRE(presentation::length(p) == 3089);
+    // REQUIRE(p.rules.size() == 370);
+    // REQUIRE(p.alphabet().size() == 3);
+
+    // // presentation::reduce_complements(p);
+    // // REQUIRE(presentation::length(p) == 249);
+    // // presentation::sort_each_rule(p);
+
+    // while (p.alphabet().size() < 9) {
+    //   presentation::replace_subword(p,
+    //   presentation::longest_common_subword(p));
+    // }
+    // REQUIRE(presentation::length(p) == 1'490);
+    // REQUIRE(p.rules.size() == 382);
+    // REQUIRE(p.alphabet().size() == 9);
+
+    // presentation::sort_rules(p);
+    // {
+    //   auto it = presentation::redundant_rule(p,
+    //   std::chrono::milliseconds(10)); while (it != p.rules.cend() &&
+    //   p.rules.size() > 370) {
+    //     p.rules.erase(it, it + 2);
+    //     it = presentation::redundant_rule(p, std::chrono::milliseconds(10));
+    //   }
+    // }
+    // REQUIRE(presentation::length(p) == 1'455);
+    // REQUIRE(p.rules.size() == 374);
+    // REQUIRE(p.alphabet().size() == 9);
+
+    REQUIRE(sims1::minimal_representation<uint32_t>(p, 945).number_of_nodes()
+            == 47);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1005,6 +1084,221 @@ namespace libsemigroups {
       REQUIRE(it->number_of_nodes() == 10);
     }
   }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "037",
+                          "RectangularBand(3, 3)",
+                          "[extreme][sims1]") {
+    auto rg = ReportGuard(false);
+    auto p  = make<Presentation<word_type>>(RectangularBand(10, 2));
+    presentation::remove_duplicate_rules(p);
+    presentation::sort_each_rule(p);
+    presentation::sort_rules(p);
+
+    Sims1_ C(congruence_kind::right, p);
+
+    REQUIRE(sims1::minimal_representation<uint32_t>(p, 20).number_of_nodes()
+            == 47);
+
+    // REQUIRE(C.number_of_congruences(225) == 601'265);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "038",
+                          "PartitionMonoid(3) - minimal rep",
+                          "[extreme][sims1]") {
+    auto                    rg = ReportGuard(false);
+    Presentation<word_type> p;
+    p.contains_empty_word(false);
+
+    p.alphabet({0, 1, 2, 3, 4});
+    presentation::add_rule_and_check(p, {0, 0}, {0});
+    presentation::add_rule_and_check(p, {0, 1}, {1});
+    presentation::add_rule_and_check(p, {0, 2}, {2});
+    presentation::add_rule_and_check(p, {0, 3}, {3});
+    presentation::add_rule_and_check(p, {0, 4}, {4});
+    presentation::add_rule_and_check(p, {1, 0}, {1});
+    presentation::add_rule_and_check(p, {2, 0}, {2});
+    presentation::add_rule_and_check(p, {2, 2}, {0});
+    presentation::add_rule_and_check(p, {2, 4}, {4});
+    presentation::add_rule_and_check(p, {3, 0}, {3});
+    presentation::add_rule_and_check(p, {3, 3}, {3});
+    presentation::add_rule_and_check(p, {4, 0}, {4});
+    presentation::add_rule_and_check(p, {4, 2}, {4});
+    presentation::add_rule_and_check(p, {4, 4}, {4});
+    presentation::add_rule_and_check(p, {1, 1, 1}, {0});
+    presentation::add_rule_and_check(p, {1, 1, 2}, {2, 1});
+    presentation::add_rule_and_check(p, {1, 2, 1}, {2});
+    presentation::add_rule_and_check(p, {2, 1, 1}, {1, 2});
+    presentation::add_rule_and_check(p, {2, 1, 2}, {1, 1});
+    presentation::add_rule_and_check(p, {2, 1, 4}, {1, 1, 4});
+    presentation::add_rule_and_check(p, {3, 1, 2}, {1, 2, 3});
+    presentation::add_rule_and_check(p, {3, 4, 3}, {3});
+    presentation::add_rule_and_check(p, {4, 1, 2}, {4, 1, 1});
+    presentation::add_rule_and_check(p, {4, 3, 4}, {4});
+    presentation::add_rule_and_check(p, {1, 1, 3, 1}, {2, 3, 2});
+    presentation::add_rule_and_check(p, {1, 1, 3, 2}, {2, 3, 1});
+    presentation::add_rule_and_check(p, {1, 2, 3, 1}, {3, 2});
+    presentation::add_rule_and_check(p, {1, 2, 3, 2}, {3, 1});
+    presentation::add_rule_and_check(p, {1, 2, 3, 4}, {3, 1, 4});
+    presentation::add_rule_and_check(p, {1, 3, 2, 3}, {3, 1, 3});
+    presentation::add_rule_and_check(p, {1, 4, 1, 4}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {2, 1, 3, 1}, {1, 3, 2});
+    presentation::add_rule_and_check(p, {2, 1, 3, 2}, {1, 3, 1});
+    presentation::add_rule_and_check(p, {2, 1, 3, 4}, {1, 3, 1, 4});
+    presentation::add_rule_and_check(p, {2, 3, 1, 3}, {1, 3, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 1, 4}, {1, 1, 3, 4});
+    presentation::add_rule_and_check(p, {2, 3, 2, 3}, {3, 2, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 2}, {3, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 4, 3}, {1, 2, 3});
+    presentation::add_rule_and_check(p, {3, 2, 3, 2}, {3, 2, 3});
+    presentation::add_rule_and_check(p, {4, 1, 1, 4}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 2}, {4, 1, 3, 1});
+    presentation::add_rule_and_check(p, {4, 1, 4, 1}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {1, 3, 1, 1, 3}, {3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {1, 3, 4, 1, 4}, {4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {2, 3, 1, 1, 3}, {3, 1, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 2, 1, 3}, {1, 3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 4, 1, 3}, {1, 3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {2, 3, 4, 1, 4}, {1, 4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {3, 1, 1, 4, 1}, {1, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 1, 1}, {3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {3, 2, 3, 1, 1}, {3, 1, 1, 3});
+    presentation::add_rule_and_check(p, {3, 4, 1, 1, 3}, {1, 2, 3});
+    presentation::add_rule_and_check(p, {3, 4, 1, 4, 3}, {1, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {4, 1, 1, 3, 4}, {4, 3, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 1, 1}, {1, 3, 1, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 1, 3}, {4, 3, 1, 3});
+    presentation::add_rule_and_check(p, {4, 1, 3, 1, 4}, {4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {4, 1, 3, 4, 1}, {4, 1, 3, 4});
+    presentation::add_rule_and_check(p, {4, 1, 4, 3, 2}, {4, 1, 4, 3, 1});
+    presentation::add_rule_and_check(p, {1, 1, 3, 4, 1, 3}, {3, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {1, 1, 4, 1, 3, 4}, {3, 4, 1, 4});
+    presentation::add_rule_and_check(p, {1, 3, 1, 1, 4, 3}, {4, 3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {1, 3, 1, 3, 1, 3}, {3, 1, 3, 1, 3});
+    presentation::add_rule_and_check(p, {1, 3, 1, 4, 1, 3}, {3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {1, 4, 3, 1, 1, 4}, {4, 3, 1, 1, 4});
+    presentation::add_rule_and_check(p, {2, 3, 1, 1, 4, 3}, {1, 4, 3, 2, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 1, 3, 4, 1}, {3, 1, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 1, 4, 3, 1}, {1, 1, 4, 3, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 1, 3, 1}, {3, 1, 3, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 3, 1, 4, 1}, {3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 4, 1, 1, 3}, {3});
+    presentation::add_rule_and_check(p, {4, 1, 4, 3, 1, 1}, {4, 3, 1, 1, 4});
+    presentation::add_rule_and_check(p, {4, 1, 4, 3, 1, 4}, {4, 1, 4});
+    presentation::add_rule_and_check(p, {4, 3, 1, 3, 1, 4}, {1, 3, 1, 1, 4});
+    presentation::add_rule_and_check(
+        p, {1, 1, 4, 3, 1, 3, 1}, {3, 1, 1, 4, 3, 2});
+    presentation::add_rule_and_check(p, {1, 1, 4, 3, 2, 1, 3}, {3, 1, 1, 4, 3});
+    presentation::add_rule_and_check(
+        p, {1, 3, 1, 3, 4, 1, 3}, {3, 1, 3, 4, 1, 3});
+    presentation::add_rule_and_check(p, {3, 1, 1, 4, 3, 2, 1}, {3, 1, 1, 4, 3});
+    presentation::add_rule_and_check(
+        p, {3, 1, 3, 1, 3, 4, 1}, {3, 1, 3, 4, 1, 3});
+    presentation::add_rule_and_check(
+        p, {4, 3, 1, 1, 4, 3, 2}, {4, 1, 4, 3, 1, 3, 1});
+    presentation::add_rule_and_check(
+        p, {3, 1, 1, 4, 3, 2, 3, 1}, {3, 1, 1, 4, 3, 2, 3});
+    presentation::add_rule_and_check(
+        p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
+    REQUIRE(sims1::minimal_representation<uint32_t>(p, 203).number_of_nodes()
+            == 23);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "039",
+                          "TemperleyLieb(3) - minimal rep",
+                          "[standard][sims1]") {
+    auto rg = ReportGuard(false);
+
+    std::array<uint64_t, 11> const sizes
+        = {0, 1, 2, 5, 14, 42, 132, 429, 1'430, 4'862, 16'796};
+    std::array<uint64_t, 11> const min_degrees
+        = {0, 0, 2, 4, 7, 10, 20, 29, 0, 0, 0};
+
+    for (size_t n = 3; n < 7; ++n) {
+      auto p = make<Presentation<word_type>>(TemperleyLieb(n));
+      // There are no relations containing the empty word so we just manually
+      // add it.
+      p.contains_empty_word(true);
+      auto d = sims1::minimal_representation<uint32_t>(p, sizes[n]);
+      auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+      S.add_generator(S.generator(0).identity());
+      REQUIRE(S.size() == sizes[n]);
+      REQUIRE(d.number_of_nodes() == min_degrees[n]);
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "040",
+                          "TransitiveGroup(10, 32) - minimal rep",
+                          "[extreme][sims1]") {
+    auto                    rg = ReportGuard(false);
+    Presentation<word_type> p;
+    p.contains_empty_word(true);
+    p.alphabet({0, 1, 2, 3, 4});
+    presentation::add_rule_and_check(p, {0, 0}, {});
+    presentation::add_rule_and_check(p, {1, 1}, {});
+    presentation::add_rule_and_check(p, {2, 2}, {});
+    presentation::add_rule_and_check(p, {3, 3}, {});
+    presentation::add_rule_and_check(p, {4, 4}, {});
+    presentation::add_rule_and_check(p, {0, 1, 0, 1, 0, 1}, {});
+    presentation::add_rule_and_check(p, {0, 2, 0, 2}, {});
+    presentation::add_rule_and_check(p, {0, 3, 0, 3}, {});
+    presentation::add_rule_and_check(p, {0, 4, 0, 4}, {});
+    presentation::add_rule_and_check(p, {1, 2, 1, 2, 1, 2}, {});
+    presentation::add_rule_and_check(p, {1, 3, 1, 3}, {});
+    presentation::add_rule_and_check(p, {1, 4, 1, 4}, {});
+    presentation::add_rule_and_check(p, {2, 3, 2, 3, 2, 3}, {});
+    presentation::add_rule_and_check(p, {2, 4, 2, 4}, {});
+    presentation::add_rule_and_check(p, {3, 4, 3, 4, 3, 4}, {});
+
+    REQUIRE(sims1::minimal_representation<uint32_t>(p, 720).number_of_nodes()
+            == 6);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "041",
+                          "RectangularBand(3, 3) - quick",
+                          "[extreme][sims1]") {
+    auto rg = ReportGuard(false);
+    auto p  = make<Presentation<word_type>>(RectangularBand(2, 2));
+    p.contains_empty_word(true);
+    auto d = sims1::minimal_representation<uint32_t>(p, 5);
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+    REQUIRE(S.size() == 4);
+    REQUIRE(d.number_of_nodes() == 4);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "042",
+                          "RectangularBand(4, 5)",
+                          "[extreme][sims1]") {
+    std::vector<std::array<size_t, 6>> results = {{0, 0, 0, 0, 0, 0},
+                                                  {0, 0, 0, 0, 0, 0},
+                                                  {0, 0, 4, 5, 5, 6},
+                                                  {0, 0, 5, 6, 6, 7},
+                                                  {0, 0, 6, 7, 7, 8},
+                                                  {0, 0, 7, 8, 8, 9}};
+
+    auto rg = ReportGuard(false);
+    for (size_t m = 2; m <= 5; ++m) {
+      for (size_t n = 2; n <= 5; ++n) {
+        std::cout << std::string(72, '#') << "\n"
+                  << "CASE m, n = " << m << ", " << n << "\n"
+                  << std::string(72, '#') << std::endl;
+
+        auto p = make<Presentation<word_type>>(RectangularBand(m, n));
+        p.contains_empty_word(true);
+        auto d = sims1::minimal_representation<uint32_t>(p, m * n + 1);
+        auto S
+            = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+        REQUIRE(S.size() == m * n);
+        REQUIRE(d.number_of_nodes() == results[m][n]);
+      }
+    }
+  }
+
 }  // namespace libsemigroups
 
 // [[[0, 0, 0]],            #1#

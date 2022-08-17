@@ -894,4 +894,42 @@ namespace libsemigroups {
     return result;
   }
 
+  // From Proposition 4.2 in
+  // https://link.springer.com/content/pdf/10.1007/s002339910016.pdf
+  std::vector<relation_type> RectangularBand(size_t m, size_t n) {
+    std::vector<word_type> a(m);
+    std::vector<word_type> b(n);
+    for (size_t i = 0; i < m; ++i) {
+      a[i] = {i};
+    }
+    for (size_t i = 0; i < n; ++i) {
+      b[i] = {i + m};
+    }
+
+    std::vector<relation_type> result;
+    result.emplace_back(a[0], b[0]);
+
+    // (7)
+    for (size_t i = 1; i < m; ++i) {
+      result.emplace_back(a[i - 1] * a[i], a[i - 1]);
+    }
+
+    result.emplace_back(a[m - 1] * a[0], a[m - 1]);
+
+    // (8)
+    for (size_t i = 1; i < n; ++i) {
+      result.emplace_back(b[i - 1] * b[i], b[i]);
+    }
+
+    result.emplace_back(b[n - 1] * b[0], b[0]);
+
+    for (size_t i = 1; i < m; ++i) {
+      for (size_t j = 1; j < n; ++j) {
+        result.emplace_back(b[j] * a[i], a[0]);
+      }
+    }
+
+    return result;
+  }
+
 }  // namespace libsemigroups

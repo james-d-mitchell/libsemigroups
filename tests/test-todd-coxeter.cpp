@@ -2416,7 +2416,7 @@ namespace libsemigroups {
                             "TemperleyLieb(10) (East)",
                             "[todd-coxeter][quick][no-valgrind][no-coverage]") {
       auto         rg = ReportGuard(REPORT);
-      size_t const n  = 10;
+      size_t const n  = 4;
       ToddCoxeter  tc(congruence_kind::twosided);
       setup(tc, n - 1, TemperleyLieb, n);
       REQUIRE(tc.number_of_classes() == 16'795);
@@ -2577,6 +2577,20 @@ namespace libsemigroups {
       setup(tc, 2 * n - 1, Brauer, n);
       tc.sort_generating_pairs().remove_duplicate_generating_pairs();
       REQUIRE(tc.number_of_classes() == 105);
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("ToddCoxeter",
+                            "113",
+                            "RectangularBand(4, 3) (Ayik et al)",
+                            "[todd-coxeter][quick][no-valgrind][no-coverage]") {
+      auto         rg = ReportGuard(false);
+      size_t const m  = 4;
+      size_t const n  = 3;
+      ToddCoxeter  tc(congruence_kind::twosided);
+      setup(tc, m + n, RectangularBand, m, n);
+      tc.sort_generating_pairs().remove_duplicate_generating_pairs();
+      REQUIRE(tc.number_of_classes() == m * n);
+      REQUIRE(tc.quotient_froidure_pin()->number_of_idempotents() == m * n);
     }
 
   }  // namespace congruence

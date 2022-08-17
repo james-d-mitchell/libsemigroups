@@ -42,12 +42,15 @@
 #include <type_traits>  // for is_base_of
 #include <vector>       // for vector
 
-#include "config.hpp"          // for LIBSEMIGROUPS_ENABLE_STATS
-#include "digraph.hpp"         // for ActionDigraph
-#include "felsch-digraph.hpp"  // for FelschDigraph
-#include "make-present.hpp"    // for make
-#include "present.hpp"         // for Presentation
-#include "types.hpp"           // for word_type, congruence_kind
+#include <iostream>
+
+#include "config.hpp"             // for LIBSEMIGROUPS_ENABLE_STATS
+#include "digraph.hpp"            // for ActionDigraph
+#include "felsch-digraph.hpp"     // for FelschDigraph
+#include "make-froidure-pin.hpp"  // for make
+#include "make-present.hpp"       // for make
+#include "present.hpp"            // for Presentation
+#include "types.hpp"              // for word_type, congruence_kind
 
 #include "report.hpp"
 
@@ -496,6 +499,10 @@ namespace libsemigroups {
         const_iterator_base::swap(that);
         std::swap(_pending, that._pending);
       }
+
+      size_type number_of_active_nodes() const noexcept {
+        return this->_num_active_nodes;
+      }
     };
 
    public:
@@ -527,6 +534,8 @@ namespace libsemigroups {
     //!
     //! \sa
     //! \ref cend
+    // TODO(Sims1): write something about the meaning of the returned graph,
+    // i.e. what indices correspond to what
     const_iterator cbegin(size_type n) const {
       return const_iterator(presentation(), _extra, _final, n);
     }
@@ -882,6 +891,135 @@ namespace libsemigroups {
   std::ostream& operator<<(std::ostream&                os,
                            typename sims1::Stats const& stats);
 #endif  // LIBSEMIGROUPS_ENABLE_STATS
+
+  namespace sims1 {
+    template <typename T, typename W>
+    ActionDigraph<T> representation(Presentation<W> const& p,
+                                    size_t                 min,
+                                    size_t                 max,
+                                    size_t                 size) {
+      // TODO check that min != 0
+      std::cout << "Trying to find a representation with degree in [" << min
+                << ", " << max << "]:" << std::endl;
+      Sims1<T> C(congruence_kind::right, p);
+      using node_type = typename Sims1<T>::digraph_type::node_type;
+
+      auto   it    = C.cbegin(max);
+      size_t count = 0;
+
+      for (; it != C.cend(max); ++it) {
+        std::cout << "\rat " << ++count << std::flush;
+        if (it.number_of_active_nodes() >= min) {
+          auto S = make<FroidurePin<Transf<0, node_type>>>(
+              *it, it.number_of_active_nodes());
+          if (p.contains_empty_word()) {
+            auto one = S.generator(0).identity();
+            if (!S.contains(one)) {
+              S.add_generator(one);
+            }
+          }
+          if (S.size() == size) {
+            break;
+          }
+        }
+      }
+
+      ActionDigraph<T> result(*it);
+      if (it.number_of_active_nodes() == 0
+          || it.number_of_active_nodes() > max) {
+        result.restrict(0);
+      } else {
+        result.restrict(it.number_of_active_nodes());
+      }
+
+      std::cout << "\r* " << count << " congruences analysed, ";
+      if (result.number_of_nodes() == 0) {
+        std::cout << "no faithful representations found!";
+      } else {
+        std::cout << "faithful representations of degree "
+                  << result.number_of_nodes() << " found!";
+      }
+      std::cout << std::endl;
+      return result;
+    }
+
+    template <typename T>
+    ActionDigraph<T> representation(FroidurePinBase& fpb,
+                                    size_t           min,
+                                    size_t           max) {
+      return representation<T>(
+          make<Presentation<word_type>>(fpb), min, max, fpb.size());
+    }
+
+    template <typename T, typename W>
+    ActionDigraph<T> minimal_representation(Presentation<W> const& p,
+                                            size_t                 size) {
+      size_t           max  = (p.contains_empty_word() ? size : size + 1);
+      auto             best = representation<T>(p, 1, max, size);
+      ActionDigraph<T> next;
+      size_t           hi = best.number_of_nodes();
+
+      if (hi < 2) {
+        // No faithful representation on up to <size> points, or trivial
+        return best;
+      }
+
+      // TODO handle the case when there is a 1 degree rep
+
+      std::cout << "best = " << hi << "\n";
+      next = std::move(representation<T>(p, 1, hi - 1, size));
+      while (next.number_of_nodes() != 0) {
+        hi = next.number_of_nodes();
+        std::cout << "best = " << hi << "\n";
+        best = std::move(next);
+        next = std::move(representation<T>(p, 1, hi - 1, size));
+      }
+      return best;
+    }
+
+    // The following is an alternative implementation that does a sort of
+    // binary search, this might be useful if there are examples where the
+    // minimal degree representation is much smaller than the initial
+    // representation found.
+    /*template <typename T, typename W>
+    ActionDigraph<T> minimal_representation(Presentation<W> const& p,
+                                            size_t                 size) {
+      auto             best = representation<T>(p, 1, size, size);
+      ActionDigraph<T> next;
+      size_t           hi = best.number_of_nodes();
+
+      if (hi == 0) {
+        // No faithful representation on up to <size> points
+        return best;
+      }
+
+      size_t lo = representation<T>(p, 1, 1, size).number_of_nodes();
+
+      // TODO handle the case when there is a 1 degree rep
+      if (lo == 0) {
+        lo = 1;
+      }
+
+      auto mid = (hi + lo) / 2;
+      mid      = (mid == 1 ? 2 : mid);
+      std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
+                << std::endl;
+      while (lo != mid) {
+        next = std::move(representation<T>(p, lo + 1, mid, size));
+        if (next.number_of_nodes() == 0) {
+          lo = mid;
+        } else if (next.number_of_nodes() < hi) {
+          hi   = next.number_of_nodes();
+          best = std::move(next);
+        }
+        mid = (hi + lo) / 2;
+        std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
+                  << std::endl;
+      }
+      return best;
+    }*/
+
+  }  // namespace sims1
 
 }  // namespace libsemigroups
 
