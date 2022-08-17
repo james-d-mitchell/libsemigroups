@@ -801,7 +801,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "036",
                           "Brauer(5) (Kudryavtseva-Mazorchuk)",
-                          "[extreme][sims1]") {
+                          "[quick][sims1]") {
     auto rg = ReportGuard(false);
     auto p  = make<Presentation<word_type>>(Brauer(5));
     REQUIRE(presentation::length(p) == 295);

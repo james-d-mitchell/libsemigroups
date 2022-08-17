@@ -956,85 +956,46 @@ namespace libsemigroups {
       return result;
     }
 
-    /*template <typename T, typename W>
+    template <typename T, typename W>
     ActionDigraph<T> parallel_representation(Presentation<W> const& p,
                                              size_t                 min,
                                              size_t                 max,
                                              size_t                 size,
-                                             size_t num_threads) {
+                                             size_t num_threads = 1) {
+      using digraph_type = typename Sims1<T>::digraph_type;
+      using node_type    = typename digraph_type::node_type;
       Sims1<T> C(congruence_kind::right, p);
 
-      if (num_threads == 1) {
-        uint64_t result = 0;
-        C.find_if(n, num_threads, [&result](digraph_type const&) { ++result; });
-        return result;
-      } else {
-        std::atomic_int64_t result(0);
-        for_each(n, num_threads, [&result](digraph_type const&) { ++result; });
-        return result;
-      }
-    }
-    // TODO check that min != 0
-    std::cout << "Trying to find a representation with degree in [" << min
-              << ", " << max << "]:" << std::endl;
-    Sims1<T> C(congruence_kind::right, p);
-    using node_type = typename Sims1<T>::digraph_type::node_type;
-
-    auto hook = [](digraph_type const& x) {
-      if (it.number_of_active_nodes() >= min) {
-        auto S = make<FroidurePin<Transf<0, node_type>>>(
-            *it, it.number_of_active_nodes());
-        if (p.contains_empty_word()) {
-          auto one = S.generator(0).identity();
-          if (!S.contains(one)) {
-            S.add_generator(one);
+      auto hook = [&p, &min, &size](digraph_type const& x) {
+        if (x.number_of_active_nodes() >= min) {
+          auto S = make<FroidurePin<Transf<0, node_type>>>(
+              x, x.number_of_active_nodes());
+          if (p.contains_empty_word()) {
+            auto one = S.generator(0).identity();
+            if (!S.contains(one)) {
+              S.add_generator(one);
+            }
+          }
+          if (S.size() == size) {
+            return true;
           }
         }
-        if (S.size() == size) {
-          break;
-        }
+        return false;
       };
+
+      if (num_threads == 1) {
+        auto result = C.find_if(max, num_threads, hook);
+        if (result.number_of_active_nodes() == 0
+            || result.number_of_active_nodes() > max) {
+          result.restrict(0);
+        } else {
+          result.restrict(result.number_of_active_nodes());
+        }
+        return result;
+      } else {
+        return digraph_type();
+      }
     }
-
-      find_if(
-      auto   it    = C.cbegin(max);
-      size_t count = 0;
-
-      for (; it != C.cend(max); ++it) {
-      std::cout << "\rat " << ++count << std::flush;
-      if (it.number_of_active_nodes() >= min) {
-        auto S = make<FroidurePin<Transf<0, node_type>>>(
-            *it, it.number_of_active_nodes());
-        if (p.contains_empty_word()) {
-          auto one = S.generator(0).identity();
-          if (!S.contains(one)) {
-            S.add_generator(one);
-          }
-        }
-        if (S.size() == size) {
-          break;
-        }
-      }
-      }
-
-      ActionDigraph<T> result(*it);
-      if (it.number_of_active_nodes() == 0
-          || it.number_of_active_nodes() > max) {
-      result.restrict(0);
-      } else {
-      result.restrict(it.number_of_active_nodes());
-      }
-
-      std::cout << "\r* " << count << " congruences analysed, ";
-      if (result.number_of_nodes() == 0) {
-      std::cout << "no faithful representations found!";
-      } else {
-      std::cout << "faithful representations of degree "
-                << result.number_of_nodes() << " found!";
-      }
-      std::cout << std::endl;
-      return result;
-  }*/
 
     template <typename T>
     ActionDigraph<T> representation(FroidurePinBase& fpb,
