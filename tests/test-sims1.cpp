@@ -78,7 +78,7 @@ namespace libsemigroups {
 
     {
       Sims1_ S(congruence_kind::right, p);
-      REQUIRE(S.parallel_number_of_congruences(5) == 6);
+      REQUIRE(S.number_of_congruences(5, 2) == 6);
 
       auto it = S.cbegin(5);
       REQUIRE(*(it++) == action_digraph_helper::make<node_type>(5, {{0, 0}}));
@@ -456,7 +456,7 @@ namespace libsemigroups {
                           "012",
                           "SymmetricInverseMonoid(4)",
                           "[extreme][low-index]") {
-    auto                    rg = ReportGuard(false);
+    auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
     p.contains_empty_word(false);
 
@@ -471,7 +471,8 @@ namespace libsemigroups {
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.parallel_number_of_congruences(209) == 195'709);
+    REQUIRE(C.number_of_congruences(209, std::thread::hardware_concurrency())
+            == 195'709);
     // REQUIRE(C.number_of_congruences(209) == 195'709);
   }
 
@@ -699,8 +700,9 @@ namespace libsemigroups {
     REQUIRE(p.rules.size() == 252);
 
     Sims1_ C(congruence_kind::right, p);
-    C.split_at(24);
-    REQUIRE(C.number_of_congruences(81) == 601'265);
+    C.split_at(212 / 2);
+    REQUIRE(C.number_of_congruences(81, std::thread::hardware_concurrency())
+            == 601'265);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -726,7 +728,7 @@ namespace libsemigroups {
     REQUIRE(p.rules.size() == 86);
     do {
       auto it = presentation::redundant_rule(p, std::chrono::milliseconds(100));
-      p.rules.erase(it, it + 1);
+      p.rules.erase(it, it + 2);
     } while (presentation::length(p) > 300);
     // REQUIRE(word_type(fl.first, fl.second) == word_type({1, 1}));
     presentation::replace_subword(p, presentation::longest_common_subword(p));
@@ -734,8 +736,9 @@ namespace libsemigroups {
     // REQUIRE(presentation::length(p) == 69);
 
     Sims1_ C(congruence_kind::right, p);
-    // C.split_at(4);
-    REQUIRE(C.number_of_congruences(105) == 103'406);
+    REQUIRE(C.number_of_congruences(105, std::thread::hardware_concurrency())
+            == 103'406);
+    // REQUIRE(C.number_of_congruences(105) == 103'406);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -768,7 +771,8 @@ namespace libsemigroups {
     // } while (presentation::length(p) != last_len);
 
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(105) == 103'406);
+    REQUIRE(C.number_of_congruences(105, std::thread::hardware_concurrency())
+            == 103'406);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -783,7 +787,8 @@ namespace libsemigroups {
     presentation::sort_rules(p);
 
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(131) == 103'406);
+    REQUIRE(C.number_of_congruences(131, std::thread::hardware_concurrency())
+            == 280'455);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",

@@ -103,24 +103,99 @@ namespace libsemigroups {
   }
 
   template <typename T>
-  uint64_t Sims1<T>::number_of_congruences(size_type n) const {
-    uint64_t                                       result = 0;
+  uint64_t Sims1<T>::number_of_congruences(size_type n,
+                                           size_type num_threads) const {
+    if (num_threads == 1) {
+      uint64_t result = 0;
+      for_each(n, num_threads, [&result](digraph_type const &) { ++result; });
+      return result;
+    } else {
+      std::atomic_int64_t result(0);
+      for_each(n, num_threads, [&result](digraph_type const &) { ++result; });
+      return result;
+    }
+  }
+
+  // Apply the function pred to every one-sided congruence with at
+  // most n classes
+  template <typename T>
+  void
+  Sims1<T>::for_each(size_type                                 n,
+                     size_type                                 num_threads,
+                     std::function<void(digraph_type const &)> pred) const {
     std::chrono::high_resolution_clock::time_point last_report
         = std::chrono::high_resolution_clock::now();
-    auto const last = cend(n);
-    auto       it   = cbegin(n);
-    for (; it != last; ++it) {
-      ++result;
-      auto now     = std::chrono::high_resolution_clock::now();
-      auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-          now - last_report);
-      if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
-              std::chrono::seconds(1))) {
-        std::swap(now, last_report);
-        REPORT_DEFAULT("found %llu congruences so far!\n", uint64_t(result));
+
+    if (num_threads == 1) {
+      if (!report::should_report()) {
+        std::for_each(cbegin(n), cend(n), pred);
+      } else {
+        auto const last       = cend(n);
+        uint64_t   count      = 0;
+        uint64_t   last_count = 0;
+        for (auto it = cbegin(n); it != last; ++it) {
+          pred(*it);
+          report_number_of_congruences(last_report, last_count, ++count);
+        }
+      }
+    } else {
+      Den den(presentation(), _extra, _final, n, num_threads);
+      if (!report::should_report()) {
+        auto pred_wrapper = [&pred](digraph_type const &ad) {
+          pred(ad);
+          return true;
+        };
+        den.run(pred_wrapper);
+      } else {
+        std::atomic_uint64_t count(0);
+        std::atomic_uint64_t last_count(0);
+        den.run([&last_report, &last_count, &count, &pred, this](
+                    digraph_type const &ad) {
+          report_number_of_congruences(last_report, last_count, ++count);
+          pred(ad);
+          return true;
+        });
       }
     }
-    return result;
+  }
+
+  template <typename T>
+  typename Sims1<T>::digraph_type
+  Sims1<T>::find_if(size_type                                 n,
+                    size_type                                 num_threads,
+                    std::function<bool(digraph_type const &)> pred) const {
+    std::chrono::high_resolution_clock::time_point last_report
+        = std::chrono::high_resolution_clock::now();
+
+    if (num_threads == 1) {
+      if (!report::should_report()) {
+        return *std::find_if(cbegin(n), cend(n), pred);
+      } else {
+        auto const last       = cend(n);
+        uint64_t   count      = 0;
+        uint64_t   last_count = 0;
+        for (auto it = cbegin(n); it != last; ++it) {
+          if (pred(*it)) {
+            return *it;
+          }
+          report_number_of_congruences(last_report, last_count, ++count);
+        }
+        return *last;  // the empty digraph
+      }
+    } else {
+      Den den(presentation(), _extra, _final, n, num_threads);
+      if (!report::should_report()) {
+        den.run(pred);
+      } else {
+        std::atomic_uint64_t count(0);
+        std::atomic_uint64_t last_count(0);
+        den.run([&last_report, &last_count, &count, &pred, this](
+                    digraph_type const &ad) {
+          report_number_of_congruences(last_report, last_count, ++count);
+          return pred(ad);
+        });
+      }
+    }
   }
 
   template <typename T>
