@@ -44,6 +44,8 @@
 
 #include <iostream>
 
+#include <fmt/chrono.h>
+
 #include "config.hpp"             // for LIBSEMIGROUPS_ENABLE_STATS
 #include "digraph.hpp"            // for ActionDigraph
 #include "felsch-digraph.hpp"     // for FelschDigraph
@@ -601,21 +603,27 @@ namespace libsemigroups {
 
     // Can't be static because REPORT_DEFAULT uses this
     template <typename S>
-    void report_number_of_congruences(time_point& last_report,
-                                      S&          last_count,
-                                      uint64_t    count) const {
-      if (count - last_count > 2'048) {
-        // Avoid calling high_resolution_clock::now too often
-        auto now     = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            now - last_report);
-        if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::seconds(1))) {
-          std::swap(now, last_report);
-          last_count = count;
-          REPORT_DEFAULT("found %llu congruences so far!\n", count);
-        }
+    void report_number_of_congruences(time_point&   last_report,
+                                      S&            last_count,
+                                      uint64_t      count,
+                                      detail::Timer t) const {
+      // TODO(Sims1) add 2'048 as a setting
+      // if (count - last_count > 2'048) {
+      // Avoid calling high_resolution_clock::now too often
+      auto now     = std::chrono::high_resolution_clock::now();
+      auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+          now - last_report);
+      if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
+              std::chrono::seconds(1))) {
+        std::swap(now, last_report);
+        last_count = count;
+        using float_seconds
+            = std::chrono::duration<float, std::chrono::seconds::period>;
+        auto seconds = std::chrono::duration_cast<float_seconds>(t.elapsed());
+        REPORT_DEFAULT(
+            FORMAT("found {:>8} congruences in {}!\n", count, seconds));
       }
+      //}
     }
 
     // TODO(Sims1) move to cpp file
@@ -879,9 +887,14 @@ namespace libsemigroups {
 
       void run(std::function<bool(digraph_type const&)> hook) {
         detail::JoinThreads joiner(_threads);
-        for (size_t i = 0; i < _num_threads; ++i) {
-          _threads.push_back(
-              std::thread(&Den::worker_thread, this, i, std::ref(hook)));
+        try {
+          for (size_t i = 0; i < _num_threads; ++i) {
+            _threads.push_back(
+                std::thread(&Den::worker_thread, this, i, std::ref(hook)));
+          }
+        } catch (...) {
+          _done = true;
+          throw;
         }
       }
     };
@@ -942,6 +955,86 @@ namespace libsemigroups {
       std::cout << std::endl;
       return result;
     }
+
+    /*template <typename T, typename W>
+    ActionDigraph<T> parallel_representation(Presentation<W> const& p,
+                                             size_t                 min,
+                                             size_t                 max,
+                                             size_t                 size,
+                                             size_t num_threads) {
+      Sims1<T> C(congruence_kind::right, p);
+
+      if (num_threads == 1) {
+        uint64_t result = 0;
+        C.find_if(n, num_threads, [&result](digraph_type const&) { ++result; });
+        return result;
+      } else {
+        std::atomic_int64_t result(0);
+        for_each(n, num_threads, [&result](digraph_type const&) { ++result; });
+        return result;
+      }
+    }
+    // TODO check that min != 0
+    std::cout << "Trying to find a representation with degree in [" << min
+              << ", " << max << "]:" << std::endl;
+    Sims1<T> C(congruence_kind::right, p);
+    using node_type = typename Sims1<T>::digraph_type::node_type;
+
+    auto hook = [](digraph_type const& x) {
+      if (it.number_of_active_nodes() >= min) {
+        auto S = make<FroidurePin<Transf<0, node_type>>>(
+            *it, it.number_of_active_nodes());
+        if (p.contains_empty_word()) {
+          auto one = S.generator(0).identity();
+          if (!S.contains(one)) {
+            S.add_generator(one);
+          }
+        }
+        if (S.size() == size) {
+          break;
+        }
+      };
+    }
+
+      find_if(
+      auto   it    = C.cbegin(max);
+      size_t count = 0;
+
+      for (; it != C.cend(max); ++it) {
+      std::cout << "\rat " << ++count << std::flush;
+      if (it.number_of_active_nodes() >= min) {
+        auto S = make<FroidurePin<Transf<0, node_type>>>(
+            *it, it.number_of_active_nodes());
+        if (p.contains_empty_word()) {
+          auto one = S.generator(0).identity();
+          if (!S.contains(one)) {
+            S.add_generator(one);
+          }
+        }
+        if (S.size() == size) {
+          break;
+        }
+      }
+      }
+
+      ActionDigraph<T> result(*it);
+      if (it.number_of_active_nodes() == 0
+          || it.number_of_active_nodes() > max) {
+      result.restrict(0);
+      } else {
+      result.restrict(it.number_of_active_nodes());
+      }
+
+      std::cout << "\r* " << count << " congruences analysed, ";
+      if (result.number_of_nodes() == 0) {
+      std::cout << "no faithful representations found!";
+      } else {
+      std::cout << "faithful representations of degree "
+                << result.number_of_nodes() << " found!";
+      }
+      std::cout << std::endl;
+      return result;
+  }*/
 
     template <typename T>
     ActionDigraph<T> representation(FroidurePinBase& fpb,

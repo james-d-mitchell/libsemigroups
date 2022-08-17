@@ -126,7 +126,10 @@ namespace libsemigroups {
     std::chrono::high_resolution_clock::time_point last_report
         = std::chrono::high_resolution_clock::now();
 
+    detail::Timer t;
+
     if (num_threads == 1) {
+      REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         std::for_each(cbegin(n), cend(n), pred);
       } else {
@@ -135,10 +138,13 @@ namespace libsemigroups {
         uint64_t   last_count = 0;
         for (auto it = cbegin(n); it != last; ++it) {
           pred(*it);
-          report_number_of_congruences(last_report, last_count, ++count);
+          report_number_of_congruences(last_report, last_count, ++count, t);
         }
       }
     } else {
+      REPORT_DEFAULT("using %d / %d additional threads\n",
+                     num_threads,
+                     std::thread::hardware_concurrency());
       Den den(presentation(), _extra, _final, n, num_threads);
       if (!report::should_report()) {
         auto pred_wrapper = [&pred](digraph_type const &ad) {
@@ -149,9 +155,10 @@ namespace libsemigroups {
       } else {
         std::atomic_uint64_t count(0);
         std::atomic_uint64_t last_count(0);
-        den.run([&last_report, &last_count, &count, &pred, this](
+
+        den.run([&last_report, &last_count, &count, &pred, &t, this](
                     digraph_type const &ad) {
-          report_number_of_congruences(last_report, last_count, ++count);
+          report_number_of_congruences(last_report, last_count, ++count, t);
           pred(ad);
           return true;
         });
@@ -167,6 +174,8 @@ namespace libsemigroups {
     std::chrono::high_resolution_clock::time_point last_report
         = std::chrono::high_resolution_clock::now();
 
+    detail::Timer t;
+
     if (num_threads == 1) {
       if (!report::should_report()) {
         return *std::find_if(cbegin(n), cend(n), pred);
@@ -178,7 +187,7 @@ namespace libsemigroups {
           if (pred(*it)) {
             return *it;
           }
-          report_number_of_congruences(last_report, last_count, ++count);
+          report_number_of_congruences(last_report, last_count, ++count, t);
         }
         return *last;  // the empty digraph
       }
@@ -189,9 +198,9 @@ namespace libsemigroups {
       } else {
         std::atomic_uint64_t count(0);
         std::atomic_uint64_t last_count(0);
-        den.run([&last_report, &last_count, &count, &pred, this](
+        den.run([&last_report, &last_count, &count, &pred, &t, this](
                     digraph_type const &ad) {
-          report_number_of_congruences(last_report, last_count, ++count);
+          report_number_of_congruences(last_report, last_count, ++count, t);
           return pred(ad);
         });
       }
