@@ -149,7 +149,7 @@ namespace libsemigroups {
       if (!report::should_report()) {
         auto pred_wrapper = [&pred](digraph_type const &ad) {
           pred(ad);
-          return true;
+          return false;
         };
         den.run(pred_wrapper);
       } else {
@@ -160,7 +160,7 @@ namespace libsemigroups {
                     digraph_type const &ad) {
           report_number_of_congruences(last_report, last_count, ++count, t);
           pred(ad);
-          return true;
+          return false;
         });
       }
     }
@@ -204,8 +204,7 @@ namespace libsemigroups {
           return pred(ad);
         });
       }
-      // TODO(Sims1) need to capture the output from Den::run
-      return digraph_type();
+      return den.get();
     }
   }
 

@@ -595,6 +595,7 @@ namespace libsemigroups {
     using time_point = std::chrono::high_resolution_clock::time_point;
 
     // Can't be static because REPORT_DEFAULT uses this
+    // TODO(Sims1) move to tpp file
     template <typename S>
     void report_number_of_congruences(time_point&   last_report,
                                       S&            last_count,
@@ -613,8 +614,7 @@ namespace libsemigroups {
         using float_seconds
             = std::chrono::duration<float, std::chrono::seconds::period>;
         auto seconds = std::chrono::duration_cast<float_seconds>(t.elapsed());
-        REPORT_DEFAULT(
-            FORMAT("found {:>8} congruences in {}!\n", count, seconds));
+        REPORT_DEFAULT(FORMAT("found {} congruences in {}!\n", count, seconds));
       }
       //}
     }
@@ -797,6 +797,8 @@ namespace libsemigroups {
       std::vector<std::unique_ptr<Thief>> _theives;
       std::vector<std::thread>            _threads;
       size_type                           _num_threads;
+      digraph_type                        _result;
+      std::mutex                          _mtx;
 
       void worker_thread(unsigned                                 my_index,
                          std::function<bool(digraph_type const&)> hook) {
@@ -805,9 +807,13 @@ namespace libsemigroups {
                 || pop_from_other_thread_queue(pd, my_index))
                && !_done) {
           if (_theives[my_index]->increment(pd)) {
-            if (!hook(**_theives[my_index])) {
-              _done = true;
-              // hook returns false to indicate that we should stop early
+            if (hook(**_theives[my_index])) {
+              // hook returns true to indicate that we should stop early
+              std::lock_guard<std::mutex> lock(_mtx);
+              if (!_done) {
+                _done   = true;
+                _result = **_theives[my_index];
+              }
               return;
             }
           }
@@ -867,6 +873,10 @@ namespace libsemigroups {
       }
 
       ~Den() = default;
+
+      digraph_type const& get() const {
+        return _result;
+      }
 
       void run(std::function<bool(digraph_type const&)> hook) {
         detail::JoinThreads joiner(_threads);
@@ -940,6 +950,7 @@ namespace libsemigroups {
       return result;
     }
 
+    // TODO(Sims1) wrap into a class so that there aren't so many parameters
     template <typename T, typename W>
     ActionDigraph<T> parallel_representation(Presentation<W> const& p,
                                              size_t                 min,
@@ -952,6 +963,7 @@ namespace libsemigroups {
 
       auto hook = [&p, &min, &size](digraph_type const& x) {
         if (x.number_of_active_nodes() >= min) {
+          // RecursiveReportGuard rg(false);
           auto S = make<FroidurePin<Transf<0, node_type>>>(
               x, x.number_of_active_nodes());
           if (p.contains_empty_word()) {
@@ -967,18 +979,14 @@ namespace libsemigroups {
         return false;
       };
 
-      if (num_threads == 1) {
-        auto result = C.find_if(max, num_threads, hook);
-        if (result.number_of_active_nodes() == 0
-            || result.number_of_active_nodes() > max) {
-          result.restrict(0);
-        } else {
-          result.restrict(result.number_of_active_nodes());
-        }
-        return result;
+      auto result = C.find_if(max, num_threads, hook);
+      if (result.number_of_active_nodes() == 0
+          || result.number_of_active_nodes() > max) {
+        result.restrict(0);
       } else {
-        return digraph_type();
+        result.restrict(result.number_of_active_nodes());
       }
+      return result;
     }
 
     template <typename T>
@@ -993,7 +1001,7 @@ namespace libsemigroups {
     ActionDigraph<T> minimal_representation(Presentation<W> const& p,
                                             size_t                 size) {
       size_t           max  = (p.contains_empty_word() ? size : size + 1);
-      auto             best = representation<T>(p, 1, max, size);
+      auto             best = parallel_representation<T>(p, 1, max, size, 1);
       ActionDigraph<T> next;
       size_t           hi = best.number_of_nodes();
 
@@ -1005,12 +1013,12 @@ namespace libsemigroups {
       // TODO handle the case when there is a 1 degree rep
 
       std::cout << "best = " << hi << "\n";
-      next = std::move(representation<T>(p, 1, hi - 1, size));
+      next = std::move(parallel_representation<T>(p, 1, hi - 1, size, 1));
       while (next.number_of_nodes() != 0) {
         hi = next.number_of_nodes();
         std::cout << "best = " << hi << "\n";
         best = std::move(next);
-        next = std::move(representation<T>(p, 1, hi - 1, size));
+        next = std::move(parallel_representation<T>(p, 1, hi - 1, size));
       }
       return best;
     }

@@ -420,8 +420,9 @@ namespace libsemigroups {
     REQUIRE(p.rules.size() == 134);
     REQUIRE(presentation::length(p) == 686);
 
-    Sims1_ C(congruence_kind::left, p);
-    REQUIRE(C.number_of_congruences(256, 4) == 120);
+    Sims1_ C(congruence_kind::right, p);
+    REQUIRE(C.number_of_congruences(256, 4)
+            == 120'121);  // Number confirmed with CREAM
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -766,7 +767,7 @@ namespace libsemigroups {
                           "024",
                           "Brauer(4) (Kudryavtseva-Mazorchuk)",
                           "[extreme][sims1]") {
-    auto rg = ReportGuard(false);
+    auto rg = ReportGuard(true);
     auto p  = make<Presentation<word_type>>(Brauer(4));
     REQUIRE(presentation::length(p) == 182);
     presentation::remove_duplicate_rules(p);
@@ -802,15 +803,18 @@ namespace libsemigroups {
                           "036",
                           "Brauer(5) (Kudryavtseva-Mazorchuk)",
                           "[quick][sims1]") {
-    auto rg = ReportGuard(false);
+    auto rg = ReportGuard(true);
     auto p  = make<Presentation<word_type>>(Brauer(5));
     REQUIRE(presentation::length(p) == 295);
     presentation::remove_duplicate_rules(p);
     REQUIRE(presentation::length(p) == 253);
 
-    REQUIRE(sims1::minimal_representation<uint32_t>(p, 945).number_of_nodes()
-            == 52);  // TODO(Sims1) when this was merged it was 47, not sure
-                     // what value is correct
+    auto d = sims1::minimal_representation<uint32_t>(p, 945);
+    // TODO(Sims1) when this was merged it was 47, not sure
+    // what value is correct
+    REQUIRE(d.number_of_nodes() == 52);
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+    REQUIRE(S.size() == 945);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",

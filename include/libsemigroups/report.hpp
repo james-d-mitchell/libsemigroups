@@ -483,5 +483,19 @@ namespace libsemigroups {
     }
   };
 
+  class RecursiveReportGuard {
+   private:
+    bool _previous_val;
+
+   public:
+    explicit RecursiveReportGuard(bool val) : _previous_val(REPORTER.report()) {
+      REPORTER.report(val);
+    }
+
+    ~RecursiveReportGuard() {
+      REPORTER.report(_previous_val);
+    }
+  };
+
 }  // namespace libsemigroups
 #endif  // LIBSEMIGROUPS_REPORT_HPP_
