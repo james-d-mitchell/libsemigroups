@@ -744,6 +744,15 @@ namespace libsemigroups {
       return _nr_nodes;
     }
 
+    ActionDigraph& number_of_active_nodes(size_type val) {
+      _num_active_nodes = val;
+      return *this;
+    }
+
+    size_type inline number_of_active_nodes() const noexcept {
+      return _num_active_nodes;
+    }
+
     //! Returns the number of edges.
     //!
     //! \returns
@@ -3011,6 +3020,7 @@ namespace libsemigroups {
 
     T                                _degree;
     T                                _nr_nodes;
+    T                                _num_active_nodes;
     mutable detail::DynamicArray2<T> _dynamic_array_2;
 
     struct Attr {
@@ -3046,6 +3056,7 @@ namespace libsemigroups {
   ActionDigraph<T>::ActionDigraph(T m, T n)
       : _degree(n),
         _nr_nodes(m),
+        _num_active_nodes(),
         _dynamic_array_2(_degree, _nr_nodes, UNDEFINED),
         _scc_back_forest(),
         _scc_forest(),

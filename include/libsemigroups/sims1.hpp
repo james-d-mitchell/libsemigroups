@@ -19,9 +19,12 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoids.
 // TODO:
-// * implement joins, meets, containment?
-// * generating pairs for congruences defined by "action digraph"
-// * minimum degree transformation representations of semigroups/monoids
+// * implement joins (HopcroftKarp), meets (not sure), containment (find join
+//   and check equality)?
+// * generating pairs for congruences defined by "action digraph"?
+// * is 2-sided congruence method. One approach would be to compute the kernel
+//   of the associated homomorphism, which is the largest 2-sided congruence
+//   contained in the right congruence. Not sure if this is a good approach.
 //
 // Notes:
 // 1. In 2022, when first writing this file, JDM tried templating the word_type
@@ -359,8 +362,8 @@ namespace libsemigroups {
       Presentation<word_type>             _final;
       size_type                           _max_num_classes;
       size_type                           _min_target_node;
-      size_type                           _num_active_nodes;
-      size_type                           _num_gens;
+      size_type _num_gens;  // TODO(Sims1) This can be removed it's just
+                            // _felsch_graph.out_degree()
 
       //! No doc
       const_iterator_base(Presentation<word_type> const& p,
@@ -386,11 +389,7 @@ namespace libsemigroups {
 
       //! No doc
       bool operator==(const_iterator_base const& that) const noexcept {
-        if (_num_active_nodes == 0 && that._num_active_nodes == 0) {
-          return true;
-        }
-        return _num_active_nodes == that._num_active_nodes
-               && _felsch_graph == that._felsch_graph;
+        return _felsch_graph == that._felsch_graph;
       }
 
       //! No doc
@@ -414,13 +413,11 @@ namespace libsemigroups {
         std::swap(_felsch_graph, that._felsch_graph);
         std::swap(_max_num_classes, that._max_num_classes);
         std::swap(_min_target_node, that._min_target_node);
-        std::swap(_num_active_nodes, that._num_active_nodes);
         std::swap(_num_gens, that._num_gens);
       }
 
       void clone(const_iterator_base const& that) {
-        _felsch_graph     = that._felsch_graph;
-        _num_active_nodes = that._num_active_nodes;
+        _felsch_graph = that._felsch_graph;
       }
     };
 
@@ -465,7 +462,7 @@ namespace libsemigroups {
                      Presentation<word_type> const& f,
                      size_type                      n)
           : const_iterator_base(p, e, f, n) {
-        if (this->_num_active_nodes == 0) {
+        if (this->_felsch_graph.number_of_active_nodes() == 0) {
           return;
         }
         if (n > 1) {
@@ -500,10 +497,6 @@ namespace libsemigroups {
       void swap(const_iterator& that) noexcept {
         const_iterator_base::swap(that);
         std::swap(_pending, that._pending);
-      }
-
-      size_type number_of_active_nodes() const noexcept {
-        return this->_num_active_nodes;
       }
     };
 
@@ -582,7 +575,7 @@ namespace libsemigroups {
     //!
     //! \exceptions
     //! \no_libsemigroups_except
-    // TODO(later): this should be in the sims1 helper namespace
+    // TODO(v3): this should be in the sims1 helper namespace
     uint64_t number_of_congruences(size_type n,
                                    size_type num_threads = 1) const;
 
@@ -676,9 +669,9 @@ namespace libsemigroups {
           this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
 
           // It might be that current.target is a new node, in which case
-          // _num_active_nodes includes this new node even before the edge
-          // current.source -> current.target is defined.
-          this->_num_active_nodes = current.num_nodes;
+          // _felsch_graph.number_of_active_nodes() includes this new node
+          // even before the edge current.source -> current.target is defined.
+          this->_felsch_graph.number_of_active_nodes(current.num_nodes);
 
           LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(
                                    current.source, current.generator)
@@ -716,26 +709,18 @@ namespace libsemigroups {
         }
 
         letter_type a = current.generator + 1;
-        for (node_type next = current.source; next < this->_num_active_nodes;
-             ++next) {
+        // TODO(Sims1): safe when not locked?
+        size_type const M = this->_felsch_graph.number_of_active_nodes();
+        size_type const N = this->_felsch_graph.number_of_edges();
+        for (node_type next = current.source; next < M; ++next) {
           for (; a < this->_num_gens; ++a) {
             if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
               std::lock_guard<std::mutex> lock(_mutex);
-              for (node_type b = this->_min_target_node;
-                   b < this->_num_active_nodes;
-                   ++b) {
-                _pending.emplace_back(next,
-                                      a,
-                                      b,
-                                      this->_felsch_graph.number_of_edges(),
-                                      this->_num_active_nodes);
+              for (node_type b = this->_min_target_node; b < M; ++b) {
+                _pending.emplace_back(next, a, b, N, M);
               }
-              if (this->_num_active_nodes < this->_max_num_classes) {
-                _pending.emplace_back(next,
-                                      a,
-                                      this->_num_active_nodes,
-                                      this->_felsch_graph.number_of_edges(),
-                                      this->_num_active_nodes + 1);
+              if (M < this->_max_num_classes) {
+                _pending.emplace_back(next, a, M, N, M + 1);
               }
               return false;
             }
@@ -743,20 +728,18 @@ namespace libsemigroups {
           a = 0;
         }
 
-        LIBSEMIGROUPS_ASSERT(this->_felsch_graph.number_of_edges()
-                             == this->_num_active_nodes
-                                    * this->_felsch_graph.out_degree());
+        LIBSEMIGROUPS_ASSERT(N == M * this->_num_gens);
+
         // No undefined edges, word graph is complete
         for (auto it = this->_final.rules.cbegin();
              it != this->_final.rules.cend();
              it += 2) {
-          for (node_type n = 0; n < this->_num_active_nodes; ++n) {
-            if (!this->_felsch_graph.compatible(n, *it, *(it + 1))) {
+          for (node_type m = 0; m < M; ++m) {
+            if (!this->_felsch_graph.compatible(m, *it, *(it + 1))) {
               return false;
             }
           }
         }
-        // REPORT_DEFAULT(detail::to_string(this->_felsch_graph) + "\n");
         return true;
       }
 
@@ -922,9 +905,9 @@ namespace libsemigroups {
 
       for (; it != C.cend(max); ++it) {
         std::cout << "\rat " << ++count << std::flush;
-        if (it.number_of_active_nodes() >= min) {
+        if (it->number_of_active_nodes() >= min) {
           auto S = make<FroidurePin<Transf<0, node_type>>>(
-              *it, it.number_of_active_nodes());
+              *it, it->number_of_active_nodes());
           if (p.contains_empty_word()) {
             auto one = S.generator(0).identity();
             if (!S.contains(one)) {
@@ -937,12 +920,13 @@ namespace libsemigroups {
         }
       }
 
+      // TODO(Sims1) is this correct?
       ActionDigraph<T> result(*it);
-      if (it.number_of_active_nodes() == 0
-          || it.number_of_active_nodes() > max) {
+      if (result.number_of_active_nodes() == 0
+          || result.number_of_active_nodes() > max) {
         result.restrict(0);
       } else {
-        result.restrict(it.number_of_active_nodes());
+        result.restrict(result.number_of_active_nodes());
       }
 
       std::cout << "\r* " << count << " congruences analysed, ";

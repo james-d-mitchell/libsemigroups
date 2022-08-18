@@ -204,6 +204,8 @@ namespace libsemigroups {
           return pred(ad);
         });
       }
+      // TODO(Sims1) need to capture the output from Den::run
+      return digraph_type();
     }
   }
 
@@ -218,10 +220,10 @@ namespace libsemigroups {
         _final(final_),
         _max_num_classes(p.contains_empty_word() ? n : n + 1),
         _min_target_node(p.contains_empty_word() ? 0 : 1),
-        _num_active_nodes(n == 0 ? 0 : 1),  // = 0 indicates iterator is done
-        // TODO(later) could sink _num_active_nodes into DigraphWithSources or
-        // FelschDigraph
-        _num_gens(p.alphabet().size()) {}
+        _num_gens(p.alphabet().size()) {
+    _felsch_graph.number_of_active_nodes(n == 0 ? 0 : 1);
+    // = 0 indicates iterator is done
+  }
 
   template <typename T>
   typename Sims1<T>::const_iterator const &
@@ -243,9 +245,9 @@ namespace libsemigroups {
       this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
 
       // It might be that current.target is a new node, in which case
-      // _num_active_nodes includes this new node even before the edge
-      // current.source -> current.target is defined.
-      this->_num_active_nodes = current.num_nodes;
+      // _felsch_graph.number_of_active_nodes() includes this new node even
+      // before the edge current.source -> current.target is defined.
+      this->_felsch_graph.number_of_active_nodes(current.num_nodes);
 
       LIBSEMIGROUPS_ASSERT(
           this->_felsch_graph.unsafe_neighbor(current.source, current.generator)
@@ -265,25 +267,18 @@ namespace libsemigroups {
         }
 
         if (this->_felsch_graph.process_definitions(start)) {
-          letter_type a = current.generator + 1;
-          for (node_type next = current.source; next < this->_num_active_nodes;
-               ++next) {
+          letter_type     a = current.generator + 1;
+          size_type const M = this->_felsch_graph.number_of_active_nodes();
+          size_type const N = this->_felsch_graph.number_of_edges();
+
+          for (node_type next = current.source; next < M; ++next) {
             for (; a < this->_num_gens; ++a) {
               if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                if (this->_num_active_nodes < this->_max_num_classes) {
-                  _pending.emplace_back(next,
-                                        a,
-                                        this->_num_active_nodes,
-                                        this->_felsch_graph.number_of_edges(),
-                                        this->_num_active_nodes + 1);
+                if (M < this->_max_num_classes) {
+                  _pending.emplace_back(next, a, M, N, M + 1);
                 }
-                for (node_type b = this->_num_active_nodes;
-                     b-- > this->_min_target_node;) {
-                  _pending.emplace_back(next,
-                                        a,
-                                        b,
-                                        this->_felsch_graph.number_of_edges(),
-                                        this->_num_active_nodes);
+                for (node_type b = M; b-- > this->_min_target_node;) {
+                  _pending.emplace_back(next, a, b, N, M);
                 }
                 goto dive;
               }
@@ -292,25 +287,24 @@ namespace libsemigroups {
           }
           // No undefined edges, word graph is complete
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-          _stats.num_good_nodes += this->_num_active_nodes;
+          _stats.num_good_nodes += this->_felsch_graph.number_of_active_nodes();
 #endif
           for (auto it = this->_final.rules.cbegin();
                it != this->_final.rules.cend();
                it += 2) {
-            for (node_type n = 0; n < this->_num_active_nodes; ++n) {
-              if (!this->_felsch_graph.compatible(n, *it, *(it + 1))) {
+            for (node_type m = 0; m < M; ++m) {
+              if (!this->_felsch_graph.compatible(m, *it, *(it + 1))) {
                 goto dive;
               }
             }
           }
-          LIBSEMIGROUPS_ASSERT(this->_felsch_graph.number_of_edges()
-                               == this->_num_active_nodes
-                                      * this->_felsch_graph.out_degree());
+          LIBSEMIGROUPS_ASSERT(N == M * this->_num_gens);
           return *this;
         }
       }
     }
-    this->_num_active_nodes = 0;  // indicates that the iterator is done
+    this->_felsch_graph.number_of_active_nodes(0);
+    // indicates that the iterator is done
     this->_felsch_graph.restrict(0);
     return *this;
   }
