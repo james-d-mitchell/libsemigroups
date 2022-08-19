@@ -494,8 +494,7 @@ namespace libsemigroups {
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(209, std::thread::hardware_concurrency())
-            == 195'709);
+    REQUIRE(C.number_of_congruences(209, 4) == 195'709);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",

@@ -62,6 +62,7 @@
 namespace libsemigroups {
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
+  // TODO(Sims1) move this to tpp file
   namespace sims1 {
     struct Stats {
       double   mean_depth     = 0;
@@ -624,16 +625,18 @@ namespace libsemigroups {
      private:
       using PendingDef = typename const_iterator_base::PendingDef;
 
-      std::deque<PendingDef> _pending;
-      mutable std::mutex     _mutex;
+      std::vector<PendingDef> _pending;
+      mutable std::mutex      _mutex;
+      uint64_t&               _total_pending;
 
      public:
       //! No doc
       Thief(Presentation<word_type> const& p,
             Presentation<word_type> const& e,
             Presentation<word_type> const& f,
-            size_type                      n)
-          : const_iterator_base(p, e, f, n) {}
+            size_type                      n,
+            uint64_t&                      total_pending)
+          : const_iterator_base(p, e, f, n), _total_pending(total_pending) {}
 
       // None of the constructors are noexcept because the corresponding
       // constructors for std::vector aren't (until C++17).
@@ -708,6 +711,7 @@ namespace libsemigroups {
           }
         }
 
+        // 627,317,961
         letter_type a = current.generator + 1;
         // TODO(Sims1): safe when not locked?
         size_type const M = this->_felsch_graph.number_of_active_nodes();
@@ -716,11 +720,17 @@ namespace libsemigroups {
           for (; a < this->_num_gens; ++a) {
             if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
               std::lock_guard<std::mutex> lock(_mutex);
-              for (node_type b = this->_min_target_node; b < M; ++b) {
-                _pending.emplace_back(next, a, b, N, M);
-              }
+              // for (node_type b = this->_min_target_node; b < M; ++b) {
+              //   _total_pending++;
+              //   _pending.emplace_back(next, a, b, N, M);
+              // }
               if (M < this->_max_num_classes) {
+                _total_pending++;
                 _pending.emplace_back(next, a, M, N, M + 1);
+              }
+              for (node_type b = M; b-- > this->_min_target_node;) {
+                _total_pending++;
+                _pending.emplace_back(next, a, b, N, M);
               }
               return false;
             }
@@ -771,9 +781,17 @@ namespace libsemigroups {
         const_iterator_base::clone(that);
         // TODO(Sims1) could steal in a different way: maybe interlaced (steal
         // every other item); steal a fixed proportion of every queue
-        _pending.insert(_pending.cbegin(),
-                        that._pending.begin() + that._pending.size() / 2,
-                        that._pending.end());
+
+        for (size_t i = 0; i < that._pending.size(); i += 2) {
+          _pending.push_back(std::move(that._pending[i]));
+          that._pending[i / 2] = std::move(that._pending[i + 1]);
+        }
+
+        // _pending.insert(_pending.cbegin(),
+        //                 that._pending.begin() + that._pending.size() / 2,
+        //                 that._pending.end());
+        // that._pending.cbegin(),
+        // that._pending.cbegin() + that._pending.size() / 2);
       }
 
       bool try_steal(Thief& q) {
@@ -785,6 +803,8 @@ namespace libsemigroups {
         q.clone(*this);  // Copy the digraph from this into q
         _pending.erase(_pending.cbegin() + _pending.size() / 2,
                        _pending.cend());
+        // _pending.erase(_pending.cbegin(),
+        //               _pending.cbegin() + _pending.size() / 2);
         return true;
       }
     };
@@ -796,6 +816,7 @@ namespace libsemigroups {
       std::atomic_bool                    _done;
       std::vector<std::unique_ptr<Thief>> _theives;
       std::vector<std::thread>            _threads;
+      std::vector<uint64_t>               _total_pending;
       size_type                           _num_threads;
       digraph_type                        _result;
       std::mutex                          _mtx;
@@ -832,8 +853,8 @@ namespace libsemigroups {
           // TODO(Sims1) could always do something different here, like find
           // the largest queue and steal from that.
           if (_theives[index]->try_steal(*_theives[my_index])) {
-            // REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index,
-            // index)); report_queue_sizes("AFTER: ");
+            // REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index, index));
+            // report_queue_sizes("AFTER: ");
             return pop_from_local_queue(pd, my_index);
           }
         }
@@ -858,16 +879,20 @@ namespace libsemigroups {
           size_type                      n,
           size_type                      num_threads)
           : _done(false),  // TODO init other data members
-            _num_threads(num_threads) {
+            _num_threads(num_threads),
+            _total_pending(num_threads, 0) {
         for (size_t i = 0; i < _num_threads; ++i) {
           // TODO(Sims1) use make_unique
-          _theives.push_back(std::unique_ptr<Thief>(new Thief(p, e, f, n)));
+          _theives.push_back(
+              std::unique_ptr<Thief>(new Thief(p, e, f, n, _total_pending[i])));
         }
 
         if (n > 1) {
+          _total_pending[0]++;
           _theives.front()->push({0, 0, 1, 0, 2});
         }
         if (_theives.front()->_min_target_node == 0) {
+          _total_pending[0]++;
           _theives.front()->push({0, 0, 0, 0, 1});
         }
       }
@@ -875,6 +900,12 @@ namespace libsemigroups {
       ~Den() = default;
 
       digraph_type const& get() const {
+        REPORT_DEFAULT(FORMAT("number of nodes created in each thread {}\n",
+                              detail::to_string(_total_pending)));
+        REPORT_DEFAULT(FORMAT(
+            "total number of nodes in search tree was {}\n",
+            fmt::group_digits(std::accumulate(
+                _total_pending.cbegin(), _total_pending.cend(), uint64_t(0)))));
         return _result;
       }
 

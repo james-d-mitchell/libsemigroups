@@ -162,6 +162,7 @@ namespace libsemigroups {
           pred(ad);
           return false;
         });
+        den.get();
       }
     }
   }
