@@ -514,6 +514,19 @@ namespace libsemigroups {
     //! whenever they point to equal objects. The iterator is exhausted if and
     //! only if it points to an ActionDigraph with zero nodes.
     //!
+    //! The meaning of the ActionDigraph pointed at by Sims1 iterators depends
+    //! on whether the input is a monoid presentation (i.e.
+    //! Presentation::contains_empty_word() returns \c true) or a semigroup
+    //! presentation. If the input is a monoid presentation for a monoid
+    //! \f$M\f$, then the ActionDigraph pointed to by an iterator of this type
+    //! has precisely \p n nodes, and the right action of \f$M\f$ on the nodes
+    //! of the digraph is isomorphic to the action of \f$M\f$ on the classes of
+    //! a right congruence.
+    //!
+    //! If the input is a semigroup presentation for a semigroup $\fS\f$, then
+    //! the ActionDigraph has \p n + 1 nodes, and the right action of \f$S\f$
+    //! on the nodes TODO(Sims1) finish this when decided what to do here
+    //!
     //! \param n the maximum number of classes in a congruence.
     //!
     //! \returns
@@ -779,8 +792,6 @@ namespace libsemigroups {
         std::lock_guard<std::mutex> lock(_mutex);
         LIBSEMIGROUPS_ASSERT(_pending.empty());
         const_iterator_base::clone(that);
-        // TODO(Sims1) could steal in a different way: maybe interlaced (steal
-        // every other item); steal a fixed proportion of every queue
 
         for (size_t i = 0; i < that._pending.size(); i += 2) {
           _pending.push_back(std::move(that._pending[i]));
@@ -824,20 +835,28 @@ namespace libsemigroups {
       void worker_thread(unsigned                                 my_index,
                          std::function<bool(digraph_type const&)> hook) {
         PendingDef pd;
-        while ((pop_from_local_queue(pd, my_index)
-                || pop_from_other_thread_queue(pd, my_index))
-               && !_done) {
-          if (_theives[my_index]->increment(pd)) {
-            if (hook(**_theives[my_index])) {
-              // hook returns true to indicate that we should stop early
-              std::lock_guard<std::mutex> lock(_mtx);
-              if (!_done) {
-                _done   = true;
-                _result = **_theives[my_index];
+        for (auto i = 0; i < 128; ++i) {
+          while ((pop_from_local_queue(pd, my_index)
+                  || pop_from_other_thread_queue(pd, my_index))
+                 && !_done) {
+            if (_theives[my_index]->increment(pd)) {
+              if (hook(**_theives[my_index])) {
+                // hook returns true to indicate that we should stop early
+                std::lock_guard<std::mutex> lock(_mtx);
+                if (!_done) {
+                  _done   = true;
+                  _result = **_theives[my_index];
+                }
+                return;
               }
-              return;
             }
           }
+          std::this_thread::yield();
+          // It's possible to reach here before all of the work is done, because
+          // by coincidence there's nothing in the local queue and nothing in
+          // any other queue either, this sometimes leads to threads shutting
+          // down earlier than desirable. On the other hand, maybe this is a
+          // desirable.
         }
       }
 
@@ -879,8 +898,8 @@ namespace libsemigroups {
           size_type                      n,
           size_type                      num_threads)
           : _done(false),  // TODO init other data members
-            _num_threads(num_threads),
-            _total_pending(num_threads, 0) {
+            _total_pending(num_threads, 0),
+            _num_threads(num_threads) {
         for (size_t i = 0; i < _num_threads; ++i) {
           // TODO(Sims1) use make_unique
           _theives.push_back(
@@ -931,10 +950,8 @@ namespace libsemigroups {
 
   namespace sims1 {
     template <typename T, typename W>
-    ActionDigraph<T> representation(Presentation<W> const& p,
-                                    size_t                 min,
-                                    size_t                 max,
-                                    size_t                 size) {
+    ActionDigraph<T>
+    cyclic_rep(Presentation<W> const& p, size_t min, size_t max, size_t size) {
       // TODO check that min != 0
       std::cout << "Trying to find a representation with degree in [" << min
                 << ", " << max << "]:" << std::endl;
@@ -946,7 +963,8 @@ namespace libsemigroups {
 
       for (; it != C.cend(max); ++it) {
         std::cout << "\rat " << ++count << std::flush;
-        if (it->number_of_active_nodes() >= min) {
+        if (it->number_of_active_nodes() >= min
+            && it->number_of_active_nodes() <= max) {
           auto S = make<FroidurePin<Transf<0, node_type>>>(
               *it, it->number_of_active_nodes());
           if (p.contains_empty_word()) {
@@ -963,9 +981,9 @@ namespace libsemigroups {
 
       // TODO(Sims1) is this correct?
       ActionDigraph<T> result(*it);
-      if (result.number_of_active_nodes() == 0
-          || result.number_of_active_nodes() > max) {
+      if (result.number_of_active_nodes() == 0) {
         result.restrict(0);
+        result.number_of_active_nodes(0);
       } else {
         result.restrict(result.number_of_active_nodes());
       }
@@ -992,8 +1010,9 @@ namespace libsemigroups {
       using node_type    = typename digraph_type::node_type;
       Sims1<T> C(congruence_kind::right, p);
 
-      auto hook = [&p, &min, &size](digraph_type const& x) {
-        if (x.number_of_active_nodes() >= min) {
+      auto hook = [&p, &min, &max, &size](digraph_type const& x) {
+        if (x.number_of_active_nodes() >= min
+            && x.number_of_active_nodes() <= max) {
           // RecursiveReportGuard rg(false);
           auto S = make<FroidurePin<Transf<0, node_type>>>(
               x, x.number_of_active_nodes());
@@ -1004,6 +1023,7 @@ namespace libsemigroups {
             }
           }
           if (S.size() == size) {
+            std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXX\n";
             return true;
           }
         }
@@ -1011,8 +1031,7 @@ namespace libsemigroups {
       };
 
       auto result = C.find_if(max, num_threads, hook);
-      if (result.number_of_active_nodes() == 0
-          || result.number_of_active_nodes() > max) {
+      if (result.number_of_active_nodes() == 0) {
         result.restrict(0);
       } else {
         result.restrict(result.number_of_active_nodes());
@@ -1021,18 +1040,15 @@ namespace libsemigroups {
     }
 
     template <typename T>
-    ActionDigraph<T> representation(FroidurePinBase& fpb,
-                                    size_t           min,
-                                    size_t           max) {
-      return representation<T>(
+    ActionDigraph<T> cyclic_rep(FroidurePinBase& fpb, size_t min, size_t max) {
+      return cyclic_rep<T>(
           make<Presentation<word_type>>(fpb), min, max, fpb.size());
     }
 
     template <typename T, typename W>
-    ActionDigraph<T> minimal_representation(Presentation<W> const& p,
-                                            size_t                 size) {
+    ActionDigraph<T> minimal_cyclic_rep(Presentation<W> const& p, size_t size) {
       size_t           max  = (p.contains_empty_word() ? size : size + 1);
-      auto             best = parallel_representation<T>(p, 1, max, size, 1);
+      auto             best = cyclic_rep<T>(p, 1, max, size);
       ActionDigraph<T> next;
       size_t           hi = best.number_of_nodes();
 
@@ -1044,12 +1060,12 @@ namespace libsemigroups {
       // TODO handle the case when there is a 1 degree rep
 
       std::cout << "best = " << hi << "\n";
-      next = std::move(parallel_representation<T>(p, 1, hi - 1, size, 1));
+      next = std::move(cyclic_rep<T>(p, 1, hi - 1, size));
       while (next.number_of_nodes() != 0) {
         hi = next.number_of_nodes();
         std::cout << "best = " << hi << "\n";
         best = std::move(next);
-        next = std::move(parallel_representation<T>(p, 1, hi - 1, size));
+        next = std::move(cyclic_rep<T>(p, 1, hi - 1, size));
       }
       return best;
     }

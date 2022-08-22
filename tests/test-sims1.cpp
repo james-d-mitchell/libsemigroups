@@ -420,9 +420,10 @@ namespace libsemigroups {
     REQUIRE(p.rules.size() == 134);
     REQUIRE(presentation::length(p) == 686);
 
-    Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(256, 4)
-            == 120'121);  // Number confirmed with CREAM
+    Sims1_ C(congruence_kind::left, p);
+    REQUIRE(C.number_of_congruences(256, 4) == 120'121);
+    // Number generated using CREAM, but Sims1 counts more
+    // TODO(Sims1) try a non-machine generated presentation
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -494,7 +495,7 @@ namespace libsemigroups {
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(209, 4) == 195'709);
+    REQUIRE(C.number_of_congruences(209, 8) == 195'709);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -790,7 +791,7 @@ namespace libsemigroups {
     //   last_len = presentation::length(p);
     //   presentation::remove_longest_redundant_rule(p);
     // } while (presentation::length(p) != last_len);
-    REQUIRE(sims1::minimal_representation<uint32_t>(p, 105).number_of_nodes()
+    REQUIRE(sims1::minimal_cyclic_rep<uint32_t>(p, 105).number_of_nodes()
             == 23);
 
     Sims1_ C(congruence_kind::right, p);
@@ -802,13 +803,13 @@ namespace libsemigroups {
                           "036",
                           "Brauer(5) (Kudryavtseva-Mazorchuk)",
                           "[quick][sims1]") {
-    auto rg = ReportGuard(true);
+    auto rg = ReportGuard(false);
     auto p  = make<Presentation<word_type>>(Brauer(5));
     REQUIRE(presentation::length(p) == 295);
     presentation::remove_duplicate_rules(p);
     REQUIRE(presentation::length(p) == 253);
 
-    auto d = sims1::minimal_representation<uint32_t>(p, 945);
+    auto d = sims1::minimal_cyclic_rep<uint32_t>(p, 945);
     // TODO(Sims1) when this was merged it was 47, not sure
     // what value is correct
     REQUIRE(d.number_of_nodes() == 52);
@@ -1061,8 +1062,7 @@ namespace libsemigroups {
 
     Sims1_ C(congruence_kind::right, p);
 
-    REQUIRE(sims1::minimal_representation<uint32_t>(p, 20).number_of_nodes()
-            == 47);
+    REQUIRE(sims1::minimal_cyclic_rep<uint32_t>(p, 20).number_of_nodes() == 47);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1163,7 +1163,7 @@ namespace libsemigroups {
         p, {3, 1, 1, 4, 3, 2, 3, 1}, {3, 1, 1, 4, 3, 2, 3});
     presentation::add_rule_and_check(
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
-    REQUIRE(sims1::minimal_representation<uint32_t>(p, 203).number_of_nodes()
+    REQUIRE(sims1::minimal_cyclic_rep<uint32_t>(p, 203).number_of_nodes()
             == 24);  // TODO(Sim1) was 23, not sure what the right number is
   }
 
@@ -1183,7 +1183,7 @@ namespace libsemigroups {
       // There are no relations containing the empty word so we just manually
       // add it.
       p.contains_empty_word(true);
-      auto d = sims1::minimal_representation<uint32_t>(p, sizes[n]);
+      auto d = sims1::minimal_cyclic_rep<uint32_t>(p, sizes[n]);
       auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
       S.add_generator(S.generator(0).identity());
       REQUIRE(S.size() == sizes[n]);
@@ -1215,21 +1215,19 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {2, 4, 2, 4}, {});
     presentation::add_rule_and_check(p, {3, 4, 3, 4, 3, 4}, {});
 
-    REQUIRE(sims1::minimal_representation<uint32_t>(p, 720).number_of_nodes()
-            == 6);
+    REQUIRE(sims1::minimal_cyclic_rep<uint32_t>(p, 720).number_of_nodes() == 6);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "041",
-                          "RectangularBand(3, 3) - quick",
+                          "RectangularBand(4, 4) - quick",
                           "[quick][sims1]") {
     auto rg = ReportGuard(false);
-    auto p  = make<Presentation<word_type>>(RectangularBand(2, 2));
-    p.contains_empty_word(true);
-    auto d = sims1::minimal_representation<uint32_t>(p, 5);
-    auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
-    REQUIRE(S.size() == 4);
-    REQUIRE(d.number_of_nodes() == 4);
+    auto p  = make<Presentation<word_type>>(RectangularBand(4, 4));
+    auto d  = sims1::minimal_cyclic_rep<uint32_t>(p, 17);
+    // auto S  = make<FroidurePin<Transf<0, node_type>>>(d,
+    // d.number_of_nodes()); REQUIRE(S.size() == 16);
+    REQUIRE(d.number_of_nodes() == 0);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1253,13 +1251,92 @@ namespace libsemigroups {
 
         auto p = make<Presentation<word_type>>(RectangularBand(m, n));
         p.contains_empty_word(true);
-        auto d = sims1::minimal_representation<uint32_t>(p, m * n + 1);
+        auto d = sims1::minimal_cyclic_rep<uint32_t>(p, m * n + 1);
         auto S
             = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
         REQUIRE(S.size() == m * n);
         REQUIRE(d.number_of_nodes() == results[m][n]);
       }
     }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "043",
+                          "RectangularBand(2, 2) - with and without identity",
+                          "[quick][sims1]") {
+    auto   rg = ReportGuard(false);
+    auto   p  = make<Presentation<word_type>>(RectangularBand(2, 2));
+    Sims1_ S(congruence_kind::right, p);
+
+    REQUIRE(S.number_of_congruences(4) == 6);
+
+    p.contains_empty_word(true);
+
+    Sims1_ T(congruence_kind::right, p);
+    REQUIRE(T.number_of_congruences(5) == 9);
+
+    auto it = S.cbegin(4);
+
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 1, 1, 1}, {1, 1, 1, 1}}));  // Good
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 1, 1, 2}, {1, 1, 1, 2}, {1, 1, 1, 2}}));  // Good
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 1, 2, 1}, {1, 1, 1, 1}, {2, 2, 2, 2}}));  // Good
+    REQUIRE(
+        *it++
+        == action_digraph_helper::make<node_type>(
+            5,
+            {{1, 1, 2, 1}, {1, 1, 1, 1}, {2, 2, 2, 3}, {2, 2, 2, 3}}));  // Good
+    REQUIRE(
+        *it++
+        == action_digraph_helper::make<node_type>(
+            5,
+            {{1, 1, 2, 3}, {1, 1, 1, 3}, {2, 2, 2, 2}, {1, 1, 1, 3}}));  // Good
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(5,
+                                                      {{1, 1, 2, 3},
+                                                       {1, 1, 1, 3},
+                                                       {2, 2, 2, 4},
+                                                       {1, 1, 1, 3},
+                                                       {2, 2, 2, 4}}));  // Good
+    REQUIRE(it->number_of_nodes() == 0);
+
+    it = T.cbegin(5);
+
+    REQUIRE(*it++ == action_digraph_helper::make<node_type>(5, {{0, 0, 0, 0}}));
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{0, 0, 0, 1}, {0, 0, 0, 1}}));
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 1, 1, 0}, {1, 1, 1, 0}}));
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 1, 1, 1}, {1, 1, 1, 1}}));
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 1, 1, 2}, {1, 1, 1, 2}, {1, 1, 1, 2}}));
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 1, 2, 1}, {1, 1, 1, 1}, {2, 2, 2, 2}}));
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 1, 2, 1}, {1, 1, 1, 1}, {2, 2, 2, 3}, {2, 2, 2, 3}}));
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(
+                5, {{1, 1, 2, 3}, {1, 1, 1, 3}, {2, 2, 2, 2}, {1, 1, 1, 3}}));
+    REQUIRE(*it++
+            == action_digraph_helper::make<node_type>(5,
+                                                      {{1, 1, 2, 3},
+                                                       {1, 1, 1, 3},
+                                                       {2, 2, 2, 4},
+                                                       {1, 1, 1, 3},
+                                                       {2, 2, 2, 4}}));
+    REQUIRE(it->number_of_nodes() == 0);
   }
 
 }  // namespace libsemigroups
