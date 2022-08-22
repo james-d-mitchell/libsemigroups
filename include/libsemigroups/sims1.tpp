@@ -79,7 +79,7 @@ namespace libsemigroups {
   Sims1<T>::Sims1(congruence_kind                ck,
                   Presentation<word_type> const &p,
                   Presentation<word_type> const &e)
-      : _extra(), _final(), _presentation() {
+      : _extra(), _final(), _num_threads(1), _presentation() {
     if (ck == congruence_kind::twosided) {
       LIBSEMIGROUPS_EXCEPTION(
           "expected congruence_kind::right or congruence_kind::left");
@@ -103,15 +103,14 @@ namespace libsemigroups {
   }
 
   template <typename T>
-  uint64_t Sims1<T>::number_of_congruences(size_type n,
-                                           size_type num_threads) const {
-    if (num_threads == 1) {
+  uint64_t Sims1<T>::number_of_congruences(size_type n) const {
+    if (number_of_threads() == 1) {
       uint64_t result = 0;
-      for_each(n, num_threads, [&result](digraph_type const &) { ++result; });
+      for_each(n, [&result](digraph_type const &) { ++result; });
       return result;
     } else {
       std::atomic_int64_t result(0);
-      for_each(n, num_threads, [&result](digraph_type const &) { ++result; });
+      for_each(n, [&result](digraph_type const &) { ++result; });
       return result;
     }
   }
@@ -121,14 +120,13 @@ namespace libsemigroups {
   template <typename T>
   void
   Sims1<T>::for_each(size_type                                 n,
-                     size_type                                 num_threads,
                      std::function<void(digraph_type const &)> pred) const {
     std::chrono::high_resolution_clock::time_point last_report
         = std::chrono::high_resolution_clock::now();
 
     detail::Timer t;
 
-    if (num_threads == 1) {
+    if (number_of_threads() == 1) {
       REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         std::for_each(cbegin(n), cend(n), pred);
@@ -143,9 +141,9 @@ namespace libsemigroups {
       }
     } else {
       REPORT_DEFAULT("using %d / %d additional threads\n",
-                     num_threads,
+                     number_of_threads(),
                      std::thread::hardware_concurrency());
-      Den den(presentation(), _extra, _final, n, num_threads);
+      Den den(presentation(), _extra, _final, n, number_of_threads());
       if (!report::should_report()) {
         auto pred_wrapper = [&pred](digraph_type const &ad) {
           pred(ad);
@@ -170,14 +168,13 @@ namespace libsemigroups {
   template <typename T>
   typename Sims1<T>::digraph_type
   Sims1<T>::find_if(size_type                                 n,
-                    size_type                                 num_threads,
                     std::function<bool(digraph_type const &)> pred) const {
     std::chrono::high_resolution_clock::time_point last_report
         = std::chrono::high_resolution_clock::now();
 
     detail::Timer t;
 
-    if (num_threads == 1) {
+    if (number_of_threads() == 1) {
       REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         return *std::find_if(cbegin(n), cend(n), pred);
@@ -195,9 +192,9 @@ namespace libsemigroups {
       }
     } else {
       REPORT_DEFAULT("using %d / %d additional threads\n",
-                     num_threads,
+                     number_of_threads(),
                      std::thread::hardware_concurrency());
-      Den den(presentation(), _extra, _final, n, num_threads);
+      Den den(presentation(), _extra, _final, n, number_of_threads());
       if (!report::should_report()) {
         den.run(pred);
       } else {

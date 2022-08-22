@@ -71,7 +71,7 @@ namespace libsemigroups {
                           "000",
                           "fp example 1",
                           "[quick][low-index]") {
-    auto rg = ReportGuard(true);
+    auto rg = ReportGuard(false);
 
     Presentation<word_type> p;
     p.contains_empty_word(true);
@@ -82,7 +82,7 @@ namespace libsemigroups {
 
     {
       Sims1_ S(congruence_kind::right, p);
-      REQUIRE(S.number_of_congruences(5, 2) == 6);
+      REQUIRE(S.number_of_threads(2).number_of_congruences(5) == 6);
 
       auto it = S.cbegin(5);
       REQUIRE(*(it++) == action_digraph_helper::make<node_type>(5, {{0, 0}}));
@@ -421,8 +421,9 @@ namespace libsemigroups {
     REQUIRE(presentation::length(p) == 686);
 
     Sims1_ C(congruence_kind::left, p);
-    REQUIRE(C.number_of_congruences(256, 4) == 120'121);
-    // Number generated using CREAM, but Sims1 counts more
+    REQUIRE(C.number_of_threads(4).number_of_congruences(256) == 120'121);
+    // Number generated using CREAM, but Sims1 counts more for right, and too
+    // slow for left
     // TODO(Sims1) try a non-machine generated presentation
   }
 
@@ -430,7 +431,7 @@ namespace libsemigroups {
                           "009",
                           "RookMonoid(2, 1)",
                           "[quick][low-index]") {
-    auto                    rg = ReportGuard(true);
+    auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.contains_empty_word(false);
 
@@ -461,7 +462,7 @@ namespace libsemigroups {
                           "011",
                           "SymmetricInverseMonoid(3)",
                           "[quick][low-index]") {
-    auto                    rg = ReportGuard(true);
+    auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.contains_empty_word(false);
 
@@ -495,7 +496,9 @@ namespace libsemigroups {
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(209, 8) == 195'709);
+    REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
+                .number_of_congruences(209)
+            == 195'709);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -723,7 +726,8 @@ namespace libsemigroups {
 
     Sims1_ C(congruence_kind::right, p);
     C.split_at(212 / 2);
-    REQUIRE(C.number_of_congruences(81, std::thread::hardware_concurrency())
+    REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
+                .number_of_congruences(81)
             == 601'265);
   }
 
@@ -758,7 +762,8 @@ namespace libsemigroups {
     // REQUIRE(presentation::length(p) == 69);
 
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(105, std::thread::hardware_concurrency())
+    REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
+                .number_of_congruences(105)
             == 103'406);
     // REQUIRE(C.number_of_congruences(105) == 103'406);
   }
@@ -799,7 +804,8 @@ namespace libsemigroups {
     REQUIRE(S.size() == 105);
 
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(105, std::thread::hardware_concurrency())
+    REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
+                .number_of_congruences(105)
             == 103'406);
   }
 
@@ -834,7 +840,8 @@ namespace libsemigroups {
     presentation::sort_rules(p);
 
     Sims1_ C(congruence_kind::right, p);
-    REQUIRE(C.number_of_congruences(131, std::thread::hardware_concurrency())
+    REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
+                .number_of_congruences(131)
             == 280'455);
   }
 
@@ -842,7 +849,7 @@ namespace libsemigroups {
                           "026",
                           "from https://mathoverflow.net/questions/423541/",
                           "[quick][sims1]") {
-    auto                      rg = ReportGuard(true);
+    auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(false);
     p.alphabet("aAbBe");
@@ -858,7 +865,7 @@ namespace libsemigroups {
                           "027",
                           "from https://mathoverflow.net/questions/423541/",
                           "[quick][sims1]") {
-    auto                      rg = ReportGuard(true);
+    auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("aAbB");
@@ -1199,7 +1206,7 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "039",
-                          "TemperleyLieb(3) - minimal rep",
+                          "TemperleyLieb(n) - n = 3 .. 6, minimal rep",
                           "[standard][sims1]") {
     auto rg = ReportGuard(false);
 
@@ -1381,7 +1388,7 @@ namespace libsemigroups {
                           "044",
                           "trivial group - minimal cyclic rep",
                           "[quick][sims1]") {
-    auto                      rg = ReportGuard(true);
+    auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("aAbB");
     p.contains_empty_word(true);

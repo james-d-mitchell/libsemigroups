@@ -134,7 +134,9 @@ namespace libsemigroups {
    private:
     Presentation<word_type> _extra;
     Presentation<word_type> _final;
+    size_type               _num_threads;
     Presentation<word_type> _presentation;
+
     // Reporting can be handled outside the class in any code using this
 
    public:
@@ -229,6 +231,16 @@ namespace libsemigroups {
     Sims1& operator=(Sims1&&) = default;
 
     ~Sims1();
+
+    size_type number_of_threads() const noexcept {
+      return _num_threads;
+    }
+
+    // TODO(Sims1): noexcept?
+    Sims1& number_of_threads(size_t val) {
+      _num_threads = val;
+      return *this;
+    }
 
     //! Returns a const reference to the defining presentation.
     //!
@@ -591,26 +603,22 @@ namespace libsemigroups {
     //! if it runs for more than 1 second.
     //!
     //! \param n the maximum number of congruence classes.
-    //! \param num_threads TODO(Sims1)
     //!
     //! \returns A value of type \c uint64_t.
     //!
     //! \exceptions
     //! \no_libsemigroups_except
     // TODO(v3): this should be in the sims1 helper namespace
-    uint64_t number_of_congruences(size_type n,
-                                   size_type num_threads = 1) const;
+    uint64_t number_of_congruences(size_type n) const;
 
     // Apply the function pred to every one-sided congruence with at
     // most n classes
     void for_each(size_type                                n,
-                  size_type                                num_threads,
                   std::function<void(digraph_type const&)> pred) const;
 
     // Apply the function pred to every one-sided congruence with at
     // most n classes, until pred returns true
     digraph_type find_if(size_type                                n,
-                         size_type                                num_threads,
                          std::function<bool(digraph_type const&)> pred) const;
 
    private:
@@ -1063,7 +1071,7 @@ namespace libsemigroups {
 
       Sims1<T> C(congruence_kind::right, _presentation);
       // TODO(Sims1): remove num_threads as argument from find_if
-      auto result = C.find_if(_max, _num_threads, hook);
+      auto result = C.number_of_threads(_num_threads).find_if(_max, hook);
       if (result.number_of_active_nodes() == 0) {
         result.restrict(0);
       } else {
