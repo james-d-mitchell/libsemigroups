@@ -162,7 +162,7 @@ namespace libsemigroups {
           pred(ad);
           return false;
         });
-        den.get();
+        den.digraph();  // for the printing
       }
     }
   }
@@ -178,6 +178,7 @@ namespace libsemigroups {
     detail::Timer t;
 
     if (num_threads == 1) {
+      REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         return *std::find_if(cbegin(n), cend(n), pred);
       } else {
@@ -193,6 +194,9 @@ namespace libsemigroups {
         return *last;  // the empty digraph
       }
     } else {
+      REPORT_DEFAULT("using %d / %d additional threads\n",
+                     num_threads,
+                     std::thread::hardware_concurrency());
       Den den(presentation(), _extra, _final, n, num_threads);
       if (!report::should_report()) {
         den.run(pred);
@@ -205,7 +209,7 @@ namespace libsemigroups {
           return pred(ad);
         });
       }
-      return den.get();
+      return den.digraph();
     }
   }
 

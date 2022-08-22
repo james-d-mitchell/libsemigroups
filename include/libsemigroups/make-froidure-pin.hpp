@@ -30,7 +30,15 @@ namespace libsemigroups {
             typename T,
             typename
             = std::enable_if_t<std::is_base_of<FroidurePinBase, S>::value>>
-  S make(ActionDigraph<T> const& ad, size_t last) {
+  S make(ActionDigraph<T> const& ad) {
+    return make<S>(ad, 0, ad.number_of_nodes());
+  }
+
+  template <typename S,
+            typename T,
+            typename
+            = std::enable_if_t<std::is_base_of<FroidurePinBase, S>::value>>
+  S make(ActionDigraph<T> const& ad, size_t first, size_t last) {
     using node_type    = typename ActionDigraph<T>::node_type;
     using element_type = typename S::element_type;
 
@@ -38,7 +46,10 @@ namespace libsemigroups {
     S            result;
     element_type x(last);
     for (node_type lbl = 0; lbl < ad.out_degree(); ++lbl) {
-      for (size_t i = 0; i < last; ++i) {
+      for (size_t i = 0; i < first; ++i) {
+        x[i] = i;
+      }
+      for (size_t i = first; i < last; ++i) {
         x[i] = ad.neighbor(i, lbl);
       }
       validate(x);

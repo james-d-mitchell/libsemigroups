@@ -732,19 +732,13 @@ namespace libsemigroups {
           }
         }
 
-        // 627,317,961
-        letter_type a = current.generator + 1;
-        // TODO(Sims1): safe when not locked?
+        letter_type     a = current.generator + 1;
         size_type const M = this->_felsch_graph.number_of_active_nodes();
         size_type const N = this->_felsch_graph.number_of_edges();
         for (node_type next = current.source; next < M; ++next) {
           for (; a < this->_num_gens; ++a) {
             if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
               std::lock_guard<std::mutex> lock(_mutex);
-              // for (node_type b = this->_min_target_node; b < M; ++b) {
-              //   _total_pending++;
-              //   _pending.emplace_back(next, a, b, N, M);
-              // }
               if (M < this->_max_num_classes) {
                 _total_pending++;
                 _pending.emplace_back(next, a, M, N, M + 1);
@@ -926,9 +920,9 @@ namespace libsemigroups {
 
       ~Den() = default;
 
-      digraph_type const& get() const {
-        REPORT_DEFAULT(FORMAT("number of nodes created in each thread {}\n",
-                              detail::to_string(_total_pending)));
+      digraph_type const& digraph() const {
+        // REPORT_DEFAULT(FORMAT("number of nodes created in each thread {}\n",
+        //                      detail::to_string(_total_pending)));
         REPORT_DEFAULT(FORMAT(
             "total number of nodes in search tree was {}\n",
             fmt::group_digits(std::accumulate(
@@ -956,94 +950,124 @@ namespace libsemigroups {
                            typename sims1::Stats const& stats);
 #endif  // LIBSEMIGROUPS_ENABLE_STATS
 
-  namespace sims1 {
-    // TODO(Sims1) delete
-    // template <typename T, typename W>
-    // ActionDigraph<T>
-    // cyclic_rep(Presentation<W> const& p, size_t min, size_t max, size_t size)
-    // {
-    //  // TODO check that min != 0
-    //  std::cout << "Trying to find a representation with degree in [" << min
-    //            << ", " << max << "]:" << std::endl;
-    //  Sims1<T> C(congruence_kind::right, p);
-    //  using node_type = typename Sims1<T>::digraph_type::node_type;
+  // TODO(Sims1) delete
+  // template <typename T, typename W>
+  // ActionDigraph<T>
+  // cyclic_rep(Presentation<W> const& p, size_t min, size_t max, size_t size)
+  // {
+  //  // TODO check that min != 0
+  //  std::cout << "Trying to find a representation with degree in [" << min
+  //            << ", " << max << "]:" << std::endl;
+  //  Sims1<T> C(congruence_kind::right, p);
+  //  using node_type = typename Sims1<T>::digraph_type::node_type;
 
-    //  auto   it    = C.cbegin(max);
-    //  size_t count = 0;
+  //  auto   it    = C.cbegin(max);
+  //  size_t count = 0;
 
-    //  for (; it != C.cend(max); ++it) {
-    //    std::cout << "\rat " << ++count << std::flush;
-    //    if (it->number_of_active_nodes() >= min
-    //        && it->number_of_active_nodes() <= max) {
-    //      auto S = make<FroidurePin<Transf<0, node_type>>>(
-    //          *it, it->number_of_active_nodes());
-    //      if (p.contains_empty_word()) {
-    //        auto one = S.generator(0).identity();
-    //        if (!S.contains(one)) {
-    //          S.add_generator(one);
-    //        }
-    //      }
-    //      if (S.size() == size) {
-    //        break;
-    //      }
-    //    }
-    //  }
+  //  for (; it != C.cend(max); ++it) {
+  //    std::cout << "\rat " << ++count << std::flush;
+  //    if (it->number_of_active_nodes() >= min
+  //        && it->number_of_active_nodes() <= max) {
+  //      auto S = make<FroidurePin<Transf<0, node_type>>>(
+  //          *it, it->number_of_active_nodes());
+  //      if (p.contains_empty_word()) {
+  //        auto one = S.generator(0).identity();
+  //        if (!S.contains(one)) {
+  //          S.add_generator(one);
+  //        }
+  //      }
+  //      if (S.size() == size) {
+  //        break;
+  //      }
+  //    }
+  //  }
 
-    // TODO(Sims1) is this correct?
-    // ActionDigraph<T> result(*it);
-    // if (result.number_of_active_nodes() == 0) {
-    //   result.restrict(0);
-    //   result.number_of_active_nodes(0);
-    // } else {
-    //   result.restrict(result.number_of_active_nodes());
-    // }
+  // TODO(Sims1) is this correct?
+  // ActionDigraph<T> result(*it);
+  // if (result.number_of_active_nodes() == 0) {
+  //   result.restrict(0);
+  //   result.number_of_active_nodes(0);
+  // } else {
+  //   result.restrict(result.number_of_active_nodes());
+  // }
 
-    // std::cout << "\r* " << count << " congruences analysed, ";
-    // if (result.number_of_nodes() == 0) {
-    //   std::cout << "no faithful representations found!";
-    // } else {
-    //   std::cout << "faithful representations of degree "
-    //             << result.number_of_nodes() << " found!";
-    // }
-    // std::cout << std::endl;
-    // return result;
-    // }
+  // std::cout << "\r* " << count << " congruences analysed, ";
+  // if (result.number_of_nodes() == 0) {
+  //   std::cout << "no faithful representations found!";
+  // } else {
+  //   std::cout << "faithful representations of degree "
+  //             << result.number_of_nodes() << " found!";
+  // }
+  // std::cout << std::endl;
+  // return result;
+  // }
 
-    // TODO(Sims1) wrap into a class so that there aren't so many parameters
-    template <typename T, typename W>
-    ActionDigraph<T> parallel_representation(Presentation<W> const& p,
-                                             size_t                 min,
-                                             size_t                 max,
-                                             size_t                 size,
-                                             size_t num_threads = 8) {
+  class CyclicRep {
+   private:
+    size_t                         _min;
+    size_t                         _max;
+    size_t                         _num_threads;
+    Presentation<word_type> const& _presentation;
+    size_t                         _size;
+
+   public:
+    explicit CyclicRep(Presentation<word_type> const& p)
+        : _min(), _max(), _num_threads(1), _presentation(p), _size() {}
+    // TODO(Sims1) the other ctors
+    // TODO(Sims1) another constructor for other types of Presentation
+
+    CyclicRep& min_nodes(size_t val) {
+      _min = val;
+      return *this;
+    }
+
+    CyclicRep& max_nodes(size_t val) {
+      _max = (_presentation.contains_empty_word() ? val : val + 1);
+      return *this;
+    }
+
+    CyclicRep& target_size(size_t val) {
+      _size = val;
+      return *this;
+    }
+
+    CyclicRep& number_of_threads(size_t val) {
+      _num_threads = val;
+      return *this;
+    }
+
+    template <typename T = uint32_t>
+    ActionDigraph<T> digraph() const {
       using digraph_type = typename Sims1<T>::digraph_type;
       using node_type    = typename digraph_type::node_type;
 
       auto hook = [&](digraph_type const& x) {
-        if (x.number_of_active_nodes() >= min
-            && x.number_of_active_nodes() <= max) {
-          auto S = make<FroidurePin<Transf<0, node_type>>>(
-              x, x.number_of_active_nodes());
-          if (p.contains_empty_word()) {
+        if (x.number_of_active_nodes() >= _min
+            && x.number_of_active_nodes() <= _max) {
+          // TODO(Sims1) the <= _max shouldn't be necessary
+          auto first = (_presentation.contains_empty_word() ? 0 : 1);
+          auto S     = make<FroidurePin<Transf<0, node_type>>>(
+              x, first, x.number_of_active_nodes());
+          if (_presentation.contains_empty_word()) {
             auto one = S.generator(0).identity();
             if (!S.contains(one)) {
               S.add_generator(one);
             }
           }
-          if (S.size() == size) {
-            std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXX\n";
+          if (S.size() == _size) {
             return true;
           }
         }
         return false;
       };
 
-      Sims1<T> C(congruence_kind::right, p);
-      auto     result = C.find_if(max, num_threads, hook);
+      Sims1<T> C(congruence_kind::right, _presentation);
+      // TODO(Sims1): remove num_threads as argument from find_if
+      auto result = C.find_if(_max, _num_threads, hook);
       if (result.number_of_active_nodes() == 0) {
         result.restrict(0);
       } else {
-        if (p.contains_empty_word()) {
+        if (_presentation.contains_empty_word()) {
           result.restrict(result.number_of_active_nodes());
         } else {
           result.induced_subdigraph(1, result.number_of_active_nodes());
@@ -1053,83 +1077,118 @@ namespace libsemigroups {
       }
       return result;
     }
+  };
 
-    /*template <typename T>
-    ActionDigraph<T> cyclic_rep(FroidurePinBase& fpb, size_t min, size_t max) {
-      return cyclic_rep<T>(
-          make<Presentation<word_type>>(fpb), min, max, fpb.size());
-    }*/
+  // TODO(Sims1): check that the returned representation is strictly cyclic,
+  // when the argument is a semigroup
+  class MinimalCyclicRep {
+   private:
+    size_t _num_threads;
+    // TODO(later): we were using a reference to the presentation here, but
+    // then the non-word_type Presentation ctor below doesn't work.
+    Presentation<word_type> _presentation;
+    size_t                  _size;
 
-    // TODO(Sims1): check that the returned representation is strictly cyclic,
-    // when the argument is a semigroup
-    template <typename T, typename W>
-    ActionDigraph<T> minimal_cyclic_rep(Presentation<W> const& p, size_t size) {
-      size_t           max  = (p.contains_empty_word() ? size : size + 1);
-      auto             best = parallel_representation<T>(p, 1, max, size);
-      ActionDigraph<T> next;
-      size_t           hi = best.number_of_nodes();
+   public:
+    MinimalCyclicRep(Presentation<word_type> const& p)
+        : _num_threads(1), _presentation(p), _size() {}
 
-      if (hi < 2) {
+    template <typename P>
+    MinimalCyclicRep(P const& p)
+        : MinimalCyclicRep(make<Presentation<word_type>>(p)) {
+      static_assert(std::is_base_of<PresentationBase, P>::value,
+                    "the template parameter P must be derived from "
+                    "PresentationBase");
+    }
+
+    MinimalCyclicRep& target_size(size_t val) {
+      _size = val;
+      return *this;
+    }
+
+    MinimalCyclicRep& number_of_threads(size_t val) {
+      _num_threads = val;
+      return *this;
+    }
+
+    template <typename T = uint32_t>
+    ActionDigraph<T> digraph() {
+      auto cr = CyclicRep(_presentation).number_of_threads(_num_threads);
+
+      size_t hi = (_presentation.contains_empty_word() ? _size : _size + 1);
+      REPORT_DEFAULT(
+          "trying to find faithful cyclic rep. on [1, %llu) points\n", hi + 1);
+      auto best = cr.min_nodes(1).max_nodes(hi).target_size(_size).digraph();
+
+      if (best.number_of_nodes() == 0) {
+        REPORT_DEFAULT("no faithful cyclic rep. on [1, %llu) points found\n",
+                       hi + 1);
         // No faithful representation on up to <size> points, or trivial
         return best;
+      } else if (best.number_of_nodes() == 1) {
+        REPORT_DEFAULT("found a faithful cyclic rep. on 1 point\n");
+        return best;
       }
+      hi = best.number_of_nodes();
+      REPORT_DEFAULT("found a faithful cyclic rep. on %llu points\n", hi);
 
-      // TODO handle the case when there is a 1 degree rep
-
-      std::cout << "best = " << hi << "\n";
-      next = std::move(parallel_representation<T>(p, 1, hi - 1, size));
+      REPORT_DEFAULT(
+          "trying to find faithful cyclic rep. on [1, %llu) points\n", hi);
+      ActionDigraph<T> next = std::move(cr.max_nodes(hi - 1).digraph());
       while (next.number_of_nodes() != 0) {
         hi = next.number_of_nodes();
-        std::cout << "best = " << hi << "\n";
+        REPORT_DEFAULT("found a faithful cyclic rep. on %llu points\n", hi);
         best = std::move(next);
-        next = std::move(parallel_representation<T>(p, 1, hi - 1, size));
+        REPORT_DEFAULT(
+            "trying to find faithful cyclic rep. on [1, %llu) points\n", hi);
+        next = std::move(cr.max_nodes(hi - 1).digraph());
       }
+      REPORT_DEFAULT("no faithful cyclic rep. on [1, %llu) points found\n", hi);
+      return best;
+    }
+  };
+
+  // The following is an alternative implementation that does a sort of
+  // binary search, this might be useful if there are examples where the
+  // minimal degree representation is much smaller than the initial
+  // representation found.
+  /*template <typename T, typename W>
+  ActionDigraph<T> minimal_representation(Presentation<W> const& p,
+                                          size_t                 size) {
+    auto             best = representation<T>(p, 1, size, size);
+    ActionDigraph<T> next;
+    size_t           hi = best.number_of_nodes();
+
+    if (hi == 0) {
+      // No faithful representation on up to <size> points
       return best;
     }
 
-    // The following is an alternative implementation that does a sort of
-    // binary search, this might be useful if there are examples where the
-    // minimal degree representation is much smaller than the initial
-    // representation found.
-    /*template <typename T, typename W>
-    ActionDigraph<T> minimal_representation(Presentation<W> const& p,
-                                            size_t                 size) {
-      auto             best = representation<T>(p, 1, size, size);
-      ActionDigraph<T> next;
-      size_t           hi = best.number_of_nodes();
+    size_t lo = representation<T>(p, 1, 1, size).number_of_nodes();
 
-      if (hi == 0) {
-        // No faithful representation on up to <size> points
-        return best;
+    // TODO handle the case when there is a 1 degree rep
+    if (lo == 0) {
+      lo = 1;
+    }
+
+    auto mid = (hi + lo) / 2;
+    mid      = (mid == 1 ? 2 : mid);
+    std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
+              << std::endl;
+    while (lo != mid) {
+      next = std::move(representation<T>(p, lo + 1, mid, size));
+      if (next.number_of_nodes() == 0) {
+        lo = mid;
+      } else if (next.number_of_nodes() < hi) {
+        hi   = next.number_of_nodes();
+        best = std::move(next);
       }
-
-      size_t lo = representation<T>(p, 1, 1, size).number_of_nodes();
-
-      // TODO handle the case when there is a 1 degree rep
-      if (lo == 0) {
-        lo = 1;
-      }
-
-      auto mid = (hi + lo) / 2;
-      mid      = (mid == 1 ? 2 : mid);
+      mid = (hi + lo) / 2;
       std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
                 << std::endl;
-      while (lo != mid) {
-        next = std::move(representation<T>(p, lo + 1, mid, size));
-        if (next.number_of_nodes() == 0) {
-          lo = mid;
-        } else if (next.number_of_nodes() < hi) {
-          hi   = next.number_of_nodes();
-          best = std::move(next);
-        }
-        mid = (hi + lo) / 2;
-        std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
-                  << std::endl;
-      }
-      return best;
-    }*/
-
-  }  // namespace sims1
+    }
+    return best;
+  }*/
 
 }  // namespace libsemigroups
 

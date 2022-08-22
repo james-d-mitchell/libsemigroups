@@ -791,11 +791,11 @@ namespace libsemigroups {
     //   last_len = presentation::length(p);
     //   presentation::remove_longest_redundant_rule(p);
     // } while (presentation::length(p) != last_len);
-    auto d = sims1::minimal_cyclic_rep<uint32_t>(p, 105);
+    auto d = MinimalCyclicRep(p).target_size(105).digraph();
     REQUIRE(!p.contains_empty_word());
     REQUIRE(d.number_of_nodes() == 22);
 
-    auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == 105);
 
     Sims1_ C(congruence_kind::right, p);
@@ -816,9 +816,9 @@ namespace libsemigroups {
     presentation::remove_duplicate_rules(p);
     REQUIRE(presentation::length(p) == 253);
 
-    auto d = sims1::minimal_cyclic_rep<uint32_t>(p, 945);
+    auto d = MinimalCyclicRep(p).target_size(945).digraph();
     REQUIRE(d.number_of_nodes() == 47);
-    auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == 945);
   }
 
@@ -1067,14 +1067,15 @@ namespace libsemigroups {
 
     Sims1_ C(congruence_kind::right, p);
 
-    REQUIRE(sims1::minimal_cyclic_rep<uint32_t>(p, 20).number_of_nodes() == 47);
+    REQUIRE(MinimalCyclicRep(p).target_size(2).digraph().number_of_nodes()
+            == 47);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "038",
                           "PartitionMonoid(3) - minimal rep",
                           "[extreme][sims1]") {
-    auto                    rg = ReportGuard(false);
+    auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
     p.contains_empty_word(false);
 
@@ -1168,8 +1169,32 @@ namespace libsemigroups {
         p, {3, 1, 1, 4, 3, 2, 3, 1}, {3, 1, 1, 4, 3, 2, 3});
     presentation::add_rule_and_check(
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
-    REQUIRE(sims1::minimal_cyclic_rep<uint32_t>(p, 203).number_of_nodes()
-            == 23);
+    auto d = CyclicRep(p)
+                 .target_size(203)
+                 .min_nodes(1)
+                 .max_nodes(22)
+                 .number_of_threads(2)
+                 .digraph();
+    REQUIRE(d.number_of_nodes() == 22);
+
+    d = MinimalCyclicRep(p).target_size(203).number_of_threads(4).digraph();
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d);
+    REQUIRE(S.size() == 203);
+    // The actual digraph obtained is non-deterministic because we just take
+    // whichever one is found first.
+    // REQUIRE(
+    //     d
+    //     == action_digraph_helper::make<node_type>(
+    //         22,
+    //         {{0, 1, 0, 2, 0},      {1, 3, 3, 4, 5},      {2, 6, 6, 2, 0},
+    //          {3, 0, 1, 2, 5},      {4, 4, 4, 4, 4},      {5, 5, 5, 7, 5},
+    //          {6, 8, 2, 4, 0},      {7, 9, 9, 7, 5},      {8, 2, 8, 4, 10},
+    //          {9, 10, 7, 11, 5},    {10, 7, 10, 12, 10},  {11, 13, 11, 11,
+    //          14}, {12, 11, 13, 12, 10}, {13, 12, 12, 15, 10}, {14, 16, 14,
+    //          11, 14}, {15, 15, 15, 15, 17}, {16, 18, 18, 19, 5},  {17, 19,
+    //          17, 15, 17}, {18, 14, 16, 12, 5},  {19, 20, 20, 19, 21}, {20,
+    //          17, 19, 15, 21}, {21, 21, 21, 19, 21}}));
+    REQUIRE(d.number_of_nodes() == 22);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1188,8 +1213,11 @@ namespace libsemigroups {
       // There are no relations containing the empty word so we just manually
       // add it.
       p.contains_empty_word(true);
-      auto d = sims1::minimal_cyclic_rep<uint32_t>(p, sizes[n]);
-      auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+      auto d = MinimalCyclicRep(p)
+                   .number_of_threads(2)
+                   .target_size(sizes[n])
+                   .digraph();
+      auto S = make<FroidurePin<Transf<0, node_type>>>(d);
       S.add_generator(S.generator(0).identity());
       REQUIRE(S.size() == sizes[n]);
       REQUIRE(d.number_of_nodes() == min_degrees[n]);
@@ -1220,29 +1248,30 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {2, 4, 2, 4}, {});
     presentation::add_rule_and_check(p, {3, 4, 3, 4, 3, 4}, {});
 
-    REQUIRE(sims1::minimal_cyclic_rep<uint32_t>(p, 720).number_of_nodes() == 6);
+    REQUIRE(MinimalCyclicRep(p).target_size(720).digraph().number_of_nodes()
+            == 6);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "041",
-                          "RectangularBand(4, 4) - quick",
+                          "RectangularBand(4, 4) - minimal cyclic rep",
                           "[standard][sims1]") {
-    auto rg = ReportGuard(false);
+    auto rg = ReportGuard(true);
     auto p  = make<Presentation<word_type>>(RectangularBand(4, 4));
     p.contains_empty_word(true);
-    auto d = sims1::minimal_cyclic_rep<uint32_t>(p, 17);
-    auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+    auto d = MinimalCyclicRep(p).number_of_threads(2).target_size(17).digraph();
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == 16);
     REQUIRE(d.number_of_nodes() == 7);
 
     p.contains_empty_word(false);
-    d = sims1::minimal_cyclic_rep<uint32_t>(p, 17);
+    d = MinimalCyclicRep(p).target_size(16).number_of_threads(2).digraph();
     REQUIRE(d.number_of_nodes() == 0);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "042",
-                          "RectangularBand(4, 5)",
+                          "RectangularBand(m, n) - m = 2 .. 5, n = 2 .. 5",
                           "[fail][sims1]") {
     // This doesn't fail it's just very extreme
     std::vector<std::array<size_t, 6>> results = {{0, 0, 0, 0, 0, 0},
@@ -1261,9 +1290,8 @@ namespace libsemigroups {
 
         auto p = make<Presentation<word_type>>(RectangularBand(m, n));
         p.contains_empty_word(true);
-        auto d = sims1::minimal_cyclic_rep<uint32_t>(p, m * n + 1);
-        auto S
-            = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+        auto d = MinimalCyclicRep(p).target_size(m * n + 1).digraph();
+        auto S = make<FroidurePin<Transf<0, node_type>>>(d);
         REQUIRE(S.size() == m * n);
         REQUIRE(d.number_of_nodes() == results[m][n]);
       }
@@ -1347,6 +1375,25 @@ namespace libsemigroups {
                                                        {1, 1, 1, 3},
                                                        {2, 2, 2, 4}}));
     REQUIRE(it->number_of_nodes() == 0);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "044",
+                          "trivial group - minimal cyclic rep",
+                          "[quick][sims1]") {
+    auto                      rg = ReportGuard(true);
+    Presentation<std::string> p;
+    p.alphabet("aAbB");
+    p.contains_empty_word(true);
+    presentation::add_inverse_rules(p, "AaBb");
+    presentation::add_rule_and_check(p, "ab", "");
+    presentation::add_rule_and_check(p, "abb", "");
+
+    Sims1_ S(congruence_kind::right, p);
+
+    REQUIRE(S.number_of_congruences(10) == 1);
+    REQUIRE(MinimalCyclicRep(p).target_size(1).digraph().number_of_nodes()
+            == 1);
   }
 
 }  // namespace libsemigroups
