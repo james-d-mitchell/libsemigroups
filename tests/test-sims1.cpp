@@ -791,8 +791,12 @@ namespace libsemigroups {
     //   last_len = presentation::length(p);
     //   presentation::remove_longest_redundant_rule(p);
     // } while (presentation::length(p) != last_len);
-    REQUIRE(sims1::minimal_cyclic_rep<uint32_t>(p, 105).number_of_nodes()
-            == 23);
+    auto d = sims1::minimal_cyclic_rep<uint32_t>(p, 105);
+    REQUIRE(!p.contains_empty_word());
+    REQUIRE(d.number_of_nodes() == 22);
+
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+    REQUIRE(S.size() == 105);
 
     Sims1_ C(congruence_kind::right, p);
     REQUIRE(C.number_of_congruences(105, std::thread::hardware_concurrency())
@@ -802,7 +806,10 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "036",
                           "Brauer(5) (Kudryavtseva-Mazorchuk)",
-                          "[quick][sims1]") {
+                          "[fail][sims1]") {
+    // TODO(Sims1) not sure if this is just very long running or it actually
+    // fails, presumably the former because we obtained the number 47 at some
+    // point!
     auto rg = ReportGuard(false);
     auto p  = make<Presentation<word_type>>(Brauer(5));
     REQUIRE(presentation::length(p) == 295);
@@ -810,9 +817,7 @@ namespace libsemigroups {
     REQUIRE(presentation::length(p) == 253);
 
     auto d = sims1::minimal_cyclic_rep<uint32_t>(p, 945);
-    // TODO(Sims1) when this was merged it was 47, not sure
-    // what value is correct
-    REQUIRE(d.number_of_nodes() == 52);
+    REQUIRE(d.number_of_nodes() == 47);
     auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
     REQUIRE(S.size() == 945);
   }
@@ -1068,7 +1073,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "038",
                           "PartitionMonoid(3) - minimal rep",
-                          "[quick][sims1]") {
+                          "[extreme][sims1]") {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.contains_empty_word(false);
@@ -1164,7 +1169,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
     REQUIRE(sims1::minimal_cyclic_rep<uint32_t>(p, 203).number_of_nodes()
-            == 24);  // TODO(Sim1) was 23, not sure what the right number is
+            == 23);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1221,12 +1226,17 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "041",
                           "RectangularBand(4, 4) - quick",
-                          "[quick][sims1]") {
+                          "[standard][sims1]") {
     auto rg = ReportGuard(false);
     auto p  = make<Presentation<word_type>>(RectangularBand(4, 4));
-    auto d  = sims1::minimal_cyclic_rep<uint32_t>(p, 17);
-    // auto S  = make<FroidurePin<Transf<0, node_type>>>(d,
-    // d.number_of_nodes()); REQUIRE(S.size() == 16);
+    p.contains_empty_word(true);
+    auto d = sims1::minimal_cyclic_rep<uint32_t>(p, 17);
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d, d.number_of_nodes());
+    REQUIRE(S.size() == 16);
+    REQUIRE(d.number_of_nodes() == 7);
+
+    p.contains_empty_word(false);
+    d = sims1::minimal_cyclic_rep<uint32_t>(p, 17);
     REQUIRE(d.number_of_nodes() == 0);
   }
 

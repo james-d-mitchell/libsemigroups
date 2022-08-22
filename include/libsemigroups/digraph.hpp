@@ -2655,6 +2655,16 @@ namespace libsemigroups {
       return _dynamic_array_2;
     }
 
+    // TODO(Sims1) noexcept?
+    typename detail::DynamicArray2<T>::iterator begin() {
+      return _dynamic_array_2.begin();
+    }
+
+    // TODO(Sims1) noexcept?
+    typename detail::DynamicArray2<T>::iterator end() {
+      return _dynamic_array_2.end();
+    }
+
    protected:
     //! No doc
     template <typename S>

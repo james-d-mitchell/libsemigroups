@@ -525,7 +525,12 @@ namespace libsemigroups {
     //!
     //! If the input is a semigroup presentation for a semigroup $\fS\f$, then
     //! the ActionDigraph has \p n + 1 nodes, and the right action of \f$S\f$
-    //! on the nodes TODO(Sims1) finish this when decided what to do here
+    //! on the nodes \f$\{1, \ldots, n\}\f$ of the ActionDigraph is isomorphic
+    //! to the action of \f$S\f$ on the classes of a right congruence. It'd
+    //! probably be better if node \f$0\f$ was not included in the
+    //! output ActionDigraph, but it is required in the implementation of the
+    //! low-index congruence algorithm, and to avoid unnecessary copies, we've
+    //! left it in for the time being.
     //!
     //! \param n the maximum number of classes in a congruence.
     //!
@@ -543,8 +548,11 @@ namespace libsemigroups {
     //!
     //! \sa
     //! \ref cend
-    // TODO(Sims1): write something about the meaning of the returned graph,
-    // i.e. what indices correspond to what
+
+    // If we don't include the extra node 0 when input is a semigroup
+    // presentation, then we don't get the correct number of congruences in
+    // test case 036, returns 8 instead of 6, so should figure out what's going
+    // on there. TOOD(Sims1)
     const_iterator cbegin(size_type n) const {
       return const_iterator(presentation(), _extra, _final, n);
     }
@@ -949,6 +957,7 @@ namespace libsemigroups {
 #endif  // LIBSEMIGROUPS_ENABLE_STATS
 
   namespace sims1 {
+    // TODO(Sims1) delete
     template <typename T, typename W>
     ActionDigraph<T>
     cyclic_rep(Presentation<W> const& p, size_t min, size_t max, size_t size) {
@@ -1005,12 +1014,11 @@ namespace libsemigroups {
                                              size_t                 min,
                                              size_t                 max,
                                              size_t                 size,
-                                             size_t num_threads = 1) {
+                                             size_t num_threads = 8) {
       using digraph_type = typename Sims1<T>::digraph_type;
       using node_type    = typename digraph_type::node_type;
-      Sims1<T> C(congruence_kind::right, p);
 
-      auto hook = [&p, &min, &max, &size](digraph_type const& x) {
+      auto hook = [&](digraph_type const& x) {
         if (x.number_of_active_nodes() >= min
             && x.number_of_active_nodes() <= max) {
           // RecursiveReportGuard rg(false);
@@ -1030,11 +1038,18 @@ namespace libsemigroups {
         return false;
       };
 
-      auto result = C.find_if(max, num_threads, hook);
+      Sims1<T> C(congruence_kind::right, p);
+      auto     result = C.find_if(max, num_threads, hook);
       if (result.number_of_active_nodes() == 0) {
         result.restrict(0);
       } else {
-        result.restrict(result.number_of_active_nodes());
+        if (p.contains_empty_word()) {
+          result.restrict(result.number_of_active_nodes());
+        } else {
+          result.induced_subdigraph(1, result.number_of_active_nodes());
+          std::for_each(result.begin(), result.end(), [](auto& val) { --val; });
+          result.number_of_active_nodes(result.number_of_active_nodes() - 1);
+        }
       }
       return result;
     }
@@ -1048,7 +1063,7 @@ namespace libsemigroups {
     template <typename T, typename W>
     ActionDigraph<T> minimal_cyclic_rep(Presentation<W> const& p, size_t size) {
       size_t           max  = (p.contains_empty_word() ? size : size + 1);
-      auto             best = cyclic_rep<T>(p, 1, max, size);
+      auto             best = parallel_representation<T>(p, 1, max, size);
       ActionDigraph<T> next;
       size_t           hi = best.number_of_nodes();
 
@@ -1060,12 +1075,12 @@ namespace libsemigroups {
       // TODO handle the case when there is a 1 degree rep
 
       std::cout << "best = " << hi << "\n";
-      next = std::move(cyclic_rep<T>(p, 1, hi - 1, size));
+      next = std::move(parallel_representation<T>(p, 1, hi - 1, size));
       while (next.number_of_nodes() != 0) {
         hi = next.number_of_nodes();
         std::cout << "best = " << hi << "\n";
         best = std::move(next);
-        next = std::move(cyclic_rep<T>(p, 1, hi - 1, size));
+        next = std::move(parallel_representation<T>(p, 1, hi - 1, size));
       }
       return best;
     }
