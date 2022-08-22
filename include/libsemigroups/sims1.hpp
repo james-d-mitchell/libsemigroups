@@ -958,55 +958,56 @@ namespace libsemigroups {
 
   namespace sims1 {
     // TODO(Sims1) delete
-    template <typename T, typename W>
-    ActionDigraph<T>
-    cyclic_rep(Presentation<W> const& p, size_t min, size_t max, size_t size) {
-      // TODO check that min != 0
-      std::cout << "Trying to find a representation with degree in [" << min
-                << ", " << max << "]:" << std::endl;
-      Sims1<T> C(congruence_kind::right, p);
-      using node_type = typename Sims1<T>::digraph_type::node_type;
+    // template <typename T, typename W>
+    // ActionDigraph<T>
+    // cyclic_rep(Presentation<W> const& p, size_t min, size_t max, size_t size)
+    // {
+    //  // TODO check that min != 0
+    //  std::cout << "Trying to find a representation with degree in [" << min
+    //            << ", " << max << "]:" << std::endl;
+    //  Sims1<T> C(congruence_kind::right, p);
+    //  using node_type = typename Sims1<T>::digraph_type::node_type;
 
-      auto   it    = C.cbegin(max);
-      size_t count = 0;
+    //  auto   it    = C.cbegin(max);
+    //  size_t count = 0;
 
-      for (; it != C.cend(max); ++it) {
-        std::cout << "\rat " << ++count << std::flush;
-        if (it->number_of_active_nodes() >= min
-            && it->number_of_active_nodes() <= max) {
-          auto S = make<FroidurePin<Transf<0, node_type>>>(
-              *it, it->number_of_active_nodes());
-          if (p.contains_empty_word()) {
-            auto one = S.generator(0).identity();
-            if (!S.contains(one)) {
-              S.add_generator(one);
-            }
-          }
-          if (S.size() == size) {
-            break;
-          }
-        }
-      }
+    //  for (; it != C.cend(max); ++it) {
+    //    std::cout << "\rat " << ++count << std::flush;
+    //    if (it->number_of_active_nodes() >= min
+    //        && it->number_of_active_nodes() <= max) {
+    //      auto S = make<FroidurePin<Transf<0, node_type>>>(
+    //          *it, it->number_of_active_nodes());
+    //      if (p.contains_empty_word()) {
+    //        auto one = S.generator(0).identity();
+    //        if (!S.contains(one)) {
+    //          S.add_generator(one);
+    //        }
+    //      }
+    //      if (S.size() == size) {
+    //        break;
+    //      }
+    //    }
+    //  }
 
-      // TODO(Sims1) is this correct?
-      ActionDigraph<T> result(*it);
-      if (result.number_of_active_nodes() == 0) {
-        result.restrict(0);
-        result.number_of_active_nodes(0);
-      } else {
-        result.restrict(result.number_of_active_nodes());
-      }
+    // TODO(Sims1) is this correct?
+    // ActionDigraph<T> result(*it);
+    // if (result.number_of_active_nodes() == 0) {
+    //   result.restrict(0);
+    //   result.number_of_active_nodes(0);
+    // } else {
+    //   result.restrict(result.number_of_active_nodes());
+    // }
 
-      std::cout << "\r* " << count << " congruences analysed, ";
-      if (result.number_of_nodes() == 0) {
-        std::cout << "no faithful representations found!";
-      } else {
-        std::cout << "faithful representations of degree "
-                  << result.number_of_nodes() << " found!";
-      }
-      std::cout << std::endl;
-      return result;
-    }
+    // std::cout << "\r* " << count << " congruences analysed, ";
+    // if (result.number_of_nodes() == 0) {
+    //   std::cout << "no faithful representations found!";
+    // } else {
+    //   std::cout << "faithful representations of degree "
+    //             << result.number_of_nodes() << " found!";
+    // }
+    // std::cout << std::endl;
+    // return result;
+    // }
 
     // TODO(Sims1) wrap into a class so that there aren't so many parameters
     template <typename T, typename W>
@@ -1021,7 +1022,6 @@ namespace libsemigroups {
       auto hook = [&](digraph_type const& x) {
         if (x.number_of_active_nodes() >= min
             && x.number_of_active_nodes() <= max) {
-          // RecursiveReportGuard rg(false);
           auto S = make<FroidurePin<Transf<0, node_type>>>(
               x, x.number_of_active_nodes());
           if (p.contains_empty_word()) {
@@ -1054,12 +1054,14 @@ namespace libsemigroups {
       return result;
     }
 
-    template <typename T>
+    /*template <typename T>
     ActionDigraph<T> cyclic_rep(FroidurePinBase& fpb, size_t min, size_t max) {
       return cyclic_rep<T>(
           make<Presentation<word_type>>(fpb), min, max, fpb.size());
-    }
+    }*/
 
+    // TODO(Sims1): check that the returned representation is strictly cyclic,
+    // when the argument is a semigroup
     template <typename T, typename W>
     ActionDigraph<T> minimal_cyclic_rep(Presentation<W> const& p, size_t size) {
       size_t           max  = (p.contains_empty_word() ? size : size + 1);
