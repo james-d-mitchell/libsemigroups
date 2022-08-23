@@ -1010,7 +1010,7 @@ namespace libsemigroups {
   // return result;
   // }
 
-  class CyclicRep {
+  class RepOnRightCongruences {
    private:
     size_t                         _min;
     size_t                         _max;
@@ -1019,27 +1019,27 @@ namespace libsemigroups {
     size_t                         _size;
 
    public:
-    explicit CyclicRep(Presentation<word_type> const& p)
+    explicit RepOnRightCongruences(Presentation<word_type> const& p)
         : _min(), _max(), _num_threads(1), _presentation(p), _size() {}
     // TODO(Sims1) the other ctors
     // TODO(Sims1) another constructor for other types of Presentation
 
-    CyclicRep& min_nodes(size_t val) {
+    RepOnRightCongruences& min_nodes(size_t val) {
       _min = val;
       return *this;
     }
 
-    CyclicRep& max_nodes(size_t val) {
+    RepOnRightCongruences& max_nodes(size_t val) {
       _max = (_presentation.contains_empty_word() ? val : val + 1);
       return *this;
     }
 
-    CyclicRep& target_size(size_t val) {
+    RepOnRightCongruences& target_size(size_t val) {
       _size = val;
       return *this;
     }
 
-    CyclicRep& number_of_threads(size_t val) {
+    RepOnRightCongruences& number_of_threads(size_t val) {
       _num_threads = val;
       return *this;
     }
@@ -1088,7 +1088,7 @@ namespace libsemigroups {
 
   // TODO(Sims1): check that the returned representation is strictly cyclic,
   // when the argument is a semigroup
-  class MinimalCyclicRep {
+  class MinimalRepOnRightCongruences {
    private:
     size_t _num_threads;
     // TODO(later): we were using a reference to the presentation here, but
@@ -1097,30 +1097,31 @@ namespace libsemigroups {
     size_t                  _size;
 
    public:
-    MinimalCyclicRep(Presentation<word_type> const& p)
+    MinimalRepOnRightCongruences(Presentation<word_type> const& p)
         : _num_threads(1), _presentation(p), _size() {}
 
     template <typename P>
-    MinimalCyclicRep(P const& p)
-        : MinimalCyclicRep(make<Presentation<word_type>>(p)) {
+    MinimalRepOnRightCongruences(P const& p)
+        : MinimalRepOnRightCongruences(make<Presentation<word_type>>(p)) {
       static_assert(std::is_base_of<PresentationBase, P>::value,
                     "the template parameter P must be derived from "
                     "PresentationBase");
     }
 
-    MinimalCyclicRep& target_size(size_t val) {
+    MinimalRepOnRightCongruences& target_size(size_t val) {
       _size = val;
       return *this;
     }
 
-    MinimalCyclicRep& number_of_threads(size_t val) {
+    MinimalRepOnRightCongruences& number_of_threads(size_t val) {
       _num_threads = val;
       return *this;
     }
 
     template <typename T = uint32_t>
     ActionDigraph<T> digraph() {
-      auto cr = CyclicRep(_presentation).number_of_threads(_num_threads);
+      auto cr = RepOnRightCongruences(_presentation)
+                    .number_of_threads(_num_threads);
 
       size_t hi = (_presentation.contains_empty_word() ? _size : _size + 1);
       REPORT_DEFAULT(
