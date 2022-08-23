@@ -30,6 +30,7 @@
 #include "debug.hpp"      // for LIBSEMIGROUPS_ASSERT
 #include "exception.hpp"  // for LIBSEMIGROUPS_EXCEPTION
 #include "types.hpp"      // for word_type
+#include "uf.hpp"         // for Duf
 
 namespace libsemigroups {
   template <typename T>
@@ -697,6 +698,7 @@ namespace libsemigroups {
       }
     }  // namespace detail
 
+    // TODO(Sims1) doc
     template <typename T>
     ActionDigraph<T> make(size_t num_nodes,
                           std::initializer_list<std::initializer_list<T>> il) {
@@ -712,9 +714,29 @@ namespace libsemigroups {
       return result;
     }
 
+    // TODO(Sims1) doc
     template <typename T>
     ActionDigraph<T> make(size_t num_nodes, size_t out_degree) {
       return ActionDigraph<T>(num_nodes, out_degree);
+    }
+
+    // TODO(Sims1) doc
+    template <typename T>
+    bool is_strictly_cyclic(ActionDigraph<T> const& ad) {
+      using node_type = typename ActionDigraph<T>::node_type;
+
+      auto const N = ad.number_of_nodes();
+      if (N == 0) {
+        return true;
+      }
+
+      ::libsemigroups::detail::Duf<> uf(N);
+      for (node_type n = 0; n < N; ++n) {
+        for (auto it = ad.cbegin_edges(n); it != ad.cend_edges(n); ++it) {
+          uf.unite(n, *it);
+        }
+      }
+      return uf.number_of_blocks() == 1;
     }
   }  // namespace action_digraph_helper
 }  // namespace libsemigroups
