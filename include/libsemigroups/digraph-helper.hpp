@@ -722,7 +722,7 @@ namespace libsemigroups {
 
     // TODO(Sims1) doc
     template <typename T>
-    bool is_strictly_cyclic(ActionDigraph<T> const& ad) {
+    bool is_connected(ActionDigraph<T> const& ad) {
       using node_type = typename ActionDigraph<T>::node_type;
 
       auto const N = ad.number_of_nodes();
@@ -737,6 +737,40 @@ namespace libsemigroups {
         }
       }
       return uf.number_of_blocks() == 1;
+    }
+
+    // TODO(Sims1) doc
+    template <typename T>
+    bool is_strictly_cyclic(ActionDigraph<T> const& ad) {
+      using node_type = typename ActionDigraph<T>::node_type;
+      auto const N    = ad.number_of_nodes();
+
+      if (N == 0) {
+        return true;
+      }
+
+      std::vector<bool> seen(N, false);
+      std::stack<T>     stack;
+
+      for (node_type m = 0; m < N; ++m) {
+        stack.push(m);
+        size_t count = 0;
+        while (!stack.empty()) {
+          auto n = stack.top();
+          stack.pop();
+          if (!seen[n]) {
+            seen[n] = true;
+            if (++count == N) {
+              return true;
+            }
+            for (auto it = ad.cbegin_edges(n); it != ad.cend_edges(n); ++it) {
+              stack.push(*it);
+            }
+          }
+        }
+        std::fill(seen.begin(), seen.end(), false);
+      }
+      return false;
     }
   }  // namespace action_digraph_helper
 }  // namespace libsemigroups

@@ -47,7 +47,8 @@ namespace libsemigroups {
     element_type x(last);
     for (node_type lbl = 0; lbl < ad.out_degree(); ++lbl) {
       for (size_t i = 0; i < first; ++i) {
-        x[i] = i;
+        x[i] = i;  // TODO(Sims1) don't do this, make the transfs act on [first,
+                   // last)
       }
       for (size_t i = first; i < last; ++i) {
         x[i] = ad.neighbor(i, lbl);

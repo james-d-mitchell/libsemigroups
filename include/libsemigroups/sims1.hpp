@@ -1070,8 +1070,7 @@ namespace libsemigroups {
       };
 
       Sims1<T> C(congruence_kind::right, _presentation);
-      // TODO(Sims1): remove num_threads as argument from find_if
-      auto result = C.number_of_threads(_num_threads).find_if(_max, hook);
+      auto     result = C.number_of_threads(_num_threads).find_if(_max, hook);
       if (result.number_of_active_nodes() == 0) {
         result.restrict(0);
       } else {
@@ -1165,7 +1164,7 @@ namespace libsemigroups {
                                           size_t                 size) {
     auto             best = representation<T>(p, 1, size, size);
     ActionDigraph<T> next;
-    size_t           hi = best.number_of_nodes();
+    size_t           hi = best.number_of_nodes(
 
     if (hi == 0) {
       // No faithful representation on up to <size> points

@@ -1410,6 +1410,95 @@ namespace libsemigroups {
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
   }
 
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "045",
+                          "right zero semigroup",
+                          "[quick][sims1]") {
+    // This is an example of a semigroup with a strictly cyclic faithful
+    // right representation.
+    size_t const n = 5;
+    auto         p = make<Presentation<word_type>>(RectangularBand(1, n));
+    auto         d = MinimalCyclicRep(p).target_size(n).digraph();
+    REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d);
+    REQUIRE(S.size() == n);
+    REQUIRE(d.number_of_nodes() == 5);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE(
+      "Sims1",
+      "046",
+      "semigroup with faithful non-strictly cyclic action of right congruence",
+      "[quick][sims1]") {
+    // Found with Smallsemi, this example is minimal wrt size of the semigroup.
+
+    FroidurePin<Transf<6>> S({Transf<6>::make({0, 0, 2, 1, 4, 1}),
+                              Transf<6>::make({0, 0, 2, 3, 4, 3}),
+                              Transf<6>::make({0, 2, 2, 0, 4, 4})});
+
+    REQUIRE(S.size() == 5);
+    auto p = make<Presentation<word_type>>(S);
+    auto d = MinimalCyclicRep(p).target_size(5).digraph();
+    REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
+    REQUIRE(d.number_of_nodes() == 4);
+    REQUIRE(d
+            == action_digraph_helper::make<uint32_t>(
+                4, {{2, 2, 3}, {0, 1, 2}, {2, 2, 2}, {3, 3, 3}}));
+    auto T = make<FroidurePin<Transf<4>>>(d);
+    REQUIRE(T.generator(0) == Transf<4>({2, 0, 2, 3}));
+    REQUIRE(T.generator(1) == Transf<4>({2, 1, 2, 3}));
+    REQUIRE(T.generator(2) == Transf<4>({3, 2, 2, 3}));
+    REQUIRE(T.size() == 5);
+
+    auto dd = action_digraph_helper::make<uint8_t>(5,
+                                                   {{0, 0, 0, 0, 0},
+                                                    {0, 0, 0, 0, 2},
+                                                    {2, 2, 2, 2, 2},
+                                                    {0, 1, 2, 3, 0},
+                                                    {4, 4, 4, 4, 4}});
+
+    REQUIRE(!action_digraph_helper::is_strictly_cyclic(dd));
+    REQUIRE(dd.number_of_nodes() == 5);
+    auto U = make<FroidurePin<Transf<5>>>(dd);
+    REQUIRE(U.size() == 5);
+
+    Sims1_ C(congruence_kind::right, p);
+    REQUIRE(C.number_of_congruences(5) == 9);
+    uint64_t strictly_cyclic_count     = 0;
+    uint64_t non_strictly_cyclic_count = 0;
+
+    for (auto it = C.cbegin(5); it != C.cend(5); ++it) {
+      auto W = make<FroidurePin<Transf<0, node_type>>>(
+          *it, 1, it->number_of_active_nodes());
+      if (p.contains_empty_word()) {
+        auto one = W.generator(0).identity();
+        if (!W.contains(one)) {
+          W.add_generator(one);
+        }
+      }
+      if (W.size() == 5) {
+        auto result = *it;
+        result.induced_subdigraph(1, result.number_of_active_nodes());
+        std::for_each(result.begin(), result.end(), [](auto &val) { --val; });
+        result.number_of_active_nodes(result.number_of_active_nodes() - 1);
+        if (action_digraph_helper::is_strictly_cyclic(result)) {
+          strictly_cyclic_count++;
+        } else {
+          REQUIRE(W.generator(0) == Transf<0, node_type>({0, 4, 1, 3, 4, 5}));
+          REQUIRE(W.generator(1) == Transf<0, node_type>({0, 4, 2, 3, 4, 5}));
+          REQUIRE(W.generator(2) == Transf<0, node_type>({0, 5, 4, 3, 4, 5}));
+          REQUIRE(
+              result
+              == action_digraph_helper::make<uint32_t>(
+                  5, {{3, 3, 4}, {0, 1, 3}, {2, 2, 2}, {3, 3, 3}, {4, 4, 4}}));
+          non_strictly_cyclic_count++;
+        }
+      }
+    }
+    REQUIRE(strictly_cyclic_count == 2);
+    REQUIRE(non_strictly_cyclic_count == 1);
+  }
+
 }  // namespace libsemigroups
 
 // [[[0, 0, 0]],            #1#
