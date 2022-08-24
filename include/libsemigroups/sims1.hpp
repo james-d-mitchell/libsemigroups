@@ -520,7 +520,7 @@ namespace libsemigroups {
     // If we don't include the extra node 0 when input is a semigroup
     // presentation, then we don't get the correct number of congruences in
     // test case 036, returns 8 instead of 6, so should figure out what's
-    // going on there. TOOD(Sims1)
+    // going on there. TODO(Sims1)
     const_iterator cbegin(size_type n) const {
       return const_iterator(presentation(), _extra, _final, n);
     }
@@ -699,6 +699,9 @@ namespace libsemigroups {
       _num_threads = val;
       return *this;
     }
+
+    // TODO(Sims1) add the other options for Sims1 here: split_at,
+    // report_interval
 
     // An alternative to the approach used below would be to do a sort of
     // binary search for a minimal representation. It seems that in most
