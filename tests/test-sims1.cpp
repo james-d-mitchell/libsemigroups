@@ -1210,7 +1210,7 @@ namespace libsemigroups {
                           "039",
                           "TemperleyLieb(n) - n = 3 .. 6, minimal rep",
                           "[standard][sims1]") {
-    auto rg = ReportGuard(true);
+    auto rg = ReportGuard(false);
 
     std::array<uint64_t, 11> const sizes
         = {0, 1, 2, 5, 14, 42, 132, 429, 1'430, 4'862, 16'796};
@@ -1218,13 +1218,13 @@ namespace libsemigroups {
         = {0, 0, 2, 4, 7, 10, 20, 29, 63, 91, 0};
     // The values 63 and 91 are not verified
 
-    for (size_t n = 9; n < 10; ++n) {
+    for (size_t n = 3; n <= 6; ++n) {
       auto p = make<Presentation<word_type>>(TemperleyLieb(n));
       // There are no relations containing the empty word so we just manually
       // add it.
       p.contains_empty_word(true);
       auto d = MinimalRepOrc(p)
-                   .number_of_threads(5)
+                   .number_of_threads(2)
                    .target_size(sizes[n])
                    .digraph();
       REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
@@ -1268,7 +1268,7 @@ namespace libsemigroups {
                           "041",
                           "RectangularBand(4, 4) - minimal cyclic rep",
                           "[standard][sims1]") {
-    auto rg = ReportGuard(true);
+    auto rg = ReportGuard(false);
     auto p  = make<Presentation<word_type>>(RectangularBand(4, 4));
     p.contains_empty_word(true);
     auto d = MinimalRepOrc(p).number_of_threads(2).target_size(17).digraph();

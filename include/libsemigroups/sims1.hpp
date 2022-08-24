@@ -93,6 +93,7 @@ namespace libsemigroups {
   //! iterator returned by \ref cbegin points at an ActionDigraph instance
   //! containing the action of the semigroup or monoid on the classes of a
   //! congruence.
+  // TODO(v3) remove the template T here
   template <typename T>
   class Sims1 {
    public:
@@ -114,8 +115,12 @@ namespace libsemigroups {
    private:
     Presentation<word_type> _extra;
     Presentation<word_type> _final;
-    size_type               _num_threads;
     Presentation<word_type> _presentation;
+
+    struct Settings {
+      size_type _num_threads     = 1;
+      size_type _report_interval = 1'000;
+    } _settings;
 
    public:
     //! Construct from \ref congruence_kind and Presentation.
@@ -212,12 +217,23 @@ namespace libsemigroups {
 
     // TODO(Sims1) doc
     size_type number_of_threads() const noexcept {
-      return _num_threads;
+      return _settings._num_threads;
     }
 
     // TODO(Sims1) doc
     Sims1& number_of_threads(size_t val) noexcept {
-      _num_threads = val;
+      _settings._num_threads = val;
+      return *this;
+    }
+
+    // TODO(Sims1) doc
+    size_type report_interval() const noexcept {
+      return _settings._report_interval;
+    }
+
+    // TODO(Sims1) doc
+    Sims1& report_interval(size_t val) noexcept {
+      _settings._report_interval = val;
       return *this;
     }
 
@@ -545,6 +561,7 @@ namespace libsemigroups {
     //! exists only to provide some feedback on the progress of the
     //! computation if it runs for more than 1 second.
     //!
+    //! TODO(Sims1): update doc for multi threading
     //! \param n the maximum number of congruence classes.
     //!
     //! \returns A value of type \c uint64_t.
@@ -556,11 +573,13 @@ namespace libsemigroups {
 
     // Apply the function pred to every one-sided congruence with at
     // most n classes
+    //! TODO(Sims1): doc
     void for_each(size_type                                n,
                   std::function<void(digraph_type const&)> pred) const;
 
     // Apply the function pred to every one-sided congruence with at
     // most n classes, until pred returns true
+    //! TODO(Sims1): doc
     digraph_type find_if(size_type                                n,
                          std::function<bool(digraph_type const&)> pred) const;
 
@@ -574,22 +593,22 @@ namespace libsemigroups {
                                       S&            last_count,
                                       uint64_t      count,
                                       detail::Timer t) const {
-      // TODO(Sims1) add 2'048 as a setting
-      // if (count - last_count > 2'048) {
-      // Avoid calling high_resolution_clock::now too often
-      auto now     = std::chrono::high_resolution_clock::now();
-      auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-          now - last_report);
-      if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
-              std::chrono::seconds(1))) {
-        std::swap(now, last_report);
-        last_count = count;
-        using float_seconds
-            = std::chrono::duration<float, std::chrono::seconds::period>;
-        auto seconds = std::chrono::duration_cast<float_seconds>(t.elapsed());
-        REPORT_DEFAULT(FORMAT("found {} congruences in {}!\n", count, seconds));
+      if (count - last_count > _settings._report_interval) {
+        // Avoid calling high_resolution_clock::now too often
+        auto now     = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            now - last_report);
+        if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::seconds(1))) {
+          std::swap(now, last_report);
+          last_count = count;
+          using float_seconds
+              = std::chrono::duration<float, std::chrono::seconds::period>;
+          auto seconds = std::chrono::duration_cast<float_seconds>(t.elapsed());
+          REPORT_DEFAULT(
+              FORMAT("found {} congruences in {}!\n", count, seconds));
+        }
       }
-      //}
     }
 
     // TODO(Sims1) move to cpp file

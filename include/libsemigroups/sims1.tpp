@@ -78,7 +78,7 @@ namespace libsemigroups {
   Sims1<T>::Sims1(congruence_kind                ck,
                   Presentation<word_type> const &p,
                   Presentation<word_type> const &e)
-      : _extra(), _final(), _num_threads(1), _presentation() {
+      : _extra(), _final(), _presentation(), _settings() {
     if (ck == congruence_kind::twosided) {
       LIBSEMIGROUPS_EXCEPTION(
           "expected congruence_kind::right or congruence_kind::left");
