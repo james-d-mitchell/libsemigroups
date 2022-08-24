@@ -583,30 +583,11 @@ namespace libsemigroups {
    private:
     using time_point = std::chrono::high_resolution_clock::time_point;
 
-    // Can't be static because REPORT_DEFAULT uses this
-    // TODO(Sims1) move to tpp file
     template <typename S>
     void report_number_of_congruences(time_point&   last_report,
                                       S&            last_count,
                                       uint64_t      count,
-                                      detail::Timer t) const {
-      if (count - last_count > _settings._report_interval) {
-        // Avoid calling high_resolution_clock::now too often
-        auto now     = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            now - last_report);
-        if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::seconds(1))) {
-          std::swap(now, last_report);
-          last_count = count;
-          using float_seconds
-              = std::chrono::duration<float, std::chrono::seconds::period>;
-          auto seconds = std::chrono::duration_cast<float_seconds>(t.elapsed());
-          REPORT_DEFAULT(
-              FORMAT("found {} congruences in {}!\n", count, seconds));
-        }
-      }
-    }
+                                      detail::Timer t) const;
 
     // TODO(Sims1) move to cpp file
     class Thief : public IteratorAndThiefBase {
