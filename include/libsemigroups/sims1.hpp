@@ -636,7 +636,6 @@ namespace libsemigroups {
 
       auto hook = [&](digraph_type const& x) {
         if (x.number_of_active_nodes() >= _min) {
-          // TODO(Sims1) the <= _max shouldn't be necessary
           auto first = (_presentation.contains_empty_word() ? 0 : 1);
           auto S     = make<FroidurePin<Transf<0, node_type>>>(
               x, first, x.number_of_active_nodes());
@@ -646,6 +645,7 @@ namespace libsemigroups {
               S.add_generator(one);
             }
           }
+          LIBSEMIGROUPS_ASSERT(S.size() <= _size);
           if (S.size() == _size) {
             return true;
           }

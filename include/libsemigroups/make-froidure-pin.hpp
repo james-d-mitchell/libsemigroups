@@ -79,12 +79,10 @@ namespace libsemigroups {
       // The next loop is required because if element_type is a fixed degree
       // type, such as Transf<5> for example, but first = last = 0, then the
       // degree of x is still 5 not last - first = 0.
-      for (size_t n = last; n < x.degree(); ++n) {
-        x[n - first] = n - first;
-      }
-      for (size_t n = x.degree() - first; n < x.degree(); ++n) {
+      for (size_t n = last - first; n < x.degree(); ++n) {
         x[n] = n;
       }
+
       validate(x);
       result.add_generator(x);
     }

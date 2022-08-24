@@ -780,11 +780,23 @@ namespace libsemigroups {
     presentation::sort_rules(p);
     REQUIRE(p.rules.size() == 86);
 
-    p.contains_empty_word(true);  // FIXME this shouldn't be required
-
     auto d = MinimalRepOrc(p).target_size(105).digraph();
     REQUIRE(d.number_of_nodes() == 22);
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
+    REQUIRE(
+        d
+        == action_digraph_helper::make<uint32_t>(
+            22, {{0, 0, 1, 0, 2, 3, 2},        {1, 4, 0, 5, 6, 3, 7},
+                 {2, 2, 2, 2, 2, 2, 2},        {3, 8, 3, 9, 6, 3, 7},
+                 {4, 1, 4, 10, 6, 2, 11},      {5, 10, 5, 1, 12, 2, 7},
+                 {6, 6, 8, 12, 6, 3, 13},      {7, 11, 9, 7, 13, 3, 7},
+                 {8, 3, 6, 14, 6, 3, 11},      {9, 14, 7, 3, 12, 3, 7},
+                 {10, 5, 15, 4, 12, 16, 11},   {11, 7, 17, 11, 13, 16, 11},
+                 {12, 12, 18, 6, 12, 16, 13},  {13, 13, 19, 13, 13, 20, 13},
+                 {14, 9, 21, 8, 12, 20, 11},   {15, 15, 10, 15, 2, 16, 2},
+                 {16, 18, 16, 17, 12, 16, 11}, {17, 21, 11, 16, 6, 16, 11},
+                 {18, 16, 12, 21, 12, 16, 7},  {19, 20, 13, 20, 13, 20, 13},
+                 {20, 19, 20, 19, 13, 20, 13}, {21, 17, 14, 18, 6, 20, 7}}));
 
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == 105);
@@ -812,7 +824,6 @@ namespace libsemigroups {
         == Transf<0, node_type>({2,  7,  2,  7,  11, 7,  13, 7, 11, 7,  11,
                                  11, 13, 13, 11, 2,  11, 11, 7, 13, 13, 7}));
 
-    p.contains_empty_word(false);  // FIXME shouldn't be required
     Sims1_ C(congruence_kind::right, p);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(105)
