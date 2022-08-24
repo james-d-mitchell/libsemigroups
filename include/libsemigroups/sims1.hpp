@@ -419,36 +419,24 @@ namespace libsemigroups {
 #endif
 
      public:
+      //! No doc
       const_iterator(Presentation<word_type> const& p,
                      Presentation<word_type> const& e,
                      Presentation<word_type> const& f,
-                     size_type                      n)
-          : IteratorAndThiefBase(p, e, f, n) {
-        if (this->_felsch_graph.number_of_active_nodes() == 0) {
-          return;
-        }
-        if (n > 1) {
-          _pending.emplace_back(0, 0, 1, 0, 2);
-        }
-        if (this->_min_target_node == 0) {
-          _pending.emplace_back(0, 0, 0, 0, 1);
-        }
-        ++(*this);
-        // The increment above is required so that when dereferencing any
-        // instance of this type we obtain a valid word graph (o/w the value
-        // pointed to here is empty).
-      }
+                     size_type                      n);
 
+      //! No doc
       using IteratorAndThiefBase::IteratorAndThiefBase;
 
+      //! No doc
       ~const_iterator() = default;
 
       // prefix
       //! No doc
       const_iterator const& operator++();
 
-      //! No doc
       // postfix
+      //! No doc
       const_iterator operator++(int) {
         const_iterator copy(*this);
         ++(*this);
@@ -460,6 +448,7 @@ namespace libsemigroups {
         IteratorAndThiefBase::swap(that);
         std::swap(_pending, that._pending);
       }
+
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
       Sims1Stats const& stats() const noexcept;
 

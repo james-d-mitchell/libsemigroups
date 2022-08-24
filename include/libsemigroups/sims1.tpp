@@ -259,6 +259,27 @@ namespace libsemigroups {
   ///////////////////////////////////////////////////////////////////////////////
 
   template <typename T>
+  Sims1<T>::const_iterator::const_iterator(Presentation<word_type> const &p,
+                                           Presentation<word_type> const &e,
+                                           Presentation<word_type> const &f,
+                                           size_type                      n)
+      : IteratorAndThiefBase(p, e, f, n) {
+    if (this->_felsch_graph.number_of_active_nodes() == 0) {
+      return;
+    }
+    if (n > 1) {
+      _pending.emplace_back(0, 0, 1, 0, 2);
+    }
+    if (this->_min_target_node == 0) {
+      _pending.emplace_back(0, 0, 0, 0, 1);
+    }
+    ++(*this);
+    // The increment above is required so that when dereferencing any
+    // instance of this type we obtain a valid word graph (o/w the value
+    // pointed to here is empty).
+  }
+
+  template <typename T>
   typename Sims1<T>::const_iterator const &
   Sims1<T>::const_iterator::operator++() {
     while (true) {
