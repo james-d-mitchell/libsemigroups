@@ -770,6 +770,7 @@ namespace libsemigroups {
                           "[extreme][sims1]") {
     auto rg = ReportGuard(true);
     auto p  = make<Presentation<word_type>>(Brauer(4));
+    REQUIRE(p.alphabet().size() == 7);
     REQUIRE(presentation::length(p) == 182);
     presentation::remove_duplicate_rules(p);
     REQUIRE(presentation::length(p) == 162);
@@ -779,14 +780,39 @@ namespace libsemigroups {
     presentation::sort_rules(p);
     REQUIRE(p.rules.size() == 86);
 
+    p.contains_empty_word(true);  // FIXME this shouldn't be required
+
     auto d = MinimalRepOrc(p).target_size(105).digraph();
-    REQUIRE(!p.contains_empty_word());
     REQUIRE(d.number_of_nodes() == 22);
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
 
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == 105);
+    REQUIRE(S.generator(0) == Transf<0, node_type>::identity(22));
+    REQUIRE(
+        S.generator(1)
+        == Transf<0, node_type>({0, 4,  2,  8, 1,  10, 6,  11, 3,  14, 5,
+                                 7, 12, 13, 9, 15, 18, 21, 16, 20, 19, 17}));
+    REQUIRE(
+        S.generator(2)
+        == Transf<0, node_type>({1,  0,  2,  3,  4,  5,  8,  9,  6,  7,  15,
+                                 17, 18, 19, 21, 10, 16, 11, 12, 13, 20, 14}));
+    REQUIRE(S.generator(3)
+            == Transf<0, node_type>({0, 5,  2, 9,  10, 1,  12, 7,  14, 3, 4, 11,
+                                     6, 13, 8, 15, 17, 16, 21, 20, 19, 18}));
+    REQUIRE(S.generator(4)
+            == Transf<0, node_type>({2,  6,  2,  6,  6, 12, 6, 13, 6,  12, 12,
+                                     13, 12, 13, 12, 2, 12, 6, 12, 13, 13, 6}));
+    REQUIRE(
+        S.generator(5)
+        == Transf<0, node_type>({3,  3,  2,  3,  2,  2,  3,  3,  3,  3,  16,
+                                 16, 16, 20, 20, 16, 16, 16, 16, 20, 20, 20}));
+    REQUIRE(
+        S.generator(6)
+        == Transf<0, node_type>({2,  7,  2,  7,  11, 7,  13, 7, 11, 7,  11,
+                                 11, 13, 13, 11, 2,  11, 11, 7, 13, 13, 7}));
 
+    p.contains_empty_word(false);  // FIXME shouldn't be required
     Sims1_ C(congruence_kind::right, p);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(105)
