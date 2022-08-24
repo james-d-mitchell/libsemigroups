@@ -1421,9 +1421,10 @@ namespace libsemigroups {
                           "[quick][sims1]") {
     // This is an example of a semigroup with a strictly cyclic faithful
     // right representation.
-    size_t const n = 5;
-    auto         p = make<Presentation<word_type>>(RectangularBand(1, n));
-    auto         d = MinimalRepOrc(p).target_size(n).digraph();
+    auto         rg = ReportGuard(false);
+    size_t const n  = 5;
+    auto         p  = make<Presentation<word_type>>(RectangularBand(1, n));
+    auto         d  = MinimalRepOrc(p).target_size(n).digraph();
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == n);

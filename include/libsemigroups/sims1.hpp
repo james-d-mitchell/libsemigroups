@@ -615,7 +615,7 @@ namespace libsemigroups {
     }
 
     RepOrc& max_nodes(size_t val) {
-      _max = (_presentation.contains_empty_word() ? val : val + 1);
+      _max = val;
       return *this;
     }
 
@@ -635,8 +635,7 @@ namespace libsemigroups {
       using node_type    = typename digraph_type::node_type;
 
       auto hook = [&](digraph_type const& x) {
-        if (x.number_of_active_nodes() >= _min
-            && x.number_of_active_nodes() <= _max) {
+        if (x.number_of_active_nodes() >= _min) {
           // TODO(Sims1) the <= _max shouldn't be necessary
           auto first = (_presentation.contains_empty_word() ? 0 : 1);
           auto S     = make<FroidurePin<Transf<0, node_type>>>(
@@ -674,8 +673,8 @@ namespace libsemigroups {
   class MinimalRepOrc {
    private:
     size_t _num_threads;
-    // TODO(later): we were using a reference to the presentation here, but
-    // then the non-word_type Presentation ctor below doesn't work.
+    // We require a copy of the presentation, rather than a reference otherwise
+    // the non-word_type Presentation ctor below doesn't work.
     Presentation<word_type> _presentation;
     size_t                  _size;
 
@@ -701,6 +700,20 @@ namespace libsemigroups {
       return *this;
     }
 
+    // An alternative to the approach used below would be to do a sort of
+    // binary search for a minimal representation. It seems that in most
+    // examples that I've tried, this actually finds the minimal rep close to
+    // the start of the search. The binary search approach would only really be
+    // useful if the rep found at the start of the search was much larger than
+    // the minimal one, and that the minimal one would not be found until late
+    // in the search through all the reps with [1, best rep so far). It seems
+    // that in most examples, binary search will involve checking many of the
+    // same graphs repeatedly, i.e. if we check [1, size = 1000) find a rep on
+    // 57 points, then check [1, 57 / 2) find nothing, then check [57/2, 57)
+    // and find nothing, then the search through [57/2, 57) actually iterates
+    // through all the digraphs with [1, 57 / 2) again (just doesn't construct
+    // a FroidurePin object for these). So, it seems to be best to just search
+    // through the digraphs with [1, 57) nodes once.
     template <typename T = uint32_t>
     ActionDigraph<T> digraph() {
       auto cr = RepOrc(_presentation).number_of_threads(_num_threads);
@@ -737,48 +750,6 @@ namespace libsemigroups {
       return best;
     }
   };
-
-  // The following is an alternative implementation that does a sort of
-  // binary search, this might be useful if there are examples where the
-  // minimal degree representation is much smaller than the initial
-  // representation found.
-  /*template <typename T, typename W>
-  ActionDigraph<T> minimal_representation(Presentation<W> const& p,
-                                          size_t                 size) {
-    auto             best = representation<T>(p, 1, size, size);
-    ActionDigraph<T> next;
-    size_t           hi = best.number_of_nodes(
-
-    if (hi == 0) {
-      // No faithful representation on up to <size> points
-      return best;
-    }
-
-    size_t lo = representation<T>(p, 1, 1, size).number_of_nodes();
-
-    // TODO handle the case when there is a 1 degree rep
-    if (lo == 0) {
-      lo = 1;
-    }
-
-    auto mid = (hi + lo) / 2;
-    mid      = (mid == 1 ? 2 : mid);
-    std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
-              << std::endl;
-    while (lo != mid) {
-      next = std::move(representation<T>(p, lo + 1, mid, size));
-      if (next.number_of_nodes() == 0) {
-        lo = mid;
-      } else if (next.number_of_nodes() < hi) {
-        hi   = next.number_of_nodes();
-        best = std::move(next);
-      }
-      mid = (hi + lo) / 2;
-      std::cout << "hi = " << hi << ", lo = " << lo << ", mid = " << mid
-                << std::endl;
-    }
-    return best;
-  }*/
 
 }  // namespace libsemigroups
 
