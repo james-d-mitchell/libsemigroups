@@ -516,7 +516,6 @@ namespace libsemigroups {
     }
 
    public:
-    // TODO (Sims1) by value, maybe not a good idea?
     void push(PendingDef pd) {
       std::lock_guard<std::mutex> lock(_mutex);
       _pending.push_back(std::move(pd));
@@ -613,30 +612,16 @@ namespace libsemigroups {
     }
 
     bool pop_from_other_thread_queue(PendingDef &pd, unsigned my_index) {
-      // report_queue_sizes("BEFORE: ");
-
       for (size_t i = 0; i < _theives.size() - 1; ++i) {
         unsigned const index = (my_index + i + 1) % _theives.size();
-        // TODO(Sims1) could always do something different here, like find
-        // the largest queue and steal from that.
+        // Could always do something different here, like find
+        // the largest queue and steal from that? I tried this and it didn't
+        // seem to be faster.
         if (_theives[index]->try_steal(*_theives[my_index])) {
-          // REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index,
-          // index)); report_queue_sizes("AFTER: ");
           return pop_from_local_queue(pd, my_index);
         }
       }
       return false;
-    }
-
-    void report_queue_sizes(std::string prefix) const {
-      if (report::should_report()) {
-        std::string msg = prefix + "Queues have sizes ";
-        for (auto const &q : _theives) {
-          msg += FORMAT("{}, ", q->size());
-        }
-        msg += "\n";
-        REPORT_DEFAULT(msg);
-      }
     }
 
    public:
@@ -645,9 +630,13 @@ namespace libsemigroups {
         Presentation<word_type> const &f,
         size_type                      n,
         size_type                      num_threads)
-        : _done(false),  // TODO init other data members
+        : _done(false),
+          _theives(),
+          _threads(),
           _total_pending(num_threads, 0),
-          _num_threads(num_threads) {
+          _num_threads(num_threads),
+          _result(),
+          _mtx() {
       for (size_t i = 0; i < _num_threads; ++i) {
         // TODO(Sims1) use make_unique
         _theives.push_back(
