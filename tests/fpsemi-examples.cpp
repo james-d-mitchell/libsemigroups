@@ -487,15 +487,15 @@ namespace libsemigroups {
     word_type const e = {0};
     word_type const a = {1};
     word_type const b = {2};
-    word_type const B = {3};
 
     std::vector<relation_type> result;
-    add_group_relations({e, a, b, B}, e, {e, a, B, b}, result);
+    add_monoid_relations({e, a, b}, e, result);
+    result.emplace_back(a ^ 2, e);
     result.emplace_back(b ^ n, e);
     result.emplace_back((a * b) ^ (n - 1), e);
-    result.emplace_back((a * B * a * b) ^ 3, e);
+    result.emplace_back((a * (b ^ (n - 1)) * a * b) ^ 3, e);
     for (size_t j = 2; j <= n - 2; ++j) {
-      result.emplace_back((a * (B ^ j) * a * (b ^ j)) ^ 2, e);
+      result.emplace_back((a * ((b ^ (n - 1)) ^ j) * a * (b ^ j)) ^ 2, e);
     }
     return result;
   }
@@ -929,6 +929,36 @@ namespace libsemigroups {
       }
     }
 
+    return result;
+  }
+
+  // From Proposition 1.7 in https://bit.ly/3R5ZpKW
+  std::vector<relation_type> FullTransformationMonoidAizenstat(size_t n) {
+    if (n < 4) {
+      LIBSEMIGROUPS_EXCEPTION(
+          "the 1st argument (size_t) must be at least 4, found %llu",
+          uint64_t(n));
+    }
+    auto result = SymmetricGroup1(n);
+
+    word_type const a = {1};
+    word_type const b = {2};
+    word_type const t = {3};
+
+    result.emplace_back(a * t, t);
+    result.emplace_back(
+        (b ^ (n - 2)) * a * (b ^ 2) * t * (b ^ (n - 2)) * a * (b ^ 2), t);
+    result.emplace_back(b * a * (b ^ (n - 1)) * a * b * t * (b ^ (n - 1)) * a
+                            * b * a * (b ^ (n - 1)),
+                        t);
+    result.emplace_back((t * b * a * (b ^ (n - 1))) ^ 2, t);
+    result.emplace_back(((b ^ (n - 1)) * a * b * t) ^ 2,
+                        t * (b ^ (n - 1)) * a * b * t);
+
+    result.emplace_back((t * (b ^ (n - 1)) * a * b) ^ 2,
+                        t * (b ^ (n - 1)) * a * b * t);
+    result.emplace_back((t * b * a * (b ^ (n - 2)) * a * b) ^ 2,
+                        (b * a * (b ^ (n - 2)) * a * b * t) ^ 2);
     return result;
   }
 

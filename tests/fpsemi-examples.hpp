@@ -51,6 +51,7 @@ namespace libsemigroups {
   std::vector<relation_type> TemperleyLieb(size_t n);
   std::vector<relation_type> Brauer(size_t n);
   std::vector<relation_type> RectangularBand(size_t m, size_t n);
+  std::vector<relation_type> FullTransformationMonoidAizenstat(size_t n);
 
   template <typename T, typename F, typename... Args>
   void setup(T& tc, size_t num_gens, F func, Args... args) {
@@ -122,9 +123,9 @@ namespace libsemigroups {
     x.add_rule(std::string({a[1]}) + a[1] + a[1], id);
 
     for (size_t i = 2; i <= n - 2; ++i) {
-      x.add_rule(
-          std::string({a[i - 1]}) + a[i] + a[i - 1] + a[i] + a[i - 1] + a[i],
-          id);
+      x.add_rule(std::string({a[i - 1]}) + a[i] + a[i - 1] + a[i] + a[i - 1]
+                     + a[i],
+                 id);
     }
 
     for (size_t j = 1; j <= n - 4; ++j) {

@@ -42,12 +42,11 @@ namespace libsemigroups {
   }
 
   template <typename T>
-  sims1::Stats const &Sims1<T>::const_iterator::stats() const noexcept {
+  Sims1Stats const &Sims1<T>::const_iterator::stats() const noexcept {
     return _stats;
   }
 
-  std::ostream &operator<<(std::ostream &               os,
-                           typename sims1::Stats const &stats) {
+  std::ostream &operator<<(std::ostream &os, Sims1Stats const &stats) {
     detail::PrintTable pt;
     pt.header("Summary of statistics (Sims low-index algorithm)");
     pt("mean depth ", "%'14lf", stats.mean_depth);

@@ -17,25 +17,24 @@
 //
 
 #include <cstddef>        // for size_t
+#include <iostream>       // for cout
 #include <stdexcept>      // for number_of_congruencestime_error
 #include <unordered_set>  // for unordered_set
 #include <vector>         // for vector
 
-#include <iostream>
+#include "catch.hpp"            // for REQUIRE, REQUIRE_THROWS_AS, REQUI...
+#include "fpsemi-examples.hpp"  // for Brauer etc
+#include "test-main.hpp"        // for LIBSEMIGROUPS_TEST_CASE
 
-#include "catch.hpp"  // for REQUIRE, REQUIRE_THROWS_AS, REQUI...
-#include "fpsemi-examples.hpp"
-#include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
-
-#include "libsemigroups/bipart.hpp"
-#include "libsemigroups/digraph-helper.hpp"
-#include "libsemigroups/froidure-pin.hpp"
-#include "libsemigroups/knuth-bendix.hpp"  // for redundant_rule
-#include "libsemigroups/make-froidure-pin.hpp"
-#include "libsemigroups/make-present.hpp"
-#include "libsemigroups/sims1.hpp"  // for Sims1_
-#include "libsemigroups/transf.hpp"
-#include "libsemigroups/types.hpp"  // for word_type
+#include "libsemigroups/bipart.hpp"             // for Bipartition
+#include "libsemigroups/digraph-helper.hpp"     // for action_digraph_helper
+#include "libsemigroups/froidure-pin.hpp"       // for FroidurePin
+#include "libsemigroups/knuth-bendix.hpp"       // for redundant_rule
+#include "libsemigroups/make-froidure-pin.hpp"  // for make
+#include "libsemigroups/make-present.hpp"       // for make
+#include "libsemigroups/sims1.hpp"              // for Sims1
+#include "libsemigroups/transf.hpp"             // for Transf
+#include "libsemigroups/types.hpp"              // for word_type
 
 namespace libsemigroups {
 
@@ -390,7 +389,7 @@ namespace libsemigroups {
     REQUIRE(S.size() == 27);
     auto   p = make<Presentation<word_type>>(S);
     Sims1_ C(congruence_kind::left, p);
-    REQUIRE(C.number_of_congruences(28) == 120);
+    REQUIRE(C.number_of_congruences(27) == 120);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -402,29 +401,26 @@ namespace libsemigroups {
                               Transf<4>({1, 0, 2, 3}),
                               Transf<4>({0, 1, 0, 3})});
     REQUIRE(S.size() == 256);
+    // auto p
+    //    = make<Presentation<word_type>>(FullTransformationMonoidAizenstat(4));
+    // Using this presentation makes this perform terribly slowly.
+
     auto p = make<Presentation<word_type>>(S);
-    REQUIRE(p.rules.size() == 154);
+    // REQUIRE(p.rules.size() == 34);
 
-    REQUIRE(presentation::length(p) == 839);
-    presentation::remove_duplicate_rules(p);
-    REQUIRE(presentation::length(p) == 839);
-    presentation::reduce_complements(p);
-    REQUIRE(presentation::length(p) == 839);
-    presentation::sort_each_rule(p);
-    presentation::sort_rules(p);
-
-    do {
-      auto it = presentation::redundant_rule(p, std::chrono::milliseconds(10));
-      p.rules.erase(it, it + 2);
-    } while (presentation::length(p) > 700);
-    REQUIRE(p.rules.size() == 134);
-    REQUIRE(presentation::length(p) == 686);
+    // REQUIRE(presentation::length(p) == 182);
+    // presentation::remove_duplicate_rules(p);
+    // REQUIRE(presentation::length(p) == 182);
+    // presentation::reduce_complements(p);
+    // REQUIRE(presentation::length(p) == 182);
+    // presentation::sort_each_rule(p);
+    // presentation::sort_rules(p);
 
     Sims1_ C(congruence_kind::left, p);
-    REQUIRE(C.number_of_threads(4).number_of_congruences(256) == 120'121);
+    REQUIRE(C.number_of_threads(6).number_of_congruences(256) == 120'121);
     // Number generated using CREAM, but Sims1 counts more for right, and too
     // slow for left
-    // TODO(Sims1) try a non-machine generated presentation
+    // TODO(Sims1) try another non-machine generated presentation
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -505,6 +501,7 @@ namespace libsemigroups {
                           "013",
                           "SymmetricInverseMonoid(5)",
                           "[fail][low-index]") {
+    // This might take an extremely long time to terminate
     auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
     p.contains_empty_word(false);
@@ -517,7 +514,10 @@ namespace libsemigroups {
                            rel.second.cend());
     }
     Sims1_ C(congruence_kind::left, p);
-    REQUIRE(C.number_of_congruences(1'546) == 195'709);
+    REQUIRE(C.number_of_threads(6).number_of_congruences(1'546) == 0);
+    // On 24/08/2022 JDM ran this for approx. 16 hours overnight on his laptop,
+    // the last line of output was:
+    // #4: Sims1: found 63'968'999 congruences in 52156s!
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -783,19 +783,6 @@ namespace libsemigroups {
     presentation::sort_rules(p);
     REQUIRE(p.rules.size() == 86);
 
-    // auto fl = presentation::longest_common_subword(p);
-    // REQUIRE(word_type(fl.first, fl.second) == word_type({6, 5}));
-    // presentation::replace_subword(p, fl.first, fl.second);
-    // fl = presentation::longest_common_subword(p);
-    // REQUIRE(word_type(fl.first, fl.second) == word_type({5, 4}));
-    // presentation::replace_subword(p, fl.first, fl.second);
-    // fl = presentation::longest_common_subword(p);
-    // REQUIRE(word_type(fl.first, fl.second) == word_type({}));
-    // size_t last_len;
-    // do {
-    //   last_len = presentation::length(p);
-    //   presentation::remove_longest_redundant_rule(p);
-    // } while (presentation::length(p) != last_len);
     auto d = MinimalRepOrc(p).target_size(105).digraph();
     REQUIRE(!p.contains_empty_word());
     REQUIRE(d.number_of_nodes() == 22);
@@ -811,26 +798,29 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "036",
+                          "025",
                           "Brauer(5) (Kudryavtseva-Mazorchuk)",
                           "[fail][sims1]") {
-    // TODO(Sims1) not sure if this is just very long running or it actually
-    // fails, presumably the former because we obtained the number 47 at some
-    // point!
-    auto rg = ReportGuard(false);
+    // This is just very long running and I haven't managed to run it to
+    // completion.
+    auto rg = ReportGuard(true);
     auto p  = make<Presentation<word_type>>(Brauer(5));
     REQUIRE(presentation::length(p) == 295);
     presentation::remove_duplicate_rules(p);
-    REQUIRE(presentation::length(p) == 253);
+    presentation::reduce_complements(p);
+    presentation::sort_each_rule(p);
+    presentation::sort_rules(p);
+    REQUIRE(presentation::length(p) == 249);
 
-    auto d = MinimalRepOrc(p).target_size(945).digraph();
-    REQUIRE(d.number_of_nodes() == 47);
+    auto d = MinimalRepOrc(p).target_size(945).number_of_threads(8).digraph();
+    REQUIRE(d.number_of_nodes()
+            == 47);  // 47 probably copy pasted from elsewhere
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == 945);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "025",
+                          "026",
                           "UniformBlockBijection(4) (Fitzgerald)",
                           "[extreme][sims1]") {
     auto rg = ReportGuard(true);
@@ -847,7 +837,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "026",
+                          "027",
                           "from https://mathoverflow.net/questions/423541/",
                           "[quick][sims1]") {
     auto                      rg = ReportGuard(false);
@@ -863,7 +853,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "027",
+                          "028",
                           "from https://mathoverflow.net/questions/423541/",
                           "[quick][sims1]") {
     auto                      rg = ReportGuard(false);
@@ -878,7 +868,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "028",
+                          "029",
                           "Fibonacci(4, 6)",
                           "[quick][sims1][no-valgrind]") {
     auto rg = ReportGuard(false);
@@ -893,7 +883,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "029",
+                          "030",
                           "presentation with one free generator",
                           "[quick][sims1]") {
     auto                    rg = ReportGuard(false);
@@ -912,7 +902,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "030",
+                          "031",
                           "presentation with non-zero index generators",
                           "[quick][sims1]") {
     auto                    rg = ReportGuard(false);
@@ -932,7 +922,7 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "031",
+                          "032",
                           "presentation with empty word",
                           "[quick][sims1]") {
     auto                    rg = ReportGuard(false);
@@ -951,7 +941,7 @@ namespace libsemigroups {
     REQUIRE(S.number_of_congruences(5) == 14);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Sims1", "032", "constructors", "[quick][sims1]") {
+  LIBSEMIGROUPS_TEST_CASE("Sims1", "033", "constructors", "[quick][sims1]") {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.contains_empty_word(true);
@@ -985,7 +975,7 @@ namespace libsemigroups {
                       LibsemigroupsException);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Sims1", "033", "split_at", "[quick][sims1]") {
+  LIBSEMIGROUPS_TEST_CASE("Sims1", "034", "split_at", "[quick][sims1]") {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.contains_empty_word(true);
@@ -1017,7 +1007,7 @@ namespace libsemigroups {
   }
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-  LIBSEMIGROUPS_TEST_CASE("Sims1", "034", "stats", "[quick][sims1]") {
+  LIBSEMIGROUPS_TEST_CASE("Sims1", "035", "stats", "[quick][sims1]") {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.contains_empty_word(true);
@@ -1037,7 +1027,7 @@ namespace libsemigroups {
 #endif
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
-                          "035",
+                          "036",
                           "check iterator requirements",
                           "[quick][sims1]") {
     Presentation<word_type> p;
@@ -1063,23 +1053,30 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "037",
-                          "RectangularBand(10, 2)",
-                          "[fail][sims1]") {
-    // TODO(Sims1) maybe this does finish but it seems to take a long time, try
-    // running it again
-    auto rg = ReportGuard(false);
-    auto p  = make<Presentation<word_type>>(RectangularBand(10, 2));
+                          "RectangularBand(9, 2)",
+                          "[extreme][sims1]") {
+    auto rg = ReportGuard(true);
+    auto p  = make<Presentation<word_type>>(RectangularBand(9, 2));
     presentation::remove_duplicate_rules(p);
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
 
-    Sims1_ C(congruence_kind::right, p);
-
     REQUIRE(MinimalRepOrc(p)
-                .target_size(2)
+                .target_size(18)
+                .number_of_threads(std::thread::hardware_concurrency())
                 .digraph()
                 .number_of_nodes()
-            == 47);
+            == 0);
+    p.contains_empty_word(true);
+    auto d = MinimalRepOrc(p)
+                 .target_size(19)
+                 .number_of_threads(std::thread::hardware_concurrency())
+                 .digraph();
+    REQUIRE(d.number_of_nodes() == 11);
+    REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
+    auto S = make<FroidurePin<Transf<0, node_type>>>(d);
+    S.add_generator(S.generator(0).identity());
+    REQUIRE(S.size() == 19);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1188,10 +1185,7 @@ namespace libsemigroups {
                  .digraph();
     REQUIRE(d.number_of_nodes() == 22);
 
-    d = MinimalRepOrc(p)
-            .target_size(203)
-            .number_of_threads(4)
-            .digraph();
+    d = MinimalRepOrc(p).target_size(203).number_of_threads(4).digraph();
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == 203);
@@ -1216,20 +1210,21 @@ namespace libsemigroups {
                           "039",
                           "TemperleyLieb(n) - n = 3 .. 6, minimal rep",
                           "[standard][sims1]") {
-    auto rg = ReportGuard(false);
+    auto rg = ReportGuard(true);
 
     std::array<uint64_t, 11> const sizes
         = {0, 1, 2, 5, 14, 42, 132, 429, 1'430, 4'862, 16'796};
     std::array<uint64_t, 11> const min_degrees
-        = {0, 0, 2, 4, 7, 10, 20, 29, 0, 0, 0};
+        = {0, 0, 2, 4, 7, 10, 20, 29, 63, 91, 0};
+    // The values 63 and 91 are not verified
 
-    for (size_t n = 3; n < 7; ++n) {
+    for (size_t n = 9; n < 10; ++n) {
       auto p = make<Presentation<word_type>>(TemperleyLieb(n));
       // There are no relations containing the empty word so we just manually
       // add it.
       p.contains_empty_word(true);
       auto d = MinimalRepOrc(p)
-                   .number_of_threads(2)
+                   .number_of_threads(5)
                    .target_size(sizes[n])
                    .digraph();
       REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
@@ -1276,46 +1271,43 @@ namespace libsemigroups {
     auto rg = ReportGuard(true);
     auto p  = make<Presentation<word_type>>(RectangularBand(4, 4));
     p.contains_empty_word(true);
-    auto d = MinimalRepOrc(p)
-                 .number_of_threads(2)
-                 .target_size(17)
-                 .digraph();
+    auto d = MinimalRepOrc(p).number_of_threads(2).target_size(17).digraph();
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == 16);
     REQUIRE(d.number_of_nodes() == 7);
 
     p.contains_empty_word(false);
-    d = MinimalRepOrc(p)
-            .target_size(16)
-            .number_of_threads(2)
-            .digraph();
+    d = MinimalRepOrc(p).target_size(16).number_of_threads(2).digraph();
     REQUIRE(d.number_of_nodes() == 0);
   }
 
+  // unbuffer -p ./test_sims1 "[042]" | ag -v FroidurePin
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "042",
-                          "RectangularBand(m, n) - m = 2 .. 5, n = 2 .. 5",
+                          "RectangularBand(m, n) - m = 1 .. 5, n = 1 .. 5",
                           "[fail][sims1]") {
     // This doesn't fail it's just very extreme
     std::vector<std::array<size_t, 6>> results = {{0, 0, 0, 0, 0, 0},
-                                                  {0, 0, 0, 0, 0, 0},
-                                                  {0, 0, 4, 5, 5, 6},
-                                                  {0, 0, 5, 6, 6, 7},
-                                                  {0, 0, 6, 7, 7, 8},
-                                                  {0, 0, 7, 8, 8, 9}};
+                                                  {0, 2, 2, 3, 4, 5},
+                                                  {0, 3, 4, 5, 5, 6},
+                                                  {0, 4, 5, 6, 6, 7},
+                                                  {0, 5, 6, 7, 7, 8},
+                                                  {0, 6, 7, 8, 8, 9}};
 
-    auto rg = ReportGuard(false);
-    for (size_t m = 2; m <= 5; ++m) {
-      for (size_t n = 2; n <= 5; ++n) {
+    auto rg = ReportGuard(true);
+    for (size_t m = 1; m <= 5; ++m) {
+      for (size_t n = 1; n <= 5; ++n) {
         std::cout << std::string(72, '#') << "\n"
                   << "CASE m, n = " << m << ", " << n << "\n"
                   << std::string(72, '#') << std::endl;
 
         auto p = make<Presentation<word_type>>(RectangularBand(m, n));
         p.contains_empty_word(true);
-        auto d
-            = MinimalRepOrc(p).target_size(m * n + 1).digraph();
+        auto d = MinimalRepOrc(p)
+                     .target_size(m * n + 1)
+                     .number_of_threads(6)
+                     .digraph();
         REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
         auto S = make<FroidurePin<Transf<0, node_type>>>(d);
         REQUIRE(S.size() == m * n);
@@ -1510,6 +1502,41 @@ namespace libsemigroups {
     }
     REQUIRE(strictly_cyclic_count == 2);
     REQUIRE(non_strictly_cyclic_count == 1);
+  }
+
+  // Takes about 3 to 4 minutes
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "047",
+                          "RectangularBand(m, n) - m = 1 .. 5, n = 1 .. 5",
+                          "[fail][sims1]") {
+    // This doesn't fail it's just very extreme
+    std::vector<std::array<size_t, 7>> left
+        = {{0, 0, 0, 0, 0, 0},
+           {0, 0, 0, 0, 0, 0},
+           {0, 0, 6, 22, 94, 454, 2'430},
+           {0, 0, 30, 205, 1'555, 12'880},
+           {0, 0, 240, 4'065, 72'465, 1'353'390},
+           {0, 0, 2'756, 148'772, 8'174'244, 456'876'004}};
+
+    // Seems like the m,n-th entry of the table above is:
+    // {m, n} ->  Sum([0 .. n], k -> Bell(m)^k*Stirling2(n, k));
+
+    auto rg = ReportGuard(true);
+    for (size_t m = 2; m <= 5; ++m) {
+      for (size_t n = 2; n <= 6; ++n) {
+        std::cout << std::string(72, '#') << "\n"
+                  << "CASE m, n = " << m << ", " << n << "\n"
+                  << std::string(72, '#') << std::endl;
+
+        auto   p = make<Presentation<word_type>>(RectangularBand(m, n));
+        Sims1_ s(congruence_kind::left, p);
+        REQUIRE(s.number_of_threads(4).number_of_congruences(m * n)
+                == left[m][n]);
+        Sims1_ t(congruence_kind::right, p);
+        REQUIRE(t.number_of_threads(4).number_of_congruences(m * n)
+                == left[n][m]);
+      }
+    }
   }
 
 }  // namespace libsemigroups

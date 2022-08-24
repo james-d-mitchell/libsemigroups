@@ -36,43 +36,43 @@
 #ifndef LIBSEMIGROUPS_SIMS1_HPP_
 #define LIBSEMIGROUPS_SIMS1_HPP_
 
-#include <algorithm>  // for find_if
-#include <cstddef>    // for size_t
-#include <cstdint>    // for uint64_t
-#include <deque>
-#include <iterator>  // for forward_iterator_tag
-#include <thread>
+#include <atomic>       // for atomic_bool
+#include <cstddef>      // for size_t
+#include <cstdint>      // for uint64_t, uint32_t
+#include <iostream>     // for string, ostream
+#include <string>       // for operator+, basic_string
+#include <thread>       // for thread, yield
 #include <type_traits>  // for is_base_of
 #include <vector>       // for vector
 
-#include <iostream>
+#include <fmt/chrono.h>  // for group_digits
 
-#include <fmt/chrono.h>
-
-#include "config.hpp"             // for LIBSEMIGROUPS_ENABLE_STATS
-#include "digraph.hpp"            // for ActionDigraph
-#include "felsch-digraph.hpp"     // for FelschDigraph
-#include "make-froidure-pin.hpp"  // for make
-#include "make-present.hpp"       // for make
-#include "present.hpp"            // for Presentation
-#include "types.hpp"              // for word_type, congruence_kind
-
-#include "report.hpp"
+#include "config.hpp"          // for LIBSEMIGROUPS_ENABLE_STATS
+#include "constants.hpp"       // for UNDEFINED
+#include "debug.hpp"           // for LIBSEMIGROUPS_ASSERT
+#include "digraph.hpp"         // for ActionDigraph
+#include "exception.hpp"       // for LIBSEMIGROUPS_EXCEPTION
+#include "felsch-digraph.hpp"  // for FelschDigraph
+#include "froidure-pin.hpp"    // for FroidurePin
+#include "present.hpp"         // for Presentation, Presentati...
+#include "report.hpp"          // for REPORT_DEFAULT, Reporter
+#include "timer.hpp"           // for Timer
+#include "transf.hpp"          // for Transf
+#include "types.hpp"           // for word_type, congruence_kind
 
 namespace libsemigroups {
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-  // TODO(Sims1) move this to tpp file
-  namespace sims1 {
-    struct Stats {
-      double   mean_depth     = 0;
-      uint64_t max_depth      = 0;
-      uint64_t max_pending    = 0;
-      uint64_t num_nodes      = 0;
-      uint64_t num_good_nodes = 0;
-      uint64_t depth          = 0;
-    };
-  }  // namespace sims1
+  // This isn't inside Sims1 because it doesn't depend on the template args at
+  // all.
+  struct Sims1Stats {
+    double   mean_depth     = 0;
+    uint64_t max_depth      = 0;
+    uint64_t max_pending    = 0;
+    uint64_t num_nodes      = 0;
+    uint64_t num_good_nodes = 0;
+    uint64_t depth          = 0;
+  };
 #endif
 
   namespace detail {
@@ -461,11 +461,11 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
 
      public:
-      sims1::Stats const& stats() const noexcept;
+      Sims1Stats const& stats() const noexcept;
 
      private:
-      sims1::Stats _stats;
-      void         stats_update(size_type);
+      Sims1Stats _stats;
+      void       stats_update(size_type);
 
 #endif
 
@@ -954,8 +954,7 @@ namespace libsemigroups {
   };
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-  std::ostream& operator<<(std::ostream&                os,
-                           typename sims1::Stats const& stats);
+  std::ostream& operator<<(std::ostream& os, Sims1Stats const& stats);
 #endif  // LIBSEMIGROUPS_ENABLE_STATS
 
   // TODO(Sims1) delete
@@ -1120,8 +1119,7 @@ namespace libsemigroups {
 
     template <typename T = uint32_t>
     ActionDigraph<T> digraph() {
-      auto cr = RepOrc(_presentation)
-                    .number_of_threads(_num_threads);
+      auto cr = RepOrc(_presentation).number_of_threads(_num_threads);
 
       size_t hi = (_presentation.contains_empty_word() ? _size : _size + 1);
       REPORT_DEFAULT(

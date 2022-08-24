@@ -2169,6 +2169,20 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("ToddCoxeter",
+                            "114",
+                            "FullTransfoFullTransformationMonoid(4))",
+                            "[todd-coxeter][quick]") {
+      auto        rg = ReportGuard(true);
+      ToddCoxeter tc(twosided);
+      tc.set_number_of_generators(4);
+      for (auto const& w : FullTransformationMonoidAizenstat(5)) {
+        tc.add_pair(w.first, w.second);
+      }
+      REQUIRE(tc.number_of_classes() == 256);
+      std::cout << tc.stats_string();
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("ToddCoxeter",
                             "043",
                             "SymmetricGroup2",
                             "[todd-coxeter][quick][no-valgrind]") {
