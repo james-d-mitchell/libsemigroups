@@ -16,10 +16,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+// TODO(Sims1):
+// * iwyu
+// * code coverage
+// * doc
+
 #ifndef LIBSEMIGROUPS_MAKE_FROIDURE_PIN_HPP_
 #define LIBSEMIGROUPS_MAKE_FROIDURE_PIN_HPP_
 
 #include "digraph.hpp"
+#include "exception.hpp"
 #include "froidure-pin.hpp"
 #include "transf.hpp"
 #include "types.hpp"
@@ -34,6 +40,7 @@ namespace libsemigroups {
     return make<S>(ad, 0, ad.number_of_nodes());
   }
 
+  // TODO(Sims1): add test for when first = last
   template <typename S,
             typename T,
             typename
@@ -42,16 +49,41 @@ namespace libsemigroups {
     using node_type    = typename ActionDigraph<T>::node_type;
     using element_type = typename S::element_type;
 
+    if (first > last) {
+      LIBSEMIGROUPS_EXCEPTION("the 2nd argument (size_t) must be at most the"
+                              " 3rd argument (size_t), found %llu > %llu",
+                              first,
+                              last);
+    } else if (first > ad.number_of_nodes()) {
+      LIBSEMIGROUPS_EXCEPTION("the 2nd argument (size_t) must be at most the "
+                              "out-degree of the 1st argument (ActionDigraph), "
+                              "found %llu > %llu",
+                              first,
+                              ad.out_degree());
+    } else if (last > ad.number_of_nodes()) {
+      LIBSEMIGROUPS_EXCEPTION("the 3rd argument (size_t) must be at most the "
+                              "out-degree of the 1st argument (ActionDigraph), "
+                              "found %llu > %llu",
+                              last,
+                              ad.out_degree());
+    }
+
     LIBSEMIGROUPS_ASSERT(ad.out_degree() > 0);
     S            result;
-    element_type x(last);
+    element_type x(last - first);
+    // Each label corresponds to a generator of S
     for (node_type lbl = 0; lbl < ad.out_degree(); ++lbl) {
-      for (size_t i = 0; i < first; ++i) {
-        x[i] = i;  // TODO(Sims1) don't do this, make the transfs act on [first,
-                   // last)
+      for (size_t n = first; n < last; ++n) {
+        x[n - first] = ad.neighbor(n, lbl) - first;
       }
-      for (size_t i = first; i < last; ++i) {
-        x[i] = ad.neighbor(i, lbl);
+      // The next loop is required because if element_type is a fixed degree
+      // type, such as Transf<5> for example, but first = last = 0, then the
+      // degree of x is still 5 not last - first = 0.
+      for (size_t n = last; n < x.degree(); ++n) {
+        x[n - first] = n - first;
+      }
+      for (size_t n = x.degree() - first; n < x.degree(); ++n) {
+        x[n] = n;
       }
       validate(x);
       result.add_generator(x);

@@ -870,7 +870,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "029",
                           "Fibonacci(4, 6)",
-                          "[quick][sims1][no-valgrind]") {
+                          "[standard][sims1][no-valgrind]") {
     auto rg = ReportGuard(false);
     auto p  = make<Presentation<word_type>>(Fibonacci(4, 6));
     presentation::remove_duplicate_rules(p);
@@ -1437,6 +1437,8 @@ namespace libsemigroups {
       "[quick][sims1]") {
     // Found with Smallsemi, this example is minimal wrt size of the semigroup.
 
+    auto rg = ReportGuard(false);
+
     FroidurePin<Transf<6>> S({Transf<6>::make({0, 0, 2, 1, 4, 1}),
                               Transf<6>::make({0, 0, 2, 3, 4, 3}),
                               Transf<6>::make({0, 2, 2, 0, 4, 4})});
@@ -1489,9 +1491,9 @@ namespace libsemigroups {
         if (action_digraph_helper::is_strictly_cyclic(result)) {
           strictly_cyclic_count++;
         } else {
-          REQUIRE(W.generator(0) == Transf<0, node_type>({0, 4, 1, 3, 4, 5}));
-          REQUIRE(W.generator(1) == Transf<0, node_type>({0, 4, 2, 3, 4, 5}));
-          REQUIRE(W.generator(2) == Transf<0, node_type>({0, 5, 4, 3, 4, 5}));
+          REQUIRE(W.generator(0) == Transf<0, node_type>({3, 0, 2, 3, 4}));
+          REQUIRE(W.generator(1) == Transf<0, node_type>({3, 1, 2, 3, 4}));
+          REQUIRE(W.generator(2) == Transf<0, node_type>({4, 3, 2, 3, 4}));
           REQUIRE(
               result
               == action_digraph_helper::make<uint32_t>(

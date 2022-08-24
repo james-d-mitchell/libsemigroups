@@ -88,7 +88,7 @@ namespace libsemigroups {
           detail::to_string(p.alphabet()).c_str(),
           detail::to_string(e.alphabet()).c_str());
     }
-    p.validate();  // TODO Test for this
+    p.validate();  // TODO(Sims1) Test for this
 
     // We call make in the next two lines to ensure that the generators of the
     // presentation are {0, ..., n - 1} where n is the size of the alphabet.
@@ -447,7 +447,7 @@ namespace libsemigroups {
 
 #ifdef LIBSEMIGROUPS_DEBUG
         for (node_type next = 0; next < current.source; ++next) {
-          for (letter_type a = 0; a < num_gens; ++a) {
+          for (letter_type a = 0; a < this->_felsch_graph.out_degree(); ++a) {
             LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(next, a)
                                  != UNDEFINED);
           }
