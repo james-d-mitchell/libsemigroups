@@ -339,8 +339,6 @@ namespace libsemigroups {
       Presentation<word_type>             _final;
       size_type                           _max_num_classes;
       size_type                           _min_target_node;
-      size_type _num_gens;  // TODO(Sims1) This can be removed it's just
-                            // _felsch_graph.out_degree()
 
      public:
       //! No doc
@@ -392,7 +390,6 @@ namespace libsemigroups {
         std::swap(_felsch_graph, that._felsch_graph);
         std::swap(_max_num_classes, that._max_num_classes);
         std::swap(_min_target_node, that._min_target_node);
-        std::swap(_num_gens, that._num_gens);
       }
 
       // TODO(Sims1) remove this just use the copy/move assignment operator
@@ -671,7 +668,7 @@ namespace libsemigroups {
 
 #ifdef LIBSEMIGROUPS_DEBUG
           for (node_type next = 0; next < current.source; ++next) {
-            for (letter_type a = 0; a < this->_num_gens; ++a) {
+            for (letter_type a = 0; a < num_gens; ++a) {
               LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(next, a)
                                    != UNDEFINED);
             }
@@ -683,10 +680,11 @@ namespace libsemigroups {
           }
 
 #endif
-          size_type start = this->_felsch_graph.number_of_edges();
+          size_type const start = this->_felsch_graph.number_of_edges();
 
           this->_felsch_graph.def_edge(
               current.source, current.generator, current.target);
+
           if (!this->_felsch_graph.process_definitions(start)) {
             return false;
           }
@@ -700,11 +698,13 @@ namespace libsemigroups {
           }
         }
 
-        letter_type     a = current.generator + 1;
-        size_type const M = this->_felsch_graph.number_of_active_nodes();
-        size_type const N = this->_felsch_graph.number_of_edges();
+        letter_type     a        = current.generator + 1;
+        size_type const M        = this->_felsch_graph.number_of_active_nodes();
+        size_type const N        = this->_felsch_graph.number_of_edges();
+        size_type const num_gens = this->_felsch_graph.out_degree();
+
         for (node_type next = current.source; next < M; ++next) {
-          for (; a < this->_num_gens; ++a) {
+          for (; a < num_gens; ++a) {
             if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
               std::lock_guard<std::mutex> lock(_mutex);
               if (M < this->_max_num_classes) {
@@ -721,7 +721,7 @@ namespace libsemigroups {
           a = 0;
         }
 
-        LIBSEMIGROUPS_ASSERT(N == M * this->_num_gens);
+        LIBSEMIGROUPS_ASSERT(N == M * num_gens);
 
         // No undefined edges, word graph is complete
         for (auto it = this->_final.rules.cbegin();

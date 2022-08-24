@@ -248,8 +248,7 @@ namespace libsemigroups {
         _felsch_graph(p, n),
         _final(final_),
         _max_num_classes(p.contains_empty_word() ? n : n + 1),
-        _min_target_node(p.contains_empty_word() ? 0 : 1),
-        _num_gens(p.alphabet().size()) {
+        _min_target_node(p.contains_empty_word() ? 0 : 1) {
     _felsch_graph.number_of_active_nodes(n == 0 ? 0 : 1);
     // = 0 indicates iterator is done
   }
@@ -324,9 +323,10 @@ namespace libsemigroups {
           letter_type     a = current.generator + 1;
           size_type const M = this->_felsch_graph.number_of_active_nodes();
           size_type const N = this->_felsch_graph.number_of_edges();
+          size_type const num_gens = this->_felsch_graph.out_degree();
 
           for (node_type next = current.source; next < M; ++next) {
-            for (; a < this->_num_gens; ++a) {
+            for (; a < num_gens; ++a) {
               if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
                 if (M < this->_max_num_classes) {
                   _pending.emplace_back(next, a, M, N, M + 1);
@@ -352,7 +352,7 @@ namespace libsemigroups {
               }
             }
           }
-          LIBSEMIGROUPS_ASSERT(N == M * this->_num_gens);
+          LIBSEMIGROUPS_ASSERT(N == M * num_gens);
           return *this;
         }
       }
