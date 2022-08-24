@@ -119,7 +119,7 @@ namespace libsemigroups {
 
     struct Settings {
       size_type _num_threads     = 1;
-      size_type _report_interval = 1'000;
+      size_type _report_interval = 10;
     } _settings;
 
    public:
