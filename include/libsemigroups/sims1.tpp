@@ -102,6 +102,31 @@ namespace libsemigroups {
   }
 
   template <typename T>
+  void Sims1<T>::split_at(size_type val) {
+    if (val > _presentation.rules.size() / 2 + _final.rules.size() / 2) {
+      LIBSEMIGROUPS_EXCEPTION(
+          "expected a value in the range [0, %llu), found %llu",
+          uint64_t(_presentation.rules.size() / 2 + _final.rules.size() / 2),
+          uint64_t(val));
+    }
+
+    val *= 2;
+    if (val < _presentation.rules.size()) {
+      _final.rules.insert(_final.rules.begin(),
+                          _presentation.rules.begin() + val,
+                          _presentation.rules.end());
+      _presentation.rules.erase(_presentation.rules.begin() + val,
+                                _presentation.rules.end());
+    } else {
+      val -= _presentation.rules.size();
+      _presentation.rules.insert(_presentation.rules.end(),
+                                 _final.rules.begin(),
+                                 _final.rules.begin() + val);
+      _final.rules.erase(_final.rules.begin(), _final.rules.begin() + val);
+    }
+  }
+
+  template <typename T>
   uint64_t Sims1<T>::number_of_congruences(size_type n) const {
     if (number_of_threads() == 1) {
       uint64_t result = 0;
@@ -209,8 +234,12 @@ namespace libsemigroups {
     }
   }
 
+  ///////////////////////////////////////////////////////////////////////////////
+  // IteratorAndThiefBase nested class
+  ///////////////////////////////////////////////////////////////////////////////
+
   template <typename T>
-  Sims1<T>::const_iterator_base::const_iterator_base(
+  Sims1<T>::IteratorAndThiefBase::IteratorAndThiefBase(
       Presentation<word_type> const &p,
       Presentation<word_type> const &extra,
       Presentation<word_type> const &final_,
@@ -224,6 +253,10 @@ namespace libsemigroups {
     _felsch_graph.number_of_active_nodes(n == 0 ? 0 : 1);
     // = 0 indicates iterator is done
   }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // const_iterator nested class
+  ///////////////////////////////////////////////////////////////////////////////
 
   template <typename T>
   typename Sims1<T>::const_iterator const &

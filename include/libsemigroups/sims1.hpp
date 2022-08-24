@@ -56,6 +56,7 @@
 #include "froidure-pin.hpp"    // for FroidurePin
 #include "present.hpp"         // for Presentation, Presentati...
 #include "report.hpp"          // for REPORT_DEFAULT, Reporter
+#include "stl.hpp"             // for JoinThreads
 #include "timer.hpp"           // for Timer
 #include "transf.hpp"          // for Transf
 #include "types.hpp"           // for word_type, congruence_kind
@@ -74,27 +75,6 @@ namespace libsemigroups {
     uint64_t depth          = 0;
   };
 #endif
-
-  namespace detail {
-    // From p, 275, Section 8 of C++ concurrency in action, 2nd edition, by
-    // Anthony Williams.
-    class JoinThreads {
-      std::vector<std::thread>& _threads;
-
-     public:
-      explicit JoinThreads(std::vector<std::thread>& threads)
-          : _threads(threads) {}
-
-      ~JoinThreads() {
-        for (size_t i = 0; i < _threads.size(); ++i) {
-          if (_threads[i].joinable()) {
-            _threads[i].join();
-          }
-        }
-      }
-    };
-
-  }  // namespace detail
 
   //! Defined in ``sims1.hpp``.
   //!
@@ -136,8 +116,6 @@ namespace libsemigroups {
     Presentation<word_type> _final;
     size_type               _num_threads;
     Presentation<word_type> _presentation;
-
-    // Reporting can be handled outside the class in any code using this
 
    public:
     //! Construct from \ref congruence_kind and Presentation.
@@ -232,12 +210,13 @@ namespace libsemigroups {
 
     ~Sims1();
 
+    // TODO(Sims1) doc
     size_type number_of_threads() const noexcept {
       return _num_threads;
     }
 
-    // TODO(Sims1): noexcept?
-    Sims1& number_of_threads(size_t val) {
+    // TODO(Sims1) doc
+    Sims1& number_of_threads(size_t val) noexcept {
       _num_threads = val;
       return *this;
     }
@@ -290,86 +269,55 @@ namespace libsemigroups {
       return _extra;
     }
 
-    //! Only apply certain relations when an otherwise compatible ActionDigraph
-    //! is found.
+    //! Only apply certain relations when an otherwise compatible
+    //! ActionDigraph is found.
     //!
     //! This function splits the relations in the underlying presentation into
-    //! two parts: those before the relation with index \p val and those after.
-    //! The order of the relations is the same as the order in the constructing
-    //! presentation. In some instances if the relations after index \p val are
-    //! "long" and those before are "short", then this can improve the
-    //! performance. It can also make the performance worse, and should be used
-    //! with care.
+    //! two parts: those before the relation with index \p val and those
+    //! after. The order of the relations is the same as the order in the
+    //! constructing presentation. In some instances if the relations after
+    //! index \p val are "long" and those before are "short", then this can
+    //! improve the performance. It can also make the performance worse, and
+    //! should be used with care.
     //!
     //! \param val the relation to split at
     //!
     //! \returns (None)
     //!
     //! \throws LibsemigroupsException if \p val is out of bounds.
-    // TODO some tests for this.
-    void split_at(size_type val) {
-      if (val > _presentation.rules.size() / 2 + _final.rules.size() / 2) {
-        LIBSEMIGROUPS_EXCEPTION(
-            "expected a value in the range [0, %llu), found %llu",
-            uint64_t(_presentation.rules.size() / 2 + _final.rules.size() / 2),
-            uint64_t(val));
-      }
+    // TODO(Sims1) some tests for this.
+    void split_at(size_type val);
 
-      val *= 2;
-      if (val < _presentation.rules.size()) {
-        _final.rules.insert(_final.rules.begin(),
-                            _presentation.rules.begin() + val,
-                            _presentation.rules.end());
-        _presentation.rules.erase(_presentation.rules.begin() + val,
-                                  _presentation.rules.end());
-      } else {
-        val -= _presentation.rules.size();
-        _presentation.rules.insert(_presentation.rules.end(),
-                                   _final.rules.begin(),
-                                   _final.rules.begin() + val);
-        _final.rules.erase(_final.rules.begin(), _final.rules.begin() + val);
-      }
-    }
+   private:
+    struct PendingDef {
+      PendingDef() = default;
 
-    struct const_iterator_base {
+      PendingDef(node_type   s,
+                 letter_type g,
+                 node_type   t,
+                 size_type   e,
+                 size_type   n) noexcept
+          : source(s), generator(g), target(t), num_edges(e), num_nodes(n) {}
+      node_type   source;
+      letter_type generator;
+      node_type   target;
+      size_type   num_edges;  // Number of edges in the graph when *this was
+                              // added to the stack
+      size_type num_nodes;    // Number of nodes in the graph after the
+                              // definition is made
+    };
+    // This class collects some common aspects of the const_iterator and Thief
+    // nested classes.
+    class IteratorAndThiefBase {
       friend class Den;
-      //! No doc
-      using size_type = typename std::vector<digraph_type>::size_type;
-      //! No doc
-      using difference_type =
-          typename std::vector<digraph_type>::difference_type;
-      //! No doc
-      using const_pointer = typename std::vector<digraph_type>::const_pointer;
-      //! No doc
-      using pointer = typename std::vector<digraph_type>::pointer;
-      //! No doc
+
+     public:
       using const_reference =
           typename std::vector<digraph_type>::const_reference;
-      //! No doc
-      using reference = typename std::vector<digraph_type>::reference;
-      //! No doc
-      using value_type = digraph_type;
-      //! No doc
-      using iterator_category = std::forward_iterator_tag;
 
-      struct PendingDef {
-        PendingDef() = default;
+      using const_pointer = typename std::vector<digraph_type>::const_pointer;
 
-        PendingDef(node_type   s,
-                   letter_type g,
-                   node_type   t,
-                   size_type   e,
-                   size_type   n) noexcept
-            : source(s), generator(g), target(t), num_edges(e), num_nodes(n) {}
-        node_type   source;
-        letter_type generator;
-        node_type   target;
-        size_type   num_edges;  // Number of edges in the graph when *this was
-                                // added to the stack
-        size_type num_nodes;    // Number of nodes in the graph after the
-                                // definition is made
-      };
-
+     protected:
       Presentation<word_type>             _extra;
       FelschDigraph<word_type, node_type> _felsch_graph;
       Presentation<word_type>             _final;
@@ -378,35 +326,37 @@ namespace libsemigroups {
       size_type _num_gens;  // TODO(Sims1) This can be removed it's just
                             // _felsch_graph.out_degree()
 
+     public:
       //! No doc
-      const_iterator_base(Presentation<word_type> const& p,
-                          Presentation<word_type> const& e,
-                          Presentation<word_type> const& f,
-                          size_type                      n);
+      IteratorAndThiefBase(Presentation<word_type> const& p,
+                           Presentation<word_type> const& e,
+                           Presentation<word_type> const& f,
+                           size_type                      n);
 
       // None of the constructors are noexcept because the corresponding
-      // constructors for std::vector aren't (until C++17).
-      //! No doc
-      const_iterator_base() = delete;
-      //! No doc
-      const_iterator_base(const_iterator_base const&) = default;
-      //! No doc
-      const_iterator_base(const_iterator_base&&) = default;
-      //! No doc
-      const_iterator_base& operator=(const_iterator_base const&) = default;
-      //! No doc
-      const_iterator_base& operator=(const_iterator_base&&) = default;
+      // constructors for Presentation aren't (until C++17).
 
       //! No doc
-      virtual ~const_iterator_base() = default;
+      IteratorAndThiefBase() = delete;
+      //! No doc
+      IteratorAndThiefBase(IteratorAndThiefBase const&) = default;
+      //! No doc
+      IteratorAndThiefBase(IteratorAndThiefBase&&) = default;
+      //! No doc
+      IteratorAndThiefBase& operator=(IteratorAndThiefBase const&) = default;
+      //! No doc
+      IteratorAndThiefBase& operator=(IteratorAndThiefBase&&) = default;
 
       //! No doc
-      bool operator==(const_iterator_base const& that) const noexcept {
+      virtual ~IteratorAndThiefBase() = default;
+
+      //! No doc
+      bool operator==(IteratorAndThiefBase const& that) const noexcept {
         return _felsch_graph == that._felsch_graph;
       }
 
       //! No doc
-      bool operator!=(const_iterator_base const& that) const noexcept {
+      bool operator!=(IteratorAndThiefBase const& that) const noexcept {
         return !(this->operator==(that));
       }
 
@@ -421,7 +371,7 @@ namespace libsemigroups {
       }
 
       //! No doc
-      void swap(const_iterator_base& that) noexcept {
+      void swap(IteratorAndThiefBase& that) noexcept {
         std::swap(_extra, that._extra);
         std::swap(_felsch_graph, that._felsch_graph);
         std::swap(_max_num_classes, that._max_num_classes);
@@ -429,44 +379,43 @@ namespace libsemigroups {
         std::swap(_num_gens, that._num_gens);
       }
 
-      void clone(const_iterator_base const& that) {
+      // TODO(Sims1) remove this just use the copy/move assignment operator
+      void clone(IteratorAndThiefBase const& that) {
         _felsch_graph = that._felsch_graph;
+      }
+
+      size_type min_target_node() const noexcept {
+        return _min_target_node;
       }
     };
 
+   public:
     //! No doc
-    class const_iterator : public const_iterator_base {
+    class const_iterator : public IteratorAndThiefBase {
      public:
       //! No doc
-      using size_type = typename const_iterator_base::size_type;
+      using const_pointer = typename IteratorAndThiefBase::const_pointer;
       //! No doc
-      using difference_type = typename const_iterator_base::difference_type;
+      using const_reference = typename IteratorAndThiefBase::const_reference;
+
       //! No doc
-      using const_pointer = typename const_iterator_base::const_pointer;
+      using size_type = typename std::vector<digraph_type>::size_type;
       //! No doc
-      using pointer = typename const_iterator_base::pointer;
+      using difference_type =
+          typename std::vector<digraph_type>::difference_type;
       //! No doc
-      using const_reference = typename const_iterator_base::const_reference;
+      using pointer = typename std::vector<digraph_type>::pointer;
       //! No doc
-      using reference = typename const_iterator_base::reference;
+      using reference = typename std::vector<digraph_type>::reference;
       //! No doc
-      using value_type = typename const_iterator_base::value_type;
+      using value_type = digraph_type;
       //! No doc
-      using iterator_category = typename const_iterator_base::iterator_category;
+      using iterator_category = std::forward_iterator_tag;
 
      private:
-      using PendingDef = typename const_iterator_base::PendingDef;
-
       std::vector<PendingDef> _pending;
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-
-     public:
-      Sims1Stats const& stats() const noexcept;
-
-     private:
       Sims1Stats _stats;
-      void       stats_update(size_type);
-
 #endif
 
      public:
@@ -474,7 +423,7 @@ namespace libsemigroups {
                      Presentation<word_type> const& e,
                      Presentation<word_type> const& f,
                      size_type                      n)
-          : const_iterator_base(p, e, f, n) {
+          : IteratorAndThiefBase(p, e, f, n) {
         if (this->_felsch_graph.number_of_active_nodes() == 0) {
           return;
         }
@@ -490,7 +439,7 @@ namespace libsemigroups {
         // pointed to here is empty).
       }
 
-      using const_iterator_base::const_iterator_base;
+      using IteratorAndThiefBase::IteratorAndThiefBase;
 
       ~const_iterator() = default;
 
@@ -508,12 +457,17 @@ namespace libsemigroups {
 
       //! No doc
       void swap(const_iterator& that) noexcept {
-        const_iterator_base::swap(that);
+        IteratorAndThiefBase::swap(that);
         std::swap(_pending, that._pending);
       }
-    };
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+      Sims1Stats const& stats() const noexcept;
 
-   public:
+     private:
+      void stats_update(size_type);
+#endif
+    };  // class const_iterator
+
     //! Returns a forward iterator pointing at the first congruence.
     //!
     //! Returns a forward iterator pointing to the ActionDigraph representing
@@ -532,8 +486,8 @@ namespace libsemigroups {
     //! presentation. If the input is a monoid presentation for a monoid
     //! \f$M\f$, then the ActionDigraph pointed to by an iterator of this type
     //! has precisely \p n nodes, and the right action of \f$M\f$ on the nodes
-    //! of the digraph is isomorphic to the action of \f$M\f$ on the classes of
-    //! a right congruence.
+    //! of the digraph is isomorphic to the action of \f$M\f$ on the classes
+    //! of a right congruence.
     //!
     //! If the input is a semigroup presentation for a semigroup $\fS\f$, then
     //! the ActionDigraph has \p n + 1 nodes, and the right action of \f$S\f$
@@ -555,16 +509,16 @@ namespace libsemigroups {
     //!
     //! \warning
     //! Copying iterators of this type is expensive.  As a consequence, prefix
-    //! incrementing \c ++it the returned  iterator \c it significantly cheaper
-    //! than postfix incrementing \c it++.
+    //! incrementing \c ++it the returned  iterator \c it significantly
+    //! cheaper than postfix incrementing \c it++.
     //!
     //! \sa
     //! \ref cend
 
     // If we don't include the extra node 0 when input is a semigroup
     // presentation, then we don't get the correct number of congruences in
-    // test case 036, returns 8 instead of 6, so should figure out what's going
-    // on there. TOOD(Sims1)
+    // test case 036, returns 8 instead of 6, so should figure out what's
+    // going on there. TOOD(Sims1)
     const_iterator cbegin(size_type n) const {
       return const_iterator(presentation(), _extra, _final, n);
     }
@@ -586,8 +540,8 @@ namespace libsemigroups {
     //!
     //! \warning
     //! Copying iterators of this type is expensive.  As a consequence, prefix
-    //! incrementing \c ++it the returned  iterator \c it significantly cheaper
-    //! than postfix incrementing \c it++.
+    //! incrementing \c ++it the returned  iterator \c it significantly
+    //! cheaper than postfix incrementing \c it++.
     //!
     //! \sa
     //! \ref cbegin
@@ -599,8 +553,8 @@ namespace libsemigroups {
     //! of classes.
     //!
     //! This function is synonymous with `std::distance(begin(), end())` and
-    //! exists only to provide some feedback on the progress of the computation
-    //! if it runs for more than 1 second.
+    //! exists only to provide some feedback on the progress of the
+    //! computation if it runs for more than 1 second.
     //!
     //! \param n the maximum number of congruence classes.
     //!
@@ -650,10 +604,8 @@ namespace libsemigroups {
     }
 
     // TODO(Sims1) move to cpp file
-    class Thief : public const_iterator_base {
+    class Thief : public IteratorAndThiefBase {
      private:
-      using PendingDef = typename const_iterator_base::PendingDef;
-
       std::vector<PendingDef> _pending;
       mutable std::mutex      _mutex;
       uint64_t&               _total_pending;
@@ -665,7 +617,7 @@ namespace libsemigroups {
             Presentation<word_type> const& f,
             size_type                      n,
             uint64_t&                      total_pending)
-          : const_iterator_base(p, e, f, n), _total_pending(total_pending) {}
+          : IteratorAndThiefBase(p, e, f, n), _total_pending(total_pending) {}
 
       // None of the constructors are noexcept because the corresponding
       // constructors for std::vector aren't (until C++17).
@@ -801,8 +753,9 @@ namespace libsemigroups {
       void clone(Thief& that) {
         std::lock_guard<std::mutex> lock(_mutex);
         LIBSEMIGROUPS_ASSERT(_pending.empty());
-        const_iterator_base::clone(that);
+        IteratorAndThiefBase::clone(that);
 
+        // Unzip that._pending into _pending and that._pending
         for (size_t i = 0; i < that._pending.size(); i += 2) {
           _pending.push_back(std::move(that._pending[i]));
           that._pending[i / 2] = std::move(that._pending[i + 1]);
@@ -832,8 +785,6 @@ namespace libsemigroups {
 
     class Den {
      private:
-      using PendingDef = typename const_iterator_base::PendingDef;
-
       std::atomic_bool                    _done;
       std::vector<std::unique_ptr<Thief>> _theives;
       std::vector<std::thread>            _threads;
@@ -862,11 +813,11 @@ namespace libsemigroups {
             }
           }
           std::this_thread::yield();
-          // It's possible to reach here before all of the work is done, because
-          // by coincidence there's nothing in the local queue and nothing in
-          // any other queue either, this sometimes leads to threads shutting
-          // down earlier than desirable. On the other hand, maybe this is a
-          // desirable.
+          // It's possible to reach here before all of the work is done,
+          // because by coincidence there's nothing in the local queue and
+          // nothing in any other queue either, this sometimes leads to
+          // threads shutting down earlier than desirable. On the other hand,
+          // maybe this is a desirable.
         }
       }
 
@@ -882,8 +833,8 @@ namespace libsemigroups {
           // TODO(Sims1) could always do something different here, like find
           // the largest queue and steal from that.
           if (_theives[index]->try_steal(*_theives[my_index])) {
-            // REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index, index));
-            // report_queue_sizes("AFTER: ");
+            // REPORT_DEFAULT(FORMAT("Q{} stole from Q{}\n", my_index,
+            // index)); report_queue_sizes("AFTER: ");
             return pop_from_local_queue(pd, my_index);
           }
         }
@@ -920,7 +871,7 @@ namespace libsemigroups {
           _total_pending[0]++;
           _theives.front()->push({0, 0, 1, 0, 2});
         }
-        if (_theives.front()->_min_target_node == 0) {
+        if (_theives.front()->min_target_node() == 0) {
           _total_pending[0]++;
           _theives.front()->push({0, 0, 0, 0, 1});
         }
@@ -929,7 +880,8 @@ namespace libsemigroups {
       ~Den() = default;
 
       digraph_type const& digraph() const {
-        // REPORT_DEFAULT(FORMAT("number of nodes created in each thread {}\n",
+        // REPORT_DEFAULT(FORMAT("number of nodes created in each thread
+        // {}\n",
         //                      detail::to_string(_total_pending)));
         REPORT_DEFAULT(FORMAT(
             "total number of nodes in search tree was {}\n",
