@@ -638,9 +638,8 @@ namespace libsemigroups {
           _result(),
           _mtx() {
       for (size_t i = 0; i < _num_threads; ++i) {
-        // TODO(Sims1) use make_unique
         _theives.push_back(
-            std::unique_ptr<Thief>(new Thief(p, e, f, n, _total_pending[i])));
+            std::make_unique<Thief>(p, e, f, n, _total_pending[i]));
       }
 
       if (n > 1) {
