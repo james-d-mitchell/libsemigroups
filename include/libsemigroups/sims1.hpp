@@ -514,9 +514,12 @@ namespace libsemigroups {
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
       Sims1Stats const& stats() const noexcept;
+#endif
 
      private:
       bool try_define(PendingDef const&);
+      bool try_pop(PendingDef&);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
       void stats_update(size_type);
 #endif
     };  // class const_iterator

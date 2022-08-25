@@ -328,12 +328,11 @@ namespace libsemigroups {
   template <typename T>
   typename Sims1<T>::const_iterator const &
   Sims1<T>::const_iterator::operator++() {
-    while (!_pending.empty()) {
-      auto const current = std::move(_pending.back());
+    PendingDef current;
+    while (try_pop(current)) {
 #if LIBSEMIGROUPS_ENABLE_STATS
       stats_update(current.num_edges);
 #endif
-      _pending.pop_back();
       if (try_define(current)) {
         return *this;
       }
@@ -342,6 +341,16 @@ namespace libsemigroups {
     // indicates that the iterator is done
     this->_felsch_graph.restrict(0);
     return *this;
+  }
+
+  template <typename T>
+  bool Sims1<T>::const_iterator::try_pop(PendingDef &pd) {
+    if (_pending.empty()) {
+      return false;
+    }
+    pd = std::move(_pending.back());
+    _pending.pop_back();
+    return true;
   }
 
   template <typename T>
@@ -579,7 +588,7 @@ namespace libsemigroups {
         return false;
       }
       // Copy the FelschDigraph and half pending from *this into q
-      q.steal_from(*this);
+      q.steal_from(*this);  // Must call steal_from on q, so that q is locked
       return true;
     }
   };
