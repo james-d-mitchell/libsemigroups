@@ -324,85 +324,87 @@ namespace libsemigroups {
   // Sims1
   ///////////////////////////////////////////////////////////////////////////////
 
-  // TODO(Sims1): remove code overlap with increment
+  // TODO(Sims1): remove code overlap with try_define
   template <typename T>
   typename Sims1<T>::const_iterator const &
   Sims1<T>::const_iterator::operator++() {
-    while (true) {
-    dive:
-      if (_pending.empty()) {
-        break;
-      }
+    while (!_pending.empty()) {
       auto const current = std::move(_pending.back());
 #if LIBSEMIGROUPS_ENABLE_STATS
       stats_update(current.num_edges);
 #endif
       _pending.pop_back();
-      LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
-      LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
-
-      // Backtrack if necessary
-      this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
-
-      // It might be that current.target is a new node, in which case
-      // _felsch_graph.number_of_active_nodes() includes this new node even
-      // before the edge current.source -> current.target is defined.
-      this->_felsch_graph.number_of_active_nodes(current.num_nodes);
-
-      LIBSEMIGROUPS_ASSERT(
-          this->_felsch_graph.unsafe_neighbor(current.source, current.generator)
-          == UNDEFINED);
-      {
-        size_type start = this->_felsch_graph.number_of_edges();
-
-        this->_felsch_graph.def_edge(
-            current.source, current.generator, current.target);
-
-        auto first = this->_extra.rules.cbegin();
-        auto last  = this->_extra.rules.cend();
-        if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)) {
-          goto dive;
-        }
-
-        if (this->_felsch_graph.process_definitions(start)) {
-          letter_type     a = current.generator + 1;
-          size_type const M = this->_felsch_graph.number_of_active_nodes();
-          size_type const N = this->_felsch_graph.number_of_edges();
-          size_type const num_gens = this->_felsch_graph.out_degree();
-
-          for (node_type next = current.source; next < M; ++next) {
-            for (; a < num_gens; ++a) {
-              if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                if (M < this->_max_num_classes) {
-                  _pending.emplace_back(next, a, M, N, M + 1);
-                }
-                for (node_type b = M; b-- > this->_min_target_node;) {
-                  _pending.emplace_back(next, a, b, N, M);
-                }
-                goto dive;
-              }
-            }
-            a = 0;
-          }
-          // No undefined edges, word graph is complete
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-          _stats.num_good_nodes += this->_felsch_graph.number_of_active_nodes();
-#endif
-          first = this->_final.rules.cbegin();
-          last  = this->_final.rules.cend();
-          if (!felsch_digraph::compatible(
-                  this->_felsch_graph, 0, M, first, last)) {
-            goto dive;
-          }
-          LIBSEMIGROUPS_ASSERT(N == M * num_gens);
-          return *this;
-        }
+      if (try_define(current)) {
+        return *this;
       }
     }
     this->_felsch_graph.number_of_active_nodes(0);
     // indicates that the iterator is done
     this->_felsch_graph.restrict(0);
     return *this;
+  }
+
+  template <typename T>
+  bool Sims1<T>::const_iterator::try_define(PendingDef const &current) {
+    LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
+    LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
+
+    // Backtrack if necessary
+    this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
+
+    // It might be that current.target is a new node, in which case
+    // _felsch_graph.number_of_active_nodes() includes this new node even
+    // before the edge current.source -> current.target is defined.
+    this->_felsch_graph.number_of_active_nodes(current.num_nodes);
+
+    LIBSEMIGROUPS_ASSERT(
+        this->_felsch_graph.unsafe_neighbor(current.source, current.generator)
+        == UNDEFINED);
+    size_type start = this->_felsch_graph.number_of_edges();
+
+    this->_felsch_graph.def_edge(
+        current.source, current.generator, current.target);
+
+    auto first = this->_extra.rules.cbegin();
+    auto last  = this->_extra.rules.cend();
+    if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)) {
+      return false;
+    }
+
+    if (!this->_felsch_graph.process_definitions(start)) {
+      return false;
+    }
+
+    letter_type     a        = current.generator + 1;
+    size_type const M        = this->_felsch_graph.number_of_active_nodes();
+    size_type const N        = this->_felsch_graph.number_of_edges();
+    size_type const num_gens = this->_felsch_graph.out_degree();
+
+    for (node_type next = current.source; next < M; ++next) {
+      for (; a < num_gens; ++a) {
+        if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
+          if (M < this->_max_num_classes) {
+            _pending.emplace_back(next, a, M, N, M + 1);
+          }
+          for (node_type b = M; b-- > this->_min_target_node;) {
+            _pending.emplace_back(next, a, b, N, M);
+          }
+          return false;
+        }
+      }
+      a = 0;
+    }
+    // No undefined edges, word graph is complete
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    _stats.num_good_nodes += this->_felsch_graph.number_of_active_nodes();
+#endif
+    first = this->_final.rules.cbegin();
+    last  = this->_final.rules.cend();
+    if (!felsch_digraph::compatible(this->_felsch_graph, 0, M, first, last)) {
+      return false;
+    }
+    LIBSEMIGROUPS_ASSERT(N == M * num_gens);
+    return true;
   }
 
   template <typename T>
@@ -461,7 +463,7 @@ namespace libsemigroups {
 
     // prefix
     //! No doc
-    bool increment(PendingDef const &current) {
+    bool try_define(PendingDef const &current) {
       LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
       LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
 
@@ -615,7 +617,7 @@ namespace libsemigroups {
         while ((pop_from_local_queue(pd, my_index)
                 || pop_from_other_thread_queue(pd, my_index))
                && !_done) {
-          if (_theives[my_index]->increment(pd)) {
+          if (_theives[my_index]->try_define(pd)) {
             if (hook(**_theives[my_index])) {
               // hook returns true to indicate that we should stop early
               std::lock_guard<std::mutex> lock(_mtx);

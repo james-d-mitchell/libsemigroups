@@ -516,6 +516,7 @@ namespace libsemigroups {
       Sims1Stats const& stats() const noexcept;
 
      private:
+      bool try_define(PendingDef const&);
       void stats_update(size_type);
 #endif
     };  // class const_iterator
