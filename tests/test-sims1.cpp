@@ -355,7 +355,7 @@ namespace libsemigroups {
       n++;
     }
     REQUIRE(n == 135);
-#ifdef LIBSEMIGgROUPS_ENABLE_STATS
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
     std::ostringstream oss;
     oss << it.stats();
 #endif
@@ -724,11 +724,20 @@ namespace libsemigroups {
     presentation::sort_rules(p);
     REQUIRE(p.rules.size() == 252);
 
-    Sims1_ C(congruence_kind::right, p);
-    C.split_at(212 / 2);
-    REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
-                .number_of_congruences(81)
-            == 601'265);
+    p.contains_empty_word(true);
+    auto d = MinimalRepOrc(p)
+                 .target_size(82)
+                 .number_of_threads(std::thread::hardware_concurrency())
+                 .split_at(212 / 2)
+                 .report_interval(2'000)
+                 .digraph();
+    REQUIRE(d.number_of_nodes() == 18);
+
+    // Sims1_ C(congruence_kind::right, p);
+    // C.split_at(212 / 2);
+    // REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
+    //            .number_of_congruences(81)
+    //        == 601'265);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",

@@ -70,12 +70,13 @@ namespace libsemigroups {
   Sims1<T>::Sims1(congruence_kind                ck,
                   Presentation<word_type> const &p,
                   Presentation<word_type> const &e)
-      : Sims1(ck, p, e, Sims1Settings()) {}
+      : Sims1(ck, p, e, Sims1Settings<Sims1<T>>()) {}
 
   template <typename T>
+  template <typename S>
   Sims1<T>::Sims1(congruence_kind                ck,
                   Presentation<word_type> const &p,
-                  Sims1Settings const &          s)
+                  Sims1Settings<S> const &       s)
       : Sims1(ck, p, Presentation<word_type>(), s) {}
 
   template <typename T>
@@ -83,11 +84,12 @@ namespace libsemigroups {
       : Sims1(ck, p, Presentation<word_type>()) {}
 
   template <typename T>
+  template <typename S>
   Sims1<T>::Sims1(congruence_kind                ck,
                   Presentation<word_type> const &p,
                   Presentation<word_type> const &e,
-                  Sims1Settings const &          s)
-      : _extra(), _final(), _presentation(), _settings(s) {
+                  Sims1Settings<S> const &       s)
+      : Sims1Settings<Sims1<T>>(s), _extra(), _final(), _presentation() {
     if (ck == congruence_kind::twosided) {
       LIBSEMIGROUPS_EXCEPTION(
           "expected congruence_kind::right or congruence_kind::left");
@@ -116,7 +118,7 @@ namespace libsemigroups {
 
   template <typename T>
   void Sims1<T>::perform_split() {
-    size_type val = _settings.split_at;
+    size_type val = Sims1Settings<Sims1<T>>::split_at();
     if (val == UNDEFINED) {
       return;
     }
@@ -142,7 +144,7 @@ namespace libsemigroups {
 
   template <typename T>
   uint64_t Sims1<T>::number_of_congruences(size_type n) const {
-    if (number_of_threads() == 1) {
+    if (this->number_of_threads() == 1) {
       uint64_t result = 0;
       for_each(n, [&result](digraph_type const &) { ++result; });
       return result;
@@ -164,7 +166,7 @@ namespace libsemigroups {
 
     detail::Timer t;
 
-    if (number_of_threads() == 1) {
+    if (this->number_of_threads() == 1) {
       REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         std::for_each(cbegin(n), cend(n), pred);
@@ -179,9 +181,9 @@ namespace libsemigroups {
       }
     } else {
       REPORT_DEFAULT("using %d / %d additional threads\n",
-                     number_of_threads(),
+                     this->number_of_threads(),
                      std::thread::hardware_concurrency());
-      Den den(presentation(), _extra, _final, n, number_of_threads());
+      Den den(presentation(), _extra, _final, n, this->number_of_threads());
       if (!report::should_report()) {
         auto pred_wrapper = [&pred](digraph_type const &ad) {
           pred(ad);
@@ -212,7 +214,7 @@ namespace libsemigroups {
 
     detail::Timer t;
 
-    if (number_of_threads() == 1) {
+    if (this->number_of_threads() == 1) {
       REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         return *std::find_if(cbegin(n), cend(n), pred);
@@ -230,9 +232,9 @@ namespace libsemigroups {
       }
     } else {
       REPORT_DEFAULT("using %d / %d additional threads\n",
-                     number_of_threads(),
+                     this->number_of_threads(),
                      std::thread::hardware_concurrency());
-      Den den(presentation(), _extra, _final, n, number_of_threads());
+      Den den(presentation(), _extra, _final, n, this->number_of_threads());
       if (!report::should_report()) {
         den.run(pred);
       } else {
@@ -255,7 +257,7 @@ namespace libsemigroups {
                                               S &           last_count,
                                               uint64_t      count,
                                               detail::Timer t) const {
-    if (count - last_count > report_interval()) {
+    if (count - last_count > this->report_interval()) {
       // Avoid calling high_resolution_clock::now too often
       auto now     = std::chrono::high_resolution_clock::now();
       auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -721,7 +723,7 @@ namespace libsemigroups {
       return false;
     };
 
-    auto result = Sims1<T>(congruence_kind::right, _presentation, _settings)
+    auto result = Sims1<T>(congruence_kind::right, _presentation, *this)
                       .find_if(_max, hook);
     if (result.number_of_active_nodes() == 0) {
       result.restrict(0);

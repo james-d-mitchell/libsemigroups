@@ -19,6 +19,10 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoids.
 // TODO(Sims1):
+// * improve the reporting from MinimalRepOrc so that it:
+//   - states all settings at the start of the run
+//   - the number of congruences considered is shown
+// * code coverage, iwyu
 // * implement joins (HopcroftKarp), meets (not sure), containment (find join
 //   and check equality)?
 // * generating pairs for congruences defined by "action digraph"?
@@ -62,6 +66,7 @@
 namespace libsemigroups {
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
+  // TODO(Sims1) ensure that this still makes sense in the multi threaded world
   // This isn't inside Sims1 because it doesn't depend on the template args at
   // all.
   struct Sims1Stats {
@@ -74,10 +79,59 @@ namespace libsemigroups {
   };
 #endif
 
-  struct Sims1Settings {
-    size_t num_threads     = 1;
-    size_t report_interval = 1'000;
-    size_t split_at        = UNDEFINED;
+  // This class allows us to use the same interface for settings for Sims1,
+  // RepOrc, and MinimalRepOrc without duplicating the code.
+  // TODO(Sims1) doc
+  template <typename T>
+  class Sims1Settings {
+   private:
+    size_t _num_threads;
+    size_t _report_interval;
+    size_t _split_at;
+
+    Sims1Settings(size_t n, size_t r, size_t s)
+        : _num_threads(n), _report_interval(r), _split_at(s) {}
+
+   public:
+    Sims1Settings() : Sims1Settings(1, 1'000, UNDEFINED) {}
+
+    template <typename S>
+    Sims1Settings(Sims1Settings<S> const& s)
+        : Sims1Settings(s.number_of_threads(),
+                        s.report_interval(),
+                        s.split_at()) {}
+
+    // TODO(Sims1) doc
+    T& split_at(size_t val) noexcept {
+      _split_at = val;
+      return static_cast<T&>(*this);
+    }
+
+    // TODO(Sims1) doc
+    size_t split_at() const noexcept {
+      return _split_at;
+    }
+
+    // TODO(Sims1) doc
+    T& number_of_threads(size_t val) noexcept {
+      _num_threads = val;
+      return static_cast<T&>(*this);
+    }
+
+    // TODO(Sims1) doc
+    size_t number_of_threads() const noexcept {
+      return _num_threads;
+    }
+
+    // TODO(Sims1) doc
+    T& report_interval(size_t val) noexcept {
+      _report_interval = val;
+      return static_cast<T&>(*this);
+    }
+    // TODO(Sims1) doc
+    size_t report_interval() const noexcept {
+      return _report_interval;
+    }
   };
 
   //! Defined in ``sims1.hpp``.
@@ -99,7 +153,7 @@ namespace libsemigroups {
   //! congruence.
   // TODO(v3) remove the template T here
   template <typename T>
-  class Sims1 {
+  class Sims1 : public Sims1Settings<Sims1<T>> {
    public:
     //! Type for the nodes in the associated ActionDigraph objects.
     using node_type = T;
@@ -120,19 +174,20 @@ namespace libsemigroups {
     Presentation<word_type> _extra;
     Presentation<word_type> _final;
     Presentation<word_type> _presentation;
-    Sims1Settings           _settings;
 
    public:
     // TODO(Sims1) doc
+    template <typename S>
     Sims1(congruence_kind                ck,
           Presentation<word_type> const& p,
           Presentation<word_type> const& e,
-          Sims1Settings const&           s);
+          Sims1Settings<S> const&        s);
 
     // TODO(Sims1) doc
+    template <typename S>
     Sims1(congruence_kind                ck,
           Presentation<word_type> const& p,
-          Sims1Settings const&           s);
+          Sims1Settings<S> const&        s);
 
     //! Construct from \ref congruence_kind and Presentation.
     //!
@@ -226,7 +281,6 @@ namespace libsemigroups {
 
     ~Sims1();
 
-   public:
     //! Returns a const reference to the defining presentation.
     //!
     //! This function returns the defining presentation of a Sims1 instance.
@@ -301,34 +355,8 @@ namespace libsemigroups {
             uint64_t(_presentation.rules.size() / 2 + _final.rules.size() / 2),
             uint64_t(val));
       }
-      _settings.split_at = val;
+      Sims1Settings<Sims1<T>>::split_at(val);
       perform_split();
-      return *this;
-    }
-
-    size_type split_at() const noexcept {
-      return _settings.split_at;
-    }
-
-    // TODO(Sims1) doc
-    size_type number_of_threads() const noexcept {
-      return _settings.num_threads;
-    }
-
-    // TODO(Sims1) doc
-    Sims1& number_of_threads(size_t val) noexcept {
-      _settings.num_threads = val;
-      return *this;
-    }
-
-    // TODO(Sims1) doc
-    size_type report_interval() const noexcept {
-      return _settings.report_interval;
-    }
-
-    // TODO(Sims1) doc
-    Sims1& report_interval(size_t val) noexcept {
-      _settings.report_interval = val;
       return *this;
     }
 
@@ -623,17 +651,20 @@ namespace libsemigroups {
 #endif  // LIBSEMIGROUPS_ENABLE_STATS
 
   // TODO(Sims1) doc
-  class RepOrc {
+  class RepOrc : public Sims1Settings<RepOrc> {
    private:
     size_t                         _min;
     size_t                         _max;
     Presentation<word_type> const& _presentation;
-    Sims1Settings                  _settings;
     size_t                         _size;
 
    public:
     explicit RepOrc(Presentation<word_type> const& p)
-        : _min(), _max(), _presentation(p), _settings(), _size() {}
+        : RepOrc(p, Sims1Settings<RepOrc>()) {}
+
+    template <typename S>
+    RepOrc(Presentation<word_type> const& p, Sims1Settings<S> const& s)
+        : Sims1Settings<RepOrc>(s), _min(), _max(), _presentation(p), _size() {}
 
     // TODO(Sims1) getters for the following
     RepOrc& min_nodes(size_t val) {
@@ -641,28 +672,15 @@ namespace libsemigroups {
       return *this;
     }
 
+    // TODO(Sims1) getters for the following
     RepOrc& max_nodes(size_t val) {
       _max = val;
       return *this;
     }
 
+    // TODO(Sims1) getters for the following
     RepOrc& target_size(size_t val) {
       _size = val;
-      return *this;
-    }
-
-    RepOrc& number_of_threads(size_t val) {
-      _settings.num_threads = val;
-      return *this;
-    }
-
-    RepOrc& split_at(size_t val) {
-      _settings.split_at = val;
-      return *this;
-    }
-
-    RepOrc& report_interval(size_t val) {
-      _settings.report_interval = val;
       return *this;
     }
 
@@ -670,9 +688,8 @@ namespace libsemigroups {
     ActionDigraph<T> digraph() const;
   };
 
-  class MinimalRepOrc {
+  class MinimalRepOrc : public Sims1Settings<MinimalRepOrc> {
    private:
-    size_t _num_threads;
     // We require a copy of the presentation, rather than a reference otherwise
     // the non-word_type Presentation ctor below doesn't work.
     Presentation<word_type> _presentation;
@@ -680,7 +697,7 @@ namespace libsemigroups {
 
    public:
     MinimalRepOrc(Presentation<word_type> const& p)
-        : _num_threads(1), _presentation(p), _size() {}
+        : _presentation(p), _size() {}
 
     template <typename P>
     MinimalRepOrc(P const& p)
@@ -690,18 +707,12 @@ namespace libsemigroups {
                     "PresentationBase");
     }
 
-    MinimalRepOrc& target_size(size_t val) {
+    MinimalRepOrc& target_size(size_t val) noexcept {
       _size = val;
       return *this;
     }
 
-    MinimalRepOrc& number_of_threads(size_t val) {
-      _num_threads = val;
-      return *this;
-    }
-
-    // TODO(Sims1) add the other options for Sims1 here: split_at,
-    // report_interval
+    // TODO(Sims1) getter for target size
 
     // An alternative to the approach used below would be to do a sort of
     // binary search for a minimal representation. It seems that in most
@@ -719,37 +730,37 @@ namespace libsemigroups {
     // through the digraphs with [1, 57) nodes once.
     template <typename T = uint32_t>
     ActionDigraph<T> digraph() {
-      auto cr = RepOrc(_presentation).number_of_threads(_num_threads);
+      auto cr = RepOrc(_presentation, *this);
 
       size_t hi = (_presentation.contains_empty_word() ? _size : _size + 1);
       REPORT_DEFAULT(
-          "trying to find faithful cyclic rep. on [1, %llu) points\n", hi + 1);
+          "trying to find faithful rep. o.r.c. on [1, %llu) points\n", hi + 1);
       auto best = cr.min_nodes(1).max_nodes(hi).target_size(_size).digraph();
 
       if (best.number_of_nodes() == 0) {
-        REPORT_DEFAULT("no faithful cyclic rep. on [1, %llu) points found\n",
+        REPORT_DEFAULT("no faithful rep. o.r.c. on [1, %llu) points found\n",
                        hi + 1);
         // No faithful representation on up to <size> points, or trivial
         return best;
       } else if (best.number_of_nodes() == 1) {
-        REPORT_DEFAULT("found a faithful cyclic rep. on 1 point\n");
+        REPORT_DEFAULT("found a faithful rep. o.r.c. on 1 point\n");
         return best;
       }
       hi = best.number_of_nodes();
-      REPORT_DEFAULT("found a faithful cyclic rep. on %llu points\n", hi);
+      REPORT_DEFAULT("found a faithful rep. o.r.c. on %llu points\n", hi);
 
       REPORT_DEFAULT(
-          "trying to find faithful cyclic rep. on [1, %llu) points\n", hi);
+          "trying to find faithful rep. o.r.c. on [1, %llu) points\n", hi);
       ActionDigraph<T> next = std::move(cr.max_nodes(hi - 1).digraph());
       while (next.number_of_nodes() != 0) {
         hi = next.number_of_nodes();
-        REPORT_DEFAULT("found a faithful cyclic rep. on %llu points\n", hi);
+        REPORT_DEFAULT("found a faithful rep. o.r.c. on %llu points\n", hi);
         best = std::move(next);
         REPORT_DEFAULT(
-            "trying to find faithful cyclic rep. on [1, %llu) points\n", hi);
+            "trying to find faithful rep. o.r.c. on [1, %llu) points\n", hi);
         next = std::move(cr.max_nodes(hi - 1).digraph());
       }
-      REPORT_DEFAULT("no faithful cyclic rep. on [1, %llu) points found\n", hi);
+      REPORT_DEFAULT("no faithful rep. o.r.c. on [1, %llu) points found\n", hi);
       return best;
     }
   };
