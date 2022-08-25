@@ -349,30 +349,31 @@ namespace libsemigroups {
     LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
     LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
 
-    // Backtrack if necessary
-    this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
+    {
+      // Backtrack if necessary
+      this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
 
-    // It might be that current.target is a new node, in which case
-    // _felsch_graph.number_of_active_nodes() includes this new node even
-    // before the edge current.source -> current.target is defined.
-    this->_felsch_graph.number_of_active_nodes(current.num_nodes);
+      // It might be that current.target is a new node, in which case
+      // _felsch_graph.number_of_active_nodes() includes this new node even
+      // before the edge current.source -> current.target is defined.
+      this->_felsch_graph.number_of_active_nodes(current.num_nodes);
 
-    LIBSEMIGROUPS_ASSERT(
-        this->_felsch_graph.unsafe_neighbor(current.source, current.generator)
-        == UNDEFINED);
-    size_type start = this->_felsch_graph.number_of_edges();
+      LIBSEMIGROUPS_ASSERT(
+          this->_felsch_graph.unsafe_neighbor(current.source, current.generator)
+          == UNDEFINED);
 
-    this->_felsch_graph.def_edge(
-        current.source, current.generator, current.target);
+      size_type const start = this->_felsch_graph.number_of_edges();
 
-    auto first = this->_extra.rules.cbegin();
-    auto last  = this->_extra.rules.cend();
-    if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)) {
-      return false;
-    }
+      this->_felsch_graph.def_edge(
+          current.source, current.generator, current.target);
 
-    if (!this->_felsch_graph.process_definitions(start)) {
-      return false;
+      auto first = this->_extra.rules.cbegin();
+      auto last  = this->_extra.rules.cend();
+      if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)
+          || !this->_felsch_graph.process_definitions(start)) {
+        // Seems to be important to check _extra first then process_definitions
+        return false;
+      }
     }
 
     letter_type     a        = current.generator + 1;
@@ -395,16 +396,14 @@ namespace libsemigroups {
       a = 0;
     }
     // No undefined edges, word graph is complete
+    LIBSEMIGROUPS_ASSERT(N == M * num_gens);
+
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
     _stats.num_good_nodes += this->_felsch_graph.number_of_active_nodes();
 #endif
-    first = this->_final.rules.cbegin();
-    last  = this->_final.rules.cend();
-    if (!felsch_digraph::compatible(this->_felsch_graph, 0, M, first, last)) {
-      return false;
-    }
-    LIBSEMIGROUPS_ASSERT(N == M * num_gens);
-    return true;
+    auto first = this->_final.rules.cbegin();
+    auto last  = this->_final.rules.cend();
+    return felsch_digraph::compatible(this->_felsch_graph, 0, M, first, last);
   }
 
   template <typename T>
@@ -502,15 +501,12 @@ namespace libsemigroups {
         this->_felsch_graph.def_edge(
             current.source, current.generator, current.target);
 
-        if (!this->_felsch_graph.process_definitions(start)) {
+        auto first = this->_extra.rules.cbegin();
+        auto last  = this->_extra.rules.cend();
+        if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)
+            || !this->_felsch_graph.process_definitions(start)) {
           return false;
         }
-      }
-
-      auto first = this->_extra.rules.cbegin();
-      auto last  = this->_extra.rules.cend();
-      if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)) {
-        return false;
       }
 
       letter_type     a        = current.generator + 1;
@@ -539,16 +535,9 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(N == M * num_gens);
 
       // No undefined edges, word graph is complete
-      for (auto it = this->_final.rules.cbegin();
-           it != this->_final.rules.cend();
-           it += 2) {
-        for (node_type m = 0; m < M; ++m) {
-          if (!this->_felsch_graph.compatible(m, *it, *(it + 1))) {
-            return false;
-          }
-        }
-      }
-      return true;
+      auto first = this->_final.rules.cbegin();
+      auto last  = this->_final.rules.cend();
+      return felsch_digraph::compatible(this->_felsch_graph, 0, M, first, last);
     }
 
    public:
