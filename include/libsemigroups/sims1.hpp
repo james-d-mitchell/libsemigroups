@@ -74,7 +74,7 @@ namespace libsemigroups {
   };
 #endif
 
-  struct SimsSettings {
+  struct Sims1Settings {
     size_t num_threads     = 1;
     size_t report_interval = 1'000;
     size_t split_at        = UNDEFINED;
@@ -120,9 +120,20 @@ namespace libsemigroups {
     Presentation<word_type> _extra;
     Presentation<word_type> _final;
     Presentation<word_type> _presentation;
-    SimsSettings            _settings;
+    Sims1Settings           _settings;
 
    public:
+    // TODO(Sims1) doc
+    Sims1(congruence_kind                ck,
+          Presentation<word_type> const& p,
+          Presentation<word_type> const& e,
+          Sims1Settings const&           s);
+
+    // TODO(Sims1) doc
+    Sims1(congruence_kind                ck,
+          Presentation<word_type> const& p,
+          Sims1Settings const&           s);
+
     //! Construct from \ref congruence_kind and Presentation.
     //!
     //! \param ck the handedness of the congruences (left or right)
@@ -215,6 +226,7 @@ namespace libsemigroups {
 
     ~Sims1();
 
+   public:
     //! Returns a const reference to the defining presentation.
     //!
     //! This function returns the defining presentation of a Sims1 instance.
@@ -615,14 +627,15 @@ namespace libsemigroups {
    private:
     size_t                         _min;
     size_t                         _max;
-    size_t                         _num_threads;
     Presentation<word_type> const& _presentation;
+    Sims1Settings                  _settings;
     size_t                         _size;
 
    public:
     explicit RepOrc(Presentation<word_type> const& p)
-        : _min(), _max(), _num_threads(1), _presentation(p), _size() {}
+        : _min(), _max(), _presentation(p), _settings(), _size() {}
 
+    // TODO(Sims1) getters for the following
     RepOrc& min_nodes(size_t val) {
       _min = val;
       return *this;
@@ -639,14 +652,19 @@ namespace libsemigroups {
     }
 
     RepOrc& number_of_threads(size_t val) {
-      _num_threads = val;
+      _settings.num_threads = val;
       return *this;
     }
 
-    RepOrc split_at(size_t val) {}
+    RepOrc& split_at(size_t val) {
+      _settings.split_at = val;
+      return *this;
+    }
 
-    // TODO(Sims1) add the other options for Sims1 here: split_at,
-    // report_interval
+    RepOrc& report_interval(size_t val) {
+      _settings.report_interval = val;
+      return *this;
+    }
 
     template <typename T = uint32_t>
     ActionDigraph<T> digraph() const;

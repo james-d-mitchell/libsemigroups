@@ -67,7 +67,16 @@ namespace libsemigroups {
 #endif
 
   template <typename T>
-  Sims1<T>::~Sims1() = default;
+  Sims1<T>::Sims1(congruence_kind                ck,
+                  Presentation<word_type> const &p,
+                  Presentation<word_type> const &e)
+      : Sims1(ck, p, e, Sims1Settings()) {}
+
+  template <typename T>
+  Sims1<T>::Sims1(congruence_kind                ck,
+                  Presentation<word_type> const &p,
+                  Sims1Settings const &          s)
+      : Sims1(ck, p, Presentation<word_type>(), s) {}
 
   template <typename T>
   Sims1<T>::Sims1(congruence_kind ck, Presentation<word_type> const &p)
@@ -76,8 +85,9 @@ namespace libsemigroups {
   template <typename T>
   Sims1<T>::Sims1(congruence_kind                ck,
                   Presentation<word_type> const &p,
-                  Presentation<word_type> const &e)
-      : _extra(), _final(), _presentation(), _settings() {
+                  Presentation<word_type> const &e,
+                  Sims1Settings const &          s)
+      : _extra(), _final(), _presentation(), _settings(s) {
     if (ck == congruence_kind::twosided) {
       LIBSEMIGROUPS_EXCEPTION(
           "expected congruence_kind::right or congruence_kind::left");
@@ -98,7 +108,11 @@ namespace libsemigroups {
       presentation::reverse(_presentation);
       presentation::reverse(_extra);
     }
+    perform_split();
   }
+
+  template <typename T>
+  Sims1<T>::~Sims1() = default;
 
   template <typename T>
   void Sims1<T>::perform_split() {
@@ -707,8 +721,8 @@ namespace libsemigroups {
       return false;
     };
 
-    Sims1<T> C(congruence_kind::right, _presentation);
-    auto     result = C.number_of_threads(_num_threads).find_if(_max, hook);
+    auto result = Sims1<T>(congruence_kind::right, _presentation, _settings)
+                      .find_if(_max, hook);
     if (result.number_of_active_nodes() == 0) {
       result.restrict(0);
     } else {
