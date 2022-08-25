@@ -45,8 +45,6 @@
 #include <type_traits>  // for is_base_of
 #include <vector>       // for vector
 
-#include <fmt/chrono.h>  // for group_digits
-
 #include "config.hpp"          // for LIBSEMIGROUPS_ENABLE_STATS
 #include "constants.hpp"       // for UNDEFINED
 #include "debug.hpp"           // for LIBSEMIGROUPS_ASSERT

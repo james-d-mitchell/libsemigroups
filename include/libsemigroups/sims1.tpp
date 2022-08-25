@@ -252,7 +252,9 @@ namespace libsemigroups {
         using float_seconds
             = std::chrono::duration<float, std::chrono::seconds::period>;
         auto seconds = std::chrono::duration_cast<float_seconds>(t.elapsed());
-        REPORT_DEFAULT(FORMAT("found {} congruences in {}!\n", count, seconds));
+        REPORT_DEFAULT("found %s congruences in %.6fs!\n",
+                       detail::group_digits(count).c_str(),
+                       seconds.count());
       }
     }
   }
@@ -655,13 +657,12 @@ namespace libsemigroups {
     ~Den() = default;
 
     digraph_type const &digraph() const {
-      // REPORT_DEFAULT(FORMAT("number of nodes created in each thread
-      // {}\n",
-      //                      detail::to_string(_total_pending)));
-      REPORT_DEFAULT(FORMAT(
-          "total number of nodes in search tree was {}\n",
-          fmt::group_digits(std::accumulate(
-              _total_pending.cbegin(), _total_pending.cend(), uint64_t(0)))));
+      REPORT_DEFAULT(
+          "total number of nodes in search tree was %s\n",
+          detail::group_digits(std::accumulate(_total_pending.cbegin(),
+                                               _total_pending.cend(),
+                                               uint64_t(0)))
+              .c_str());
       return _result;
     }
 
