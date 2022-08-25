@@ -346,19 +346,7 @@ namespace libsemigroups {
     //!
     //! \throws LibsemigroupsException if \p val is out of bounds.
     // TODO(Sims1) some tests for this.
-    // TODO(Sims1) move to tpp file
-    Sims1& split_at(size_type val) {
-      if (val != UNDEFINED
-          && val > _presentation.rules.size() / 2 + _final.rules.size() / 2) {
-        LIBSEMIGROUPS_EXCEPTION(
-            "expected a value in the range [0, %llu) or UNDEFINED, found %llu",
-            uint64_t(_presentation.rules.size() / 2 + _final.rules.size() / 2),
-            uint64_t(val));
-      }
-      Sims1Settings<Sims1<T>>::split_at(val);
-      perform_split();
-      return *this;
-    }
+    Sims1& split_at(size_type val);
 
    private:
     void perform_split();
@@ -397,6 +385,9 @@ namespace libsemigroups {
       Presentation<word_type>             _final;
       size_type                           _max_num_classes;
       size_type                           _min_target_node;
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+      Sims1Stats _stats;
+#endif
 
      public:
       //! No doc
@@ -666,22 +657,31 @@ namespace libsemigroups {
     RepOrc(Presentation<word_type> const& p, Sims1Settings<S> const& s)
         : Sims1Settings<RepOrc>(s), _min(), _max(), _presentation(p), _size() {}
 
-    // TODO(Sims1) getters for the following
-    RepOrc& min_nodes(size_t val) {
+    RepOrc& min_nodes(size_t val) noexcept {
       _min = val;
       return *this;
     }
 
-    // TODO(Sims1) getters for the following
-    RepOrc& max_nodes(size_t val) {
+    size_t min_nodes() const noexcept {
+      return _min;
+    }
+
+    RepOrc& max_nodes(size_t val) noexcept {
       _max = val;
       return *this;
     }
 
-    // TODO(Sims1) getters for the following
-    RepOrc& target_size(size_t val) {
+    size_t max_nodes() const noexcept {
+      return _max;
+    }
+
+    RepOrc& target_size(size_t val) noexcept {
       _size = val;
       return *this;
+    }
+
+    size_t target_size() const noexcept {
+      return _size;
     }
 
     template <typename T = uint32_t>
@@ -713,7 +713,9 @@ namespace libsemigroups {
       return *this;
     }
 
-    // TODO(Sims1) getter for target size
+    size_t target_size() const noexcept {
+      return _size;
+    }
 
     // An alternative to the approach used below would be to do a sort of
     // binary search for a minimal representation. It seems that in most

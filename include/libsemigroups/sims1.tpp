@@ -320,6 +320,10 @@ namespace libsemigroups {
     // pointed to here is empty).
   }
 
+  ///////////////////////////////////////////////////////////////////////////////
+  // Sims1
+  ///////////////////////////////////////////////////////////////////////////////
+
   // TODO(Sims1): remove code overlap with increment
   template <typename T>
   typename Sims1<T>::const_iterator const &
@@ -354,12 +358,10 @@ namespace libsemigroups {
         this->_felsch_graph.def_edge(
             current.source, current.generator, current.target);
 
-        for (auto it = this->_extra.rules.cbegin();
-             it != this->_extra.rules.cend();
-             it += 2) {
-          if (!this->_felsch_graph.compatible(0, *it, *(it + 1))) {
-            goto dive;
-          }
+        auto first = this->_extra.rules.cbegin();
+        auto last  = this->_extra.rules.cend();
+        if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)) {
+          goto dive;
         }
 
         if (this->_felsch_graph.process_definitions(start)) {
@@ -386,14 +388,11 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
           _stats.num_good_nodes += this->_felsch_graph.number_of_active_nodes();
 #endif
-          for (auto it = this->_final.rules.cbegin();
-               it != this->_final.rules.cend();
-               it += 2) {
-            for (node_type m = 0; m < M; ++m) {
-              if (!this->_felsch_graph.compatible(m, *it, *(it + 1))) {
-                goto dive;
-              }
-            }
+          first = this->_final.rules.cbegin();
+          last  = this->_final.rules.cend();
+          if (!felsch_digraph::compatible(
+                  this->_felsch_graph, 0, M, first, last)) {
+            goto dive;
           }
           LIBSEMIGROUPS_ASSERT(N == M * num_gens);
           return *this;
@@ -405,6 +404,24 @@ namespace libsemigroups {
     this->_felsch_graph.restrict(0);
     return *this;
   }
+
+  template <typename T>
+  Sims1<T> &Sims1<T>::split_at(size_type val) {
+    if (val != UNDEFINED
+        && val > _presentation.rules.size() / 2 + _final.rules.size() / 2) {
+      LIBSEMIGROUPS_EXCEPTION(
+          "expected a value in the range [0, %llu) or UNDEFINED, found %llu",
+          uint64_t(_presentation.rules.size() / 2 + _final.rules.size() / 2),
+          uint64_t(val));
+    }
+    Sims1Settings<Sims1<T>>::split_at(val);
+    perform_split();
+    return *this;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Thief
+  ///////////////////////////////////////////////////////////////////////////////
 
   template <typename T>
   class Sims1<T>::Thief : public IteratorAndThiefBase {
@@ -438,7 +455,7 @@ namespace libsemigroups {
     //! No doc
     ~Thief() = default;
 
-    size_t size() const {
+    size_t size() const noexcept {
       return _pending.size();
     }
 
@@ -488,12 +505,10 @@ namespace libsemigroups {
         }
       }
 
-      for (auto it = this->_extra.rules.cbegin();
-           it != this->_extra.rules.cend();
-           it += 2) {
-        if (!this->_felsch_graph.compatible(0, *it, *(it + 1))) {
-          return false;
-        }
+      auto first = this->_extra.rules.cbegin();
+      auto last  = this->_extra.rules.cend();
+      if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)) {
+        return false;
       }
 
       letter_type     a        = current.generator + 1;
@@ -536,13 +551,7 @@ namespace libsemigroups {
 
    public:
     void push(PendingDef pd) {
-      std::lock_guard<std::mutex> lock(_mutex);
       _pending.push_back(std::move(pd));
-    }
-
-    bool empty() const {
-      std::lock_guard<std::mutex> lock(_mutex);
-      return _pending.empty();
     }
 
     bool try_pop(PendingDef &pd) {
@@ -578,12 +587,15 @@ namespace libsemigroups {
       if (_pending.empty()) {
         return false;
       }
-      LIBSEMIGROUPS_ASSERT(q.empty());
       // Copy the FelschDigraph and half pending from *this into q
       q.steal_from(*this);
       return true;
     }
   };
+
+  ////////////////////////////////////////////////////////////////////////
+  // Den
+  ////////////////////////////////////////////////////////////////////////
 
   template <typename T>
   class Sims1<T>::Den {

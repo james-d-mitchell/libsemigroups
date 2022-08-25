@@ -1093,6 +1093,7 @@ namespace libsemigroups {
     }
   }
 
+  // Takes about 30s
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "037",
                           "RectangularBand(9, 2)",
@@ -1123,7 +1124,7 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "038",
-                          "PartitionMonoid(3) - minimal rep",
+                          "PartitionMonoid(3) - minimal o.r.c. rep",
                           "[extreme][sims1]") {
     auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
@@ -1308,7 +1309,7 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "041",
-                          "RectangularBand(4, 4) - minimal cyclic rep",
+                          "RectangularBand(4, 4) - minimal o.r.c. rep",
                           "[standard][sims1]") {
     auto rg = ReportGuard(false);
     auto p  = make<Presentation<word_type>>(RectangularBand(4, 4));
@@ -1439,7 +1440,7 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "044",
-                          "trivial group - minimal cyclic rep",
+                          "trivial group - minimal o.r.c rep",
                           "[quick][sims1]") {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
@@ -1459,7 +1460,7 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "045",
-                          "right zero semigroup",
+                          "right zero semigroup - minimal o.r.c. rep",
                           "[quick][sims1]") {
     // This is an example of a semigroup with a strictly cyclic faithful
     // right representation.
