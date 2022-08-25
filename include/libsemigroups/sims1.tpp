@@ -739,4 +739,44 @@ namespace libsemigroups {
     return result;
   }
 
+  ////////////////////////////////////////////////////////////////////////
+  // MinimalRepOrc helper class
+  ////////////////////////////////////////////////////////////////////////
+
+  template <typename T>
+  ActionDigraph<T> MinimalRepOrc::digraph() {
+    auto cr = RepOrc(_presentation, *this);
+
+    size_t hi = (_presentation.contains_empty_word() ? _size : _size + 1);
+    REPORT_DEFAULT("trying to find faithful rep. o.r.c. on [1, %llu) points\n",
+                   hi + 1);
+    auto best = cr.min_nodes(1).max_nodes(hi).target_size(_size).digraph();
+
+    if (best.number_of_nodes() == 0) {
+      REPORT_DEFAULT("no faithful rep. o.r.c. on [1, %llu) points found\n",
+                     hi + 1);
+      // No faithful representation on up to <size> points, or trivial
+      return best;
+    } else if (best.number_of_nodes() == 1) {
+      REPORT_DEFAULT("found a faithful rep. o.r.c. on 1 point\n");
+      return best;
+    }
+    hi = best.number_of_nodes();
+    REPORT_DEFAULT("found a faithful rep. o.r.c. on %llu points\n", hi);
+
+    REPORT_DEFAULT("trying to find faithful rep. o.r.c. on [1, %llu) points\n",
+                   hi);
+    ActionDigraph<T> next = std::move(cr.max_nodes(hi - 1).digraph());
+    while (next.number_of_nodes() != 0) {
+      hi = next.number_of_nodes();
+      REPORT_DEFAULT("found a faithful rep. o.r.c. on %llu points\n", hi);
+      best = std::move(next);
+      REPORT_DEFAULT(
+          "trying to find faithful rep. o.r.c. on [1, %llu) points\n", hi);
+      next = std::move(cr.max_nodes(hi - 1).digraph());
+    }
+    REPORT_DEFAULT("no faithful rep. o.r.c. on [1, %llu) points found\n", hi);
+    return best;
+  }
+
 }  // namespace libsemigroups
