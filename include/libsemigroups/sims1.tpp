@@ -101,13 +101,14 @@ namespace libsemigroups {
   }
 
   template <typename T>
-  void Sims1<T>::split_at(size_type val) {
-    if (val > _presentation.rules.size() / 2 + _final.rules.size() / 2) {
-      LIBSEMIGROUPS_EXCEPTION(
-          "expected a value in the range [0, %llu), found %llu",
-          uint64_t(_presentation.rules.size() / 2 + _final.rules.size() / 2),
-          uint64_t(val));
+  void Sims1<T>::perform_split() {
+    size_type val = _settings.split_at;
+    if (val == UNDEFINED) {
+      return;
     }
+
+    LIBSEMIGROUPS_ASSERT(val < _presentation.rules.size() / 2
+                                   + _final.rules.size() / 2);
 
     val *= 2;
     if (val < _presentation.rules.size()) {
@@ -240,7 +241,7 @@ namespace libsemigroups {
                                               S &           last_count,
                                               uint64_t      count,
                                               detail::Timer t) const {
-    if (count - last_count > _settings._report_interval) {
+    if (count - last_count > report_interval()) {
       // Avoid calling high_resolution_clock::now too often
       auto now     = std::chrono::high_resolution_clock::now();
       auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -538,22 +539,22 @@ namespace libsemigroups {
       return true;
     }
 
-    void clone(Thief &that) {
+    void steal_from(Thief &that) {
+      // WARNING <that> must be locked before calling this function
       std::lock_guard<std::mutex> lock(_mutex);
       LIBSEMIGROUPS_ASSERT(_pending.empty());
-      IteratorAndThiefBase::clone(that);
+      // Copy the FelschDigraph from that into *this
+      IteratorAndThiefBase::copy_felsch_graph(that);
 
-      // Unzip that._pending into _pending and that._pending
+      // Unzip that._pending into _pending and that._pending, this seems to
+      // give better performance in the search than splitting that._pending
+      // into [begin, begin + size / 2) and [begin + size / 2, end)
       for (size_t i = 0; i < that._pending.size(); i += 2) {
         _pending.push_back(std::move(that._pending[i]));
         that._pending[i / 2] = std::move(that._pending[i + 1]);
       }
-
-      // _pending.insert(_pending.cbegin(),
-      //                 that._pending.begin() + that._pending.size() / 2,
-      //                 that._pending.end());
-      // that._pending.cbegin(),
-      // that._pending.cbegin() + that._pending.size() / 2);
+      that._pending.erase(that._pending.cbegin() + that._pending.size() / 2,
+                          that._pending.cend());
     }
 
     bool try_steal(Thief &q) {
@@ -562,10 +563,8 @@ namespace libsemigroups {
         return false;
       }
       LIBSEMIGROUPS_ASSERT(q.empty());
-      q.clone(*this);  // Copy the digraph from this into q
-      _pending.erase(_pending.cbegin() + _pending.size() / 2, _pending.cend());
-      // _pending.erase(_pending.cbegin(),
-      //               _pending.cbegin() + _pending.size() / 2);
+      // Copy the FelschDigraph and half pending from *this into q
+      q.steal_from(*this);
       return true;
     }
   };
@@ -679,5 +678,49 @@ namespace libsemigroups {
       }
     }
   };
+
+  ////////////////////////////////////////////////////////////////////////
+  // RepOrc helper class
+  ////////////////////////////////////////////////////////////////////////
+
+  template <typename T>
+  ActionDigraph<T> RepOrc::digraph() const {
+    using digraph_type = typename Sims1<T>::digraph_type;
+    using node_type    = typename digraph_type::node_type;
+
+    auto hook = [&](digraph_type const &x) {
+      if (x.number_of_active_nodes() >= _min) {
+        auto first = (_presentation.contains_empty_word() ? 0 : 1);
+        auto S     = make<FroidurePin<Transf<0, node_type>>>(
+            x, first, x.number_of_active_nodes());
+        if (_presentation.contains_empty_word()) {
+          auto one = S.generator(0).identity();
+          if (!S.contains(one)) {
+            S.add_generator(one);
+          }
+        }
+        LIBSEMIGROUPS_ASSERT(S.size() <= _size);
+        if (S.size() == _size) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    Sims1<T> C(congruence_kind::right, _presentation);
+    auto     result = C.number_of_threads(_num_threads).find_if(_max, hook);
+    if (result.number_of_active_nodes() == 0) {
+      result.restrict(0);
+    } else {
+      if (_presentation.contains_empty_word()) {
+        result.restrict(result.number_of_active_nodes());
+      } else {
+        result.induced_subdigraph(1, result.number_of_active_nodes());
+        std::for_each(result.begin(), result.end(), [](auto &val) { --val; });
+        result.number_of_active_nodes(result.number_of_active_nodes() - 1);
+      }
+    }
+    return result;
+  }
 
 }  // namespace libsemigroups

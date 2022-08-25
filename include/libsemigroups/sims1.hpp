@@ -18,7 +18,7 @@
 
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoids.
-// TODO:
+// TODO(Sims1):
 // * implement joins (HopcroftKarp), meets (not sure), containment (find join
 //   and check equality)?
 // * generating pairs for congruences defined by "action digraph"?
@@ -74,6 +74,12 @@ namespace libsemigroups {
   };
 #endif
 
+  struct SimsSettings {
+    size_t num_threads     = 1;
+    size_t report_interval = 1'000;
+    size_t split_at        = UNDEFINED;
+  };
+
   //! Defined in ``sims1.hpp``.
   //!
   //! On this page we describe the functionality relating to the small index
@@ -114,11 +120,7 @@ namespace libsemigroups {
     Presentation<word_type> _extra;
     Presentation<word_type> _final;
     Presentation<word_type> _presentation;
-
-    struct Settings {
-      size_type _num_threads     = 1;
-      size_type _report_interval = 10;
-    } _settings;
+    SimsSettings            _settings;
 
    public:
     //! Construct from \ref congruence_kind and Presentation.
@@ -213,28 +215,6 @@ namespace libsemigroups {
 
     ~Sims1();
 
-    // TODO(Sims1) doc
-    size_type number_of_threads() const noexcept {
-      return _settings._num_threads;
-    }
-
-    // TODO(Sims1) doc
-    Sims1& number_of_threads(size_t val) noexcept {
-      _settings._num_threads = val;
-      return *this;
-    }
-
-    // TODO(Sims1) doc
-    size_type report_interval() const noexcept {
-      return _settings._report_interval;
-    }
-
-    // TODO(Sims1) doc
-    Sims1& report_interval(size_t val) noexcept {
-      _settings._report_interval = val;
-      return *this;
-    }
-
     //! Returns a const reference to the defining presentation.
     //!
     //! This function returns the defining presentation of a Sims1 instance.
@@ -300,9 +280,49 @@ namespace libsemigroups {
     //!
     //! \throws LibsemigroupsException if \p val is out of bounds.
     // TODO(Sims1) some tests for this.
-    void split_at(size_type val);
+    // TODO(Sims1) move to tpp file
+    Sims1& split_at(size_type val) {
+      if (val != UNDEFINED
+          && val > _presentation.rules.size() / 2 + _final.rules.size() / 2) {
+        LIBSEMIGROUPS_EXCEPTION(
+            "expected a value in the range [0, %llu) or UNDEFINED, found %llu",
+            uint64_t(_presentation.rules.size() / 2 + _final.rules.size() / 2),
+            uint64_t(val));
+      }
+      _settings.split_at = val;
+      perform_split();
+      return *this;
+    }
+
+    size_type split_at() const noexcept {
+      return _settings.split_at;
+    }
+
+    // TODO(Sims1) doc
+    size_type number_of_threads() const noexcept {
+      return _settings.num_threads;
+    }
+
+    // TODO(Sims1) doc
+    Sims1& number_of_threads(size_t val) noexcept {
+      _settings.num_threads = val;
+      return *this;
+    }
+
+    // TODO(Sims1) doc
+    size_type report_interval() const noexcept {
+      return _settings.report_interval;
+    }
+
+    // TODO(Sims1) doc
+    Sims1& report_interval(size_t val) noexcept {
+      _settings.report_interval = val;
+      return *this;
+    }
 
    private:
+    void perform_split();
+
     struct PendingDef {
       PendingDef() = default;
 
@@ -390,8 +410,9 @@ namespace libsemigroups {
         std::swap(_min_target_node, that._min_target_node);
       }
 
-      // TODO(Sims1) remove this just use the copy/move assignment operator
-      void clone(IteratorAndThiefBase const& that) {
+      // We could use the copy constructor, but there's no point in copying
+      // anything except the FelschDigraph and so we only copy that.
+      void copy_felsch_graph(IteratorAndThiefBase const& that) {
         _felsch_graph = that._felsch_graph;
       }
 
@@ -493,11 +514,10 @@ namespace libsemigroups {
     //! the ActionDigraph has \p n + 1 nodes, and the right action of \f$S\f$
     //! on the nodes \f$\{1, \ldots, n\}\f$ of the ActionDigraph is isomorphic
     //! to the action of \f$S\f$ on the classes of a right congruence. It'd
-    //! probably be better if node \f$0\f$ was not included in the
+    //! probably be better in this case if node \f$0\f$ was not included in the
     //! output ActionDigraph, but it is required in the implementation of the
     //! low-index congruence algorithm, and to avoid unnecessary copies, we've
     //! left it in for the time being.
-    //!
     //! \param n the maximum number of classes in a congruence.
     //!
     //! \returns
@@ -514,11 +534,7 @@ namespace libsemigroups {
     //!
     //! \sa
     //! \ref cend
-
-    // If we don't include the extra node 0 when input is a semigroup
-    // presentation, then we don't get the correct number of congruences in
-    // test case 036, returns 8 instead of 6, so should figure out what's
-    // going on there. TODO(Sims1)
+    // TODO(Sims1) it'd be good to remove node 0 to avoid confusion.
     const_iterator cbegin(size_type n) const {
       return const_iterator(presentation(), _extra, _final, n);
     }
@@ -627,45 +643,13 @@ namespace libsemigroups {
       return *this;
     }
 
+    RepOrc split_at(size_t val) {}
+
+    // TODO(Sims1) add the other options for Sims1 here: split_at,
+    // report_interval
+
     template <typename T = uint32_t>
-    ActionDigraph<T> digraph() const {
-      using digraph_type = typename Sims1<T>::digraph_type;
-      using node_type    = typename digraph_type::node_type;
-
-      auto hook = [&](digraph_type const& x) {
-        if (x.number_of_active_nodes() >= _min) {
-          auto first = (_presentation.contains_empty_word() ? 0 : 1);
-          auto S     = make<FroidurePin<Transf<0, node_type>>>(
-              x, first, x.number_of_active_nodes());
-          if (_presentation.contains_empty_word()) {
-            auto one = S.generator(0).identity();
-            if (!S.contains(one)) {
-              S.add_generator(one);
-            }
-          }
-          LIBSEMIGROUPS_ASSERT(S.size() <= _size);
-          if (S.size() == _size) {
-            return true;
-          }
-        }
-        return false;
-      };
-
-      Sims1<T> C(congruence_kind::right, _presentation);
-      auto     result = C.number_of_threads(_num_threads).find_if(_max, hook);
-      if (result.number_of_active_nodes() == 0) {
-        result.restrict(0);
-      } else {
-        if (_presentation.contains_empty_word()) {
-          result.restrict(result.number_of_active_nodes());
-        } else {
-          result.induced_subdigraph(1, result.number_of_active_nodes());
-          std::for_each(result.begin(), result.end(), [](auto& val) { --val; });
-          result.number_of_active_nodes(result.number_of_active_nodes() - 1);
-        }
-      }
-      return result;
-    }
+    ActionDigraph<T> digraph() const;
   };
 
   class MinimalRepOrc {
