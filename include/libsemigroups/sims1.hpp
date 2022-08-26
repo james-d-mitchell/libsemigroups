@@ -56,6 +56,7 @@
 #include "exception.hpp"       // for LIBSEMIGROUPS_EXCEPTION
 #include "felsch-digraph.hpp"  // for FelschDigraph
 #include "froidure-pin.hpp"    // for FroidurePin
+#include "make-present.hpp"    // for make
 #include "present.hpp"         // for Presentation, Presentati...
 #include "report.hpp"          // for REPORT_DEFAULT, Reporter
 #include "stl.hpp"             // for JoinThreads
@@ -368,10 +369,22 @@ namespace libsemigroups {
       size_type num_nodes;    // Number of nodes in the graph after the
                               // definition is made
     };
-    // This class collects some common aspects of the const_iterator and Thief
-    // nested classes.
-    class IteratorAndThiefBase {
+
+    // Dummy struct for use with iterator_base
+    struct Noop {
+      Noop()            = default;
+      Noop(Noop const&) = default;
+      Noop& operator=(Noop const&) = default;
+      Noop(Noop&) {}
+    };
+
+    // This class collects some common aspects of the iterator and
+    // thread_iterator nested classes. The Mutex does nothing for <iterator>
+    // and is an actual std::mutex for <thread_iterator>.
+    template <typename Mutex>
+    class iterator_base {
       friend class Den;
+      friend class thread_iterator;
 
      public:
       using const_reference =
@@ -385,41 +398,60 @@ namespace libsemigroups {
       Presentation<word_type>             _final;
       size_type                           _max_num_classes;
       size_type                           _min_target_node;
+      std::vector<PendingDef>             _pending;
+      Mutex                               _mtx;
+
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
       Sims1Stats _stats;
+
+      void stats_update(size_type);
 #endif
+
+      void init(size_type n);
+
+      // We could use the copy constructor, but there's no point in copying
+      // anything except the FelschDigraph and so we only copy that.
+      void copy_felsch_graph(iterator_base const& that) {
+        _felsch_graph = that._felsch_graph;
+      }
+
+      template <typename Lock>
+      bool try_define(PendingDef const&);
+
+      template <typename Lock>
+      bool try_pop(PendingDef&);
 
      public:
       //! No doc
-      IteratorAndThiefBase(Presentation<word_type> const& p,
-                           Presentation<word_type> const& e,
-                           Presentation<word_type> const& f,
-                           size_type                      n);
+      iterator_base(Presentation<word_type> const& p,
+                    Presentation<word_type> const& e,
+                    Presentation<word_type> const& f,
+                    size_type                      n);
 
       // None of the constructors are noexcept because the corresponding
-      // constructors for Presentation aren't (until C++17).
+      // constructors for Presentation aren't currently
 
       //! No doc
-      IteratorAndThiefBase() = delete;
+      iterator_base() = default;
       //! No doc
-      IteratorAndThiefBase(IteratorAndThiefBase const&) = default;
+      iterator_base(iterator_base const&) = default;
       //! No doc
-      IteratorAndThiefBase(IteratorAndThiefBase&&) = default;
+      iterator_base(iterator_base&&) = default;
       //! No doc
-      IteratorAndThiefBase& operator=(IteratorAndThiefBase const&) = default;
+      iterator_base& operator=(iterator_base const&) = default;
       //! No doc
-      IteratorAndThiefBase& operator=(IteratorAndThiefBase&&) = default;
+      iterator_base& operator=(iterator_base&&) = default;
 
       //! No doc
-      virtual ~IteratorAndThiefBase() = default;
+      virtual ~iterator_base() = default;
 
       //! No doc
-      bool operator==(IteratorAndThiefBase const& that) const noexcept {
+      bool operator==(iterator_base const& that) const noexcept {
         return _felsch_graph == that._felsch_graph;
       }
 
       //! No doc
-      bool operator!=(IteratorAndThiefBase const& that) const noexcept {
+      bool operator!=(iterator_base const& that) const noexcept {
         return !(this->operator==(that));
       }
 
@@ -434,32 +466,34 @@ namespace libsemigroups {
       }
 
       //! No doc
-      void swap(IteratorAndThiefBase& that) noexcept {
+      // TODO(Sims1) to tpp
+      void swap(iterator_base& that) noexcept {
         std::swap(_extra, that._extra);
         std::swap(_felsch_graph, that._felsch_graph);
         std::swap(_max_num_classes, that._max_num_classes);
         std::swap(_min_target_node, that._min_target_node);
+        std::swap(_pending, that._pending);
       }
 
-      // We could use the copy constructor, but there's no point in copying
-      // anything except the FelschDigraph and so we only copy that.
-      void copy_felsch_graph(IteratorAndThiefBase const& that) {
-        _felsch_graph = that._felsch_graph;
-      }
-
+      // TODO(Sims1) needed?
       size_type min_target_node() const noexcept {
         return _min_target_node;
       }
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+      Sims1Stats const& stats() const noexcept;
+
+#endif
     };
 
    public:
     //! No doc
-    class const_iterator : public IteratorAndThiefBase {
+    class iterator : public iterator_base<Noop> {
      public:
+      using iterator_base = iterator_base<Noop>;
       //! No doc
-      using const_pointer = typename IteratorAndThiefBase::const_pointer;
+      using const_pointer = typename iterator_base::const_pointer;
       //! No doc
-      using const_reference = typename IteratorAndThiefBase::const_reference;
+      using const_reference = typename iterator_base::const_reference;
 
       //! No doc
       using size_type = typename std::vector<digraph_type>::size_type;
@@ -475,54 +509,33 @@ namespace libsemigroups {
       //! No doc
       using iterator_category = std::forward_iterator_tag;
 
-     private:
-      std::vector<PendingDef> _pending;
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-      Sims1Stats _stats;
-#endif
-
      public:
       //! No doc
-      const_iterator(Presentation<word_type> const& p,
-                     Presentation<word_type> const& e,
-                     Presentation<word_type> const& f,
-                     size_type                      n);
+      iterator(Presentation<word_type> const& p,
+               Presentation<word_type> const& e,
+               Presentation<word_type> const& f,
+               size_type                      n);
 
       //! No doc
-      using IteratorAndThiefBase::IteratorAndThiefBase;
+      using iterator_base::iterator_base;
 
       //! No doc
-      ~const_iterator() = default;
+      ~iterator() = default;
 
       // prefix
       //! No doc
-      const_iterator const& operator++();
+      iterator const& operator++();
 
       // postfix
       //! No doc
-      const_iterator operator++(int) {
-        const_iterator copy(*this);
+      iterator operator++(int) {
+        iterator copy(*this);
         ++(*this);
         return copy;
       }
 
-      //! No doc
-      void swap(const_iterator& that) noexcept {
-        IteratorAndThiefBase::swap(that);
-        std::swap(_pending, that._pending);
-      }
-
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-      Sims1Stats const& stats() const noexcept;
-#endif
-
-     private:
-      bool try_define(PendingDef const&);
-      bool try_pop(PendingDef&);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-      void stats_update(size_type);
-#endif
-    };  // class const_iterator
+      using iterator_base::swap;
+    };  // class iterator
 
     //! Returns a forward iterator pointing at the first congruence.
     //!
@@ -556,7 +569,7 @@ namespace libsemigroups {
     //! \param n the maximum number of classes in a congruence.
     //!
     //! \returns
-    //! An iterator \c it of type \c const_iterator pointing to an
+    //! An iterator \c it of type \c iterator pointing to an
     //! ActionDigraph with at most \p n nodes.
     //!
     //! \exceptions
@@ -570,8 +583,8 @@ namespace libsemigroups {
     //! \sa
     //! \ref cend
     // TODO(Sims1) it'd be good to remove node 0 to avoid confusion.
-    const_iterator cbegin(size_type n) const {
-      return const_iterator(presentation(), _extra, _final, n);
+    iterator cbegin(size_type n) const {
+      return iterator(presentation(), _extra, _final, n);
     }
 
     //! Returns a forward iterator pointing one beyond the last congruence.
@@ -583,7 +596,7 @@ namespace libsemigroups {
     //! \param n the maximum number of classes in a congruence.
     //!
     //! \returns
-    //! An iterator \c it of type \c const_iterator pointing to an
+    //! An iterator \c it of type \c iterator pointing to an
     //! ActionDigraph with at most \p 0 nodes.
     //!
     //! \exceptions
@@ -596,8 +609,8 @@ namespace libsemigroups {
     //!
     //! \sa
     //! \ref cbegin
-    const_iterator cend(size_type) const {
-      return const_iterator(presentation(), _extra, _final, 0);
+    iterator cend(size_type) const {
+      return iterator(presentation(), _extra, _final, 0);
     }
 
     //! Returns the number of one-sided congruences with up to a given number
@@ -637,7 +650,7 @@ namespace libsemigroups {
                                       S&            last_count,
                                       uint64_t      count,
                                       detail::Timer t) const;
-    class Thief;
+    class thread_iterator;
     class Den;
   };
 

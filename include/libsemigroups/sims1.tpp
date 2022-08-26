@@ -22,7 +22,9 @@
 namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
   template <typename T>
-  void Sims1<T>::const_iterator::stats_update(size_type current_num_edges) {
+  template <typename Mutex>
+  void
+  Sims1<T>::iterator_base<Mutex>::stats_update(size_type current_num_edges) {
     if (this->_felsch_graph.number_of_edges() > current_num_edges) {
       if (_stats.depth > 0) {
         _stats.depth--;
@@ -41,7 +43,8 @@ namespace libsemigroups {
   }
 
   template <typename T>
-  Sims1Stats const &Sims1<T>::const_iterator::stats() const noexcept {
+  template <typename Mutex>
+  Sims1Stats const &Sims1<T>::iterator_base<Mutex>::stats() const noexcept {
     return _stats;
   }
 
@@ -194,8 +197,7 @@ namespace libsemigroups {
         std::atomic_uint64_t count(0);
         std::atomic_uint64_t last_count(0);
 
-        den.run([&last_report, &last_count, &count, &pred, &t, this](
-                    digraph_type const &ad) {
+        den.run([&](digraph_type const &ad) {
           report_number_of_congruences(last_report, last_count, ++count, t);
           pred(ad);
           return false;
@@ -240,8 +242,7 @@ namespace libsemigroups {
       } else {
         std::atomic_uint64_t count(0);
         std::atomic_uint64_t last_count(0);
-        den.run([&last_report, &last_count, &count, &pred, &t, this](
-                    digraph_type const &ad) {
+        den.run([&](digraph_type const &ad) {
           report_number_of_congruences(last_report, last_count, ++count, t);
           return pred(ad);
         });
@@ -277,11 +278,12 @@ namespace libsemigroups {
   }
 
   ///////////////////////////////////////////////////////////////////////////////
-  // IteratorAndThiefBase nested class
+  // iterator_base nested class
   ///////////////////////////////////////////////////////////////////////////////
 
   template <typename T>
-  Sims1<T>::IteratorAndThiefBase::IteratorAndThiefBase(
+  template <typename Mutex>
+  Sims1<T>::iterator_base<Mutex>::iterator_base(
       Presentation<word_type> const &p,
       Presentation<word_type> const &extra,
       Presentation<word_type> const &final_,
@@ -290,75 +292,48 @@ namespace libsemigroups {
         _felsch_graph(p, n),
         _final(final_),
         _max_num_classes(p.contains_empty_word() ? n : n + 1),
-        _min_target_node(p.contains_empty_word() ? 0 : 1) {
+        _min_target_node(p.contains_empty_word() ? 0 : 1),
+        _mtx() {
     _felsch_graph.number_of_active_nodes(n == 0 ? 0 : 1);
     // = 0 indicates iterator is done
   }
 
-  ///////////////////////////////////////////////////////////////////////////////
-  // const_iterator nested class
-  ///////////////////////////////////////////////////////////////////////////////
-
+  // The following function is separated from the constructor so that it isn't
+  // called in the constructor of every thread_iterator
   template <typename T>
-  Sims1<T>::const_iterator::const_iterator(Presentation<word_type> const &p,
-                                           Presentation<word_type> const &e,
-                                           Presentation<word_type> const &f,
-                                           size_type                      n)
-      : IteratorAndThiefBase(p, e, f, n) {
-    if (this->_felsch_graph.number_of_active_nodes() == 0) {
-      return;
-    }
+  template <typename Mutex>
+  void Sims1<T>::iterator_base<Mutex>::init(size_type n) {
     if (n > 1) {
       _pending.emplace_back(0, 0, 1, 0, 2);
     }
     if (this->_min_target_node == 0) {
       _pending.emplace_back(0, 0, 0, 0, 1);
     }
-    ++(*this);
-    // The increment above is required so that when dereferencing any
-    // instance of this type we obtain a valid word graph (o/w the value
-    // pointed to here is empty).
-  }
-
-  ///////////////////////////////////////////////////////////////////////////////
-  // Sims1
-  ///////////////////////////////////////////////////////////////////////////////
-
-  // TODO(Sims1): remove code overlap with try_define
-  template <typename T>
-  typename Sims1<T>::const_iterator const &
-  Sims1<T>::const_iterator::operator++() {
-    PendingDef current;
-    while (try_pop(current)) {
-#if LIBSEMIGROUPS_ENABLE_STATS
-      stats_update(current.num_edges);
-#endif
-      if (try_define(current)) {
-        return *this;
-      }
-    }
-    this->_felsch_graph.number_of_active_nodes(0);
-    // indicates that the iterator is done
-    this->_felsch_graph.restrict(0);
-    return *this;
   }
 
   template <typename T>
-  bool Sims1<T>::const_iterator::try_pop(PendingDef &pd) {
-    if (_pending.empty()) {
+  template <typename Mutex>
+  template <typename Lock>
+  bool Sims1<T>::iterator_base<Mutex>::try_pop(PendingDef &pd) {
+    Lock lock(_mtx);
+    (void) lock;
+    if (this->_pending.empty()) {
       return false;
     }
-    pd = std::move(_pending.back());
-    _pending.pop_back();
+    pd = std::move(this->_pending.back());
+    this->_pending.pop_back();
     return true;
   }
 
   template <typename T>
-  bool Sims1<T>::const_iterator::try_define(PendingDef const &current) {
+  template <typename Mutex>
+  template <typename Lock>
+  bool Sims1<T>::iterator_base<Mutex>::try_define(PendingDef const &current) {
     LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
     LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
-
     {
+      Lock lock(_mtx);
+      (void) lock;
       // Backtrack if necessary
       this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
 
@@ -393,6 +368,8 @@ namespace libsemigroups {
     for (node_type next = current.source; next < M; ++next) {
       for (; a < num_gens; ++a) {
         if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
+          Lock lock(_mtx);
+          (void) lock;
           if (M < this->_max_num_classes) {
             _pending.emplace_back(next, a, M, N, M + 1);
           }
@@ -408,11 +385,49 @@ namespace libsemigroups {
     LIBSEMIGROUPS_ASSERT(N == M * num_gens);
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-    _stats.num_good_nodes += this->_felsch_graph.number_of_active_nodes();
+    this->_stats.num_good_nodes += this->_felsch_graph.number_of_active_nodes();
 #endif
     auto first = this->_final.rules.cbegin();
     auto last  = this->_final.rules.cend();
     return felsch_digraph::compatible(this->_felsch_graph, 0, M, first, last);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // iterator nested class
+  ///////////////////////////////////////////////////////////////////////////////
+
+  template <typename T>
+  Sims1<T>::iterator::iterator(Presentation<word_type> const &p,
+                               Presentation<word_type> const &e,
+                               Presentation<word_type> const &f,
+                               size_type                      n)
+      : iterator_base(p, e, f, n) {
+    if (this->_felsch_graph.number_of_active_nodes() == 0) {
+      return;
+    }
+    this->init(n);
+    ++(*this);
+    // The increment above is required so that when dereferencing any
+    // instance of this type we obtain a valid word graph (o/w the value
+    // pointed to here is empty).
+  }
+
+  // TODO(Sims1): remove code overlap with try_define
+  template <typename T>
+  typename Sims1<T>::iterator const &Sims1<T>::iterator::operator++() {
+    PendingDef current;
+    while (this->template try_pop<Noop>(current)) {
+#if LIBSEMIGROUPS_ENABLE_STATS
+      this->stats_update(current.num_edges);
+#endif
+      if (this->template try_define<Noop>(current)) {
+        return *this;
+      }
+    }
+    this->_felsch_graph.number_of_active_nodes(0);
+    // indicates that the iterator is done
+    this->_felsch_graph.restrict(0);
+    return *this;
   }
 
   template <typename T>
@@ -430,161 +445,145 @@ namespace libsemigroups {
   }
 
   ///////////////////////////////////////////////////////////////////////////////
-  // Thief
+  // thread_iterator
   ///////////////////////////////////////////////////////////////////////////////
 
   template <typename T>
-  class Sims1<T>::Thief : public IteratorAndThiefBase {
-   private:
-    std::vector<PendingDef> _pending;
-    mutable std::mutex      _mutex;
-    uint64_t &              _total_pending;
+  class Sims1<T>::thread_iterator : public iterator_base<std::mutex> {
+    friend class Sims1<T>::Den;
 
    public:
     //! No doc
-    Thief(Presentation<word_type> const &p,
-          Presentation<word_type> const &e,
-          Presentation<word_type> const &f,
-          size_type                      n,
-          uint64_t &                     total_pending)
-        : IteratorAndThiefBase(p, e, f, n), _total_pending(total_pending) {}
+    thread_iterator(Presentation<word_type> const &p,
+                    Presentation<word_type> const &e,
+                    Presentation<word_type> const &f,
+                    size_type                      n)
+        : iterator_base<std::mutex>(p, e, f, n) {}
 
     // None of the constructors are noexcept because the corresponding
     // constructors for std::vector aren't (until C++17).
     //! No doc
-    Thief() = delete;
+    thread_iterator() = delete;
     //! No doc
-    Thief(Thief const &) = delete;
+    thread_iterator(thread_iterator const &) = delete;
     //! No doc
-    Thief(Thief &&) = delete;
+    thread_iterator(thread_iterator &&) = delete;
     //! No doc
-    Thief &operator=(Thief const &) = delete;
+    thread_iterator &operator=(thread_iterator const &) = delete;
     //! No doc
-    Thief &operator=(Thief &&) = delete;
+    thread_iterator &operator=(thread_iterator &&) = delete;
 
     //! No doc
-    ~Thief() = default;
-
-    size_t size() const noexcept {
-      return _pending.size();
-    }
+    ~thread_iterator() = default;
 
     // prefix
     //! No doc
-    bool try_define(PendingDef const &current) {
-      LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
-      LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
+    /*    bool try_define(PendingDef const &current) {
+          LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
+          LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
 
-      {
-        std::lock_guard<std::mutex> lock(_mutex);
-        LIBSEMIGROUPS_ASSERT(this->_felsch_graph.number_of_edges()
-                             >= current.num_edges);
-        // Backtrack if necessary
-        this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
-
-        // It might be that current.target is a new node, in which case
-        // _felsch_graph.number_of_active_nodes() includes this new node
-        // even before the edge current.source -> current.target is defined.
-        this->_felsch_graph.number_of_active_nodes(current.num_nodes);
-
-        LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(
-                                 current.source, current.generator)
-                             == UNDEFINED);
-
-#ifdef LIBSEMIGROUPS_DEBUG
-        for (node_type next = 0; next < current.source; ++next) {
-          for (letter_type a = 0; a < this->_felsch_graph.out_degree(); ++a) {
-            LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(next, a)
-                                 != UNDEFINED);
-          }
-        }
-        for (letter_type a = 0; a < current.generator; ++a) {
-          LIBSEMIGROUPS_ASSERT(
-              this->_felsch_graph.unsafe_neighbor(current.source, a)
-              != UNDEFINED);
-        }
-
-#endif
-        size_type const start = this->_felsch_graph.number_of_edges();
-
-        this->_felsch_graph.def_edge(
-            current.source, current.generator, current.target);
-
-        auto first = this->_extra.rules.cbegin();
-        auto last  = this->_extra.rules.cend();
-        if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)
-            || !this->_felsch_graph.process_definitions(start)) {
-          return false;
-        }
-      }
-
-      letter_type     a        = current.generator + 1;
-      size_type const M        = this->_felsch_graph.number_of_active_nodes();
-      size_type const N        = this->_felsch_graph.number_of_edges();
-      size_type const num_gens = this->_felsch_graph.out_degree();
-
-      for (node_type next = current.source; next < M; ++next) {
-        for (; a < num_gens; ++a) {
-          if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
+          {
             std::lock_guard<std::mutex> lock(_mutex);
-            if (M < this->_max_num_classes) {
-              _total_pending++;
-              _pending.emplace_back(next, a, M, N, M + 1);
+            LIBSEMIGROUPS_ASSERT(this->_felsch_graph.number_of_edges()
+                                 >= current.num_edges);
+            // Backtrack if necessary
+            this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
+
+            // It might be that current.target is a new node, in which case
+            // _felsch_graph.number_of_active_nodes() includes this new node
+            // even before the edge current.source -> current.target is defined.
+            this->_felsch_graph.number_of_active_nodes(current.num_nodes);
+
+            LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(
+                                     current.source, current.generator)
+                                 == UNDEFINED);
+
+    #ifdef LIBSEMIGROUPS_DEBUG
+            for (node_type next = 0; next < current.source; ++next) {
+              for (letter_type a = 0; a < this->_felsch_graph.out_degree(); ++a)
+    { LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(next, a)
+                                     != UNDEFINED);
+              }
             }
-            for (node_type b = M; b-- > this->_min_target_node;) {
-              _total_pending++;
-              _pending.emplace_back(next, a, b, N, M);
+            for (letter_type a = 0; a < current.generator; ++a) {
+              LIBSEMIGROUPS_ASSERT(
+                  this->_felsch_graph.unsafe_neighbor(current.source, a)
+                  != UNDEFINED);
             }
-            return false;
+
+    #endif
+            size_type const start = this->_felsch_graph.number_of_edges();
+
+            this->_felsch_graph.def_edge(
+                current.source, current.generator, current.target);
+
+            auto first = this->_extra.rules.cbegin();
+            auto last  = this->_extra.rules.cend();
+            if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)
+                || !this->_felsch_graph.process_definitions(start)) {
+              return false;
+            }
           }
-        }
-        a = 0;
-      }
 
-      LIBSEMIGROUPS_ASSERT(N == M * num_gens);
+          letter_type     a        = current.generator + 1;
+          size_type const M        =
+    this->_felsch_graph.number_of_active_nodes(); size_type const N        =
+    this->_felsch_graph.number_of_edges(); size_type const num_gens =
+    this->_felsch_graph.out_degree();
 
-      // No undefined edges, word graph is complete
-      auto first = this->_final.rules.cbegin();
-      auto last  = this->_final.rules.cend();
-      return felsch_digraph::compatible(this->_felsch_graph, 0, M, first, last);
-    }
+          for (node_type next = current.source; next < M; ++next) {
+            for (; a < num_gens; ++a) {
+              if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
+                std::lock_guard<std::mutex> lock(_mutex);
+                if (M < this->_max_num_classes) {
+                  _total_pending++;
+                  _pending.emplace_back(next, a, M, N, M + 1);
+                }
+                for (node_type b = M; b-- > this->_min_target_node;) {
+                  _total_pending++;
+                  _pending.emplace_back(next, a, b, N, M);
+                }
+                return false;
+              }
+            }
+            a = 0;
+          }
+
+          LIBSEMIGROUPS_ASSERT(N == M * num_gens);
+
+          // No undefined edges, word graph is complete
+          auto first = this->_final.rules.cbegin();
+          auto last  = this->_final.rules.cend();
+          return felsch_digraph::compatible(this->_felsch_graph, 0, M, first,
+    last);
+        } */
 
    public:
     void push(PendingDef pd) {
-      _pending.push_back(std::move(pd));
+      this->_pending.push_back(std::move(pd));
     }
 
-    bool try_pop(PendingDef &pd) {
-      std::lock_guard<std::mutex> lock(_mutex);
-      if (_pending.empty()) {
-        return false;
-      }
-      pd = std::move(_pending.back());
-      _pending.pop_back();
-      return true;
-    }
-
-    void steal_from(Thief &that) {
+    void steal_from(thread_iterator &that) {
       // WARNING <that> must be locked before calling this function
-      std::lock_guard<std::mutex> lock(_mutex);
+      std::lock_guard<std::mutex> lock(this->_mtx);
       LIBSEMIGROUPS_ASSERT(_pending.empty());
       // Copy the FelschDigraph from that into *this
-      IteratorAndThiefBase::copy_felsch_graph(that);
+      this->copy_felsch_graph(that);
 
       // Unzip that._pending into _pending and that._pending, this seems to
       // give better performance in the search than splitting that._pending
       // into [begin, begin + size / 2) and [begin + size / 2, end)
       for (size_t i = 0; i < that._pending.size(); i += 2) {
-        _pending.push_back(std::move(that._pending[i]));
+        this->_pending.push_back(std::move(that._pending[i]));
         that._pending[i / 2] = std::move(that._pending[i + 1]);
       }
       that._pending.erase(that._pending.cbegin() + that._pending.size() / 2,
                           that._pending.cend());
     }
 
-    bool try_steal(Thief &q) {
-      std::lock_guard<std::mutex> lock(_mutex);
-      if (_pending.empty()) {
+    bool try_steal(thread_iterator &q) {
+      std::lock_guard<std::mutex> lock(this->_mtx);
+      if (this->_pending.empty()) {
         return false;
       }
       // Copy the FelschDigraph and half pending from *this into q
@@ -600,22 +599,23 @@ namespace libsemigroups {
   template <typename T>
   class Sims1<T>::Den {
    private:
-    std::atomic_bool                    _done;
-    std::vector<std::unique_ptr<Thief>> _theives;
-    std::vector<std::thread>            _threads;
-    std::vector<uint64_t>               _total_pending;
-    size_type                           _num_threads;
-    digraph_type                        _result;
-    std::mutex                          _mtx;
+    std::atomic_bool                              _done;
+    std::vector<std::unique_ptr<thread_iterator>> _theives;
+    std::vector<std::thread>                      _threads;
+    std::vector<uint64_t>                         _total_pending;
+    size_type                                     _num_threads;
+    digraph_type                                  _result;
+    std::mutex                                    _mtx;
 
     void worker_thread(unsigned                                  my_index,
                        std::function<bool(digraph_type const &)> hook) {
+      using Lock = std::lock_guard<std::mutex>;
       PendingDef pd;
       for (auto i = 0; i < 128; ++i) {
         while ((pop_from_local_queue(pd, my_index)
                 || pop_from_other_thread_queue(pd, my_index))
                && !_done) {
-          if (_theives[my_index]->try_define(pd)) {
+          if (_theives[my_index]->template try_define<Lock>(pd)) {
             if (hook(**_theives[my_index])) {
               // hook returns true to indicate that we should stop early
               std::lock_guard<std::mutex> lock(_mtx);
@@ -637,7 +637,8 @@ namespace libsemigroups {
     }
 
     bool pop_from_local_queue(PendingDef &pd, unsigned my_index) {
-      return _theives[my_index]->try_pop(pd);
+      using Lock = std::lock_guard<std::mutex>;
+      return _theives[my_index]->template try_pop<Lock>(pd);
     }
 
     bool pop_from_other_thread_queue(PendingDef &pd, unsigned my_index) {
@@ -667,18 +668,9 @@ namespace libsemigroups {
           _result(),
           _mtx() {
       for (size_t i = 0; i < _num_threads; ++i) {
-        _theives.push_back(
-            std::make_unique<Thief>(p, e, f, n, _total_pending[i]));
+        _theives.push_back(std::make_unique<thread_iterator>(p, e, f, n));
       }
-
-      if (n > 1) {
-        _total_pending[0]++;
-        _theives.front()->push({0, 0, 1, 0, 2});
-      }
-      if (_theives.front()->min_target_node() == 0) {
-        _total_pending[0]++;
-        _theives.front()->push({0, 0, 0, 0, 1});
-      }
+      _theives.front()->init(n);
     }
 
     ~Den() = default;
