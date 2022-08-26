@@ -97,40 +97,28 @@ namespace libsemigroups {
     size_t                  _report_interval;
     Presentation<word_type> _shorts;
 
-    // TODO(Sims1) clean up the ctrs
-    Sims1Settings(size_t n, size_t r, size_t s)
-        : _longs(), _num_threads(n), _report_interval(r), _shorts() {}
-
    public:
-    Sims1Settings() : Sims1Settings(1, 1'000, UNDEFINED) {}
+    Sims1Settings() : _longs(), _num_threads(), _report_interval(), _shorts() {
+      number_of_threads(1);
+      report_interval(1'000);
+    }
 
     template <typename S>
-    Sims1Settings(Sims1Settings<S> const& s)
-        : Sims1Settings(s.number_of_threads(),
-                        s.report_interval(),
-                        s.split_at()) {
-      shorts(s.shorts());
-      longs(s.longs());
-    }
+    Sims1Settings(Sims1Settings<S> const& that)
+        : _longs(that.longs()),
+          _num_threads(that.number_of_threads()),
+          _report_interval(that.report_interval()),
+          _shorts(that.shorts()) {}
 
     Sims1Settings const& settings() {
       return *this;
     }
 
+    // Copy the settings from that into this, used in builder in derived
+    // classes.
     T& settings(Sims1Settings const& that) {
       *this = that;
       return static_cast<T&>(*this);
-    }
-
-    // TODO(Sims1) doc
-    T& split_at(size_t val) noexcept {
-      _split_at = val;
-      return static_cast<T&>(*this);
-    }
-
-    // TODO(Sims1) doc
-    size_t split_at() const noexcept {
-      return _split_at;
     }
 
     // TODO(Sims1) doc
@@ -803,8 +791,6 @@ namespace libsemigroups {
   // TODO(Sims1) doc
   class MinimalRepOrc : public Sims1Settings<MinimalRepOrc> {
    private:
-    // We require a copy of the presentation, rather than a reference
-    // otherwise the non-word_type Presentation ctor below doesn't work.
     size_t _size;
 
    public:

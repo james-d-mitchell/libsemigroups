@@ -357,7 +357,7 @@ namespace libsemigroups {
 
     Sims1_ S(congruence_kind::right);
     S.shorts(p);
-    S.split_at(43);
+    // S.split_at(43);
     auto     it = S.cbegin(10);
     uint64_t n  = 0;
     for (; it != S.cend(10); ++it) {
@@ -755,7 +755,7 @@ namespace libsemigroups {
                  .shorts(p)
                  .target_size(82)
                  .number_of_threads(std::thread::hardware_concurrency())
-                 .split_at(212 / 2)
+                 //           .split_at(212 / 2)
                  .report_interval(2'000)
                  .digraph();
     REQUIRE(d.number_of_nodes() == 18);
@@ -1059,37 +1059,37 @@ namespace libsemigroups {
     REQUIRE_THROWS_AS(C.shorts(p).extra(e), LibsemigroupsException);
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Sims1", "034", "split_at", "[quick][sims1]") {
-    auto                    rg = ReportGuard(false);
-    Presentation<word_type> p;
-    p.contains_empty_word(true);
+  // LIBSEMIGROUPS_TEST_CASE("Sims1", "034", "split_at", "[quick][sims1]") {
+  //   auto                    rg = ReportGuard(false);
+  //   Presentation<word_type> p;
+  //   p.contains_empty_word(true);
 
-    //          a  A  b  B  c  C
-    p.alphabet({0, 1, 2, 3, 4, 5});
-    presentation::add_inverse_rules(p, {1, 0, 3, 2, 5, 4});
-    presentation::add_rule_and_check(p, {0, 0, 5, 0, 4}, {});
-    presentation::add_rule_and_check(p, {0, 4, 2, 2, 1, 5, 2}, {});
-    presentation::add_rule_and_check(p, {1, 3, 0, 2, 4, 4, 4}, {});
-    Sims1_ S(congruence_kind::right);
-    S.shorts(p);
+  //   //          a  A  b  B  c  C
+  //   p.alphabet({0, 1, 2, 3, 4, 5});
+  //   presentation::add_inverse_rules(p, {1, 0, 3, 2, 5, 4});
+  //   presentation::add_rule_and_check(p, {0, 0, 5, 0, 4}, {});
+  //   presentation::add_rule_and_check(p, {0, 4, 2, 2, 1, 5, 2}, {});
+  //   presentation::add_rule_and_check(p, {1, 3, 0, 2, 4, 4, 4}, {});
+  //   Sims1_ S(congruence_kind::right);
+  //   S.shorts(p);
 
-    REQUIRE_THROWS_AS(S.split_at(10), LibsemigroupsException);
-    S.split_at(0);
+  //   REQUIRE_THROWS_AS(S.split_at(10), LibsemigroupsException);
+  //   S.split_at(0);
 
-    REQUIRE(S.shorts().rules.empty());
+  //   REQUIRE(S.shorts().rules.empty());
 
-    for (size_t i = 0; i <= p.rules.size() / 2; ++i) {
-      S.split_at(i);
-      REQUIRE(S.shorts().rules.size() == 2 * i);
-    }
-    REQUIRE(S.shorts().rules.size() == p.rules.size());
-    for (size_t i = p.rules.size() / 2; i > 0; --i) {
-      S.split_at(i);
-      REQUIRE(S.shorts().rules.size() == 2 * i);
-    }
-    S.split_at(7);
-    REQUIRE(S.number_of_congruences(3) == 14);
-  }
+  //   for (size_t i = 0; i <= p.rules.size() / 2; ++i) {
+  //     S.split_at(i);
+  //     REQUIRE(S.shorts().rules.size() == 2 * i);
+  //   }
+  //   REQUIRE(S.shorts().rules.size() == p.rules.size());
+  //   for (size_t i = p.rules.size() / 2; i > 0; --i) {
+  //     S.split_at(i);
+  //     REQUIRE(S.shorts().rules.size() == 2 * i);
+  //   }
+  //   S.split_at(7);
+  //   REQUIRE(S.number_of_congruences(3) == 14);
+  // }
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
   LIBSEMIGROUPS_TEST_CASE("Sims1", "035", "stats", "[quick][sims1]") {
