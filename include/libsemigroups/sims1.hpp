@@ -19,8 +19,11 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoids.
 // TODO(Sims1):
+// * number congs per second in reporting
+// * add short_rules + long_rules from iterators
+// * add presentation::longest_rule, shortest_rule, number of rules less than a
+//   given size.
 // * fix sorting in presentation (so that is uses both sides of the rules)
-// * add a function to split at a particular sum of lhs + rhs length
 // * figure out how to suppress FroidurePin reporting
 // * ensure that stats works properly
 // * improve the reporting from MinimalRepOrc so that it:
@@ -100,7 +103,7 @@ namespace libsemigroups {
    public:
     Sims1Settings() : _longs(), _num_threads(), _report_interval(), _shorts() {
       number_of_threads(1);
-      report_interval(1'000);
+      report_interval(999);
     }
 
     template <typename S>

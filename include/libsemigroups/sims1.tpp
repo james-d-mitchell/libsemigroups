@@ -235,9 +235,10 @@ namespace libsemigroups {
         using float_seconds
             = std::chrono::duration<float, std::chrono::seconds::period>;
         auto seconds = std::chrono::duration_cast<float_seconds>(t.elapsed());
-        REPORT_DEFAULT("found %s congruences in %.6fs!\n",
+        REPORT_DEFAULT("found %s congruences in %.6fs (%s/s)!\n",
                        detail::group_digits(count).c_str(),
-                       seconds.count());
+                       seconds.count(),
+                       detail::group_digits(count / seconds.count()).c_str());
       }
     }
   }
@@ -489,7 +490,7 @@ namespace libsemigroups {
     void worker_thread(unsigned                                  my_index,
                        std::function<bool(digraph_type const &)> hook) {
       PendingDef pd;
-      for (auto i = 0; i < 128; ++i) {
+      for (auto i = 0; i < 16; ++i) {
         while ((pop_from_local_queue(pd, my_index)
                 || pop_from_other_thread_queue(pd, my_index))
                && !_done) {

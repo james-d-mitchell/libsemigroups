@@ -405,26 +405,32 @@ namespace libsemigroups {
     auto                   rg = ReportGuard(true);
     FroidurePin<Transf<4>> S({Transf<4>({1, 2, 3, 0}),
                               Transf<4>({1, 0, 2, 3}),
-                              Transf<4>({0, 1, 0, 3})});
+                              Transf<4>({0, 0, 1, 2})});
     REQUIRE(S.size() == 256);
-    // auto p
-    //    = make<Presentation<word_type>>(FullTransformationMonoidAizenstat(4));
+    auto p = make<Presentation<word_type>>(S);
+    REQUIRE(p.rules.size() == 132);
+    auto q
+        = make<Presentation<word_type>>(FullTransformationMonoidAizenstat(4));
+    // q.rules.insert(q.rules.end(), p.rules.cbegin(), p.rules.cbegin() + 100);
     // Using this presentation makes this perform terribly slowly.
 
-    auto p = make<Presentation<word_type>>(S);
     // REQUIRE(p.rules.size() == 34);
 
     // REQUIRE(presentation::length(p) == 182);
-    // presentation::remove_duplicate_rules(p);
     // REQUIRE(presentation::length(p) == 182);
-    // presentation::reduce_complements(p);
     // REQUIRE(presentation::length(p) == 182);
-    // presentation::sort_each_rule(p);
-    // presentation::sort_rules(p);
 
-    Sims1_ C(congruence_kind::left);
+    presentation::sort_each_rule(q);
+    presentation::sort_rules(q);
+    presentation::remove_duplicate_rules(q);
+    presentation::reduce_complements(q);
+
+    Sims1_ C(congruence_kind::right);
     C.short_rules(p);
-    REQUIRE(C.number_of_threads(6).number_of_congruences(256) == 120'121);
+    // REQUIRE(C.short_rules().rules.size() == 106);
+    // REQUIRE(C.long_rules().rules.size() == 48);
+
+    REQUIRE(C.number_of_threads(8).number_of_congruences(256) == 120'121);
     // Number generated using CREAM, but Sims1 counts more for right, and too
     // slow for left
     // TODO(Sims1) try another non-machine generated presentation
@@ -502,7 +508,7 @@ namespace libsemigroups {
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
     Sims1_ C(congruence_kind::right);
-    C.short_rules(p);
+    C.short_rules(p).large_rule_length(10);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(209)
             == 195'709);
@@ -1503,7 +1509,7 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "044",
-                          "trivial group - minimal o.r.c rep",
+                          "trivial group - minimal o.r.c. rep",
                           "[quick][sims1]") {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
