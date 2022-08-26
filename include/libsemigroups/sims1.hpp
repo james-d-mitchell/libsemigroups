@@ -279,6 +279,11 @@ namespace libsemigroups {
 
     ~Sims1();
 
+    using Sims1Settings<Sims1>::shorts;
+    using Sims1Settings<Sims1>::longs;
+    using Sims1Settings<Sims1>::number_of_threads;
+    using Sims1Settings<Sims1>::report_interval;
+
     //! Returns a const reference to the defining presentation.
     //!
     //! This function returns the defining presentation of a Sims1 instance.
@@ -335,8 +340,8 @@ namespace libsemigroups {
 
     Sims1& extra(Presentation<word_type> const& p) {
       auto normal_p = make<Presentation<word_type>>(p);
-      validate_presentation(normal_p, this->shorts());
-      validate_presentation(normal_p, this->longs());
+      validate_presentation(normal_p, shorts());
+      validate_presentation(normal_p, longs());
       if (_kind == congruence_kind::left) {
         presentation::reverse(normal_p);
       }
@@ -344,13 +349,11 @@ namespace libsemigroups {
       return *this;
     }
 
-    using Sims1Settings<Sims1>::shorts;
-
     Sims1& shorts(Presentation<word_type> const& p) {
       // We call make in the next two lines to ensure that the generators of the
       // presentation are {0, ..., n - 1} where n is the size of the alphabet.
       auto normal_p = make<Presentation<word_type>>(p);
-      validate_presentation(normal_p, this->longs());
+      validate_presentation(normal_p, longs());
       validate_presentation(normal_p, _extra);
       if (_kind == congruence_kind::left) {
         presentation::reverse(normal_p);
@@ -358,13 +361,11 @@ namespace libsemigroups {
       return Sims1Settings<Sims1>::shorts(normal_p);
     }
 
-    using Sims1Settings<Sims1>::longs;
-
     Sims1& longs(Presentation<word_type> const& p) {
       // We call make in the next two lines to ensure that the generators of the
       // presentation are {0, ..., n - 1} where n is the size of the alphabet.
       auto normal_p = make<Presentation<word_type>>(p);
-      validate_presentation(normal_p, this->shorts());
+      validate_presentation(normal_p, shorts());
       validate_presentation(normal_p, _extra);
       if (_kind == congruence_kind::left) {
         presentation::reverse(normal_p);
@@ -422,21 +423,24 @@ namespace libsemigroups {
 
       using const_pointer = typename std::vector<digraph_type>::const_pointer;
 
-     protected:
+     private:
       Presentation<word_type> _extra;
-      FelschDigraph<word_type, node_type>
-          _felsch_graph;  // shorts is stored in _felsch_graph
       Presentation<word_type> _longs;
       size_type               _max_num_classes;
       size_type               _min_target_node;
-      std::vector<PendingDef> _pending;
+
+     protected:
+      // shorts is stored in _felsch_graph
+      FelschDigraph<word_type, node_type> _felsch_graph;
       // This mutex does nothing for iterator, only does something for
       // thread_iterator
-      std::mutex _mtx;
+      std::mutex              _mtx;
+      std::vector<PendingDef> _pending;
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
       Sims1Stats _stats;
 
+     protected:
       void stats_update(size_type);
 #endif
 
@@ -477,10 +481,10 @@ namespace libsemigroups {
       // TODO(Sims1) to tpp file
       iterator_base(iterator_base const& that)
           : _extra(that._extra),
-            _felsch_graph(that._felsch_graph),
             _longs(that._longs),
             _max_num_classes(that._max_num_classes),
             _min_target_node(that._min_target_node),
+            _felsch_graph(that._felsch_graph),
             _pending(that._pending) {}
 
       //! No doc
@@ -489,10 +493,10 @@ namespace libsemigroups {
       // TODO(Sims1) to tpp file
       iterator_base(iterator_base&& that)
           : _extra(std::move(that._extra)),
-            _felsch_graph(std::move(that._felsch_graph)),
             _longs(std::move(that._longs)),
             _max_num_classes(std::move(that._max_num_classes)),
             _min_target_node(std::move(that._min_target_node)),
+            _felsch_graph(std::move(that._felsch_graph)),
             _pending(std::move(that._pending)) {}
 
       //! No doc
@@ -501,10 +505,10 @@ namespace libsemigroups {
       // TODO(Sims1) to tpp file
       iterator_base& operator=(iterator_base const& that) {
         _extra           = that._extra;
-        _felsch_graph    = that._felsch_graph;
         _longs           = that._longs;
         _max_num_classes = that._max_num_classes;
         _min_target_node = that._min_target_node;
+        _felsch_graph    = that._felsch_graph;
         _pending         = that._pending;
         return *this;
       }
@@ -515,10 +519,10 @@ namespace libsemigroups {
       // TODO(Sims1) to tpp file
       iterator_base& operator=(iterator_base&& that) {
         _extra           = std::move(that._extra);
-        _felsch_graph    = std::move(that._felsch_graph);
         _longs           = std::move(that.longs());
         _max_num_classes = std::move(that._max_num_classes);
         _min_target_node = std::move(that._min_target_node);
+        _felsch_graph    = std::move(that._felsch_graph);
         _pending         = std::move(that._pending);
         return *this;
       }
@@ -533,7 +537,7 @@ namespace libsemigroups {
 
       //! No doc
       bool operator!=(iterator_base const& that) const noexcept {
-        return !(this->operator==(that));
+        return !(operator==(that));
       }
 
       //! No doc
@@ -564,6 +568,14 @@ namespace libsemigroups {
    public:
     //! No doc
     class iterator : public iterator_base {
+      using iterator_base::init;
+      using iterator_base::try_define;
+      using iterator_base::try_pop;
+
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+      using iterator_base::stats_update;
+#endif
+
      public:
       //! No doc
       using const_pointer = typename iterator_base::const_pointer;

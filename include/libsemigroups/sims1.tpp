@@ -22,9 +22,8 @@
 namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
   template <typename T>
-
   void Sims1<T>::iterator_base::stats_update(size_type current_num_edges) {
-    if (this->_felsch_graph.number_of_edges() > current_num_edges) {
+    if (_felsch_graph.number_of_edges() > current_num_edges) {
       if (_stats.depth > 0) {
         _stats.depth--;
       }
@@ -42,7 +41,6 @@ namespace libsemigroups {
   }
 
   template <typename T>
-
   Sims1Stats const &Sims1<T>::iterator_base::stats() const noexcept {
     return _stats;
   }
@@ -112,7 +110,7 @@ namespace libsemigroups {
 
   template <typename T>
   uint64_t Sims1<T>::number_of_congruences(size_type n) const {
-    if (this->number_of_threads() == 1) {
+    if (number_of_threads() == 1) {
       uint64_t result = 0;
       for_each(n, [&result](digraph_type const &) { ++result; });
       return result;
@@ -134,7 +132,7 @@ namespace libsemigroups {
 
     detail::Timer t;
 
-    if (this->number_of_threads() == 1) {
+    if (number_of_threads() == 1) {
       REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         std::for_each(cbegin(n), cend(n), pred);
@@ -149,10 +147,9 @@ namespace libsemigroups {
       }
     } else {
       REPORT_DEFAULT("using %d / %d additional threads\n",
-                     this->number_of_threads(),
+                     number_of_threads(),
                      std::thread::hardware_concurrency());
-      thread_runner den(
-          shorts(), _extra, longs(), n, this->number_of_threads());
+      thread_runner den(shorts(), _extra, longs(), n, number_of_threads());
       if (!report::should_report()) {
         auto pred_wrapper = [&pred](digraph_type const &ad) {
           pred(ad);
@@ -182,7 +179,7 @@ namespace libsemigroups {
 
     detail::Timer t;
 
-    if (this->number_of_threads() == 1) {
+    if (number_of_threads() == 1) {
       REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         return *std::find_if(cbegin(n), cend(n), pred);
@@ -200,10 +197,9 @@ namespace libsemigroups {
       }
     } else {
       REPORT_DEFAULT("using %d / %d additional threads\n",
-                     this->number_of_threads(),
+                     number_of_threads(),
                      std::thread::hardware_concurrency());
-      thread_runner den(
-          shorts(), _extra, longs(), n, this->number_of_threads());
+      thread_runner den(shorts(), _extra, longs(), n, number_of_threads());
       if (!report::should_report()) {
         den.run(pred);
       } else {
@@ -225,7 +221,7 @@ namespace libsemigroups {
                                               S &           last_count,
                                               uint64_t      count,
                                               detail::Timer t) const {
-    if (count - last_count > this->report_interval()) {
+    if (count - last_count > report_interval()) {
       // Avoid calling high_resolution_clock::now too often
       auto now     = std::chrono::high_resolution_clock::now();
       auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -253,12 +249,15 @@ namespace libsemigroups {
                                          Presentation<word_type> const &extra,
                                          Presentation<word_type> const &final_,
                                          size_type                      n)
-      : _extra(extra),
-        _felsch_graph(p, n),
+      :  // private
+        _extra(extra),
         _longs(final_),
         _max_num_classes(p.contains_empty_word() ? n : n + 1),
         _min_target_node(p.contains_empty_word() ? 0 : 1),
-        _mtx() {
+        // protected
+        _felsch_graph(p, n),
+        _mtx(),
+        _pending() {
     _felsch_graph.number_of_active_nodes(n == 0 ? 0 : 1);
     // = 0 indicates iterator is done
   }
@@ -270,7 +269,7 @@ namespace libsemigroups {
     if (n > 1) {
       _pending.emplace_back(0, 0, 1, 0, 2);
     }
-    if (this->_min_target_node == 0) {
+    if (_min_target_node == 0) {
       _pending.emplace_back(0, 0, 0, 0, 1);
     }
   }
@@ -278,59 +277,58 @@ namespace libsemigroups {
   template <typename T>
   bool Sims1<T>::iterator_base::try_pop(PendingDef &pd) {
     std::lock_guard<std::mutex> lock(_mtx);
-    if (this->_pending.empty()) {
+    if (_pending.empty()) {
       return false;
     }
-    pd = std::move(this->_pending.back());
-    this->_pending.pop_back();
+    pd = std::move(_pending.back());
+    _pending.pop_back();
     return true;
   }
 
   template <typename T>
   bool Sims1<T>::iterator_base::try_define(PendingDef const &current) {
     LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
-    LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
+    LIBSEMIGROUPS_ASSERT(current.num_nodes <= _max_num_classes);
     {
       std::lock_guard<std::mutex> lock(_mtx);
       // Backtrack if necessary
-      this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
+      _felsch_graph.reduce_number_of_edges_to(current.num_edges);
 
       // It might be that current.target is a new node, in which case
       // _felsch_graph.number_of_active_nodes() includes this new node even
       // before the edge current.source -> current.target is defined.
-      this->_felsch_graph.number_of_active_nodes(current.num_nodes);
+      _felsch_graph.number_of_active_nodes(current.num_nodes);
 
       LIBSEMIGROUPS_ASSERT(
-          this->_felsch_graph.unsafe_neighbor(current.source, current.generator)
+          _felsch_graph.unsafe_neighbor(current.source, current.generator)
           == UNDEFINED);
 
-      size_type const start = this->_felsch_graph.number_of_edges();
+      size_type const start = _felsch_graph.number_of_edges();
 
-      this->_felsch_graph.def_edge(
-          current.source, current.generator, current.target);
+      _felsch_graph.def_edge(current.source, current.generator, current.target);
 
-      auto first = this->_extra.rules.cbegin();
-      auto last  = this->_extra.rules.cend();
-      if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)
-          || !this->_felsch_graph.process_definitions(start)) {
+      auto first = _extra.rules.cbegin();
+      auto last  = _extra.rules.cend();
+      if (!felsch_digraph::compatible(_felsch_graph, 0, first, last)
+          || !_felsch_graph.process_definitions(start)) {
         // Seems to be important to check _extra first then process_definitions
         return false;
       }
     }
 
     letter_type     a        = current.generator + 1;
-    size_type const M        = this->_felsch_graph.number_of_active_nodes();
-    size_type const N        = this->_felsch_graph.number_of_edges();
-    size_type const num_gens = this->_felsch_graph.out_degree();
+    size_type const M        = _felsch_graph.number_of_active_nodes();
+    size_type const N        = _felsch_graph.number_of_edges();
+    size_type const num_gens = _felsch_graph.out_degree();
 
     for (node_type next = current.source; next < M; ++next) {
       for (; a < num_gens; ++a) {
-        if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
+        if (_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
           std::lock_guard<std::mutex> lock(_mtx);
-          if (M < this->_max_num_classes) {
+          if (M < _max_num_classes) {
             _pending.emplace_back(next, a, M, N, M + 1);
           }
-          for (node_type b = M; b-- > this->_min_target_node;) {
+          for (node_type b = M; b-- > _min_target_node;) {
             _pending.emplace_back(next, a, b, N, M);
           }
           return false;
@@ -342,11 +340,11 @@ namespace libsemigroups {
     LIBSEMIGROUPS_ASSERT(N == M * num_gens);
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-    this->_stats.num_good_nodes += this->_felsch_graph.number_of_active_nodes();
+    _stats.num_good_nodes += _felsch_graph.number_of_active_nodes();
 #endif
-    auto first = this->_longs.rules.cbegin();
-    auto last  = this->_longs.rules.cend();
-    return felsch_digraph::compatible(this->_felsch_graph, 0, M, first, last);
+    auto first = _longs.rules.cbegin();
+    auto last  = _longs.rules.cend();
+    return felsch_digraph::compatible(_felsch_graph, 0, M, first, last);
   }
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -362,7 +360,7 @@ namespace libsemigroups {
     if (this->_felsch_graph.number_of_active_nodes() == 0) {
       return;
     }
-    this->init(n);
+    init(n);
     ++(*this);
     // The increment above is required so that when dereferencing any
     // instance of this type we obtain a valid word graph (o/w the value
@@ -372,11 +370,11 @@ namespace libsemigroups {
   template <typename T>
   typename Sims1<T>::iterator const &Sims1<T>::iterator::operator++() {
     PendingDef current;
-    while (this->try_pop(current)) {
+    while (try_pop(current)) {
 #if LIBSEMIGROUPS_ENABLE_STATS
-      this->stats_update(current.num_edges);
+      stats_update(current.num_edges);
 #endif
-      if (this->try_define(current)) {
+      if (try_define(current)) {
         return *this;
       }
     }
@@ -410,6 +408,8 @@ namespace libsemigroups {
   template <typename T>
   class Sims1<T>::thread_iterator : public iterator_base {
     friend class Sims1<T>::thread_runner;
+
+    using iterator_base::copy_felsch_graph;
 
    public:
     //! No doc
@@ -445,7 +445,7 @@ namespace libsemigroups {
       std::lock_guard<std::mutex> lock(this->_mtx);
       LIBSEMIGROUPS_ASSERT(this->_pending.empty());
       // Copy the FelschDigraph from that into *this
-      this->copy_felsch_graph(that);
+      copy_felsch_graph(that);
 
       // Unzip that._pending into _pending and that._pending, this seems to
       // give better performance in the search than splitting that._pending
