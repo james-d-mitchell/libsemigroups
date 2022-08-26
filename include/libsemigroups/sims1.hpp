@@ -26,6 +26,8 @@
 // * improve the reporting from MinimalRepOrc so that it:
 //   - states all settings at the start of the run
 //   - the number of congruences considered is shown
+//  * check for the case that we've constructed a Sims1 but haven't added any
+//  relations or anything
 // * code coverage, iwyu
 // * implement joins (HopcroftKarp), meets (not sure), containment (find join
 //   and check equality)?
@@ -90,9 +92,11 @@ namespace libsemigroups {
   template <typename T>
   class Sims1Settings {
    private:
-    size_t _num_threads;
-    size_t _report_interval;
-    size_t _split_at;
+    Presentation<word_type> _longs;
+    size_t                  _num_threads;
+    size_t                  _report_interval;
+    Presentation<word_type> _shorts;
+    size_t                  _split_at;
 
     Sims1Settings(size_t n, size_t r, size_t s)
         : _num_threads(n), _report_interval(r), _split_at(s) {}
@@ -104,7 +108,19 @@ namespace libsemigroups {
     Sims1Settings(Sims1Settings<S> const& s)
         : Sims1Settings(s.number_of_threads(),
                         s.report_interval(),
-                        s.split_at()) {}
+                        s.split_at()) {
+      shorts(s.shorts());
+      longs(s.longs());
+    }
+
+    Sims1Settings const& settings() {
+      return *this;
+    }
+
+    T& settings(Sims1Settings const& that) {
+      *this = that;
+      return static_cast<T&>(*this);
+    }
 
     // TODO(Sims1) doc
     T& split_at(size_t val) noexcept {
@@ -138,17 +154,67 @@ namespace libsemigroups {
     size_t report_interval() const noexcept {
       return _report_interval;
     }
+
+    T& shorts(Presentation<word_type> const& p) {
+      validate_presentation(p, _longs);
+      _shorts = p;
+      return static_cast<T&>(*this);
+    }
+
+    template <typename P>
+    T& shorts(P const& p) {
+      static_assert(std::is_base_of<PresentationBase, P>::value,
+                    "the template parameter P must be derived from "
+                    "PresentationBase");
+      return shorts(make<Presentation<word_type>>(p));
+    }
+
+    Presentation<word_type> const& shorts() const noexcept {
+      return _shorts;
+    }
+
+    T& longs(Presentation<word_type> const& p) {
+      validate_presentation(p, _shorts);
+      _longs = p;
+      return static_cast<T&>(*this);
+    }
+
+    template <typename P>
+    T& longs(P const& p) {
+      static_assert(std::is_base_of<PresentationBase, P>::value,
+                    "the template parameter P must be derived from "
+                    "PresentationBase");
+      return longs(make<Presentation<word_type>>(p));
+    }
+
+    Presentation<word_type> const& longs() const noexcept {
+      return _longs;
+    }
+
+   protected:
+    void validate_presentation(Presentation<word_type> const& arg,
+                               Presentation<word_type> const& existing) {
+      if (!arg.alphabet().empty() && !existing.alphabet().empty()
+          && arg.alphabet() != existing.alphabet()) {
+        LIBSEMIGROUPS_EXCEPTION(
+            "the argument (a presentation) is not defined over "
+            "the correct alphabet, expected alphabet %s got %s",
+            detail::to_string(existing.alphabet()).c_str(),
+            detail::to_string(arg.alphabet()).c_str());
+      }
+      arg.validate();
+    }
   };
 
   //! Defined in ``sims1.hpp``.
   //!
   //! On this page we describe the functionality relating to the small index
-  //! congruence algorithm. The algorithm implemented by this class template is
-  //! essentially the low index subgroup algorithm for finitely presented
+  //! congruence algorithm. The algorithm implemented by this class template
+  //! is essentially the low index subgroup algorithm for finitely presented
   //! groups described in Section 5.6 of [Computation with Finitely Presented
   //! Groups](https://doi.org/10.1017/CBO9780511574702) by C. Sims. The low
-  //! index subgroups algorithm was adapted for semigroups and monoids by J. D.
-  //! Mitchell and M. Tsalakou.
+  //! index subgroups algorithm was adapted for semigroups and monoids by J.
+  //! D. Mitchell and M. Tsalakou.
   //!
   //! The purpose of this class is to provide the functions \ref cbegin and
   //! \ref cend, which permit iterating through the one-sided congruences of a
@@ -178,23 +244,11 @@ namespace libsemigroups {
 
    private:
     Presentation<word_type> _extra;
-    Presentation<word_type> _final;
-    Presentation<word_type> _presentation;
+    congruence_kind         _kind;
+
+    using Sims1Settings<Sims1>::validate_presentation;
 
    public:
-    // TODO(Sims1) doc
-    template <typename S>
-    Sims1(congruence_kind                ck,
-          Presentation<word_type> const& p,
-          Presentation<word_type> const& e,
-          Sims1Settings<S> const&        s);
-
-    // TODO(Sims1) doc
-    template <typename S>
-    Sims1(congruence_kind                ck,
-          Presentation<word_type> const& p,
-          Sims1Settings<S> const&        s);
-
     //! Construct from \ref congruence_kind and Presentation.
     //!
     //! \param ck the handedness of the congruences (left or right)
@@ -206,69 +260,7 @@ namespace libsemigroups {
     //!
     //! \sa \ref cbegin and \ref cend for a description of the meaning of the
     //! parameters.
-    Sims1(congruence_kind ck, Presentation<word_type> const& p);
-
-    //! Construct from \ref congruence_kind and two Presentation objects.
-    //!
-    //! \param ck the handedness of the congruences (left or right)
-    //! \param p the presentation defining the semigroup
-    //! \param e presentation containing additional relations
-    //!
-    //! \throws LibsemigroupsException if \p ck is \ref
-    //! congruence_kind::twosided
-    //! \throws LibsemigroupsException if `p.validate()` throws.
-    //!
-    //! \sa \ref cbegin and \ref cend for a description of the meaning of the
-    //! parameters.
-    //!
-    //! \note The presentations provided are copied when an instance of Sims1
-    //! is created, and the return values of \ref presentation and \ref extra
-    //! may not be identical to \p p and \p e. See \ref presentation for
-    //! further details.
-    Sims1(congruence_kind                ck,
-          Presentation<word_type> const& p,
-          Presentation<word_type> const& e);
-
-    //! Construct from \ref congruence_kind and Presentation.
-    //!
-    //! \param ck the handedness of the congruences (left or right)
-    //! \param p the presentation
-    //!
-    //! \throws LibsemigroupsException if \p ck is \ref
-    //! congruence_kind::twosided
-    //! \throws LibsemigroupsException if `p.validate()` throws.
-    //!
-    //! \sa \ref cbegin and \ref cend for a description of the meaning of the
-    //! parameters.
-    template <typename P>
-    Sims1(congruence_kind ck, P const& p) : Sims1(ck, p, P()) {}
-
-    //! Construct from \ref congruence_kind and two Presentation objects.
-    //!
-    //! \param ck the handedness of the congruences (left or right)
-    //! \param p the presentation defining the semigroup
-    //! \param e presentation containing additional relations
-    //!
-    //! \throws LibsemigroupsException if \p ck is
-    //! `congruence_kind::twosided`
-    //! \throws LibsemigroupsException if `p.validate()` throws.
-    //!
-    //! \sa \ref cbegin and \ref cend for a description of the meaning of the
-    //! parameters.
-    //!
-    //! \note The presentations provided are copied when an instance of Sims1
-    //! is created, and the return values of \ref presentation and \ref extra
-    //! may not be identical to \p p and \p e. See \ref presentation for
-    //! further details.
-    template <typename P>
-    Sims1(congruence_kind ck, P const& p, P const& e)
-        : Sims1(ck,
-                make<Presentation<word_type>>(p),
-                make<Presentation<word_type>>(e)) {
-      static_assert(std::is_base_of<PresentationBase, P>::value,
-                    "the template parameter P must be derived from "
-                    "PresentationBase");
-    }
+    Sims1(congruence_kind ck);
 
     //! Default constructor - deleted!
     Sims1() = delete;
@@ -313,9 +305,7 @@ namespace libsemigroups {
     //! \warning
     //! If \ref split_at has been called, then some of the defining relations
     //! may have been removed from the presentation.
-    Presentation<word_type> const& presentation() const noexcept {
-      return _presentation;
-    }
+    // TODO(Sims1) reuse documentation above
 
     //! Returns a const reference to the additional defining pairs.
     //!
@@ -335,6 +325,53 @@ namespace libsemigroups {
       return _extra;
     }
 
+    template <typename P>
+    Sims1& extra(P const& p) {
+      static_assert(std::is_base_of<PresentationBase, P>::value,
+                    "the template parameter P must be derived from "
+                    "PresentationBase");
+      return extra(make<Presentation<word_type>>(p));
+    }
+
+    Sims1& extra(Presentation<word_type> const& p) {
+      auto normal_p = make<Presentation<word_type>>(p);
+      validate_presentation(normal_p, this->shorts());
+      validate_presentation(normal_p, this->longs());
+      if (_kind == congruence_kind::left) {
+        presentation::reverse(normal_p);
+      }
+      _extra = normal_p;
+      return *this;
+    }
+
+    using Sims1Settings<Sims1>::shorts;
+
+    Sims1& shorts(Presentation<word_type> const& p) {
+      // We call make in the next two lines to ensure that the generators of the
+      // presentation are {0, ..., n - 1} where n is the size of the alphabet.
+      auto normal_p = make<Presentation<word_type>>(p);
+      validate_presentation(normal_p, this->longs());
+      validate_presentation(normal_p, _extra);
+      if (_kind == congruence_kind::left) {
+        presentation::reverse(normal_p);
+      }
+      return Sims1Settings<Sims1>::shorts(normal_p);
+    }
+
+    using Sims1Settings<Sims1>::longs;
+
+    Sims1& longs(Presentation<word_type> const& p) {
+      // We call make in the next two lines to ensure that the generators of the
+      // presentation are {0, ..., n - 1} where n is the size of the alphabet.
+      auto normal_p = make<Presentation<word_type>>(p);
+      validate_presentation(normal_p, this->shorts());
+      validate_presentation(normal_p, _extra);
+      if (_kind == congruence_kind::left) {
+        presentation::reverse(normal_p);
+      }
+      return Sims1Settings<Sims1>::longs(normal_p);
+    }
+
     //! Only apply certain relations when an otherwise compatible
     //! ActionDigraph is found.
     //!
@@ -352,10 +389,10 @@ namespace libsemigroups {
     //!
     //! \throws LibsemigroupsException if \p val is out of bounds.
     // TODO(Sims1) some tests for this.
-    Sims1& split_at(size_type val);
+    // Sims1& split_at(size_type val);
 
    private:
-    void perform_split();
+    // void perform_split();
 
     struct PendingDef {
       PendingDef() = default;
@@ -386,12 +423,13 @@ namespace libsemigroups {
       using const_pointer = typename std::vector<digraph_type>::const_pointer;
 
      protected:
-      Presentation<word_type>             _extra;
-      FelschDigraph<word_type, node_type> _felsch_graph;
-      Presentation<word_type>             _final;
-      size_type                           _max_num_classes;
-      size_type                           _min_target_node;
-      std::vector<PendingDef>             _pending;
+      Presentation<word_type> _extra;
+      FelschDigraph<word_type, node_type>
+          _felsch_graph;  // shorts is stored in _felsch_graph
+      Presentation<word_type> _longs;
+      size_type               _max_num_classes;
+      size_type               _min_target_node;
+      std::vector<PendingDef> _pending;
       // This mutex does nothing for iterator, only does something for
       // thread_iterator
       std::mutex _mtx;
@@ -402,7 +440,8 @@ namespace libsemigroups {
       void stats_update(size_type);
 #endif
 
-      // Push initial PendingDef's into _pending, see tpp file for explanation.
+      // Push initial PendingDef's into _pending, see tpp file for
+      // explanation.
       void init(size_type n);
 
       // We could use the copy constructor, but there's no point in copying
@@ -411,8 +450,8 @@ namespace libsemigroups {
         _felsch_graph = that._felsch_graph;
       }
 
-      // Try to make the definition represented by PendingDef, returns false if
-      // it wasn't possible, and true if it was.
+      // Try to make the definition represented by PendingDef, returns false
+      // if it wasn't possible, and true if it was.
       bool try_define(PendingDef const&);
 
       // Try to pop from _pending into the argument (reference), returns true
@@ -439,7 +478,7 @@ namespace libsemigroups {
       iterator_base(iterator_base const& that)
           : _extra(that._extra),
             _felsch_graph(that._felsch_graph),
-            _final(that._final),
+            _longs(that._longs),
             _max_num_classes(that._max_num_classes),
             _min_target_node(that._min_target_node),
             _pending(that._pending) {}
@@ -451,7 +490,7 @@ namespace libsemigroups {
       iterator_base(iterator_base&& that)
           : _extra(std::move(that._extra)),
             _felsch_graph(std::move(that._felsch_graph)),
-            _final(std::move(that._final)),
+            _longs(std::move(that._longs)),
             _max_num_classes(std::move(that._max_num_classes)),
             _min_target_node(std::move(that._min_target_node)),
             _pending(std::move(that._pending)) {}
@@ -463,7 +502,7 @@ namespace libsemigroups {
       iterator_base& operator=(iterator_base const& that) {
         _extra           = that._extra;
         _felsch_graph    = that._felsch_graph;
-        _final           = that._final;
+        _longs           = that._longs;
         _max_num_classes = that._max_num_classes;
         _min_target_node = that._min_target_node;
         _pending         = that._pending;
@@ -477,7 +516,7 @@ namespace libsemigroups {
       iterator_base& operator=(iterator_base&& that) {
         _extra           = std::move(that._extra);
         _felsch_graph    = std::move(that._felsch_graph);
-        _final           = std::move(that._final);
+        _longs           = std::move(that.longs());
         _max_num_classes = std::move(that._max_num_classes);
         _min_target_node = std::move(that._min_target_node);
         _pending         = std::move(that._pending);
@@ -604,11 +643,11 @@ namespace libsemigroups {
     //! the ActionDigraph has \p n + 1 nodes, and the right action of \f$S\f$
     //! on the nodes \f$\{1, \ldots, n\}\f$ of the ActionDigraph is isomorphic
     //! to the action of \f$S\f$ on the classes of a right congruence. It'd
-    //! probably be better in this case if node \f$0\f$ was not included in the
-    //! output ActionDigraph, but it is required in the implementation of the
-    //! low-index congruence algorithm, and to avoid unnecessary copies, we've
-    //! left it in for the time being.
-    //! \param n the maximum number of classes in a congruence.
+    //! probably be better in this case if node \f$0\f$ was not included in
+    //! the output ActionDigraph, but it is required in the implementation of
+    //! the low-index congruence algorithm, and to avoid unnecessary copies,
+    //! we've left it in for the time being. \param n the maximum number of
+    //! classes in a congruence.
     //!
     //! \returns
     //! An iterator \c it of type \c iterator pointing to an
@@ -626,7 +665,7 @@ namespace libsemigroups {
     //! \ref cend
     // TODO(Sims1) it'd be good to remove node 0 to avoid confusion.
     iterator cbegin(size_type n) const {
-      return iterator(presentation(), _extra, _final, n);
+      return iterator(shorts(), _extra, longs(), n);
     }
 
     //! Returns a forward iterator pointing one beyond the last congruence.
@@ -652,7 +691,7 @@ namespace libsemigroups {
     //! \sa
     //! \ref cbegin
     iterator cend(size_type) const {
-      return iterator(presentation(), _extra, _final, 0);
+      return iterator(shorts(), _extra, longs(), 0);
     }
 
     //! Returns the number of one-sided congruences with up to a given number
@@ -703,18 +742,16 @@ namespace libsemigroups {
   // TODO(Sims1) doc
   class RepOrc : public Sims1Settings<RepOrc> {
    private:
-    size_t                         _min;
-    size_t                         _max;
-    Presentation<word_type> const& _presentation;
-    size_t                         _size;
+    size_t _min;
+    size_t _max;
+    size_t _size;
 
    public:
-    explicit RepOrc(Presentation<word_type> const& p)
-        : RepOrc(p, Sims1Settings<RepOrc>()) {}
+    RepOrc() = default;
 
     template <typename S>
-    RepOrc(Presentation<word_type> const& p, Sims1Settings<S> const& s)
-        : Sims1Settings<RepOrc>(s), _min(), _max(), _presentation(p), _size() {}
+    RepOrc(Sims1Settings<S> const& s)
+        : Sims1Settings<RepOrc>(s), _min(), _max(), _size() {}
 
     RepOrc& min_nodes(size_t val) noexcept {
       _min = val;
@@ -745,27 +782,21 @@ namespace libsemigroups {
 
     template <typename T = uint32_t>
     ActionDigraph<T> digraph() const;
+
+    using Sims1Settings<RepOrc>::shorts;
+    using Sims1Settings<RepOrc>::longs;
+    // TODO(Sims1) the rest of the functions from Sims1Settings
   };
 
   // TODO(Sims1) doc
   class MinimalRepOrc : public Sims1Settings<MinimalRepOrc> {
    private:
-    // We require a copy of the presentation, rather than a reference otherwise
-    // the non-word_type Presentation ctor below doesn't work.
-    Presentation<word_type> _presentation;
-    size_t                  _size;
+    // We require a copy of the presentation, rather than a reference
+    // otherwise the non-word_type Presentation ctor below doesn't work.
+    size_t _size;
 
    public:
-    MinimalRepOrc(Presentation<word_type> const& p)
-        : _presentation(p), _size() {}
-
-    template <typename P>
-    MinimalRepOrc(P const& p)
-        : MinimalRepOrc(make<Presentation<word_type>>(p)) {
-      static_assert(std::is_base_of<PresentationBase, P>::value,
-                    "the template parameter P must be derived from "
-                    "PresentationBase");
-    }
+    MinimalRepOrc() : Sims1Settings<MinimalRepOrc>(), _size() {}
 
     MinimalRepOrc& target_size(size_t val) noexcept {
       _size = val;
@@ -779,17 +810,17 @@ namespace libsemigroups {
     // An alternative to the approach used below would be to do a sort of
     // binary search for a minimal representation. It seems that in most
     // examples that I've tried, this actually finds the minimal rep close to
-    // the start of the search. The binary search approach would only really be
-    // useful if the rep found at the start of the search was much larger than
-    // the minimal one, and that the minimal one would not be found until late
-    // in the search through all the reps with [1, best rep so far). It seems
-    // that in most examples, binary search will involve checking many of the
-    // same graphs repeatedly, i.e. if we check [1, size = 1000) find a rep on
-    // 57 points, then check [1, 57 / 2) find nothing, then check [57/2, 57)
-    // and find nothing, then the search through [57/2, 57) actually iterates
-    // through all the digraphs with [1, 57 / 2) again (just doesn't construct
-    // a FroidurePin object for these). So, it seems to be best to just search
-    // through the digraphs with [1, 57) nodes once.
+    // the start of the search. The binary search approach would only really
+    // be useful if the rep found at the start of the search was much larger
+    // than the minimal one, and that the minimal one would not be found until
+    // late in the search through all the reps with [1, best rep so far). It
+    // seems that in most examples, binary search will involve checking many
+    // of the same graphs repeatedly, i.e. if we check [1, size = 1000) find a
+    // rep on 57 points, then check [1, 57 / 2) find nothing, then check
+    // [57/2, 57) and find nothing, then the search through [57/2, 57)
+    // actually iterates through all the digraphs with [1, 57 / 2) again (just
+    // doesn't construct a FroidurePin object for these). So, it seems to be
+    // best to just search through the digraphs with [1, 57) nodes once.
     template <typename T = uint32_t>
     ActionDigraph<T> digraph();
   };

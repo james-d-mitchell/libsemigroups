@@ -67,82 +67,48 @@ namespace libsemigroups {
   }
 
 #endif
+  ////////////////////////////////////////////////////////////////////////
+  // Sims1
+  ////////////////////////////////////////////////////////////////////////
 
   template <typename T>
-  Sims1<T>::Sims1(congruence_kind                ck,
-                  Presentation<word_type> const &p,
-                  Presentation<word_type> const &e)
-      : Sims1(ck, p, e, Sims1Settings<Sims1<T>>()) {}
-
-  template <typename T>
-  template <typename S>
-  Sims1<T>::Sims1(congruence_kind                ck,
-                  Presentation<word_type> const &p,
-                  Sims1Settings<S> const &       s)
-      : Sims1(ck, p, Presentation<word_type>(), s) {}
-
-  template <typename T>
-  Sims1<T>::Sims1(congruence_kind ck, Presentation<word_type> const &p)
-      : Sims1(ck, p, Presentation<word_type>()) {}
-
-  template <typename T>
-  template <typename S>
-  Sims1<T>::Sims1(congruence_kind                ck,
-                  Presentation<word_type> const &p,
-                  Presentation<word_type> const &e,
-                  Sims1Settings<S> const &       s)
-      : Sims1Settings<Sims1<T>>(s), _extra(), _final(), _presentation() {
+  Sims1<T>::Sims1(congruence_kind ck)
+      : Sims1Settings<Sims1<T>>(), _extra(), _kind(ck) {
     if (ck == congruence_kind::twosided) {
       LIBSEMIGROUPS_EXCEPTION(
           "expected congruence_kind::right or congruence_kind::left");
-    } else if (p.alphabet() != e.alphabet() && !e.alphabet().empty()) {
-      LIBSEMIGROUPS_EXCEPTION(
-          "the 2nd and 3rd arguments (presentations) are not defined over "
-          "the same alphabets, expected alphabet %s for 3rd argument got %s",
-          detail::to_string(p.alphabet()).c_str(),
-          detail::to_string(e.alphabet()).c_str());
     }
-    p.validate();  // TODO(Sims1) Test for this
-
-    // We call make in the next two lines to ensure that the generators of the
-    // presentation are {0, ..., n - 1} where n is the size of the alphabet.
-    _presentation = make<Presentation<word_type>>(p);
-    _extra        = make<Presentation<word_type>>(e);
-    if (ck == congruence_kind::left) {
-      presentation::reverse(_presentation);
-      presentation::reverse(_extra);
-    }
-    perform_split();
   }
 
   template <typename T>
   Sims1<T>::~Sims1() = default;
 
-  template <typename T>
-  void Sims1<T>::perform_split() {
-    size_type val = Sims1Settings<Sims1<T>>::split_at();
-    if (val == UNDEFINED) {
-      return;
-    }
+  // TODO(Sims1) remove this
+  // template <typename T>
+  // void Sims1<T>::perform_split() {
+  //   size_type val = Sims1Settings<Sims1<T>>::split_at();
+  //   if (val == UNDEFINED) {
+  //     return;
+  //   }
 
-    LIBSEMIGROUPS_ASSERT(val < _presentation.rules.size() / 2
-                                   + _final.rules.size() / 2);
+  //   LIBSEMIGROUPS_ASSERT(val
+  //                        < _short.rules.size() / 2 + _longs.rules.size() /
+  //                        2);
 
-    val *= 2;
-    if (val < _presentation.rules.size()) {
-      _final.rules.insert(_final.rules.begin(),
-                          _presentation.rules.begin() + val,
-                          _presentation.rules.end());
-      _presentation.rules.erase(_presentation.rules.begin() + val,
-                                _presentation.rules.end());
-    } else {
-      val -= _presentation.rules.size();
-      _presentation.rules.insert(_presentation.rules.end(),
-                                 _final.rules.begin(),
-                                 _final.rules.begin() + val);
-      _final.rules.erase(_final.rules.begin(), _final.rules.begin() + val);
-    }
-  }
+  //   val *= 2;
+  //   if (val < _short.rules.size()) {
+  //     _longs.rules.insert(
+  //         _longs.rules.begin(), _short.rules.begin() + val,
+  //         _short.rules.end());
+  //     _short.rules.erase(_short.rules.begin() + val, _short.rules.end());
+  //   } else {
+  //     val -= _short.rules.size();
+  //     _short.rules.insert(
+  //         _short.rules.end(), _longs.rules.begin(), _longs.rules.begin() +
+  //         val);
+  //     _longs.rules.erase(_longs.rules.begin(), _longs.rules.begin() + val);
+  //   }
+  // }
 
   template <typename T>
   uint64_t Sims1<T>::number_of_congruences(size_type n) const {
@@ -186,7 +152,7 @@ namespace libsemigroups {
                      this->number_of_threads(),
                      std::thread::hardware_concurrency());
       thread_runner den(
-          presentation(), _extra, _final, n, this->number_of_threads());
+          shorts(), _extra, longs(), n, this->number_of_threads());
       if (!report::should_report()) {
         auto pred_wrapper = [&pred](digraph_type const &ad) {
           pred(ad);
@@ -237,7 +203,7 @@ namespace libsemigroups {
                      this->number_of_threads(),
                      std::thread::hardware_concurrency());
       thread_runner den(
-          presentation(), _extra, _final, n, this->number_of_threads());
+          shorts(), _extra, longs(), n, this->number_of_threads());
       if (!report::should_report()) {
         den.run(pred);
       } else {
@@ -283,14 +249,13 @@ namespace libsemigroups {
   ///////////////////////////////////////////////////////////////////////////////
 
   template <typename T>
-
   Sims1<T>::iterator_base::iterator_base(Presentation<word_type> const &p,
                                          Presentation<word_type> const &extra,
                                          Presentation<word_type> const &final_,
                                          size_type                      n)
       : _extra(extra),
         _felsch_graph(p, n),
-        _final(final_),
+        _longs(final_),
         _max_num_classes(p.contains_empty_word() ? n : n + 1),
         _min_target_node(p.contains_empty_word() ? 0 : 1),
         _mtx() {
@@ -301,7 +266,6 @@ namespace libsemigroups {
   // The following function is separated from the constructor so that it isn't
   // called in the constructor of every thread_iterator
   template <typename T>
-
   void Sims1<T>::iterator_base::init(size_type n) {
     if (n > 1) {
       _pending.emplace_back(0, 0, 1, 0, 2);
@@ -380,8 +344,8 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
     this->_stats.num_good_nodes += this->_felsch_graph.number_of_active_nodes();
 #endif
-    auto first = this->_final.rules.cbegin();
-    auto last  = this->_final.rules.cend();
+    auto first = this->_longs.rules.cbegin();
+    auto last  = this->_longs.rules.cend();
     return felsch_digraph::compatible(this->_felsch_graph, 0, M, first, last);
   }
 
@@ -422,19 +386,20 @@ namespace libsemigroups {
     return *this;
   }
 
-  template <typename T>
-  Sims1<T> &Sims1<T>::split_at(size_type val) {
-    if (val != UNDEFINED
-        && val > _presentation.rules.size() / 2 + _final.rules.size() / 2) {
-      LIBSEMIGROUPS_EXCEPTION(
-          "expected a value in the range [0, %llu) or UNDEFINED, found %llu",
-          uint64_t(_presentation.rules.size() / 2 + _final.rules.size() / 2),
-          uint64_t(val));
-    }
-    Sims1Settings<Sims1<T>>::split_at(val);
-    perform_split();
-    return *this;
-  }
+  // TODO(Sims1) remove this
+  // template <typename T>
+  // Sims1<T> &Sims1<T>::split_at(size_type val) {
+  //   if (val != UNDEFINED
+  //       && val > _short.rules.size() / 2 + _longs.rules.size() / 2) {
+  //     LIBSEMIGROUPS_EXCEPTION(
+  //         "expected a value in the range [0, %llu) or UNDEFINED, found %llu",
+  //         uint64_t(_short.rules.size() / 2 + _longs.rules.size() / 2),
+  //         uint64_t(val));
+  //   }
+  //   Sims1Settings<Sims1<T>>::split_at(val);
+  //   perform_split();
+  //   return *this;
+  // }
 
   ///////////////////////////////////////////////////////////////////////////////
   // thread_iterator
@@ -478,7 +443,7 @@ namespace libsemigroups {
     void steal_from(thread_iterator &that) {
       // WARNING <that> must be locked before calling this function
       std::lock_guard<std::mutex> lock(this->_mtx);
-      LIBSEMIGROUPS_ASSERT(_pending.empty());
+      LIBSEMIGROUPS_ASSERT(this->_pending.empty());
       // Copy the FelschDigraph from that into *this
       this->copy_felsch_graph(that);
 
@@ -620,10 +585,10 @@ namespace libsemigroups {
 
     auto hook = [&](digraph_type const &x) {
       if (x.number_of_active_nodes() >= _min) {
-        auto first = (_presentation.contains_empty_word() ? 0 : 1);
+        auto first = (shorts().contains_empty_word() ? 0 : 1);
         auto S     = make<FroidurePin<Transf<0, node_type>>>(
             x, first, x.number_of_active_nodes());
-        if (_presentation.contains_empty_word()) {
+        if (shorts().contains_empty_word()) {
           auto one = S.generator(0).identity();
           if (!S.contains(one)) {
             S.add_generator(one);
@@ -637,12 +602,12 @@ namespace libsemigroups {
       return false;
     };
 
-    auto result = Sims1<T>(congruence_kind::right, _presentation, *this)
-                      .find_if(_max, hook);
+    auto result
+        = Sims1<T>(congruence_kind::right).settings(*this).find_if(_max, hook);
     if (result.number_of_active_nodes() == 0) {
       result.restrict(0);
     } else {
-      if (_presentation.contains_empty_word()) {
+      if (shorts().contains_empty_word()) {
         result.restrict(result.number_of_active_nodes());
       } else {
         result.induced_subdigraph(1, result.number_of_active_nodes());
@@ -659,9 +624,9 @@ namespace libsemigroups {
 
   template <typename T>
   ActionDigraph<T> MinimalRepOrc::digraph() {
-    auto cr = RepOrc(_presentation, *this);
+    auto cr = RepOrc(*this);
 
-    size_t hi = (_presentation.contains_empty_word() ? _size : _size + 1);
+    size_t hi = (shorts().contains_empty_word() ? _size : _size + 1);
     REPORT_DEFAULT("trying to find faithful rep. o.r.c. on [1, %llu) points\n",
                    hi + 1);
     auto best = cr.min_nodes(1).max_nodes(hi).target_size(_size).digraph();
