@@ -19,6 +19,10 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoids.
 // TODO(Sims1):
+// * fix sorting in presentation (so that is uses both sides of the rules)
+// * add a function to split at a particular sum of lhs + rhs length
+// * figure out how to suppress FroidurePin reporting
+// * ensure that stats works properly
 // * improve the reporting from MinimalRepOrc so that it:
 //   - states all settings at the start of the run
 //   - the number of congruences considered is shown
@@ -129,6 +133,7 @@ namespace libsemigroups {
       _report_interval = val;
       return static_cast<T&>(*this);
     }
+
     // TODO(Sims1) doc
     size_t report_interval() const noexcept {
       return _report_interval;
@@ -370,22 +375,10 @@ namespace libsemigroups {
                               // definition is made
     };
 
-    // Dummy struct for use with iterator_base
-    struct Noop {
-      Noop()            = default;
-      Noop(Noop const&) = default;
-      Noop& operator=(Noop const&) = default;
-      Noop(Noop&) {}
-    };
-
     // This class collects some common aspects of the iterator and
     // thread_iterator nested classes. The Mutex does nothing for <iterator>
     // and is an actual std::mutex for <thread_iterator>.
-    template <typename Mutex>
     class iterator_base {
-      friend class Den;
-      friend class thread_iterator;
-
      public:
       using const_reference =
           typename std::vector<digraph_type>::const_reference;
@@ -399,7 +392,9 @@ namespace libsemigroups {
       size_type                           _max_num_classes;
       size_type                           _min_target_node;
       std::vector<PendingDef>             _pending;
-      Mutex                               _mtx;
+      // This mutex does nothing for iterator, only does something for
+      // thread_iterator
+      std::mutex _mtx;
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
       Sims1Stats _stats;
@@ -407,6 +402,7 @@ namespace libsemigroups {
       void stats_update(size_type);
 #endif
 
+      // Push initial PendingDef's into _pending, see tpp file for explanation.
       void init(size_type n);
 
       // We could use the copy constructor, but there's no point in copying
@@ -415,10 +411,12 @@ namespace libsemigroups {
         _felsch_graph = that._felsch_graph;
       }
 
-      template <typename Lock>
+      // Try to make the definition represented by PendingDef, returns false if
+      // it wasn't possible, and true if it was.
       bool try_define(PendingDef const&);
 
-      template <typename Lock>
+      // Try to pop from _pending into the argument (reference), returns true
+      // if successful and false if not.
       bool try_pop(PendingDef&);
 
      public:
@@ -433,14 +431,58 @@ namespace libsemigroups {
 
       //! No doc
       iterator_base() = default;
+
       //! No doc
-      iterator_base(iterator_base const&) = default;
+      // Intentionally don't copy the mutex, it doesn't compile, wouldn't make
+      // sense if the mutex was used here.
+      // TODO(Sims1) to tpp file
+      iterator_base(iterator_base const& that)
+          : _extra(that._extra),
+            _felsch_graph(that._felsch_graph),
+            _final(that._final),
+            _max_num_classes(that._max_num_classes),
+            _min_target_node(that._min_target_node),
+            _pending(that._pending) {}
+
       //! No doc
-      iterator_base(iterator_base&&) = default;
+      // Intentionally don't copy the mutex, it doesn't compile, wouldn't make
+      // sense if the mutex was used here.
+      // TODO(Sims1) to tpp file
+      iterator_base(iterator_base&& that)
+          : _extra(std::move(that._extra)),
+            _felsch_graph(std::move(that._felsch_graph)),
+            _final(std::move(that._final)),
+            _max_num_classes(std::move(that._max_num_classes)),
+            _min_target_node(std::move(that._min_target_node)),
+            _pending(std::move(that._pending)) {}
+
       //! No doc
-      iterator_base& operator=(iterator_base const&) = default;
+      // Intentionally don't copy the mutex, it doesn't compile, wouldn't make
+      // sense if the mutex was used here.
+      // TODO(Sims1) to tpp file
+      iterator_base& operator=(iterator_base const& that) {
+        _extra           = that._extra;
+        _felsch_graph    = that._felsch_graph;
+        _final           = that._final;
+        _max_num_classes = that._max_num_classes;
+        _min_target_node = that._min_target_node;
+        _pending         = that._pending;
+        return *this;
+      }
+
       //! No doc
-      iterator_base& operator=(iterator_base&&) = default;
+      // Intentionally don't copy the mutex, it doesn't compile, wouldn't make
+      // sense if the mutex was used here.
+      // TODO(Sims1) to tpp file
+      iterator_base& operator=(iterator_base&& that) {
+        _extra           = std::move(that._extra);
+        _felsch_graph    = std::move(that._felsch_graph);
+        _final           = std::move(that._final);
+        _max_num_classes = std::move(that._max_num_classes);
+        _min_target_node = std::move(that._min_target_node);
+        _pending         = std::move(that._pending);
+        return *this;
+      }
 
       //! No doc
       virtual ~iterator_base() = default;
@@ -475,21 +517,15 @@ namespace libsemigroups {
         std::swap(_pending, that._pending);
       }
 
-      // TODO(Sims1) needed?
-      size_type min_target_node() const noexcept {
-        return _min_target_node;
-      }
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
       Sims1Stats const& stats() const noexcept;
-
 #endif
     };
 
    public:
     //! No doc
-    class iterator : public iterator_base<Noop> {
+    class iterator : public iterator_base {
      public:
-      using iterator_base = iterator_base<Noop>;
       //! No doc
       using const_pointer = typename iterator_base::const_pointer;
       //! No doc
@@ -509,25 +545,30 @@ namespace libsemigroups {
       //! No doc
       using iterator_category = std::forward_iterator_tag;
 
-     public:
       //! No doc
+      using iterator_base::iterator_base;
+
+     private:
+      // Only want Sims1 to be able to use this constructor.
       iterator(Presentation<word_type> const& p,
                Presentation<word_type> const& e,
                Presentation<word_type> const& f,
                size_type                      n);
 
-      //! No doc
-      using iterator_base::iterator_base;
+      // So that we can use the constructor above.
+      friend iterator Sims1::cbegin(Sims1::size_type) const;
+      friend iterator Sims1::cend(Sims1::size_type) const;
 
+     public:
       //! No doc
       ~iterator() = default;
 
-      // prefix
       //! No doc
+      // prefix
       iterator const& operator++();
 
-      // postfix
       //! No doc
+      // postfix
       iterator operator++(int) {
         iterator copy(*this);
         ++(*this);
@@ -535,6 +576,7 @@ namespace libsemigroups {
       }
 
       using iterator_base::swap;
+
     };  // class iterator
 
     //! Returns a forward iterator pointing at the first congruence.
@@ -651,7 +693,7 @@ namespace libsemigroups {
                                       uint64_t      count,
                                       detail::Timer t) const;
     class thread_iterator;
-    class Den;
+    class thread_runner;
   };
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS

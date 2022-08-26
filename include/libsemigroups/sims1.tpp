@@ -22,9 +22,8 @@
 namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
   template <typename T>
-  template <typename Mutex>
-  void
-  Sims1<T>::iterator_base<Mutex>::stats_update(size_type current_num_edges) {
+
+  void Sims1<T>::iterator_base::stats_update(size_type current_num_edges) {
     if (this->_felsch_graph.number_of_edges() > current_num_edges) {
       if (_stats.depth > 0) {
         _stats.depth--;
@@ -43,8 +42,8 @@ namespace libsemigroups {
   }
 
   template <typename T>
-  template <typename Mutex>
-  Sims1Stats const &Sims1<T>::iterator_base<Mutex>::stats() const noexcept {
+
+  Sims1Stats const &Sims1<T>::iterator_base::stats() const noexcept {
     return _stats;
   }
 
@@ -186,7 +185,8 @@ namespace libsemigroups {
       REPORT_DEFAULT("using %d / %d additional threads\n",
                      this->number_of_threads(),
                      std::thread::hardware_concurrency());
-      Den den(presentation(), _extra, _final, n, this->number_of_threads());
+      thread_runner den(
+          presentation(), _extra, _final, n, this->number_of_threads());
       if (!report::should_report()) {
         auto pred_wrapper = [&pred](digraph_type const &ad) {
           pred(ad);
@@ -236,7 +236,8 @@ namespace libsemigroups {
       REPORT_DEFAULT("using %d / %d additional threads\n",
                      this->number_of_threads(),
                      std::thread::hardware_concurrency());
-      Den den(presentation(), _extra, _final, n, this->number_of_threads());
+      thread_runner den(
+          presentation(), _extra, _final, n, this->number_of_threads());
       if (!report::should_report()) {
         den.run(pred);
       } else {
@@ -282,12 +283,11 @@ namespace libsemigroups {
   ///////////////////////////////////////////////////////////////////////////////
 
   template <typename T>
-  template <typename Mutex>
-  Sims1<T>::iterator_base<Mutex>::iterator_base(
-      Presentation<word_type> const &p,
-      Presentation<word_type> const &extra,
-      Presentation<word_type> const &final_,
-      size_type                      n)
+
+  Sims1<T>::iterator_base::iterator_base(Presentation<word_type> const &p,
+                                         Presentation<word_type> const &extra,
+                                         Presentation<word_type> const &final_,
+                                         size_type                      n)
       : _extra(extra),
         _felsch_graph(p, n),
         _final(final_),
@@ -301,8 +301,8 @@ namespace libsemigroups {
   // The following function is separated from the constructor so that it isn't
   // called in the constructor of every thread_iterator
   template <typename T>
-  template <typename Mutex>
-  void Sims1<T>::iterator_base<Mutex>::init(size_type n) {
+
+  void Sims1<T>::iterator_base::init(size_type n) {
     if (n > 1) {
       _pending.emplace_back(0, 0, 1, 0, 2);
     }
@@ -312,11 +312,8 @@ namespace libsemigroups {
   }
 
   template <typename T>
-  template <typename Mutex>
-  template <typename Lock>
-  bool Sims1<T>::iterator_base<Mutex>::try_pop(PendingDef &pd) {
-    Lock lock(_mtx);
-    (void) lock;
+  bool Sims1<T>::iterator_base::try_pop(PendingDef &pd) {
+    std::lock_guard<std::mutex> lock(_mtx);
     if (this->_pending.empty()) {
       return false;
     }
@@ -326,14 +323,11 @@ namespace libsemigroups {
   }
 
   template <typename T>
-  template <typename Mutex>
-  template <typename Lock>
-  bool Sims1<T>::iterator_base<Mutex>::try_define(PendingDef const &current) {
+  bool Sims1<T>::iterator_base::try_define(PendingDef const &current) {
     LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
     LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
     {
-      Lock lock(_mtx);
-      (void) lock;
+      std::lock_guard<std::mutex> lock(_mtx);
       // Backtrack if necessary
       this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
 
@@ -368,8 +362,7 @@ namespace libsemigroups {
     for (node_type next = current.source; next < M; ++next) {
       for (; a < num_gens; ++a) {
         if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-          Lock lock(_mtx);
-          (void) lock;
+          std::lock_guard<std::mutex> lock(_mtx);
           if (M < this->_max_num_classes) {
             _pending.emplace_back(next, a, M, N, M + 1);
           }
@@ -412,15 +405,14 @@ namespace libsemigroups {
     // pointed to here is empty).
   }
 
-  // TODO(Sims1): remove code overlap with try_define
   template <typename T>
   typename Sims1<T>::iterator const &Sims1<T>::iterator::operator++() {
     PendingDef current;
-    while (this->template try_pop<Noop>(current)) {
+    while (this->try_pop(current)) {
 #if LIBSEMIGROUPS_ENABLE_STATS
       this->stats_update(current.num_edges);
 #endif
-      if (this->template try_define<Noop>(current)) {
+      if (this->try_define(current)) {
         return *this;
       }
     }
@@ -448,9 +440,11 @@ namespace libsemigroups {
   // thread_iterator
   ///////////////////////////////////////////////////////////////////////////////
 
+  // Note that this class is private, and not really an iterator in the usual
+  // sense. It is designed solely to work with thread_runner.
   template <typename T>
-  class Sims1<T>::thread_iterator : public iterator_base<std::mutex> {
-    friend class Sims1<T>::Den;
+  class Sims1<T>::thread_iterator : public iterator_base {
+    friend class Sims1<T>::thread_runner;
 
    public:
     //! No doc
@@ -458,7 +452,7 @@ namespace libsemigroups {
                     Presentation<word_type> const &e,
                     Presentation<word_type> const &f,
                     size_type                      n)
-        : iterator_base<std::mutex>(p, e, f, n) {}
+        : iterator_base(p, e, f, n) {}
 
     // None of the constructors are noexcept because the corresponding
     // constructors for std::vector aren't (until C++17).
@@ -475,88 +469,6 @@ namespace libsemigroups {
 
     //! No doc
     ~thread_iterator() = default;
-
-    // prefix
-    //! No doc
-    /*    bool try_define(PendingDef const &current) {
-          LIBSEMIGROUPS_ASSERT(current.target < current.num_nodes);
-          LIBSEMIGROUPS_ASSERT(current.num_nodes <= this->_max_num_classes);
-
-          {
-            std::lock_guard<std::mutex> lock(_mutex);
-            LIBSEMIGROUPS_ASSERT(this->_felsch_graph.number_of_edges()
-                                 >= current.num_edges);
-            // Backtrack if necessary
-            this->_felsch_graph.reduce_number_of_edges_to(current.num_edges);
-
-            // It might be that current.target is a new node, in which case
-            // _felsch_graph.number_of_active_nodes() includes this new node
-            // even before the edge current.source -> current.target is defined.
-            this->_felsch_graph.number_of_active_nodes(current.num_nodes);
-
-            LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(
-                                     current.source, current.generator)
-                                 == UNDEFINED);
-
-    #ifdef LIBSEMIGROUPS_DEBUG
-            for (node_type next = 0; next < current.source; ++next) {
-              for (letter_type a = 0; a < this->_felsch_graph.out_degree(); ++a)
-    { LIBSEMIGROUPS_ASSERT(this->_felsch_graph.unsafe_neighbor(next, a)
-                                     != UNDEFINED);
-              }
-            }
-            for (letter_type a = 0; a < current.generator; ++a) {
-              LIBSEMIGROUPS_ASSERT(
-                  this->_felsch_graph.unsafe_neighbor(current.source, a)
-                  != UNDEFINED);
-            }
-
-    #endif
-            size_type const start = this->_felsch_graph.number_of_edges();
-
-            this->_felsch_graph.def_edge(
-                current.source, current.generator, current.target);
-
-            auto first = this->_extra.rules.cbegin();
-            auto last  = this->_extra.rules.cend();
-            if (!felsch_digraph::compatible(this->_felsch_graph, 0, first, last)
-                || !this->_felsch_graph.process_definitions(start)) {
-              return false;
-            }
-          }
-
-          letter_type     a        = current.generator + 1;
-          size_type const M        =
-    this->_felsch_graph.number_of_active_nodes(); size_type const N        =
-    this->_felsch_graph.number_of_edges(); size_type const num_gens =
-    this->_felsch_graph.out_degree();
-
-          for (node_type next = current.source; next < M; ++next) {
-            for (; a < num_gens; ++a) {
-              if (this->_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
-                std::lock_guard<std::mutex> lock(_mutex);
-                if (M < this->_max_num_classes) {
-                  _total_pending++;
-                  _pending.emplace_back(next, a, M, N, M + 1);
-                }
-                for (node_type b = M; b-- > this->_min_target_node;) {
-                  _total_pending++;
-                  _pending.emplace_back(next, a, b, N, M);
-                }
-                return false;
-              }
-            }
-            a = 0;
-          }
-
-          LIBSEMIGROUPS_ASSERT(N == M * num_gens);
-
-          // No undefined edges, word graph is complete
-          auto first = this->_final.rules.cbegin();
-          auto last  = this->_final.rules.cend();
-          return felsch_digraph::compatible(this->_felsch_graph, 0, M, first,
-    last);
-        } */
 
    public:
     void push(PendingDef pd) {
@@ -593,11 +505,11 @@ namespace libsemigroups {
   };
 
   ////////////////////////////////////////////////////////////////////////
-  // Den
+  // thread_runner
   ////////////////////////////////////////////////////////////////////////
 
   template <typename T>
-  class Sims1<T>::Den {
+  class Sims1<T>::thread_runner {
    private:
     std::atomic_bool                              _done;
     std::vector<std::unique_ptr<thread_iterator>> _theives;
@@ -609,13 +521,12 @@ namespace libsemigroups {
 
     void worker_thread(unsigned                                  my_index,
                        std::function<bool(digraph_type const &)> hook) {
-      using Lock = std::lock_guard<std::mutex>;
       PendingDef pd;
       for (auto i = 0; i < 128; ++i) {
         while ((pop_from_local_queue(pd, my_index)
                 || pop_from_other_thread_queue(pd, my_index))
                && !_done) {
-          if (_theives[my_index]->template try_define<Lock>(pd)) {
+          if (_theives[my_index]->try_define(pd)) {
             if (hook(**_theives[my_index])) {
               // hook returns true to indicate that we should stop early
               std::lock_guard<std::mutex> lock(_mtx);
@@ -637,8 +548,7 @@ namespace libsemigroups {
     }
 
     bool pop_from_local_queue(PendingDef &pd, unsigned my_index) {
-      using Lock = std::lock_guard<std::mutex>;
-      return _theives[my_index]->template try_pop<Lock>(pd);
+      return _theives[my_index]->try_pop(pd);
     }
 
     bool pop_from_other_thread_queue(PendingDef &pd, unsigned my_index) {
@@ -655,11 +565,11 @@ namespace libsemigroups {
     }
 
    public:
-    Den(Presentation<word_type> const &p,
-        Presentation<word_type> const &e,
-        Presentation<word_type> const &f,
-        size_type                      n,
-        size_type                      num_threads)
+    thread_runner(Presentation<word_type> const &p,
+                  Presentation<word_type> const &e,
+                  Presentation<word_type> const &f,
+                  size_type                      n,
+                  size_type                      num_threads)
         : _done(false),
           _theives(),
           _threads(),
@@ -673,7 +583,7 @@ namespace libsemigroups {
       _theives.front()->init(n);
     }
 
-    ~Den() = default;
+    ~thread_runner() = default;
 
     digraph_type const &digraph() const {
       REPORT_DEFAULT(
@@ -689,8 +599,8 @@ namespace libsemigroups {
       detail::JoinThreads joiner(_threads);
       try {
         for (size_t i = 0; i < _num_threads; ++i) {
-          _threads.push_back(
-              std::thread(&Den::worker_thread, this, i, std::ref(hook)));
+          _threads.push_back(std::thread(
+              &thread_runner::worker_thread, this, i, std::ref(hook)));
         }
       } catch (...) {
         _done = true;
