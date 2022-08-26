@@ -149,7 +149,8 @@ namespace libsemigroups {
       REPORT_DEFAULT("using %d / %d additional threads\n",
                      number_of_threads(),
                      std::thread::hardware_concurrency());
-      thread_runner den(shorts(), _extra, longs(), n, number_of_threads());
+      thread_runner den(
+          short_rules(), _extra, long_rules(), n, number_of_threads());
       if (!report::should_report()) {
         auto pred_wrapper = [&pred](digraph_type const &ad) {
           pred(ad);
@@ -199,7 +200,8 @@ namespace libsemigroups {
       REPORT_DEFAULT("using %d / %d additional threads\n",
                      number_of_threads(),
                      std::thread::hardware_concurrency());
-      thread_runner den(shorts(), _extra, longs(), n, number_of_threads());
+      thread_runner den(
+          short_rules(), _extra, long_rules(), n, number_of_threads());
       if (!report::should_report()) {
         den.run(pred);
       } else {
@@ -585,10 +587,10 @@ namespace libsemigroups {
 
     auto hook = [&](digraph_type const &x) {
       if (x.number_of_active_nodes() >= _min) {
-        auto first = (shorts().contains_empty_word() ? 0 : 1);
+        auto first = (short_rules().contains_empty_word() ? 0 : 1);
         auto S     = make<FroidurePin<Transf<0, node_type>>>(
             x, first, x.number_of_active_nodes());
-        if (shorts().contains_empty_word()) {
+        if (short_rules().contains_empty_word()) {
           auto one = S.generator(0).identity();
           if (!S.contains(one)) {
             S.add_generator(one);
@@ -607,7 +609,7 @@ namespace libsemigroups {
     if (result.number_of_active_nodes() == 0) {
       result.restrict(0);
     } else {
-      if (shorts().contains_empty_word()) {
+      if (short_rules().contains_empty_word()) {
         result.restrict(result.number_of_active_nodes());
       } else {
         result.induced_subdigraph(1, result.number_of_active_nodes());
@@ -622,11 +624,25 @@ namespace libsemigroups {
   // MinimalRepOrc helper class
   ////////////////////////////////////////////////////////////////////////
 
+  // An alternative to the approach used below would be to do a sort of
+  // binary search for a minimal representation. It seems that in most
+  // examples that I've tried, this actually finds the minimal rep close to
+  // the start of the search. The binary search approach would only really
+  // be useful if the rep found at the start of the search was much larger
+  // than the minimal one, and that the minimal one would not be found until
+  // late in the search through all the reps with [1, best rep so far). It
+  // seems that in most examples, binary search will involve checking many
+  // of the same graphs repeatedly, i.e. if we check [1, size = 1000) find a
+  // rep on 57 points, then check [1, 57 / 2) find nothing, then check
+  // [57/2, 57) and find nothing, then the search through [57/2, 57)
+  // actually iterates through all the digraphs with [1, 57 / 2) again (just
+  // doesn't construct a FroidurePin object for these). So, it seems to be
+  // best to just search through the digraphs with [1, 57) nodes once.
   template <typename T>
   ActionDigraph<T> MinimalRepOrc::digraph() {
     auto cr = RepOrc(*this);
 
-    size_t hi = (shorts().contains_empty_word() ? _size : _size + 1);
+    size_t hi = (short_rules().contains_empty_word() ? _size : _size + 1);
     REPORT_DEFAULT("trying to find faithful rep. o.r.c. on [1, %llu) points\n",
                    hi + 1);
     auto best = cr.min_nodes(1).max_nodes(hi).target_size(_size).digraph();

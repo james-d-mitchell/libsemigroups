@@ -105,10 +105,10 @@ namespace libsemigroups {
 
     template <typename S>
     Sims1Settings(Sims1Settings<S> const& that)
-        : _longs(that.longs()),
+        : _longs(that.long_rules()),
           _num_threads(that.number_of_threads()),
           _report_interval(that.report_interval()),
-          _shorts(that.shorts()) {}
+          _shorts(that.short_rules()) {}
 
     Sims1Settings const& settings() {
       return *this;
@@ -143,40 +143,78 @@ namespace libsemigroups {
       return _report_interval;
     }
 
-    T& shorts(Presentation<word_type> const& p) {
+    T& short_rules(Presentation<word_type> const& p) {
       validate_presentation(p, _longs);
       _shorts = p;
       return static_cast<T&>(*this);
     }
 
     template <typename P>
-    T& shorts(P const& p) {
+    T& short_rules(P const& p) {
       static_assert(std::is_base_of<PresentationBase, P>::value,
                     "the template parameter P must be derived from "
                     "PresentationBase");
-      return shorts(make<Presentation<word_type>>(p));
+      return short_rules(make<Presentation<word_type>>(p));
     }
 
-    Presentation<word_type> const& shorts() const noexcept {
+    Presentation<word_type> const& short_rules() const noexcept {
       return _shorts;
     }
 
-    T& longs(Presentation<word_type> const& p) {
+    T& long_rules(Presentation<word_type> const& p) {
       validate_presentation(p, _shorts);
       _longs = p;
       return static_cast<T&>(*this);
     }
 
     template <typename P>
-    T& longs(P const& p) {
+    T& long_rules(P const& p) {
       static_assert(std::is_base_of<PresentationBase, P>::value,
                     "the template parameter P must be derived from "
                     "PresentationBase");
-      return longs(make<Presentation<word_type>>(p));
+      return long_rules(make<Presentation<word_type>>(p));
     }
 
-    Presentation<word_type> const& longs() const noexcept {
+    Presentation<word_type> const& long_rules() const noexcept {
       return _longs;
+    }
+
+    T& large_rule_length(size_t val) {
+      auto partition = [&val](auto first, auto last) {
+        for (; first != last; first += 2) {
+          if (first->size() + (first + 1)->size() >= val) {
+            break;
+          }
+        }
+        if (first == last) {
+          return first;
+        }
+
+        for (auto lhs = first + 2; lhs < last; lhs += 2) {
+          auto rhs = lhs + 1;
+          if (lhs->size() + rhs->size() < val) {
+            std::iter_swap(lhs, first++);
+            std::iter_swap(rhs, first++);
+          }
+        }
+        return first;
+      };
+
+      // points at the lhs of the first rule of length at least val
+      auto its = partition(_shorts.rules.begin(), _shorts.rules.end());
+      _longs.rules.insert(_longs.rules.end(),
+                          std::make_move_iterator(its),
+                          std::make_move_iterator(_shorts.rules.end()));
+      auto lastl = _longs.rules.end() - std::distance(its, _shorts.rules.end());
+      _shorts.rules.erase(its, _shorts.rules.end());
+
+      // points at the lhs of the first rule of length at least val
+      auto itl = partition(_longs.rules.begin(), lastl);
+      _shorts.rules.insert(_shorts.rules.end(),
+                           std::make_move_iterator(_longs.rules.begin()),
+                           std::make_move_iterator(itl));
+      _longs.rules.erase(_longs.rules.begin(), itl);
+      return static_cast<T&>(*this);
     }
 
    protected:
@@ -267,8 +305,8 @@ namespace libsemigroups {
 
     ~Sims1();
 
-    using Sims1Settings<Sims1>::shorts;
-    using Sims1Settings<Sims1>::longs;
+    using Sims1Settings<Sims1>::short_rules;
+    using Sims1Settings<Sims1>::long_rules;
     using Sims1Settings<Sims1>::number_of_threads;
     using Sims1Settings<Sims1>::report_interval;
 
@@ -318,6 +356,7 @@ namespace libsemigroups {
       return _extra;
     }
 
+    // TODO(Sims1) to tpp
     template <typename P>
     Sims1& extra(P const& p) {
       static_assert(std::is_base_of<PresentationBase, P>::value,
@@ -326,10 +365,11 @@ namespace libsemigroups {
       return extra(make<Presentation<word_type>>(p));
     }
 
+    // TODO(Sims1) to tpp
     Sims1& extra(Presentation<word_type> const& p) {
       auto normal_p = make<Presentation<word_type>>(p);
-      validate_presentation(normal_p, shorts());
-      validate_presentation(normal_p, longs());
+      validate_presentation(normal_p, short_rules());
+      validate_presentation(normal_p, long_rules());
       if (_kind == congruence_kind::left) {
         presentation::reverse(normal_p);
       }
@@ -337,28 +377,32 @@ namespace libsemigroups {
       return *this;
     }
 
-    Sims1& shorts(Presentation<word_type> const& p) {
-      // We call make in the next two lines to ensure that the generators of the
-      // presentation are {0, ..., n - 1} where n is the size of the alphabet.
+    // TODO(Sims1) to tpp
+    Sims1& short_rules(Presentation<word_type> const& p) {
+      // We call make in the next two lines to ensure that the generators of
+      // the presentation are {0, ..., n - 1} where n is the size of the
+      // alphabet.
       auto normal_p = make<Presentation<word_type>>(p);
-      validate_presentation(normal_p, longs());
+      validate_presentation(normal_p, long_rules());
       validate_presentation(normal_p, _extra);
       if (_kind == congruence_kind::left) {
         presentation::reverse(normal_p);
       }
-      return Sims1Settings<Sims1>::shorts(normal_p);
+      return Sims1Settings<Sims1>::short_rules(normal_p);
     }
 
-    Sims1& longs(Presentation<word_type> const& p) {
-      // We call make in the next two lines to ensure that the generators of the
-      // presentation are {0, ..., n - 1} where n is the size of the alphabet.
+    // TODO(Sims1) to tpp
+    Sims1& long_rules(Presentation<word_type> const& p) {
+      // We call make in the next two lines to ensure that the generators of
+      // the presentation are {0, ..., n - 1} where n is the size of the
+      // alphabet.
       auto normal_p = make<Presentation<word_type>>(p);
-      validate_presentation(normal_p, shorts());
+      validate_presentation(normal_p, short_rules());
       validate_presentation(normal_p, _extra);
       if (_kind == congruence_kind::left) {
         presentation::reverse(normal_p);
       }
-      return Sims1Settings<Sims1>::longs(normal_p);
+      return Sims1Settings<Sims1>::long_rules(normal_p);
     }
 
     //! Only apply certain relations when an otherwise compatible
@@ -378,10 +422,7 @@ namespace libsemigroups {
     //!
     //! \throws LibsemigroupsException if \p val is out of bounds.
     // TODO(Sims1) some tests for this.
-    // Sims1& split_at(size_type val);
-
-   private:
-    // void perform_split();
+    // TODO(Sims1) to tpp + should be helper function
 
     struct PendingDef {
       PendingDef() = default;
@@ -418,7 +459,7 @@ namespace libsemigroups {
       size_type               _min_target_node;
 
      protected:
-      // shorts is stored in _felsch_graph
+      // short_rules is stored in _felsch_graph
       FelschDigraph<word_type, node_type> _felsch_graph;
       // This mutex does nothing for iterator, only does something for
       // thread_iterator
@@ -507,7 +548,7 @@ namespace libsemigroups {
       // TODO(Sims1) to tpp file
       iterator_base& operator=(iterator_base&& that) {
         _extra           = std::move(that._extra);
-        _longs           = std::move(that.longs());
+        _longs           = std::move(that.long_rules());
         _max_num_classes = std::move(that._max_num_classes);
         _min_target_node = std::move(that._min_target_node);
         _felsch_graph    = std::move(that._felsch_graph);
@@ -665,7 +706,7 @@ namespace libsemigroups {
     //! \ref cend
     // TODO(Sims1) it'd be good to remove node 0 to avoid confusion.
     iterator cbegin(size_type n) const {
-      return iterator(shorts(), _extra, longs(), n);
+      return iterator(short_rules(), _extra, long_rules(), n);
     }
 
     //! Returns a forward iterator pointing one beyond the last congruence.
@@ -691,7 +732,7 @@ namespace libsemigroups {
     //! \sa
     //! \ref cbegin
     iterator cend(size_type) const {
-      return iterator(shorts(), _extra, longs(), 0);
+      return iterator(short_rules(), _extra, long_rules(), 0);
     }
 
     //! Returns the number of one-sided congruences with up to a given number
@@ -783,9 +824,8 @@ namespace libsemigroups {
     template <typename T = uint32_t>
     ActionDigraph<T> digraph() const;
 
-    using Sims1Settings<RepOrc>::shorts;
-    using Sims1Settings<RepOrc>::longs;
-    // TODO(Sims1) the rest of the functions from Sims1Settings
+    using Sims1Settings<RepOrc>::short_rules;
+    using Sims1Settings<RepOrc>::long_rules;
   };
 
   // TODO(Sims1) doc
@@ -805,20 +845,6 @@ namespace libsemigroups {
       return _size;
     }
 
-    // An alternative to the approach used below would be to do a sort of
-    // binary search for a minimal representation. It seems that in most
-    // examples that I've tried, this actually finds the minimal rep close to
-    // the start of the search. The binary search approach would only really
-    // be useful if the rep found at the start of the search was much larger
-    // than the minimal one, and that the minimal one would not be found until
-    // late in the search through all the reps with [1, best rep so far). It
-    // seems that in most examples, binary search will involve checking many
-    // of the same graphs repeatedly, i.e. if we check [1, size = 1000) find a
-    // rep on 57 points, then check [1, 57 / 2) find nothing, then check
-    // [57/2, 57) and find nothing, then the search through [57/2, 57)
-    // actually iterates through all the digraphs with [1, 57 / 2) again (just
-    // doesn't construct a FroidurePin object for these). So, it seems to be
-    // best to just search through the digraphs with [1, 57) nodes once.
     template <typename T = uint32_t>
     ActionDigraph<T> digraph();
   };

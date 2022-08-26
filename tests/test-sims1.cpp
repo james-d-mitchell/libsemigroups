@@ -59,10 +59,10 @@ namespace libsemigroups {
         return true;
       };
       Sims1_ S(ck);
-      S.shorts(p);
+      S.short_rules(p);
 
       Sims1_ T(ck);
-      T.shorts(p).extra(e);
+      T.short_rules(p).extra(e);
 
       REQUIRE(static_cast<uint64_t>(std::count_if(S.cbegin(n), S.cend(n), foo))
               == T.number_of_congruences(n));
@@ -84,7 +84,8 @@ namespace libsemigroups {
 
     {
       Sims1_ S(congruence_kind::right);
-      REQUIRE(S.shorts(p).number_of_threads(2).number_of_congruences(5) == 6);
+      REQUIRE(S.short_rules(p).number_of_threads(2).number_of_congruences(5)
+              == 6);
 
       auto it = S.cbegin(5);
       REQUIRE(*(it++) == action_digraph_helper::make<node_type>(5, {{0, 0}}));
@@ -116,7 +117,7 @@ namespace libsemigroups {
     // [[1, 0], [1, 1]]]
     {
       Sims1_ S(congruence_kind::left);
-      REQUIRE(S.shorts(p).number_of_congruences(5) == 9);
+      REQUIRE(S.short_rules(p).number_of_congruences(5) == 9);
       for (auto it = S.cbegin(5); it != S.cend(5); ++it) {
         REQUIRE(action_digraph_helper::follow_path_nc(*it, 0, {1, 0, 1, 0})
                 == action_digraph_helper::follow_path_nc(*it, 0, {0}));
@@ -143,7 +144,7 @@ namespace libsemigroups {
 
     {
       Sims1_ S(congruence_kind::right);
-      S.shorts(p);
+      S.short_rules(p);
       REQUIRE(S.number_of_congruences(1) == 1);
       REQUIRE(S.number_of_congruences(2) == 3);
       REQUIRE(S.number_of_congruences(3) == 13);
@@ -169,7 +170,7 @@ namespace libsemigroups {
     }
     {
       Sims1_ S(congruence_kind::left);
-      S.shorts(p);
+      S.short_rules(p);
       REQUIRE(S.number_of_congruences(11) == 176);
     }
   }
@@ -190,7 +191,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 4, 2, 2, 1, 5, 2}, {6});
     presentation::add_rule_and_check(p, {1, 3, 0, 2, 4, 4, 4}, {6});
     Sims1_ S(congruence_kind::right);
-    S.shorts(p);
+    S.short_rules(p);
     REQUIRE(S.number_of_congruences(3) == 14);
     REQUIRE(S.number_of_congruences(4) == 14);
     REQUIRE(S.number_of_congruences(5) == 14);
@@ -212,7 +213,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, "acbbACb", "e");
     presentation::add_rule_and_check(p, "ABabccc", "e");
     Sims1_ S(congruence_kind::right);
-    S.shorts(p);
+    S.short_rules(p);
     REQUIRE(S.number_of_congruences(3) == 14);
   }
 
@@ -237,7 +238,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {2, 1, 2, 1}, {2, 1, 2});
 
     Sims1_ S(congruence_kind::right);
-    S.shorts(p);
+    S.short_rules(p);
     REQUIRE(S.number_of_congruences(2) == 4);
     REQUIRE(S.number_of_congruences(3) == 7);
     REQUIRE(S.number_of_congruences(4) == 14);
@@ -259,7 +260,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "005",
                           "PartitionMonoid(3)",
-                          "[quick][low-index]") {
+                          "[extreme][low-index]") {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.contains_empty_word(false);
@@ -356,17 +357,11 @@ namespace libsemigroups {
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
 
     Sims1_ S(congruence_kind::right);
-    S.shorts(p);
-    // S.split_at(43);
-    auto     it = S.cbegin(10);
-    uint64_t n  = 0;
-    for (; it != S.cend(10); ++it) {
-      n++;
-    }
-    REQUIRE(n == 135);
+    S.short_rules(p).large_rule_length(11);  // This actually helps here!
+    REQUIRE(std::distance(S.cbegin(17), S.cend(17)) == 1589);
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
     std::ostringstream oss;
-    oss << it.stats();
+    oss << S.cbegin(10).stats();
 #endif
   }
 
@@ -385,7 +380,7 @@ namespace libsemigroups {
     REQUIRE(static_cast<size_t>(std::distance(p.rules.cbegin(), p.rules.cend()))
             == 2 * S.number_of_rules());
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(27) == 287);
   }
 
@@ -399,7 +394,7 @@ namespace libsemigroups {
     REQUIRE(S.size() == 27);
     auto   p = make<Presentation<word_type>>(S);
     Sims1_ C(congruence_kind::left);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(27) == 120);
   }
 
@@ -428,7 +423,7 @@ namespace libsemigroups {
     // presentation::sort_rules(p);
 
     Sims1_ C(congruence_kind::left);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_threads(6).number_of_congruences(256) == 120'121);
     // Number generated using CREAM, but Sims1 counts more for right, and too
     // slow for left
@@ -451,7 +446,7 @@ namespace libsemigroups {
                            rel.second.cend());
     }
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(7) == 10);  // Should be 10
   }
 
@@ -464,7 +459,7 @@ namespace libsemigroups {
     REQUIRE(S.size() == 7);
     auto   p = make<Presentation<word_type>>(S);
     Sims1_ C(congruence_kind::left);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(7) == 10);
   }
 
@@ -484,7 +479,7 @@ namespace libsemigroups {
                            rel.second.cend());
     }
     Sims1_ C(congruence_kind::left);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(34) == 274);
   }
 
@@ -507,7 +502,7 @@ namespace libsemigroups {
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(209)
             == 195'709);
@@ -530,7 +525,7 @@ namespace libsemigroups {
                            rel.second.cend());
     }
     Sims1_ C(congruence_kind::left);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_threads(6).number_of_congruences(1'546) == 0);
     // On 24/08/2022 JDM ran this for approx. 16 hours overnight on his laptop,
     // the last line of output was:
@@ -554,12 +549,12 @@ namespace libsemigroups {
     }
     {
       Sims1_ S(congruence_kind::right);
-      S.shorts(p);
+      S.short_rules(p);
       REQUIRE(S.number_of_congruences(14) == 9);
     }
     {
       Sims1_ S(congruence_kind::left);
-      S.shorts(p);
+      S.short_rules(p);
       REQUIRE(S.number_of_congruences(14) == 9);
     }
   }
@@ -581,12 +576,12 @@ namespace libsemigroups {
     }
     {
       Sims1_ S(congruence_kind::right);
-      S.shorts(p);
+      S.short_rules(p);
       REQUIRE(S.number_of_congruences(14) == 79);
     }
     {
       Sims1_ S(congruence_kind::left);
-      S.shorts(p);
+      S.short_rules(p);
       REQUIRE(S.number_of_congruences(14) == 79);
     }
   }
@@ -610,7 +605,7 @@ namespace libsemigroups {
     e.alphabet({0, 1});
     presentation::add_rule_and_check(e, {0}, {1});
     Sims1_ S(congruence_kind::right);
-    S.shorts(p).extra(e);
+    S.short_rules(p).extra(e);
     REQUIRE(S.number_of_congruences(5) == 2);
     check_extra(congruence_kind::right, p, e, 5);
     check_extra(congruence_kind::left, p, e, 5);
@@ -635,7 +630,7 @@ namespace libsemigroups {
     e.alphabet({0, 1});
     presentation::add_rule_and_check(e, {0, 1}, {1});
     Sims1_ T(congruence_kind::right);
-    T.shorts(p).extra(e);
+    T.short_rules(p).extra(e);
     REQUIRE(T.number_of_congruences(5) == 2);
     check_extra(congruence_kind::right, p, e, 5);
     check_extra(congruence_kind::left, p, e, 5);
@@ -661,12 +656,12 @@ namespace libsemigroups {
     presentation::add_rule_and_check(e, {0, 1, 0, 1}, {0});
     {
       Sims1_ T(congruence_kind::right);
-      T.shorts(p).extra(e);
+      T.short_rules(p).extra(e);
       REQUIRE(T.number_of_congruences(5) == 6);
     }
     {
       Sims1_ T(congruence_kind::left);
-      T.shorts(p).extra(e);
+      T.short_rules(p).extra(e);
       REQUIRE(T.number_of_congruences(5) == 9);  // Verified with GAP
     }
     check_extra(congruence_kind::right, p, e, 5);
@@ -695,11 +690,11 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, "a", "b");
 
     Sims1_ S(congruence_kind::right);
-    S.shorts(p).extra(e);
+    S.short_rules(p).extra(e);
     REQUIRE(S.number_of_congruences(3) == 2);
 
-    check_extra(congruence_kind::right, S.shorts(), S.extra(), 3);
-    check_extra(congruence_kind::left, S.shorts(), S.extra(), 3);
+    check_extra(congruence_kind::right, S.short_rules(), S.extra(), 3);
+    check_extra(congruence_kind::left, S.short_rules(), S.extra(), 3);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -752,20 +747,21 @@ namespace libsemigroups {
 
     p.contains_empty_word(true);
     auto d = MinimalRepOrc()
-                 .shorts(p)
+                 .short_rules(p)
                  .target_size(82)
                  .number_of_threads(std::thread::hardware_concurrency())
-                 //           .split_at(212 / 2)
+                 .large_rule_length(8)
                  .report_interval(2'000)
                  .digraph();
     REQUIRE(d.number_of_nodes() == 18);
 
-    // Sims1_ C(congruence_kind::right);
-    // C.shorts(p);
+    p.contains_empty_word(false);
+    Sims1_ C(congruence_kind::right);
+    C.short_rules(p);  // TODO(Sims1) need a short_rules from iterators
     // C.split_at(212 / 2);
-    // REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
-    //            .number_of_congruences(81)
-    //        == 601'265);
+    REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
+                .number_of_congruences(81)
+            == 601'265);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -796,7 +792,7 @@ namespace libsemigroups {
     presentation::replace_subword(p, presentation::longest_common_subword(p));
 
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(105)
             == 103'406);
@@ -818,7 +814,7 @@ namespace libsemigroups {
     presentation::sort_rules(p);
     REQUIRE(p.rules.size() == 86);
 
-    auto d = MinimalRepOrc().shorts(p).target_size(105).digraph();
+    auto d = MinimalRepOrc().short_rules(p).target_size(105).digraph();
     REQUIRE(d.number_of_nodes() == 22);
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
     REQUIRE(
@@ -863,7 +859,7 @@ namespace libsemigroups {
                                  11, 13, 13, 11, 2,  11, 11, 7, 13, 13, 7}));
 
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(105)
             == 103'406);
@@ -885,7 +881,7 @@ namespace libsemigroups {
     REQUIRE(presentation::length(p) == 249);
 
     auto d = MinimalRepOrc()
-                 .shorts(p)
+                 .short_rules(p)
                  .target_size(945)
                  .number_of_threads(8)
                  .digraph();
@@ -907,7 +903,7 @@ namespace libsemigroups {
     presentation::sort_rules(p);
 
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(131)
             == 280'455);
@@ -926,7 +922,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, "aaa", "e");
     presentation::add_rule_and_check(p, "baBBBABA", "e");
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(10) == 3);
   }
 
@@ -942,7 +938,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, "aaa", "");
     presentation::add_rule_and_check(p, "baBBBABA", "");
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(10) == 3);
   }
 
@@ -956,9 +952,11 @@ namespace libsemigroups {
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
     REQUIRE(presentation::length(p) == 30);
+    REQUIRE(p.rules.size() == 12);
+    REQUIRE(p.rules[0].size() + p.rules[1].size() == 5);
 
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(3) == 5);
   }
 
@@ -978,7 +976,7 @@ namespace libsemigroups {
     presentation::add_rule(p, {1, 3}, {1, 1});
     p.validate();
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(2) == 67);
   }
 
@@ -999,7 +997,7 @@ namespace libsemigroups {
     p.validate();
 
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(2) == 7);
   }
 
@@ -1018,7 +1016,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 4, 2, 2, 1, 5, 2}, {});
     presentation::add_rule_and_check(p, {1, 3, 0, 2, 4, 4, 4}, {});
     Sims1_ S(congruence_kind::right);
-    S.shorts(p);
+    S.short_rules(p);
     REQUIRE(S.number_of_congruences(3) == 14);
     REQUIRE(S.number_of_congruences(4) == 14);
     REQUIRE(S.number_of_congruences(5) == 14);
@@ -1036,7 +1034,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 4, 2, 2, 1, 5, 2}, {});
     presentation::add_rule_and_check(p, {1, 3, 0, 2, 4, 4, 4}, {});
     Sims1_ S(congruence_kind::right);
-    S.shorts(p);
+    S.short_rules(p);
 
     Sims1_ T(S);
     REQUIRE(S.number_of_congruences(3) == 14);
@@ -1056,7 +1054,7 @@ namespace libsemigroups {
     e.alphabet({0, 1, 2, 5});
 
     Sims1_ C(congruence_kind::right);
-    REQUIRE_THROWS_AS(C.shorts(p).extra(e), LibsemigroupsException);
+    REQUIRE_THROWS_AS(C.short_rules(p).extra(e), LibsemigroupsException);
   }
 
   // LIBSEMIGROUPS_TEST_CASE("Sims1", "034", "split_at", "[quick][sims1]") {
@@ -1071,21 +1069,21 @@ namespace libsemigroups {
   //   presentation::add_rule_and_check(p, {0, 4, 2, 2, 1, 5, 2}, {});
   //   presentation::add_rule_and_check(p, {1, 3, 0, 2, 4, 4, 4}, {});
   //   Sims1_ S(congruence_kind::right);
-  //   S.shorts(p);
+  //   S.short_rules(p);
 
   //   REQUIRE_THROWS_AS(S.split_at(10), LibsemigroupsException);
   //   S.split_at(0);
 
-  //   REQUIRE(S.shorts().rules.empty());
+  //   REQUIRE(S.short_rules().rules.empty());
 
   //   for (size_t i = 0; i <= p.rules.size() / 2; ++i) {
   //     S.split_at(i);
-  //     REQUIRE(S.shorts().rules.size() == 2 * i);
+  //     REQUIRE(S.short_rules().rules.size() == 2 * i);
   //   }
-  //   REQUIRE(S.shorts().rules.size() == p.rules.size());
+  //   REQUIRE(S.short_rules().rules.size() == p.rules.size());
   //   for (size_t i = p.rules.size() / 2; i > 0; --i) {
   //     S.split_at(i);
-  //     REQUIRE(S.shorts().rules.size() == 2 * i);
+  //     REQUIRE(S.short_rules().rules.size() == 2 * i);
   //   }
   //   S.split_at(7);
   //   REQUIRE(S.number_of_congruences(3) == 14);
@@ -1104,7 +1102,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {0, 4, 2, 2, 1, 5, 2}, {});
     presentation::add_rule_and_check(p, {1, 3, 0, 2, 4, 4, 4}, {});
     Sims1_ S(congruence_kind::right);
-    S.shorts(p);
+    S.short_rules(p);
 
     std::stringbuf buff;
     std::ostream   os(&buff);
@@ -1125,14 +1123,14 @@ namespace libsemigroups {
 
     {
       Sims1_ S(congruence_kind::right);
-      S.shorts(p);
+      S.short_rules(p);
       verify_forward_iterator_requirements(S.cbegin(10));
       auto it = S.cbegin(10);
       REQUIRE(it->number_of_nodes() == 10);
     }
     {
       Sims1_ S(congruence_kind::left);
-      S.shorts(p);
+      S.short_rules(p);
       verify_forward_iterator_requirements(S.cbegin(10));
       auto it = S.cbegin(10);
       REQUIRE(it->number_of_nodes() == 10);
@@ -1151,7 +1149,7 @@ namespace libsemigroups {
     presentation::sort_rules(p);
 
     REQUIRE(MinimalRepOrc()
-                .shorts(p)
+                .short_rules(p)
                 .target_size(18)
                 .number_of_threads(std::thread::hardware_concurrency())
                 .digraph()
@@ -1159,7 +1157,7 @@ namespace libsemigroups {
             == 0);
     p.contains_empty_word(true);
     auto d = MinimalRepOrc()
-                 .shorts(p)
+                 .short_rules(p)
                  .target_size(19)
                  .number_of_threads(std::thread::hardware_concurrency())
                  .digraph();
@@ -1269,7 +1267,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
     auto d = RepOrc()
-                 .shorts(p)
+                 .short_rules(p)
                  .target_size(203)
                  .min_nodes(1)
                  .max_nodes(22)
@@ -1278,7 +1276,7 @@ namespace libsemigroups {
     REQUIRE(d.number_of_nodes() == 22);
 
     d = MinimalRepOrc()
-            .shorts(p)
+            .short_rules(p)
             .target_size(203)
             .number_of_threads(4)
             .digraph();
@@ -1320,7 +1318,7 @@ namespace libsemigroups {
       // add it.
       p.contains_empty_word(true);
       auto d = MinimalRepOrc()
-                   .shorts(p)
+                   .short_rules(p)
                    .number_of_threads(2)
                    .target_size(sizes[n])
                    .digraph();
@@ -1356,7 +1354,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, {2, 4, 2, 4}, {});
     presentation::add_rule_and_check(p, {3, 4, 3, 4, 3, 4}, {});
 
-    auto d = MinimalRepOrc().shorts(p).target_size(720).digraph();
+    auto d = MinimalRepOrc().short_rules(p).target_size(720).digraph();
     REQUIRE(d.number_of_nodes() == 6);
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
   }
@@ -1369,7 +1367,7 @@ namespace libsemigroups {
     auto p  = make<Presentation<word_type>>(RectangularBand(4, 4));
     p.contains_empty_word(true);
     auto d = MinimalRepOrc()
-                 .shorts(p)
+                 .short_rules(p)
                  .number_of_threads(2)
                  .target_size(17)
                  .digraph();
@@ -1380,7 +1378,7 @@ namespace libsemigroups {
 
     p.contains_empty_word(false);
     d = MinimalRepOrc()
-            .shorts(p)
+            .short_rules(p)
             .target_size(16)
             .number_of_threads(2)
             .digraph();
@@ -1410,7 +1408,7 @@ namespace libsemigroups {
         auto p = make<Presentation<word_type>>(RectangularBand(m, n));
         p.contains_empty_word(true);
         auto d = MinimalRepOrc()
-                     .shorts(p)
+                     .short_rules(p)
                      .target_size(m * n + 1)
                      .number_of_threads(6)
                      .digraph();
@@ -1429,14 +1427,14 @@ namespace libsemigroups {
     auto   rg = ReportGuard(false);
     auto   p  = make<Presentation<word_type>>(RectangularBand(2, 2));
     Sims1_ S(congruence_kind::right);
-    S.shorts(p);
+    S.short_rules(p);
 
     REQUIRE(S.number_of_congruences(4) == 6);
 
     p.contains_empty_word(true);
 
     Sims1_ T(congruence_kind::right);
-    T.shorts(p);
+    T.short_rules(p);
     REQUIRE(T.number_of_congruences(5) == 9);
 
     auto it = S.cbegin(4);
@@ -1516,10 +1514,10 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, "abb", "");
 
     Sims1_ S(congruence_kind::right);
-    S.shorts(p);
+    S.short_rules(p);
 
     REQUIRE(S.number_of_congruences(10) == 1);
-    auto d = MinimalRepOrc().shorts(p).target_size(1).digraph();
+    auto d = MinimalRepOrc().short_rules(p).target_size(1).digraph();
     REQUIRE(d.number_of_nodes() == 1);
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
   }
@@ -1533,7 +1531,7 @@ namespace libsemigroups {
     auto         rg = ReportGuard(false);
     size_t const n  = 5;
     auto         p  = make<Presentation<word_type>>(RectangularBand(1, n));
-    auto         d  = MinimalRepOrc().shorts(p).target_size(n).digraph();
+    auto         d  = MinimalRepOrc().short_rules(p).target_size(n).digraph();
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == n);
@@ -1555,7 +1553,7 @@ namespace libsemigroups {
 
     REQUIRE(S.size() == 5);
     auto p = make<Presentation<word_type>>(S);
-    auto d = MinimalRepOrc().shorts(p).target_size(5).digraph();
+    auto d = MinimalRepOrc().short_rules(p).target_size(5).digraph();
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
     REQUIRE(d.number_of_nodes() == 4);
     REQUIRE(d
@@ -1580,7 +1578,7 @@ namespace libsemigroups {
     REQUIRE(U.size() == 5);
 
     Sims1_ C(congruence_kind::right);
-    C.shorts(p);
+    C.short_rules(p);
     REQUIRE(C.number_of_congruences(5) == 9);
     uint64_t strictly_cyclic_count     = 0;
     uint64_t non_strictly_cyclic_count = 0;
@@ -1643,11 +1641,11 @@ namespace libsemigroups {
 
         auto   p = make<Presentation<word_type>>(RectangularBand(m, n));
         Sims1_ S(congruence_kind::left);
-        S.shorts(p);
+        S.short_rules(p);
         REQUIRE(S.number_of_threads(4).number_of_congruences(m * n)
                 == left[m][n]);
         Sims1_ T(congruence_kind::right);
-        T.shorts(p);
+        T.short_rules(p);
         REQUIRE(T.number_of_threads(4).number_of_congruences(m * n)
                 == left[n][m]);
       }
