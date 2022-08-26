@@ -96,10 +96,10 @@ namespace libsemigroups {
     size_t                  _num_threads;
     size_t                  _report_interval;
     Presentation<word_type> _shorts;
-    size_t                  _split_at;
 
+    // TODO(Sims1) clean up the ctrs
     Sims1Settings(size_t n, size_t r, size_t s)
-        : _num_threads(n), _report_interval(r), _split_at(s) {}
+        : _longs(), _num_threads(n), _report_interval(r), _shorts() {}
 
    public:
     Sims1Settings() : Sims1Settings(1, 1'000, UNDEFINED) {}
