@@ -46,33 +46,6 @@ namespace libsemigroups {
   template <typename T>
   Sims1<T>::~Sims1() = default;
 
-  // TODO(Sims1) remove this
-  // template <typename T>
-  // void Sims1<T>::perform_split() {
-  //   size_type val = Sims1Settings<Sims1<T>>::split_at();
-  //   if (val == UNDEFINED) {
-  //     return;
-  //   }
-
-  //   LIBSEMIGROUPS_ASSERT(val
-  //                        < _short.rules.size() / 2 + _longs.rules.size() /
-  //                        2);
-
-  //   val *= 2;
-  //   if (val < _short.rules.size()) {
-  //     _longs.rules.insert(
-  //         _longs.rules.begin(), _short.rules.begin() + val,
-  //         _short.rules.end());
-  //     _short.rules.erase(_short.rules.begin() + val, _short.rules.end());
-  //   } else {
-  //     val -= _short.rules.size();
-  //     _short.rules.insert(
-  //         _short.rules.end(), _longs.rules.begin(), _longs.rules.begin() +
-  //         val);
-  //     _longs.rules.erase(_longs.rules.begin(), _longs.rules.begin() + val);
-  //   }
-  // }
-
   template <typename T>
   uint64_t Sims1<T>::number_of_congruences(size_type n) const {
     if (number_of_threads() == 1) {
@@ -95,6 +68,7 @@ namespace libsemigroups {
     if (number_of_threads() == 1) {
       REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
+        // No stats in this case
         std::for_each(cbegin(n), cend(n), pred);
       } else {
         auto       start_time  = std::chrono::high_resolution_clock::now();
@@ -102,20 +76,34 @@ namespace libsemigroups {
         uint64_t   last_count  = 0;
         uint64_t   count       = 0;
         std::mutex mtx;  // does nothing
+        auto       it   = cbegin(n);
         auto const last = cend(n);
-        for (auto it = cbegin(n); it != last; ++it) {
-          report_number_of_congruences(
-              start_time, last_report, last_count, ++count, mtx);
+        for (; it != last; ++it) {
+          report_number_of_congruences(report_interval(),
+                                       start_time,
+                                       last_report,
+                                       last_count,
+                                       ++count,
+                                       mtx);
           pred(*it);
         }
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+        // Copy the iterator stats into this so that we can retrieve it
+        // after den is destroyed.
+        stats(it.stats());
+#endif
       }
     } else {
       REPORT_DEFAULT("using %d / %d additional threads\n",
                      number_of_threads(),
                      std::thread::hardware_concurrency());
-      thread_runner den(
-          short_rules(), _extra, long_rules(), n, number_of_threads());
-      auto pred_wrapper = [&pred](digraph_type const &ad) {
+      thread_runner den(short_rules(),
+                        _extra,
+                        long_rules(),
+                        n,
+                        number_of_threads(),
+                        report_interval());
+      auto          pred_wrapper = [&pred](digraph_type const &ad) {
         pred(ad);
         return false;
       };
@@ -142,30 +130,51 @@ namespace libsemigroups {
         uint64_t   last_count  = 0;
         uint64_t   count       = 0;
         std::mutex mtx;  // does nothing
+        auto       it   = cbegin(n);
         auto const last = cend(n);
-        for (auto it = cbegin(n); it != last; ++it) {
+
+        for (; it != last; ++it) {
           if (pred(*it)) {
             return *it;
           }
-          report_number_of_congruences(
-              start_time, last_report, last_count, ++count, mtx);
+          report_number_of_congruences(report_interval(),
+                                       start_time,
+                                       last_report,
+                                       last_count,
+                                       ++count,
+                                       mtx);
         }
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+        // Copy the iterator stats into this so that we can retrieve it
+        // after den is destroyed.
+        stats(it.stats());
+#endif
         return *last;  // the empty digraph
       }
     } else {
       REPORT_DEFAULT("using %d / %d additional threads\n",
                      number_of_threads(),
                      std::thread::hardware_concurrency());
-      thread_runner den(
-          short_rules(), _extra, long_rules(), n, number_of_threads());
+      thread_runner den(short_rules(),
+                        _extra,
+                        long_rules(),
+                        n,
+                        number_of_threads(),
+                        report_interval());
       den.run(pred);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+      // Copy the thread_runner stats into this so that we can retrieve it
+      // after den is destroyed.
+      stats(den.stats());
+#endif
       return den.digraph();
     }
   }
 
   template <typename T>
   template <typename S>
-  void Sims1<T>::report_number_of_congruences(time_point &start_time,
+  void Sims1<T>::report_number_of_congruences(uint64_t    report_interval,
+                                              time_point &start_time,
                                               time_point &last_report,
                                               S &         last_count,
                                               uint64_t    count_now,
@@ -174,7 +183,7 @@ namespace libsemigroups {
     using std::chrono::seconds;
 
     std::lock_guard<std::mutex> lock(mtx);
-    if (count_now - last_count > 1'000) {
+    if (count_now - last_count > report_interval) {
       auto now = std::chrono::high_resolution_clock::now();
       if (now - last_report > std::chrono::seconds(1)) {
         auto total_time = duration_cast<seconds>(now - start_time);
@@ -421,6 +430,7 @@ namespace libsemigroups {
     std::vector<std::thread>                      _threads;
     std::mutex                                    _mtx;
     size_type                                     _num_threads;
+    uint64_t                                      _report_interval;
     digraph_type                                  _result;
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
     Sims1Stats _stats;
@@ -486,12 +496,14 @@ namespace libsemigroups {
                   Presentation<word_type> const &e,
                   Presentation<word_type> const &f,
                   size_type                      n,
-                  size_type                      num_threads)
+                  size_type                      num_threads,
+                  uint64_t                       report_interval)
         : _done(false),
           _theives(),
           _threads(),
           _mtx(),
           _num_threads(num_threads),
+          _report_interval(report_interval),
           _result()
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
           ,
@@ -520,9 +532,15 @@ namespace libsemigroups {
       auto actual_hook = hook;
       if (report::should_report()) {
         actual_hook = [&](digraph_type const &ad) {
-          hook(ad);
-          report_number_of_congruences(
-              start_time, last_report, last_count, ++count, _mtx);
+          if (hook(ad)) {
+            return true;
+          }
+          report_number_of_congruences(_report_interval,
+                                       start_time,
+                                       last_report,
+                                       last_count,
+                                       ++count,
+                                       _mtx);
           return false;
         };
       }
@@ -619,10 +637,11 @@ namespace libsemigroups {
     if (best.number_of_nodes() == 0) {
       REPORT_DEFAULT("no faithful rep. o.r.c. on [1, %llu) points found\n",
                      hi + 1);
-      // No faithful representation on up to <size> points, or trivial
+      stats(cr.stats());
       return best;
     } else if (best.number_of_nodes() == 1) {
       REPORT_DEFAULT("found a faithful rep. o.r.c. on 1 point\n");
+      stats(cr.stats());
       return best;
     }
     hi = best.number_of_nodes();
@@ -640,6 +659,7 @@ namespace libsemigroups {
       next = std::move(cr.max_nodes(hi - 1).digraph());
     }
     REPORT_DEFAULT("no faithful rep. o.r.c. on [1, %llu) points found\n", hi);
+    stats(cr.stats());
     return best;
   }
 

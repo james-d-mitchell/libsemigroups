@@ -785,7 +785,8 @@ namespace libsemigroups {
     using time_point = std::chrono::high_resolution_clock::time_point;
 
     template <typename S>
-    static void report_number_of_congruences(time_point& start_time,
+    static void report_number_of_congruences(uint64_t    report_interval,
+                                             time_point& start_time,
                                              time_point& last_report,
                                              S&          last_count,
                                              uint64_t    count_now,
@@ -852,7 +853,9 @@ namespace libsemigroups {
     size_t _size;
 
    public:
-    MinimalRepOrc() : Sims1Settings<MinimalRepOrc>(), _size() {}
+    using Sims1Settings<MinimalRepOrc>::stats;
+
+    MinimalRepOrc() = default;
 
     MinimalRepOrc& target_size(size_t val) noexcept {
       _size = val;

@@ -261,7 +261,8 @@ namespace libsemigroups {
                           "005",
                           "PartitionMonoid(3)",
                           "[extreme][low-index]") {
-    auto                    rg = ReportGuard(false);
+    auto rg = ReportGuard(true);
+    // TODO(Sims1) move this definition into fpsemigroup-examples
     Presentation<word_type> p;
     p.contains_empty_word(false);
 
@@ -358,10 +359,18 @@ namespace libsemigroups {
 
     Sims1_ S(congruence_kind::right);
     S.short_rules(p).large_rule_length(11);  // This actually helps here!
-    REQUIRE(std::distance(S.cbegin(17), S.cend(17)) == 1589);
+    // We don't do std::distance(S.cbegin(17), S.cend(17)) so that we can
+    // capture the stats
+    auto       it    = S.cbegin(17);
+    auto const last  = S.cend(17);
+    auto       count = 0;
+    for (; it != last; ++it) {
+      ++count;
+    }
+
+    REQUIRE(count == 1589);
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::ostringstream oss;
-    oss << S.cbegin(10).stats();
+    std::cout << it.stats();
 #endif
   }
 
@@ -772,11 +781,14 @@ namespace libsemigroups {
 
     p.contains_empty_word(false);
     Sims1_ C(congruence_kind::right);
-    C.short_rules(p);  // TODO(Sims1) need a short_rules from iterators
+    C.short_rules(p);
     // C.split_at(212 / 2);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(81)
             == 601'265);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    std::cout << C.stats();
+#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -811,6 +823,9 @@ namespace libsemigroups {
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(105)
             == 103'406);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    std::cout << C.stats();
+#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -878,6 +893,9 @@ namespace libsemigroups {
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(105)
             == 103'406);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    std::cout << C.stats();
+#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -922,6 +940,9 @@ namespace libsemigroups {
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(131)
             == 280'455);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    std::cout << C.stats();
+#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1171,16 +1192,17 @@ namespace libsemigroups {
                 .number_of_nodes()
             == 0);
     p.contains_empty_word(true);
-    auto d = MinimalRepOrc()
-                 .short_rules(p)
-                 .target_size(19)
-                 .number_of_threads(std::thread::hardware_concurrency())
-                 .digraph();
+    auto mro = MinimalRepOrc().short_rules(p).target_size(19).number_of_threads(
+        std::thread::hardware_concurrency());
+    auto d = mro.digraph();
     REQUIRE(d.number_of_nodes() == 11);
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     S.add_generator(S.generator(0).identity());
     REQUIRE(S.size() == 19);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    std::cout << mro.stats();
+#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1290,11 +1312,10 @@ namespace libsemigroups {
                  .digraph();
     REQUIRE(d.number_of_nodes() == 22);
 
-    d = MinimalRepOrc()
-            .short_rules(p)
-            .target_size(203)
-            .number_of_threads(4)
-            .digraph();
+    auto mro
+        = MinimalRepOrc().short_rules(p).target_size(203).number_of_threads(4);
+    d = mro.digraph();
+
     REQUIRE(action_digraph_helper::is_strictly_cyclic(d));
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     REQUIRE(S.size() == 203);
@@ -1313,6 +1334,9 @@ namespace libsemigroups {
     //          17, 15, 17}, {18, 14, 16, 12, 5},  {19, 20, 20, 19, 21}, {20,
     //          17, 19, 15, 21}, {21, 21, 21, 19, 21}}));
     REQUIRE(d.number_of_nodes() == 22);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    std::cout << mro.stats();
+#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1697,6 +1721,7 @@ namespace libsemigroups {
                           "049",
                           "Stylic(n) n = 3, 4",
                           "[fail][sims1]") {
+    auto                           rg   = ReportGuard(true);
     std::array<uint64_t, 10> const size = {0, 0, 0, 14, 51};
     //               1505s
     std::array<uint64_t, 10> const num_left  = {0, 0, 0, 1'214, 1'429'447'174};
@@ -1708,11 +1733,17 @@ namespace libsemigroups {
         Sims1_ S(congruence_kind::right);
         S.short_rules(p).number_of_threads(4);
         REQUIRE(S.number_of_congruences(size[n]) == num_right[n]);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+        std::cout << S.stats();
+#endif
       }
       {
         Sims1_ S(congruence_kind::left);
         S.short_rules(p).number_of_threads(4);
         REQUIRE(S.number_of_congruences(size[n]) == num_left[n]);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+        std::cout << S.stats();
+#endif
       }
     }
   }
@@ -1721,6 +1752,7 @@ namespace libsemigroups {
                           "050",
                           "(2, 3, 7)-triangle group - index 50",
                           "[extreme][sims1]") {
+    auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("xy");
@@ -1730,6 +1762,9 @@ namespace libsemigroups {
     Sims1_ S(congruence_kind::right);
     S.short_rules(p).number_of_threads(4);
     REQUIRE(S.number_of_congruences(50) == 75'971);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    std::cout << S.stats();
+#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1770,6 +1805,9 @@ namespace libsemigroups {
       Sims1_ S(congruence_kind::right);
       S.short_rules(p).number_of_threads(4);
       REQUIRE(S.number_of_congruences(size[n]) == num_right[n]);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+      std::cout << S.stats();
+#endif
     }
   }
 
