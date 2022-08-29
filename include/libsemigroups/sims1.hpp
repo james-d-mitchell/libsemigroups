@@ -20,7 +20,7 @@
 // congruence" algorithm for semigroups and monoids.
 // TODO(Sims1):
 // * be useful to have output when no congruences are found too (i.e. in
-// Heineken group example)
+//   Heineken group example)
 // * add presentation::longest_rule, shortest_rule, number of rules less than a
 //   given size.
 // * fix sorting in presentation (so that is uses both sides of the rules)
@@ -29,7 +29,7 @@
 //   - states all settings at the start of the run
 //   - the number of congruences considered is shown
 //  * check for the case that we've constructed a Sims1 but haven't added any
-//  relations or anything
+//    relations or anything
 // * code coverage, iwyu
 // * implement joins (HopcroftKarp), meets (not sure), containment (find join
 //   and check equality)?
@@ -85,6 +85,16 @@ namespace libsemigroups {
     uint64_t num_nodes      = 0;
     uint64_t num_good_nodes = 0;
     uint64_t depth          = 0;
+
+    Sims1Stats& operator+=(Sims1Stats const& that) {
+      mean_depth += that.mean_depth;
+      max_depth += that.max_depth;
+      max_pending += that.max_pending;
+      num_nodes += that.num_nodes;
+      num_good_nodes += that.num_good_nodes;
+      depth += that.depth;
+      return *this;
+    }
   };
 #endif
 
@@ -98,9 +108,15 @@ namespace libsemigroups {
     size_t                  _num_threads;
     size_t                  _report_interval;
     Presentation<word_type> _shorts;
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    mutable Sims1Stats _stats;
+
+#endif
 
    public:
-    Sims1Settings() : _longs(), _num_threads(), _report_interval(), _shorts() {
+    Sims1Settings()
+        // TODO(Sims1) _stats only if LIBSEMIGROUPS_ENABLE_STATS
+        : _longs(), _num_threads(), _report_interval(), _shorts(), _stats() {
       number_of_threads(1);
       report_interval(999);
     }
@@ -110,7 +126,8 @@ namespace libsemigroups {
         : _longs(that.long_rules()),
           _num_threads(that.number_of_threads()),
           _report_interval(that.report_interval()),
-          _shorts(that.short_rules()) {}
+          _shorts(that.short_rules()),
+          _stats(that.stats()) {}
 
     Sims1Settings const& settings() {
       return *this;
@@ -179,6 +196,15 @@ namespace libsemigroups {
 
     Presentation<word_type> const& long_rules() const noexcept {
       return _longs;
+    }
+
+    Sims1Stats const& stats() const noexcept {
+      return _stats;
+    }
+
+    T const& stats(Sims1Stats const& stts) const {
+      _stats = std::move(stts);
+      return static_cast<T const&>(*this);
     }
 
     T& large_rule_length(size_t val) {
@@ -311,6 +337,7 @@ namespace libsemigroups {
     using Sims1Settings<Sims1>::long_rules;
     using Sims1Settings<Sims1>::number_of_threads;
     using Sims1Settings<Sims1>::report_interval;
+    using Sims1Settings<Sims1>::stats;
 
     //! Returns a const reference to the defining presentation.
     //!
@@ -470,11 +497,9 @@ namespace libsemigroups {
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
       Sims1Stats _stats;
-
-     protected:
-      void stats_update(size_type);
 #endif
 
+     protected:
       // Push initial PendingDef's into _pending, see tpp file for
       // explanation.
       void init(size_type n);
@@ -592,7 +617,9 @@ namespace libsemigroups {
       }
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-      Sims1Stats const& stats() const noexcept;
+      Sims1Stats const& stats() const noexcept {
+        return _stats;
+      }
 #endif
     };
 
@@ -602,10 +629,6 @@ namespace libsemigroups {
       using iterator_base::init;
       using iterator_base::try_define;
       using iterator_base::try_pop;
-
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-      using iterator_base::stats_update;
-#endif
 
      public:
       //! No doc

@@ -21,49 +21,11 @@
 
 namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-  template <typename T>
-  void Sims1<T>::iterator_base::stats_update(size_type current_num_edges) {
-    if (_felsch_graph.number_of_edges() > current_num_edges) {
-      if (_stats.depth > 0) {
-        _stats.depth--;
-      }
-    } else {
-      _stats.depth++;
-    }
-    _stats.max_depth = std::max(_stats.max_depth, _stats.depth);
-    _stats.max_pending
-        = std::max(_stats.max_pending, static_cast<uint64_t>(_pending.size()));
-    _stats.num_nodes++;
-    if (_stats.depth > 0) {
-      _stats.mean_depth
-          += (_stats.depth - _stats.mean_depth) / _stats.num_nodes;
-    }
-  }
-
-  template <typename T>
-  Sims1Stats const &Sims1<T>::iterator_base::stats() const noexcept {
-    return _stats;
-  }
-
   std::ostream &operator<<(std::ostream &os, Sims1Stats const &stats) {
-    detail::PrintTable pt;
-    pt.header("Summary of statistics (Sims low-index algorithm)");
-    pt("mean depth ", "%'14lf", stats.mean_depth);
-    pt("max depth ", "%'14llu", stats.max_depth);
-    pt("max pending ", "%'14llu", stats.max_pending);
-    pt("number of nodes visited ", "%'14llu", stats.num_nodes);
-    pt("approx. number of good nodes ", "%'14llu*", stats.num_good_nodes);
-    pt("ratio of good / bad nodes ",
-       "%'14lf",
-       static_cast<double>(stats.num_good_nodes) / stats.num_nodes);
-    pt("");
-    pt("*the number of complete digraphs found times their number of nodes, "
-       "this value overcounts the number of good nodes!");
-    pt.footer("End of summary (Sims low-index algorithm)");
-    os << pt.emit();
+    os << "#0: Sims1: total number of nodes in search tree was "
+       << detail::group_digits(stats.num_nodes) << std::endl;
     return os;
   }
-
 #endif
   ////////////////////////////////////////////////////////////////////////
   // Sims1
@@ -141,8 +103,8 @@ namespace libsemigroups {
         uint64_t   count      = 0;
         uint64_t   last_count = 0;
         for (auto it = cbegin(n); it != last; ++it) {
-          pred(*it);
           report_number_of_congruences(last_report, last_count, ++count, t);
+          pred(*it);
         }
       }
     } else {
@@ -166,7 +128,9 @@ namespace libsemigroups {
           pred(ad);
           return false;
         });
-        den.digraph();  // for the printing
+        // Copy the thread_runner stats into this so that we can retrieve it
+        // after den is destroyed.
+        stats(den.stats());
       }
     }
   }
@@ -335,9 +299,11 @@ namespace libsemigroups {
         if (_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
           std::lock_guard<std::mutex> lock(_mtx);
           if (M < _max_num_classes) {
+            ++_stats.num_nodes;
             _pending.emplace_back(next, a, M, N, M + 1);
           }
           for (node_type b = M; b-- > _min_target_node;) {
+            ++_stats.num_nodes;
             _pending.emplace_back(next, a, b, N, M);
           }
           return false;
@@ -348,9 +314,6 @@ namespace libsemigroups {
     // No undefined edges, word graph is complete
     LIBSEMIGROUPS_ASSERT(N == M * num_gens);
 
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    _stats.num_good_nodes += _felsch_graph.number_of_active_nodes();
-#endif
     auto first = _longs.rules.cbegin();
     auto last  = _longs.rules.cend();
     return felsch_digraph::compatible(_felsch_graph, 0, M, first, last);
@@ -380,9 +343,6 @@ namespace libsemigroups {
   typename Sims1<T>::iterator const &Sims1<T>::iterator::operator++() {
     PendingDef current;
     while (try_pop(current)) {
-#if LIBSEMIGROUPS_ENABLE_STATS
-      stats_update(current.num_edges);
-#endif
       if (try_define(current)) {
         return *this;
       }
@@ -392,21 +352,6 @@ namespace libsemigroups {
     this->_felsch_graph.restrict(0);
     return *this;
   }
-
-  // TODO(Sims1) remove this
-  // template <typename T>
-  // Sims1<T> &Sims1<T>::split_at(size_type val) {
-  //   if (val != UNDEFINED
-  //       && val > _short.rules.size() / 2 + _longs.rules.size() / 2) {
-  //     LIBSEMIGROUPS_EXCEPTION(
-  //         "expected a value in the range [0, %llu) or UNDEFINED, found %llu",
-  //         uint64_t(_short.rules.size() / 2 + _longs.rules.size() / 2),
-  //         uint64_t(val));
-  //   }
-  //   Sims1Settings<Sims1<T>>::split_at(val);
-  //   perform_split();
-  //   return *this;
-  // }
 
   ///////////////////////////////////////////////////////////////////////////////
   // thread_iterator
@@ -443,6 +388,8 @@ namespace libsemigroups {
 
     //! No doc
     ~thread_iterator() = default;
+
+    using iterator_base::stats;
 
    public:
     void push(PendingDef pd) {
@@ -488,10 +435,10 @@ namespace libsemigroups {
     std::atomic_bool                              _done;
     std::vector<std::unique_ptr<thread_iterator>> _theives;
     std::vector<std::thread>                      _threads;
-    std::vector<uint64_t>                         _total_pending;
+    std::mutex                                    _mtx;
     size_type                                     _num_threads;
     digraph_type                                  _result;
-    std::mutex                                    _mtx;
+    Sims1Stats                                    _stats;
 
     void worker_thread(unsigned                                  my_index,
                        std::function<bool(digraph_type const &)> hook) {
@@ -519,6 +466,13 @@ namespace libsemigroups {
         // threads shutting down earlier than desirable. On the other hand,
         // maybe this is a desirable.
       }
+      std::lock_guard<std::mutex> lock(_mtx);
+#ifdef LIBSEMIGROUPS_VERBOSE
+      REPORT_DEFAULT(
+          "this thread created %s nodes\n",
+          detail::group_digits(_theives[my_index]->stats().num_nodes).c_str());
+#endif
+      _stats += _theives[my_index]->stats();
     }
 
     bool pop_from_local_queue(PendingDef &pd, unsigned my_index) {
@@ -547,10 +501,10 @@ namespace libsemigroups {
         : _done(false),
           _theives(),
           _threads(),
-          _total_pending(num_threads, 0),
+          _mtx(),
           _num_threads(num_threads),
           _result(),
-          _mtx() {
+          _stats() {
       for (size_t i = 0; i < _num_threads; ++i) {
         _theives.push_back(std::make_unique<thread_iterator>(p, e, f, n));
       }
@@ -560,12 +514,6 @@ namespace libsemigroups {
     ~thread_runner() = default;
 
     digraph_type const &digraph() const {
-      REPORT_DEFAULT(
-          "total number of nodes in search tree was %s\n",
-          detail::group_digits(std::accumulate(_total_pending.cbegin(),
-                                               _total_pending.cend(),
-                                               uint64_t(0)))
-              .c_str());
       return _result;
     }
 
@@ -581,6 +529,12 @@ namespace libsemigroups {
         throw;
       }
     }
+
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    Sims1Stats const &stats() {
+      return _stats;
+    }
+#endif
   };
 
   ////////////////////////////////////////////////////////////////////////
