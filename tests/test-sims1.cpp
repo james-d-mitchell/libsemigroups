@@ -802,9 +802,8 @@ namespace libsemigroups {
 
     Sims1_ C(congruence_kind::right);
     C.short_rules(p);
+    REQUIRE(C.short_rules().rules.size() == 186);
 
-    C.large_rule_length(8);
-    // C.split_at(212 / 2);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(81)
             == 601'265);
