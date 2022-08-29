@@ -79,20 +79,12 @@ namespace libsemigroups {
   // This isn't inside Sims1 because it doesn't depend on the template args at
   // all.
   struct Sims1Stats {
-    double   mean_depth     = 0;
-    uint64_t max_depth      = 0;
-    uint64_t max_pending    = 0;
-    uint64_t num_nodes      = 0;
-    uint64_t num_good_nodes = 0;
-    uint64_t depth          = 0;
+    uint64_t max_pending   = 0;
+    uint64_t total_pending = 0;
 
     Sims1Stats& operator+=(Sims1Stats const& that) {
-      mean_depth += that.mean_depth;
-      max_depth += that.max_depth;
-      max_pending += that.max_pending;
-      num_nodes += that.num_nodes;
-      num_good_nodes += that.num_good_nodes;
-      depth += that.depth;
+      max_pending = std::max(max_pending, that.max_pending);
+      total_pending += that.total_pending;
       return *this;
     }
   };

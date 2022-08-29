@@ -23,7 +23,9 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
   std::ostream &operator<<(std::ostream &os, Sims1Stats const &stats) {
     os << "#0: Sims1: total number of nodes in search tree was "
-       << detail::group_digits(stats.num_nodes) << std::endl;
+       << detail::group_digits(stats.total_pending) << std::endl;
+    os << "#0: Sims1: max. number of pending definitions was "
+       << detail::group_digits(stats.max_pending) << std::endl;
     return os;
   }
 #endif
@@ -299,13 +301,19 @@ namespace libsemigroups {
         if (_felsch_graph.unsafe_neighbor(next, a) == UNDEFINED) {
           std::lock_guard<std::mutex> lock(_mtx);
           if (M < _max_num_classes) {
-            ++_stats.num_nodes;
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+            ++_stats.total_pending;
+#endif
             _pending.emplace_back(next, a, M, N, M + 1);
           }
           for (node_type b = M; b-- > _min_target_node;) {
-            ++_stats.num_nodes;
             _pending.emplace_back(next, a, b, N, M);
           }
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+          _stats.total_pending += M - _min_target_node;
+          _stats.max_pending = std::max(static_cast<uint64_t>(_pending.size()),
+                                        _stats.max_pending);
+#endif
           return false;
         }
       }
@@ -470,7 +478,8 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_VERBOSE
       REPORT_DEFAULT(
           "this thread created %s nodes\n",
-          detail::group_digits(_theives[my_index]->stats().num_nodes).c_str());
+          detail::group_digits(_theives[my_index]->stats().total_pending)
+              .c_str());
 #endif
       _stats += _theives[my_index]->stats();
     }
