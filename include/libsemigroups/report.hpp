@@ -52,6 +52,13 @@
   (REPORTER.report() ? REPORTER(__VA_ARGS__).prefix(this) : REPORTER)
 
 #ifdef LIBSEMIGROUPS_FMT_ENABLED
+#define REPORT_DEFAULT_V3(...) \
+  REPORTER(__VA_ARGS__).prefix(nullptr).thread_color().flush()
+#else
+#define REPORT_DEFAULT_V3(...) REPORTER(__VA_ARGS__).prefix().flush();
+#endif
+
+#ifdef LIBSEMIGROUPS_FMT_ENABLED
 #define REPORT_DEFAULT(...) REPORT(__VA_ARGS__).thread_color().flush();
 #else
 #define REPORT_DEFAULT(...) REPORT(__VA_ARGS__).flush();
@@ -311,11 +318,18 @@ namespace libsemigroups {
           resize(tid + 1);
           _options[tid].prefix
 #ifdef LIBSEMIGROUPS_FMT_ENABLED
-              = fmt::sprintf("#%llu: %s: ", tid, string_class_name(ptr));
+              = fmt::sprintf("#%llu: ", tid);
 #else
-              = string_format(
-                  "#%llu: %s: ", tid, string_class_name(ptr).c_str());
+              = string_format("#%llu: ", tid);
 #endif
+          if (ptr != nullptr) {
+            _options[tid].prefix +=
+#ifdef LIBSEMIGROUPS_FMT_ENABLED
+                fmt::sprintf("%s: ", string_class_name(ptr));
+#else
+                string_format("%s: ", string_class_name(ptr));
+#endif
+          }
         }
         return *this;
       }
@@ -324,8 +338,22 @@ namespace libsemigroups {
       Reporter& color(fmt::color);
       Reporter& thread_color();
 #endif
-
       Reporter& prefix();
+
+      Reporter& prefix(std::nullptr_t) {
+        if (_report) {
+          std::lock_guard<std::mutex> lg(_mtx);
+          uint64_t tid = THREAD_ID_MANAGER.tid(std::this_thread::get_id());
+          resize(tid + 1);
+          _options[tid].prefix
+#ifdef LIBSEMIGROUPS_FMT_ENABLED
+              = fmt::sprintf("#%llu: ", tid);
+#else
+              = string_format("#%llu: ", tid);
+#endif
+        }
+        return *this;
+      }
 
       std::string get_prefix() const noexcept {
         uint64_t tid = THREAD_ID_MANAGER.tid(std::this_thread::get_id());

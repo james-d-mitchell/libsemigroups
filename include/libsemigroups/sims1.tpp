@@ -92,21 +92,20 @@ namespace libsemigroups {
   void
   Sims1<T>::for_each(size_type                                 n,
                      std::function<void(digraph_type const &)> pred) const {
-    std::chrono::high_resolution_clock::time_point last_report
-        = std::chrono::high_resolution_clock::now();
-
-    detail::Timer t;
-
     if (number_of_threads() == 1) {
       REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         std::for_each(cbegin(n), cend(n), pred);
       } else {
-        auto const last       = cend(n);
-        uint64_t   count      = 0;
-        uint64_t   last_count = 0;
+        auto       start_time  = std::chrono::high_resolution_clock::now();
+        auto       last_report = start_time;
+        uint64_t   last_count  = 0;
+        uint64_t   count       = 0;
+        std::mutex mtx;  // does nothing
+        auto const last = cend(n);
         for (auto it = cbegin(n); it != last; ++it) {
-          report_number_of_congruences(last_report, last_count, ++count, t);
+          report_number_of_congruences(
+              start_time, last_report, last_count, ++count, mtx);
           pred(*it);
         }
       }
@@ -116,27 +115,16 @@ namespace libsemigroups {
                      std::thread::hardware_concurrency());
       thread_runner den(
           short_rules(), _extra, long_rules(), n, number_of_threads());
-      if (!report::should_report()) {
-        auto pred_wrapper = [&pred](digraph_type const &ad) {
-          pred(ad);
-          return false;
-        };
-        den.run(pred_wrapper);
-      } else {
-        std::atomic_uint64_t count(0);
-        std::atomic_uint64_t last_count(0);
-
-        den.run([&](digraph_type const &ad) {
-          report_number_of_congruences(last_report, last_count, ++count, t);
-          pred(ad);
-          return false;
-        });
-        // Copy the thread_runner stats into this so that we can retrieve it
-        // after den is destroyed.
+      auto pred_wrapper = [&pred](digraph_type const &ad) {
+        pred(ad);
+        return false;
+      };
+      den.run(pred_wrapper);
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-        stats(den.stats());
+      // Copy the thread_runner stats into this so that we can retrieve it
+      // after den is destroyed.
+      stats(den.stats());
 #endif
-      }
     }
   }
 
@@ -144,24 +132,23 @@ namespace libsemigroups {
   typename Sims1<T>::digraph_type
   Sims1<T>::find_if(size_type                                 n,
                     std::function<bool(digraph_type const &)> pred) const {
-    std::chrono::high_resolution_clock::time_point last_report
-        = std::chrono::high_resolution_clock::now();
-
-    detail::Timer t;
-
     if (number_of_threads() == 1) {
       REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         return *std::find_if(cbegin(n), cend(n), pred);
       } else {
-        auto const last       = cend(n);
-        uint64_t   count      = 0;
-        uint64_t   last_count = 0;
+        auto       start_time  = std::chrono::high_resolution_clock::now();
+        auto       last_report = start_time;
+        uint64_t   last_count  = 0;
+        uint64_t   count       = 0;
+        std::mutex mtx;  // does nothing
+        auto const last = cend(n);
         for (auto it = cbegin(n); it != last; ++it) {
           if (pred(*it)) {
             return *it;
           }
-          report_number_of_congruences(last_report, last_count, ++count, t);
+          report_number_of_congruences(
+              start_time, last_report, last_count, ++count, mtx);
         }
         return *last;  // the empty digraph
       }
@@ -171,49 +158,35 @@ namespace libsemigroups {
                      std::thread::hardware_concurrency());
       thread_runner den(
           short_rules(), _extra, long_rules(), n, number_of_threads());
-      if (!report::should_report()) {
-        den.run(pred);
-      } else {
-        std::atomic_uint64_t count(0);
-        std::atomic_uint64_t last_count(0);
-        den.run([&](digraph_type const &ad) {
-          report_number_of_congruences(last_report, last_count, ++count, t);
-          return pred(ad);
-        });
-      }
+      den.run(pred);
       return den.digraph();
     }
   }
 
-  // Can't be static because REPORT_DEFAULT uses this
   template <typename T>
   template <typename S>
-  void Sims1<T>::report_number_of_congruences(time_point &  last_report,
-                                              S &           last_count,
-                                              uint64_t      count,
-                                              detail::Timer t) const {
-    if (count - last_count >= report_interval()) {
-      // Avoid calling high_resolution_clock::now too often
-      auto now     = std::chrono::high_resolution_clock::now();
-      auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-          now - last_report);
-      if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
-              std::chrono::seconds(1))) {
-        auto count_diff = count - last_count;
-        std::swap(now, last_report);
-        last_count = count;
-        // TODO(Sims1) cleanup
-        using float_seconds
-            = std::chrono::duration<float, std::chrono::seconds::period>;
-        auto total_time
-            = std::chrono::duration_cast<float_seconds>(t.elapsed());
-        auto diff_time
-            = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
-        REPORT_DEFAULT(
-            "found %s congruences in %.6fs (%s/s)!\n",
-            detail::group_digits(count).c_str(),
+  void Sims1<T>::report_number_of_congruences(time_point &start_time,
+                                              time_point &last_report,
+                                              S &         last_count,
+                                              uint64_t    count_now,
+                                              std::mutex &mtx) {
+    using std::chrono::duration_cast;
+    using std::chrono::seconds;
+
+    std::lock_guard<std::mutex> lock(mtx);
+    if (count_now - last_count > 1'000) {
+      auto now = std::chrono::high_resolution_clock::now();
+      if (now - last_report > std::chrono::seconds(1)) {
+        auto total_time = duration_cast<seconds>(now - start_time);
+        auto diff_time  = duration_cast<seconds>(now - last_report);
+        REPORT_DEFAULT_V3(
+            "Sims1: found %s congruences in %llus (%s/s)!\n",
+            detail::group_digits(count_now).c_str(),
             total_time.count(),
-            detail::group_digits(count_diff / diff_time.count()).c_str());
+            detail::group_digits(count_now - last_count / diff_time.count())
+                .c_str());
+        std::swap(now, last_report);
+        last_count = count_now;
       }
     }
   }
@@ -538,48 +511,18 @@ namespace libsemigroups {
       return _result;
     }
 
-    void report_number_of_congruences(time_point &          last_report,
-                                      std::atomic_uint64_t &last_count,
-                                      uint64_t              count,
-                                      detail::Timer         t) {
-      // TODO(Sims1) Avoid calling high_resolution_clock::now too often
-      if (count - last_count > 1'000) {
-        auto now     = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            now - last_report);
-        if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::seconds(1))) {
-          std::lock_guard<std::mutex> lock(_mtx);
-          auto                        count_diff = count - last_count;
-          std::swap(now, last_report);
-          last_count = count;
-          // TODO(Sims1) cleanup
-          using float_seconds
-              = std::chrono::duration<float, std::chrono::seconds::period>;
-          auto total_time
-              = std::chrono::duration_cast<float_seconds>(t.elapsed());
-          auto diff_time
-              = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
-          REPORT_DEFAULT(
-              "found %s congruences in %.6fs (%s/s)!\n",
-              detail::group_digits(count).c_str(),
-              total_time.count(),
-              detail::group_digits(count_diff / diff_time.count()).c_str());
-        }
-      }
-    }
-
     void run(std::function<bool(digraph_type const &)> hook) {
-      auto last_report = std::chrono::high_resolution_clock::now();
+      auto start_time  = std::chrono::high_resolution_clock::now();
+      auto last_report = start_time;
       std::atomic_uint64_t last_count(0);
       std::atomic_uint64_t count(0);
-      detail::Timer        t;
 
       auto actual_hook = hook;
       if (report::should_report()) {
         actual_hook = [&](digraph_type const &ad) {
           hook(ad);
-          report_number_of_congruences(last_report, last_count, ++count, t);
+          report_number_of_congruences(
+              start_time, last_report, last_count, ++count, _mtx);
           return false;
         };
       }

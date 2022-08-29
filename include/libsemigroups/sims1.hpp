@@ -785,10 +785,11 @@ namespace libsemigroups {
     using time_point = std::chrono::high_resolution_clock::time_point;
 
     template <typename S>
-    void report_number_of_congruences(time_point&   last_report,
-                                      S&            last_count,
-                                      uint64_t      count,
-                                      detail::Timer t) const;
+    static void report_number_of_congruences(time_point& start_time,
+                                             time_point& last_report,
+                                             S&          last_count,
+                                             uint64_t    count_now,
+                                             std::mutex& mtx);
     class thread_iterator;
     class thread_runner;
   };
