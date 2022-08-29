@@ -213,7 +213,6 @@ namespace libsemigroups {
 
     template <typename W>
     void remove_duplicate_rules(Presentation<W>& p) {
-      using libsemigroups::shortlex_compare;
       std::unordered_set<std::pair<W, W>, Hash<std::pair<W, W>>> relations_set;
 
       for (auto it = p.rules.begin(); it != p.rules.end(); it += 2) {
@@ -260,8 +259,6 @@ namespace libsemigroups {
         }
       }
 
-      using libsemigroups::shortlex_compare;
-
       // Class index -> index of min. length words in wrt + words
       std::unordered_map<size_t, W> mins;
 
@@ -303,6 +300,55 @@ namespace libsemigroups {
       }
     }
 
+    // Lex compare of
+    // [first11, last11) + [first12, last12)
+    // and
+    // [first21, last21) + [first22, last22)
+    template <typename W>
+    bool shortlex_compare_concat(W const& prefix1,
+                                 W const& suffix1,
+                                 W const& prefix2,
+                                 W const& suffix2) {
+      if (prefix1.size() + suffix1.size() < prefix2.size() + suffix2.size()) {
+        return true;
+      } else if (prefix1.size() + suffix1.size()
+                 > prefix2.size() + suffix2.size()) {
+        return false;
+      }
+
+      if (prefix1.size() < prefix2.size()) {
+        size_t const k = prefix2.size() - prefix1.size();
+        return std::lexicographical_compare(prefix1.cbegin(),
+                                            prefix1.cend(),
+                                            prefix2.cbegin(),
+                                            prefix2.cbegin() + prefix1.size())
+               || std::lexicographical_compare(suffix1.cbegin(),
+                                               suffix1.cbegin() + k,
+                                               prefix2.cbegin()
+                                                   + prefix1.size(),
+                                               prefix2.cend())
+               || std::lexicographical_compare(suffix1.cbegin() + k,
+                                               suffix1.cend(),
+                                               suffix2.cbegin(),
+                                               suffix2.cend());
+      } else {
+        size_t const k = prefix1.size() - prefix2.size();
+        return std::lexicographical_compare(prefix1.cbegin(),
+                                            prefix1.cbegin() + prefix2.size(),
+                                            prefix2.cbegin(),
+                                            prefix2.cend())
+               || std::lexicographical_compare(prefix1.cbegin()
+                                                   + prefix2.size(),
+                                               prefix1.cend(),
+                                               suffix2.cbegin(),
+                                               suffix2.cbegin() + k)
+               || std::lexicographical_compare(suffix1.cbegin(),
+                                               suffix1.cend(),
+                                               suffix2.cbegin() + k,
+                                               suffix2.cend());
+      }
+    }
+
     template <typename W>
     void sort_rules(Presentation<W>& p) {
       // Create a permutation of the even indexed entries in vec
@@ -313,7 +359,10 @@ namespace libsemigroups {
       perm.resize(n);
       std::iota(perm.begin(), perm.end(), 0);
       std::sort(perm.begin(), perm.end(), [&p](auto x, auto y) -> bool {
-        return shortlex_compare(p.rules[2 * x], p.rules[2 * y]);
+        return shortlex_compare_concat(p.rules[2 * x],
+                                       p.rules[2 * x + 1],
+                                       p.rules[2 * y],
+                                       p.rules[2 * y + 1]);
       });
       // Apply the permutation (adapted from stl.hpp:apply_permutation)
       for (letter_type i = 0; static_cast<decltype(n)>(i) < n; ++i) {

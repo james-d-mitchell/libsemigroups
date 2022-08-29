@@ -22,6 +22,9 @@
 // presentation, (i.e. it's consistent with its alphabet etc), and some related
 // functionality.
 
+// TODO(Presentation):
+// * add presentation::find_if, presentation::for_each,
+
 #ifndef LIBSEMIGROUPS_PRESENT_HPP_
 #define LIBSEMIGROUPS_PRESENT_HPP_
 

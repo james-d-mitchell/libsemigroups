@@ -22,7 +22,6 @@
 // * be useful to have output when no congruences are found too (i.e. in
 //   Heineken group example).
 // * add presentation::find_if, presentation::for_each,
-// * fix sorting in presentation (so that is uses both sides of the rules)
 // * improve the reporting from MinimalRepOrc so that it:
 //   - states all settings at the start of the run
 //   - the number of congruences considered is shown
