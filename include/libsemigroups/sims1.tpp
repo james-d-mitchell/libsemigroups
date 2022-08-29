@@ -133,7 +133,9 @@ namespace libsemigroups {
         });
         // Copy the thread_runner stats into this so that we can retrieve it
         // after den is destroyed.
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
         stats(den.stats());
+#endif
       }
     }
   }
@@ -536,12 +538,56 @@ namespace libsemigroups {
       return _result;
     }
 
+    void report_number_of_congruences(time_point &          last_report,
+                                      std::atomic_uint64_t &last_count,
+                                      uint64_t              count,
+                                      detail::Timer         t) {
+      // TODO(Sims1) Avoid calling high_resolution_clock::now too often
+      if (count - last_count > 1'000) {
+        auto now     = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            now - last_report);
+        if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::seconds(1))) {
+          std::lock_guard<std::mutex> lock(_mtx);
+          auto                        count_diff = count - last_count;
+          std::swap(now, last_report);
+          last_count = count;
+          // TODO(Sims1) cleanup
+          using float_seconds
+              = std::chrono::duration<float, std::chrono::seconds::period>;
+          auto total_time
+              = std::chrono::duration_cast<float_seconds>(t.elapsed());
+          auto diff_time
+              = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
+          REPORT_DEFAULT(
+              "found %s congruences in %.6fs (%s/s)!\n",
+              detail::group_digits(count).c_str(),
+              total_time.count(),
+              detail::group_digits(count_diff / diff_time.count()).c_str());
+        }
+      }
+    }
+
     void run(std::function<bool(digraph_type const &)> hook) {
+      auto last_report = std::chrono::high_resolution_clock::now();
+      std::atomic_uint64_t last_count(0);
+      std::atomic_uint64_t count(0);
+      detail::Timer        t;
+
+      auto actual_hook = hook;
+      if (report::should_report()) {
+        actual_hook = [&](digraph_type const &ad) {
+          hook(ad);
+          report_number_of_congruences(last_report, last_count, ++count, t);
+          return false;
+        };
+      }
       detail::JoinThreads joiner(_threads);
       try {
         for (size_t i = 0; i < _num_threads; ++i) {
           _threads.push_back(std::thread(
-              &thread_runner::worker_thread, this, i, std::ref(hook)));
+              &thread_runner::worker_thread, this, i, std::ref(actual_hook)));
         }
       } catch (...) {
         _done = true;
