@@ -230,6 +230,17 @@ namespace libsemigroups {
     }
 
     template <typename W>
+    void remove_trivial_rules(Presentation<W>& p) {
+      for (size_t i = 0; i < p.rules.size();) {
+        if (p.rules[i] == p.rules[i + 1]) {
+          p.rules.erase(p.rules.cbegin() + i, p.rules.cbegin() + i + 2);
+        } else {
+          i += 2;
+        }
+      }
+    }
+
+    template <typename W>
     void reduce_complements(Presentation<W>& p) {
       libsemigroups::detail::Duf<> duf;
       duf.resize(p.rules.size());
@@ -360,6 +371,29 @@ namespace libsemigroups {
     }
 
     template <typename W>
+    void replace_subword(Presentation<W>& p,
+                         W const&         existing,
+                         W const&         replacement) {
+      auto rplc_sbwrd = [&existing, &replacement](W& word) {
+        auto it = std::search(
+            word.begin(), word.end(), existing.cbegin(), existing.cend());
+        while (it != word.end()) {
+          // found existing
+          auto replacement_first = it - word.begin();
+          word.erase(it, it + existing.size());
+          word.insert(word.begin() + replacement_first,
+                      replacement.cbegin(),
+                      replacement.cend());
+          it = std::search(word.begin() + replacement_first + 1,
+                           word.end(),
+                           existing.cbegin(),
+                           existing.cend());
+        }
+      };
+      std::for_each(p.rules.begin(), p.rules.end(), rplc_sbwrd);
+    }
+
+    template <typename W>
     void normalize_alphabet(Presentation<W>& p) {
       using size_type   = typename Presentation<W>::size_type;
       using letter_type = typename Presentation<W>::letter_type;
@@ -402,6 +436,71 @@ namespace libsemigroups {
       XYxy.push_back(y);
     }
 
-  }  // namespace presentation
+    template <typename T>
+    auto longest_rule(T first, T last) {
+      auto   result = last;
+      size_t max    = 0;
+      for (auto it = first; it != last; it += 2) {
+        size_t val = it->size() + (it + 1)->size();
+        if (val > max) {
+          max    = val;
+          result = it;
+        }
+      }
+      return result;
+    }
 
+    template <typename T>
+    auto longest_rule_length(T first, T last) {
+      auto it = longest_rule(first, last);
+      return it->size() + (it + 1)->size();
+    }
+
+    template <typename T>
+    auto shortest_rule(T first, T last) {
+      auto   result = last;
+      size_t min    = POSITIVE_INFINITY;
+      for (auto it = first; it != last; it += 2) {
+        size_t val = it->size() + (it + 1)->size();
+        if (val < min) {
+          min    = val;
+          result = it;
+        }
+      }
+      return result;
+    }
+
+    template <typename T>
+    auto shortest_rule_length(T first, T last) {
+      auto it = shortest_rule(first, last);
+      return it->size() + (it + 1)->size();
+    }
+
+    template <typename W>
+    void remove_redundant_generators(Presentation<W>& p) {
+      remove_trivial_rules(p);
+      for (size_t i = 0; i != p.rules.size(); i += 2) {
+        auto lhs = p.rules[i];
+        auto rhs = p.rules[i + 1];
+        if (lhs.size() == 1
+            && std::none_of(
+                rhs.cbegin(), rhs.cend(), [&lhs](letter_type const& a) {
+                  return a == lhs[0];
+                })) {
+          if (rhs.size() == 1 && rhs[0] < lhs[0]) {
+            std::swap(lhs, rhs);
+          }
+          replace_subword(p, rhs, lhs);
+        } else if (rhs.size() == 1
+                   && std::none_of(
+                       lhs.cbegin(), lhs.cend(), [&rhs](letter_type const& a) {
+                         return a == rhs[0];
+                       })) {
+          replace_subword(p, rhs, lhs);
+        }
+      }
+      remove_trivial_rules(p);
+      p.alphabet_from_rules();
+    }
+  }  // namespace presentation
 }  // namespace libsemigroups

@@ -32,6 +32,7 @@
 #include <string>         // for string
 #include <thread>         // for get_id, thread, thread::id
 #include <unordered_map>  // for unordered_map
+#include <unordered_set>  // for unordered_set
 #include <utility>        // for pair
 #include <vector>         // for vector
 
@@ -392,6 +393,16 @@ namespace libsemigroups {
         return *this;
       }
 
+      Reporter& suppress(std::string const& class_name) {
+        _suppressions.insert(class_name);
+        return *this;
+      }
+
+      Reporter& clear_suppressions() {
+        _suppressions.clear();
+        return *this;
+      }
+
      private:
       void resize(size_t);
 
@@ -410,11 +421,12 @@ namespace libsemigroups {
         bool        flush_right;
         std::string prefix;
       };
-      std::vector<std::string> _last_msg;
-      std::mutex               _mtx;
-      std::vector<std::string> _msg;
-      std::vector<Options>     _options;
-      std::atomic<bool>        _report;
+      std::vector<std::string>        _last_msg;
+      std::mutex                      _mtx;
+      std::vector<std::string>        _msg;
+      std::vector<Options>            _options;
+      std::atomic<bool>               _report;
+      std::unordered_set<std::string> _suppressions;
     };
   }  // namespace detail
 
@@ -492,7 +504,9 @@ namespace libsemigroups {
 
   namespace report {
     bool should_report() noexcept;
-  }
+    void suppress(std::string const&);
+    void clear_suppressions();
+  }  // namespace report
 
   //! This struct can be used to enable printing of some information during
   //! various of the computation in ``libsemigroups``. Reporting is enable (or

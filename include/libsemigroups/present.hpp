@@ -723,6 +723,10 @@ namespace libsemigroups {
     template <typename W, typename T>
     void replace_subword(Presentation<W>& p, T first, T last);
 
+    // TODO(Sims1)
+    template <typename W>
+    void replace_subword(Presentation<W>& p, W const&, W const&);
+
     //! Replace non-overlapping instances of a subword via const reference.
     //!
     //! If \f$w=\f$`[first, last)` is a word, then replaces every
@@ -794,6 +798,38 @@ namespace libsemigroups {
 
     template <typename W>
     W commutator(W const& x, W const& X, W const& y, W const& Y);
+
+    template <typename T>
+    auto longest_rule(T first, T last);
+
+    template <typename W>
+    auto longest_rule(Presentation<W> const& p) {
+      return longest_rule(p.rules.cbegin(), p.rules.cend());
+    }
+
+    template <typename T>
+    auto shortest_rule(T first, T last);
+
+    template <typename W>
+    auto shortest_rule(Presentation<W> const& p) {
+      return shortest_rule(p.rules.cbegin(), p.rules.cend());
+    }
+
+    template <typename T>
+    auto longest_rule_length(T first, T last);
+
+    template <typename W>
+    auto longest_rule_length(Presentation<W> const& p) {
+      return longest_rule_length(p.rules.cbegin(), p.rules.cend());
+    }
+
+    template <typename T>
+    auto shortest_rule_length(T first, T last);
+
+    template <typename W>
+    auto shortest_rule_length(Presentation<W> const& p) {
+      return shortest_rule_length(p.rules.cbegin(), p.rules.cend());
+    }
 
   }  // namespace presentation
 }  // namespace libsemigroups

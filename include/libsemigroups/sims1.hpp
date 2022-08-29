@@ -21,10 +21,8 @@
 // TODO(Sims1):
 // * be useful to have output when no congruences are found too (i.e. in
 //   Heineken group example).
-// * add presentation::longest_rule, shortest_rule, number of rules less than a
-//   given size.
+// * add presentation::find_if, presentation::for_each,
 // * fix sorting in presentation (so that is uses both sides of the rules)
-// * figure out how to suppress FroidurePin reporting
 // * improve the reporting from MinimalRepOrc so that it:
 //   - states all settings at the start of the run
 //   - the number of congruences considered is shown
@@ -154,28 +152,21 @@ namespace libsemigroups {
       return _report_interval;
     }
 
-    T& short_rules(Presentation<word_type> const& p) {
-      validate_presentation(p, _longs);
-      _shorts = p;
-      return static_cast<T&>(*this);
-    }
-
     template <typename P>
     T& short_rules(P const& p) {
       static_assert(std::is_base_of<PresentationBase, P>::value,
                     "the template parameter P must be derived from "
                     "PresentationBase");
-      return short_rules(make<Presentation<word_type>>(p));
+      // This normalises the rules in the case they are of the right type but
+      // not normalised
+      auto pp = make<Presentation<word_type>>(p);
+      validate_presentation(pp, _longs);
+      _shorts = pp;
+      return static_cast<T&>(*this);
     }
 
     Presentation<word_type> const& short_rules() const noexcept {
       return _shorts;
-    }
-
-    T& long_rules(Presentation<word_type> const& p) {
-      validate_presentation(p, _shorts);
-      _longs = p;
-      return static_cast<T&>(*this);
     }
 
     template <typename P>
@@ -183,7 +174,12 @@ namespace libsemigroups {
       static_assert(std::is_base_of<PresentationBase, P>::value,
                     "the template parameter P must be derived from "
                     "PresentationBase");
-      return long_rules(make<Presentation<word_type>>(p));
+      // This normalises the rules in the case they are of the right type but
+      // not normalised
+      auto pp = make<Presentation<word_type>>(p);
+      validate_presentation(pp, _shorts);
+      _longs = pp;
+      return static_cast<T&>(*this);
     }
 
     Presentation<word_type> const& long_rules() const noexcept {

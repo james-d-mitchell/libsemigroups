@@ -572,6 +572,8 @@ namespace libsemigroups {
     using digraph_type = typename Sims1<T>::digraph_type;
     using node_type    = typename digraph_type::node_type;
 
+    report::suppress("FroidurePin");
+
     auto hook = [&](digraph_type const &x) {
       if (x.number_of_active_nodes() >= _min) {
         auto first = (short_rules().contains_empty_word() ? 0 : 1);
@@ -604,6 +606,7 @@ namespace libsemigroups {
         result.number_of_active_nodes(result.number_of_active_nodes() - 1);
       }
     }
+    report::clear_suppressions();
     return result;
   }
 

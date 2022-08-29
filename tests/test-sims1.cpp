@@ -762,26 +762,48 @@ namespace libsemigroups {
                           "[extreme][sims1]") {
     auto rg = ReportGuard(true);
     auto p  = make<Presentation<word_type>>(SingularBrauer(4));
+    REQUIRE(p.alphabet().size() == 12);
     REQUIRE(presentation::length(p) == 660);
+
+    REQUIRE(*presentation::shortest_rule(p) == word_type({0}));
+    REQUIRE(*(presentation::shortest_rule(p) + 1) == word_type({3}));
+
+    presentation::remove_redundant_generators(p);
+
+    REQUIRE(*presentation::shortest_rule(p) == word_type({0, 0}));
+    REQUIRE(*(presentation::shortest_rule(p) + 1) == word_type({0}));
+
     presentation::remove_duplicate_rules(p);
-    REQUIRE(presentation::length(p) == 600);
     presentation::sort_each_rule(p);
     presentation::sort_rules(p);
-    REQUIRE(p.rules.size() == 252);
+
+    REQUIRE(p.alphabet().size() == 6);
+    REQUIRE(presentation::length(p) == 462);
+    REQUIRE(p.rules.size() == 186);
 
     p.contains_empty_word(true);
+
+    p.validate();
+
     auto d = MinimalRepOrc()
                  .short_rules(p)
                  .target_size(82)
                  .number_of_threads(std::thread::hardware_concurrency())
-                 .large_rule_length(8)
-                 .report_interval(2'000)
+                 .report_interval(1'999)
                  .digraph();
     REQUIRE(d.number_of_nodes() == 18);
 
     p.contains_empty_word(false);
+
+    REQUIRE(presentation::shortest_rule_length(p) == 3);
+    REQUIRE(presentation::longest_rule_length(p) == 6);
+    REQUIRE(*presentation::longest_rule(p) == word_type({0, 4, 8}));
+    REQUIRE(*(presentation::longest_rule(p) + 1) == word_type({0, 2, 8}));
+
     Sims1_ C(congruence_kind::right);
     C.short_rules(p);
+
+    C.large_rule_length(8);
     // C.split_at(212 / 2);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(81)
