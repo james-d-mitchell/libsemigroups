@@ -401,7 +401,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "008",
                           "FullTransformationMonoid(4) left",
-                          "[fail][low-index]") {
+                          "[fail][low-index][babbage]") {
     auto                   rg = ReportGuard(true);
     FroidurePin<Transf<4>> S({Transf<4>({1, 2, 3, 0}),
                               Transf<4>({1, 0, 2, 3}),
@@ -433,6 +433,9 @@ namespace libsemigroups {
     REQUIRE(C.number_of_threads(8).number_of_congruences(256) == 120'121);
     // Number generated using CREAM, but Sims1 counts more for right, and too
     // slow for left
+    // On 27/08/22 JDM ran this for a long time and it got to the next line
+    // before I killed it
+    // #1: Sims1: found 7,260,171 congruences in 48549.925781s (149/s)!
     // TODO(Sims1) try another non-machine generated presentation
   }
 
@@ -536,6 +539,9 @@ namespace libsemigroups {
     // On 24/08/2022 JDM ran this for approx. 16 hours overnight on his laptop,
     // the last line of output was:
     // #4: Sims1: found 63'968'999 congruences in 52156s!
+    // #21: Sims1: found 759'256'468 congruences in 244617.546875
+    // #12: Sims1: found 943'233'501 congruences in 321019.531250!
+    // #30: Sims1: found 1005857634 congruences in 350411.000000!
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1655,6 +1661,108 @@ namespace libsemigroups {
         REQUIRE(T.number_of_threads(4).number_of_congruences(m * n)
                 == left[n][m]);
       }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "048",
+                          "Stellar(n) n = 3 .. 4",
+                          "[fail][sims1][babbage]") {
+    std::array<uint64_t, 10> const size      = {0, 0, 0, 16, 65};
+    std::array<uint64_t, 10> const num_left  = {0, 0, 0, 1'550, 0};
+    std::array<uint64_t, 10> const num_right = {0, 0, 0, 1'521, 0};
+
+    for (size_t n = 3; n < 5; ++n) {
+      auto p = make<Presentation<word_type>>(RookMonoid(n, 0));
+      auto q = make<Presentation<word_type>>(Stell(n));
+      p.rules.insert(p.rules.end(), q.rules.cbegin(), q.rules.cend());
+      REQUIRE(p.alphabet().size() == n + 1);
+      {
+        Sims1_ S(congruence_kind::left);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(size[n]) == num_left[n]);
+      }
+      {
+        Sims1_ S(congruence_kind::right);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(size[n]) == num_right[n]);
+      }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "049",
+                          "Stylic(n) n = 3, 4",
+                          "[fail][sims1]") {
+    std::array<uint64_t, 10> const size = {0, 0, 0, 14, 51};
+    //               1505s
+    std::array<uint64_t, 10> const num_left  = {0, 0, 0, 1'214, 1'429'447'174};
+    std::array<uint64_t, 10> const num_right = {0, 0, 0, 1'214, 1'429'455'689};
+
+    for (size_t n = 3; n < 5; ++n) {
+      auto p = make<Presentation<word_type>>(Stylic(n));
+      {
+        Sims1_ S(congruence_kind::right);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(size[n]) == num_right[n]);
+      }
+      {
+        Sims1_ S(congruence_kind::left);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(size[n]) == num_left[n]);
+      }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "050",
+                          "(2, 3, 7)-triangle group - index 50",
+                          "[extreme][sims1]") {
+    Presentation<std::string> p;
+    p.contains_empty_word(true);
+    p.alphabet("xy");
+    presentation::add_rule_and_check(p, "xx", "");
+    presentation::add_rule_and_check(p, "yyy", "");
+    presentation::add_rule_and_check(p, "xyxyxyxyxyxyxy", "");
+    Sims1_ S(congruence_kind::right);
+    S.short_rules(p).number_of_threads(4);
+    REQUIRE(S.number_of_congruences(50) == 75'971);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "051",
+                          "Heineken group - index 10",
+                          "[extreme][sims1]") {
+    Presentation<std::string> p;
+    p.contains_empty_word(true);
+    p.alphabet("xXyY");
+    presentation::add_inverse_rules(p, "XxYy");
+    presentation::add_rule_and_check(p, "yXYYxyYYxyyXYYxyyXyXYYxy", "x");
+
+    Presentation<std::string> q;
+    presentation::add_rule_and_check(
+        q, "YxyyXXYYxyxYxyyXYXyXYYxxyyXYXyXYYxyx", "y");
+
+    Sims1_ S(congruence_kind::right);
+    S.short_rules(p).long_rules(q).number_of_threads(8);
+    REQUIRE(S.number_of_congruences(10) == 1);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "052",
+                          "TemperleyLieb(n) - n = 3 .. 6",
+                          "[extreme][low-index][babbage]") {
+    std::array<uint64_t, 10> const size = {0, 0, 0, 5, 14, 42, 132, 429};
+    std::array<uint64_t, 10> const num_right
+        = {0, 0, 0, 9, 79, 2'157, 4'326'459};
+
+    auto rg = ReportGuard(true);
+    for (size_t n = 3; n < 7; ++n) {
+      auto p = make<Presentation<word_type>>(TemperleyLieb(n));
+      p.contains_empty_word(true);
+      Sims1_ S(congruence_kind::right);
+      S.short_rules(p).number_of_threads(4);
+      REQUIRE(S.number_of_congruences(size[n]) == num_right[n]);
     }
   }
 

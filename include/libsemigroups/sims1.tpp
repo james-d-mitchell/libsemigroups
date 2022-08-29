@@ -223,22 +223,28 @@ namespace libsemigroups {
                                               S &           last_count,
                                               uint64_t      count,
                                               detail::Timer t) const {
-    if (count - last_count > report_interval()) {
+    if (count - last_count >= report_interval()) {
       // Avoid calling high_resolution_clock::now too often
       auto now     = std::chrono::high_resolution_clock::now();
       auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
           now - last_report);
       if (elapsed > std::chrono::duration_cast<std::chrono::nanoseconds>(
               std::chrono::seconds(1))) {
+        auto count_diff = count - last_count;
         std::swap(now, last_report);
         last_count = count;
+        // TODO(Sims1) cleanup
         using float_seconds
             = std::chrono::duration<float, std::chrono::seconds::period>;
-        auto seconds = std::chrono::duration_cast<float_seconds>(t.elapsed());
-        REPORT_DEFAULT("found %s congruences in %.6fs (%s/s)!\n",
-                       detail::group_digits(count).c_str(),
-                       seconds.count(),
-                       detail::group_digits(count / seconds.count()).c_str());
+        auto total_time
+            = std::chrono::duration_cast<float_seconds>(t.elapsed());
+        auto diff_time
+            = std::chrono::duration_cast<std::chrono::seconds>(elapsed);
+        REPORT_DEFAULT(
+            "found %s congruences in %.6fs (%s/s)!\n",
+            detail::group_digits(count).c_str(),
+            total_time.count(),
+            detail::group_digits(count_diff / diff_time.count()).c_str());
       }
     }
   }

@@ -336,12 +336,15 @@ namespace libsemigroups {
       return W(first, last);
     }
 
+    // TODO(Sims1) this should replace a subword with another subword
     template <typename W, typename T>
     void replace_subword(Presentation<W>& p, T first, T last) {
       using letter_type   = typename Presentation<W>::letter_type;
       letter_type const x = static_cast<letter_type>(p.alphabet().size());
-      p.alphabet(p.alphabet().size() + 1);
-      auto replace_subword = [&first, &last, &x](W& word) {
+      W                 new_alphabet = p.alphabet();
+      new_alphabet.push_back(x);
+      p.alphabet(new_alphabet);
+      auto rplc_sbwrd = [&first, &last, &x](W& word) {
         auto it = std::search(word.begin(), word.end(), first, last);
         while (it != word.end()) {
           // found [first, last)
@@ -351,7 +354,7 @@ namespace libsemigroups {
           it = std::search(word.begin() + pos + 1, word.end(), first, last);
         }
       };
-      std::for_each(p.rules.begin(), p.rules.end(), replace_subword);
+      std::for_each(p.rules.begin(), p.rules.end(), rplc_sbwrd);
       p.rules.emplace_back(W({x}));
       p.rules.emplace_back(first, last);
     }
@@ -388,6 +391,17 @@ namespace libsemigroups {
       p.validate();
 #endif
     }
+
+    template <typename W>
+    W commutator(W const& x, W const& X, W const& y, W const& Y) {
+      // TODO(Sims1) checks
+      W XYxy;
+      XYxy.push_back(X);
+      XYxy.push_back(Y);
+      XYxy.push_back(x);
+      XYxy.push_back(y);
+    }
+
   }  // namespace presentation
 
 }  // namespace libsemigroups

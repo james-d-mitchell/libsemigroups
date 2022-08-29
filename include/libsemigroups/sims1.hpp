@@ -19,13 +19,12 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoids.
 // TODO(Sims1):
-// * number congs per second in reporting
-// * add short_rules + long_rules from iterators
+// * be useful to have output when no congruences are found too (i.e. in
+// Heineken group example)
 // * add presentation::longest_rule, shortest_rule, number of rules less than a
 //   given size.
 // * fix sorting in presentation (so that is uses both sides of the rules)
 // * figure out how to suppress FroidurePin reporting
-// * ensure that stats works properly
 // * improve the reporting from MinimalRepOrc so that it:
 //   - states all settings at the start of the run
 //   - the number of congruences considered is shown

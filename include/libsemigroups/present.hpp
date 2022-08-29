@@ -539,6 +539,8 @@ namespace libsemigroups {
       }
     }
 
+    // TODO(Sims1) split rules
+
     //! Add rules for an identity element.
     //!
     //! Adds rules of the form \f$ae = ea = a\f$ for every letter \f$a\f$ in
@@ -789,6 +791,9 @@ namespace libsemigroups {
     //! presentation.
     template <typename W>
     void normalize_alphabet(Presentation<W>& p);
+
+    template <typename W>
+    W commutator(W const& x, W const& X, W const& y, W const& Y);
 
   }  // namespace presentation
 }  // namespace libsemigroups
