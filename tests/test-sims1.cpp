@@ -1740,6 +1740,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, "yXYYxyYYxyyXYYxyyXyXYYxy", "x");
 
     Presentation<std::string> q;
+    q.alphabet("xXyY");
     presentation::add_rule_and_check(
         q, "YxyyXXYYxyxYxyyXYXyXYYxxyyXYXyXYYxyx", "y");
 
