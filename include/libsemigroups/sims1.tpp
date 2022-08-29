@@ -29,6 +29,7 @@ namespace libsemigroups {
     return os;
   }
 #endif
+
   ////////////////////////////////////////////////////////////////////////
   // Sims1
   ////////////////////////////////////////////////////////////////////////
@@ -446,7 +447,9 @@ namespace libsemigroups {
     std::mutex                                    _mtx;
     size_type                                     _num_threads;
     digraph_type                                  _result;
-    Sims1Stats                                    _stats;
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+    Sims1Stats _stats;
+#endif
 
     void worker_thread(unsigned                                  my_index,
                        std::function<bool(digraph_type const &)> hook) {
@@ -474,14 +477,16 @@ namespace libsemigroups {
         // threads shutting down earlier than desirable. On the other hand,
         // maybe this is a desirable.
       }
-      std::lock_guard<std::mutex> lock(_mtx);
 #ifdef LIBSEMIGROUPS_VERBOSE
       REPORT_DEFAULT(
           "this thread created %s nodes\n",
           detail::group_digits(_theives[my_index]->stats().total_pending)
               .c_str());
 #endif
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+      std::lock_guard<std::mutex> lock(_mtx);
       _stats += _theives[my_index]->stats();
+#endif
     }
 
     bool pop_from_local_queue(PendingDef &pd, unsigned my_index) {
@@ -512,8 +517,13 @@ namespace libsemigroups {
           _threads(),
           _mtx(),
           _num_threads(num_threads),
-          _result(),
-          _stats() {
+          _result()
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+          ,
+          _stats()
+#endif
+
+    {
       for (size_t i = 0; i < _num_threads; ++i) {
         _theives.push_back(std::make_unique<thread_iterator>(p, e, f, n));
       }

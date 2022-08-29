@@ -20,7 +20,7 @@
 // congruence" algorithm for semigroups and monoids.
 // TODO(Sims1):
 // * be useful to have output when no congruences are found too (i.e. in
-//   Heineken group example)
+//   Heineken group example).
 // * add presentation::longest_rule, shortest_rule, number of rules less than a
 //   given size.
 // * fix sorting in presentation (so that is uses both sides of the rules)

@@ -515,7 +515,9 @@ namespace libsemigroups {
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(209)
             == 195'709);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
     std::cout << C.stats();
+#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1748,7 +1750,9 @@ namespace libsemigroups {
     Sims1_ S(congruence_kind::right);
     S.short_rules(p).long_rules(q).number_of_threads(8);
     REQUIRE(S.number_of_congruences(10) == 1);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
     std::cout << S.stats();
+#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
