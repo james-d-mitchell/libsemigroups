@@ -399,7 +399,9 @@ namespace libsemigroups {
     // TODO(Sims1) this should replace a subword with another subword
     template <typename W, typename T>
     void replace_subword(Presentation<W>& p, T first, T last) {
-      using letter_type   = typename Presentation<W>::letter_type;
+      using letter_type = typename Presentation<W>::letter_type;
+      // TODO(Sims1) the next line only really works if p has a
+      // normalize_alphabet
       letter_type const x = static_cast<letter_type>(p.alphabet().size());
       W                 new_alphabet = p.alphabet();
       new_alphabet.push_back(x);

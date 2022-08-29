@@ -19,12 +19,12 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoids.
 // TODO(Sims1):
-// * be useful to have output when no congruences are found too (i.e. in
-//   Heineken group example).
-// * add presentation::find_if, presentation::for_each,
-// * improve the reporting from MinimalRepOrc so that it:
+// * improve the reporting from MinimalRepOrc so that it
+// (Kudryavtseva-Mazorchuk) example is a good one for this
 //   - states all settings at the start of the run
 //   - the number of congruences considered is shown
+// * be useful to have output when no congruences are found too (i.e. in
+//   Heineken group example).
 //  * check for the case that we've constructed a Sims1 but haven't added any
 //    relations or anything
 // * code coverage, iwyu
@@ -72,7 +72,6 @@
 namespace libsemigroups {
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
-  // TODO(Sims1) ensure that this still makes sense in the multi threaded world
   // This isn't inside Sims1 because it doesn't depend on the template args at
   // all.
   struct Sims1Stats {

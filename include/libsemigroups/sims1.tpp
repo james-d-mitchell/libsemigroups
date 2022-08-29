@@ -192,7 +192,7 @@ namespace libsemigroups {
             "Sims1: found %s congruences in %llus (%s/s)!\n",
             detail::group_digits(count_now).c_str(),
             total_time.count(),
-            detail::group_digits(count_now - last_count / diff_time.count())
+            detail::group_digits((count_now - last_count) / diff_time.count())
                 .c_str());
         std::swap(now, last_report);
         last_count = count_now;
