@@ -20,7 +20,7 @@
 // congruence" algorithm for semigroups and monoids.
 // TODO(Sims1):
 // * improve the reporting from MinimalRepOrc so that it
-// (Kudryavtseva-Mazorchuk) example is a good one for this
+//   (Kudryavtseva-Mazorchuk) example is a good one for this
 //   - states all settings at the start of the run
 //   - the number of congruences considered is shown
 // * be useful to have output when no congruences are found too (i.e. in
@@ -778,6 +778,11 @@ namespace libsemigroups {
    private:
     using time_point = std::chrono::high_resolution_clock::time_point;
 
+    static void report_at_start(Presentation<word_type> const& shorts,
+                                Presentation<word_type> const& longs,
+                                size_t                         num_classes,
+                                size_t                         num_threads);
+
     template <typename S>
     static void report_number_of_congruences(uint64_t    report_interval,
                                              time_point& start_time,
@@ -785,6 +790,12 @@ namespace libsemigroups {
                                              S&          last_count,
                                              uint64_t    count_now,
                                              std::mutex& mtx);
+
+    void report_stats() const;
+
+    static void final_report_number_of_congruences(time_point& start_time,
+                                                   uint64_t    count);
+
     class thread_iterator;
     class thread_runner;
   };

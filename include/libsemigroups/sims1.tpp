@@ -65,8 +65,8 @@ namespace libsemigroups {
   void
   Sims1<T>::for_each(size_type                                 n,
                      std::function<void(digraph_type const &)> pred) const {
+    report_at_start(short_rules(), long_rules(), n, number_of_threads());
     if (number_of_threads() == 1) {
-      REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         // No stats in this case
         std::for_each(cbegin(n), cend(n), pred);
@@ -87,16 +87,15 @@ namespace libsemigroups {
                                        mtx);
           pred(*it);
         }
+        final_report_number_of_congruences(start_time, count);
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
         // Copy the iterator stats into this so that we can retrieve it
         // after den is destroyed.
         stats(it.stats());
+        report_stats();
 #endif
       }
     } else {
-      REPORT_DEFAULT("using %d / %d additional threads\n",
-                     number_of_threads(),
-                     std::thread::hardware_concurrency());
       thread_runner den(short_rules(),
                         _extra,
                         long_rules(),
@@ -112,6 +111,7 @@ namespace libsemigroups {
       // Copy the thread_runner stats into this so that we can retrieve it
       // after den is destroyed.
       stats(den.stats());
+      report_stats();
 #endif
     }
   }
@@ -120,8 +120,8 @@ namespace libsemigroups {
   typename Sims1<T>::digraph_type
   Sims1<T>::find_if(size_type                                 n,
                     std::function<bool(digraph_type const &)> pred) const {
+    report_at_start(short_rules(), long_rules(), n, number_of_threads());
     if (number_of_threads() == 1) {
-      REPORT_DEFAULT("using 0 additional threads\n");
       if (!report::should_report()) {
         return *std::find_if(cbegin(n), cend(n), pred);
       } else {
@@ -135,6 +135,11 @@ namespace libsemigroups {
 
         for (; it != last; ++it) {
           if (pred(*it)) {
+            final_report_number_of_congruences(start_time, ++count);
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+            stats(it.stats());
+            report_stats();
+#endif
             return *it;
           }
           report_number_of_congruences(report_interval(),
@@ -144,17 +149,16 @@ namespace libsemigroups {
                                        ++count,
                                        mtx);
         }
+        final_report_number_of_congruences(start_time, ++count);
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
         // Copy the iterator stats into this so that we can retrieve it
-        // after den is destroyed.
+        // after it is destroyed.
         stats(it.stats());
+        report_stats();
 #endif
         return *last;  // the empty digraph
       }
     } else {
-      REPORT_DEFAULT("using %d / %d additional threads\n",
-                     number_of_threads(),
-                     std::thread::hardware_concurrency());
       thread_runner den(short_rules(),
                         _extra,
                         long_rules(),
@@ -166,8 +170,44 @@ namespace libsemigroups {
       // Copy the thread_runner stats into this so that we can retrieve it
       // after den is destroyed.
       stats(den.stats());
+      report_stats();
 #endif
       return den.digraph();
+    }
+  }
+
+  template <typename T>
+  void Sims1<T>::report_at_start(Presentation<word_type> const &shorts,
+                                 Presentation<word_type> const &longs,
+                                 size_t                         num_classes,
+                                 size_t                         num_threads) {
+    if (num_threads == 1) {
+      REPORT_DEFAULT_V3("Sims1: using 0 additional threads\n");
+    } else {
+      REPORT_DEFAULT_V3("Sims1: using %d / %d additional threads\n",
+                        num_threads,
+                        std::thread::hardware_concurrency());
+    }
+    REPORT_DEFAULT_V3("Sims1: finding congruences with at most %llu classes\n",
+                      uint64_t(num_classes));
+    REPORT_DEFAULT_V3(
+        "Sims1: using %llu generators, and %llu short relations u = v"
+        " with:\n",
+        shorts.alphabet().size(),
+        shorts.rules.size() / 2);
+    REPORT_DEFAULT_V3(
+        "Sims1: |u| + |v| \u2208 [%llu, %llu] and \u2211(|u| + |v|) = %llu\n",
+        presentation::shortest_rule_length(shorts),
+        presentation::longest_rule_length(shorts),
+        presentation::length(shorts));
+    if (!longs.rules.empty()) {
+      REPORT_DEFAULT_V3("Sims1: %llu long relations u = v with:\n",
+                        longs.rules.size() / 2);
+      REPORT_DEFAULT_V3(
+          "Sims1: |u| + |v| \u2208 [%llu, %llu] and \u2211(|u| + |v|) = %llu\n",
+          presentation::shortest_rule_length(longs),
+          presentation::longest_rule_length(longs),
+          presentation::length(longs));
     }
   }
 
@@ -199,6 +239,31 @@ namespace libsemigroups {
       }
     }
   }
+
+  template <typename T>
+  void Sims1<T>::final_report_number_of_congruences(time_point &start_time,
+                                                    uint64_t    count) {
+    using std::chrono::duration_cast;
+    using std::chrono::nanoseconds;
+
+    auto elapsed = duration_cast<nanoseconds>(
+        std::chrono::high_resolution_clock::now() - start_time);
+    REPORT_DEFAULT_V3(
+        "Sims1: found %s congruences in %s (%s per congruence)!\n",
+        detail::group_digits(count).c_str(),
+        detail::Timer::string(elapsed),
+        detail::Timer::string(elapsed / count));
+  }
+
+#ifdef LIBSEMIGROUPS_ENABLE_STATS
+  template <typename T>
+  void Sims1<T>::report_stats() const {
+    REPORT_DEFAULT("total number of nodes in search tree was %s\n",
+                   detail::group_digits(stats().total_pending).c_str());
+    REPORT_DEFAULT("max. number of pending definitions was %s\n",
+                   detail::group_digits(stats().max_pending).c_str());
+  }
+#endif
 
   ///////////////////////////////////////////////////////////////////////////////
   // iterator_base nested class
@@ -271,7 +336,8 @@ namespace libsemigroups {
       auto last  = _extra.rules.cend();
       if (!felsch_digraph::compatible(_felsch_graph, 0, first, last)
           || !_felsch_graph.process_definitions(start)) {
-        // Seems to be important to check _extra first then process_definitions
+        // Seems to be important to check _extra first then
+        // process_definitions
         return false;
       }
     }
@@ -524,8 +590,9 @@ namespace libsemigroups {
     }
 
     void run(std::function<bool(digraph_type const &)> hook) {
-      auto start_time  = std::chrono::high_resolution_clock::now();
-      auto last_report = start_time;
+      detail::Timer t;
+      auto          start_time  = std::chrono::high_resolution_clock::now();
+      auto          last_report = start_time;
       std::atomic_uint64_t last_count(0);
       std::atomic_uint64_t count(0);
 
@@ -544,8 +611,8 @@ namespace libsemigroups {
           return false;
         };
       }
-      detail::JoinThreads joiner(_threads);
       try {
+        detail::JoinThreads joiner(_threads);
         for (size_t i = 0; i < _num_threads; ++i) {
           _threads.push_back(std::thread(
               &thread_runner::worker_thread, this, i, std::ref(actual_hook)));
@@ -554,6 +621,7 @@ namespace libsemigroups {
         _done = true;
         throw;
       }
+      final_report_number_of_congruences(start_time, count);
     }
 
 #ifdef LIBSEMIGROUPS_ENABLE_STATS
@@ -571,10 +639,17 @@ namespace libsemigroups {
   ActionDigraph<T> RepOrc::digraph() const {
     using digraph_type = typename Sims1<T>::digraph_type;
     using node_type    = typename digraph_type::node_type;
+    REPORT_DEFAULT(
+        "searching for a faithful rep. o.r.c. on [%llu, %llu) points\n",
+        _min,
+        _max + 1);
 
     report::suppress("FroidurePin");
 
+    std::atomic_uint64_t count(0);
+
     auto hook = [&](digraph_type const &x) {
+      ++count;
       if (x.number_of_active_nodes() >= _min) {
         auto first = (short_rules().contains_empty_word() ? 0 : 1);
         auto S     = make<FroidurePin<Transf<0, node_type>>>(
@@ -595,9 +670,15 @@ namespace libsemigroups {
 
     auto result
         = Sims1<T>(congruence_kind::right).settings(*this).find_if(_max, hook);
+
     if (result.number_of_active_nodes() == 0) {
+      REPORT_DEFAULT("no faithful rep. o.r.c. on [%llu, %llu) points found\n",
+                     _min,
+                     _max + 1);
       result.restrict(0);
     } else {
+      REPORT_DEFAULT("found a faithful rep. o.r.c. on %llu points\n",
+                     result.number_of_active_nodes());
       if (short_rules().contains_empty_word()) {
         result.restrict(result.number_of_active_nodes());
       } else {
@@ -632,36 +713,21 @@ namespace libsemigroups {
   ActionDigraph<T> MinimalRepOrc::digraph() {
     auto cr = RepOrc(*this);
 
-    size_t hi = (short_rules().contains_empty_word() ? _size : _size + 1);
-    REPORT_DEFAULT("trying to find faithful rep. o.r.c. on [1, %llu) points\n",
-                   hi + 1);
-    auto best = cr.min_nodes(1).max_nodes(hi).target_size(_size).digraph();
+    size_t hi   = (short_rules().contains_empty_word() ? _size : _size + 1);
+    auto   best = cr.min_nodes(1).max_nodes(hi).target_size(_size).digraph();
 
-    if (best.number_of_nodes() == 0) {
-      REPORT_DEFAULT("no faithful rep. o.r.c. on [1, %llu) points found\n",
-                     hi + 1);
-      stats(cr.stats());
-      return best;
-    } else if (best.number_of_nodes() == 1) {
-      REPORT_DEFAULT("found a faithful rep. o.r.c. on 1 point\n");
+    if (best.number_of_nodes() < 1) {
       stats(cr.stats());
       return best;
     }
-    hi = best.number_of_nodes();
-    REPORT_DEFAULT("found a faithful rep. o.r.c. on %llu points\n", hi);
 
-    REPORT_DEFAULT("trying to find faithful rep. o.r.c. on [1, %llu) points\n",
-                   hi);
+    hi                    = best.number_of_nodes();
     ActionDigraph<T> next = std::move(cr.max_nodes(hi - 1).digraph());
     while (next.number_of_nodes() != 0) {
-      hi = next.number_of_nodes();
-      REPORT_DEFAULT("found a faithful rep. o.r.c. on %llu points\n", hi);
+      hi   = next.number_of_nodes();
       best = std::move(next);
-      REPORT_DEFAULT(
-          "trying to find faithful rep. o.r.c. on [1, %llu) points\n", hi);
       next = std::move(cr.max_nodes(hi - 1).digraph());
     }
-    REPORT_DEFAULT("no faithful rep. o.r.c. on [1, %llu) points found\n", hi);
     stats(cr.stats());
     return best;
   }

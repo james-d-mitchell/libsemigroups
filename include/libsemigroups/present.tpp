@@ -397,7 +397,7 @@ namespace libsemigroups {
     }
 
     // TODO(Sims1) this should replace a subword with another subword
-    template <typename W, typename T>
+    template <typename W, typename T, typename>
     void replace_subword(Presentation<W>& p, T first, T last) {
       using letter_type = typename Presentation<W>::letter_type;
       // TODO(Sims1) the next line only really works if p has a
@@ -541,7 +541,7 @@ namespace libsemigroups {
           if (rhs.size() == 1 && rhs[0] < lhs[0]) {
             std::swap(lhs, rhs);
           }
-          replace_subword(p, rhs, lhs);
+          replace_subword(p, lhs, rhs);
         } else if (rhs.size() == 1
                    && std::none_of(
                        lhs.cbegin(), lhs.cend(), [&rhs](letter_type const& a) {

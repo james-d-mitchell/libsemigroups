@@ -48,6 +48,7 @@
 #include "libsemigroups/froidure-pin.hpp"  // for FroidurePin, FroidurePin<>...
 #include "libsemigroups/iterator.hpp"      // for ConstIteratorStateful, ope...
 #include "libsemigroups/knuth-bendix.hpp"  // for KnuthBendix
+#include "libsemigroups/make-todd-coxeter.hpp"  // for ToddCoxeter
 #include "libsemigroups/order.hpp"         // for RecursivePathCompare, Lexi...
 #include "libsemigroups/report.hpp"        // for ReportGuard
 #include "libsemigroups/string.hpp"        // for operator<<, to_string
@@ -2161,7 +2162,7 @@ namespace libsemigroups {
       auto        rg = ReportGuard(true);
       ToddCoxeter tc(twosided);
       tc.set_number_of_generators(4);
-      for (auto const& w : SymmetricGroup1(10)) {
+      for (auto const& w : SymmetricGroup(5, author::Carmichael)) {
         tc.add_pair(w.first, w.second);
       }
       REQUIRE(tc.number_of_classes() == 3'628'800);
@@ -2605,6 +2606,28 @@ namespace libsemigroups {
       tc.sort_generating_pairs().remove_duplicate_generating_pairs();
       REQUIRE(tc.number_of_classes() == m * n);
       REQUIRE(tc.quotient_froidure_pin()->number_of_idempotents() == m * n);
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("ToddCoxeter",
+                            "115",
+                            "PartialTransformationMonoid - Aizenstat",
+                            "[todd-coxeter][quick][no-valgrind][no-coverage]") {
+      auto rg = ReportGuard(true);
+
+      auto n = 4;
+      auto p = make<Presentation<word_type>>(
+          PartialTransformationMonoid(n, author::Aizenstat));
+      p.alphabet(p.alphabet().size() + 1);
+      word_type id = {p.alphabet().back()};
+      presentation::add_identity_rules(p, id[0]);
+      std::for_each(p.rules.begin(), p.rules.end(), [&id](auto& w) {
+        w = (w.empty() ? id : w);
+      });
+      // REQUIRE(p.rules == std::vector<word_type>());
+      ToddCoxeter tc(congruence_kind::twosided);
+      make<ToddCoxeter>(tc, p);
+      tc.strategy(ToddCoxeter::options::strategy::felsch);
+      REQUIRE(tc.number_of_classes() == 625);
     }
 
   }  // namespace congruence

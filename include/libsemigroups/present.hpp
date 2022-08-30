@@ -723,7 +723,9 @@ namespace libsemigroups {
     //! \exceptions
     //! \no_libsemigroups_except
     // TODO(later) complexity
-    template <typename W, typename T>
+    template <typename W,
+              typename T,
+              typename = std::enable_if_t<!std::is_same<T, W>::value>>
     void replace_subword(Presentation<W>& p, T first, T last);
 
     // TODO(Sims1)
@@ -762,7 +764,7 @@ namespace libsemigroups {
     //! \exceptions
     //! \no_libsemigroups_except
     template <typename W>
-    size_t length(Presentation<W>& p) {
+    size_t length(Presentation<W> const& p) {
       auto op = [](size_t val, W const& x) { return val + x.size(); };
       return std::accumulate(p.rules.cbegin(), p.rules.cend(), size_t(0), op);
     }

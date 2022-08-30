@@ -358,20 +358,9 @@ namespace libsemigroups {
         p, {3, 1, 1, 4, 3, 2, 3, 4, 1}, {1, 1, 4, 3, 1, 3, 4, 1, 3});
 
     Sims1_ S(congruence_kind::right);
-    S.short_rules(p).large_rule_length(11);  // This actually helps here!
-    // We don't do std::distance(S.cbegin(17), S.cend(17)) so that we can
-    // capture the stats
-    auto       it    = S.cbegin(17);
-    auto const last  = S.cend(17);
-    auto       count = 0;
-    for (; it != last; ++it) {
-      ++count;
-    }
-
-    REQUIRE(count == 1589);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << it.stats();
-#endif
+    S.short_rules(p).large_rule_length(11).number_of_threads(
+        4);  // This actually helps here!
+    REQUIRE(S.number_of_congruences(17) == 1589);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -536,9 +525,6 @@ namespace libsemigroups {
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(209)
             == 195'709);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << C.stats();
-#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -565,7 +551,8 @@ namespace libsemigroups {
     // #4: Sims1: found 63'968'999 congruences in 52156s!
     // #21: Sims1: found 759'256'468 congruences in 244617.546875
     // #12: Sims1: found 943'233'501 congruences in 321019.531250!
-    // #30: Sims1: found 1005857634 congruences in 350411.000000!
+    // #30: Sims1: found 1'005'857'634 congruences in 350411.000000!
+    // #45: Sims1: found 1'314'588'296 congruences in 487405.000000!
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -787,12 +774,12 @@ namespace libsemigroups {
     presentation::sort_rules(p);
 
     REQUIRE(presentation::shortest_rule_length(p) == 3);
-    REQUIRE(*presentation::shortest_rule(p) == word_type({0, 0}));
-    REQUIRE(*(presentation::shortest_rule(p) + 1) == word_type({0}));
+    REQUIRE(*presentation::shortest_rule(p) == word_type({3, 3}));
+    REQUIRE(*(presentation::shortest_rule(p) + 1) == word_type({3}));
 
     REQUIRE(presentation::longest_rule_length(p) == 6);
-    REQUIRE(*presentation::longest_rule(p) == word_type({0, 4, 8}));
-    REQUIRE(*(presentation::longest_rule(p) + 1) == word_type({0, 2, 8}));
+    REQUIRE(*presentation::longest_rule(p) == word_type({3, 10, 11}));
+    REQUIRE(*(presentation::longest_rule(p) + 1) == word_type({3, 6, 11}));
 
     REQUIRE(p.alphabet().size() == 6);
     REQUIRE(presentation::length(p) == 462);
@@ -818,9 +805,6 @@ namespace libsemigroups {
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(81)
             == 601'265);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << C.stats();
-#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -851,13 +835,10 @@ namespace libsemigroups {
     presentation::replace_subword(p, presentation::longest_common_subword(p));
 
     Sims1_ C(congruence_kind::right);
-    C.short_rules(p);
+    C.short_rules(p).large_rule_length(8);
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(105)
             == 103'406);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << C.stats();
-#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -925,9 +906,6 @@ namespace libsemigroups {
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(105)
             == 103'406);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << C.stats();
-#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -993,9 +971,6 @@ namespace libsemigroups {
     REQUIRE(C.number_of_threads(std::thread::hardware_concurrency())
                 .number_of_congruences(131)
             == 280'455);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << C.stats();
-#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1253,9 +1228,6 @@ namespace libsemigroups {
     auto S = make<FroidurePin<Transf<0, node_type>>>(d);
     S.add_generator(S.generator(0).identity());
     REQUIRE(S.size() == 19);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << mro.stats();
-#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1387,9 +1359,6 @@ namespace libsemigroups {
     //          17, 15, 17}, {18, 14, 16, 12, 5},  {19, 20, 20, 19, 21}, {20,
     //          17, 19, 15, 21}, {21, 21, 21, 19, 21}}));
     REQUIRE(d.number_of_nodes() == 22);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << mro.stats();
-#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1786,17 +1755,11 @@ namespace libsemigroups {
         Sims1_ S(congruence_kind::right);
         S.short_rules(p).number_of_threads(4);
         REQUIRE(S.number_of_congruences(size[n]) == num_right[n]);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-        std::cout << S.stats();
-#endif
       }
       {
         Sims1_ S(congruence_kind::left);
         S.short_rules(p).number_of_threads(4);
         REQUIRE(S.number_of_congruences(size[n]) == num_left[n]);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-        std::cout << S.stats();
-#endif
       }
     }
   }
@@ -1815,15 +1778,13 @@ namespace libsemigroups {
     Sims1_ S(congruence_kind::right);
     S.short_rules(p).number_of_threads(4);
     REQUIRE(S.number_of_congruences(50) == 75'971);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << S.stats();
-#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
                           "051",
                           "Heineken group - index 10",
                           "[extreme][sims1]") {
+    auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("xXyY");
@@ -1838,9 +1799,6 @@ namespace libsemigroups {
     Sims1_ S(congruence_kind::right);
     S.short_rules(p).long_rules(q).number_of_threads(8);
     REQUIRE(S.number_of_congruences(10) == 1);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-    std::cout << S.stats();
-#endif
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -1858,9 +1816,193 @@ namespace libsemigroups {
       Sims1_ S(congruence_kind::right);
       S.short_rules(p).number_of_threads(4);
       REQUIRE(S.number_of_congruences(size[n]) == num_right[n]);
-#ifdef LIBSEMIGROUPS_ENABLE_STATS
-      std::cout << S.stats();
-#endif
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "053",
+                          "PartialTransformationMonoid(3)",
+                          "[extreme][low-index]") {
+    auto rg = ReportGuard(true);
+    auto p  = make<Presentation<word_type>>(
+        PartialTransformationMonoid(3, author::Machine));
+    {
+      Sims1_ S(congruence_kind::right);
+      S.short_rules(p).number_of_threads(4);
+      REQUIRE(S.number_of_congruences(64) == 92'703);
+    }
+    {
+      Sims1_ S(congruence_kind::left);
+      S.short_rules(p).number_of_threads(4);
+      REQUIRE(S.number_of_congruences(64) == 371);
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "060",
+                          "PartialTransformationMonoid(4) from FroidurePin",
+                          "[fail][low-index]") {
+    using Transf_ = Transf<5>;
+    auto rg       = ReportGuard(true);
+
+    FroidurePin<Transf_> S({Transf_({1, 0, 2, 3, 4}),
+                            Transf_({3, 0, 1, 2, 4}),
+                            Transf_({4, 1, 2, 3, 4}),
+                            Transf_({1, 1, 2, 3, 4})});
+    REQUIRE(S.size() == 625);
+    auto   p = make<Presentation<word_type>>(S);
+    Sims1_ C(congruence_kind::left);
+    REQUIRE(presentation::longest_rule_length(p) == 18);
+    REQUIRE(presentation::shortest_rule_length(p) == 3);
+
+    presentation::remove_duplicate_rules(p);
+    presentation::remove_trivial_rules(p);
+    presentation::sort_each_rule(p);
+    presentation::sort_rules(p);
+
+    word_type w = presentation::longest_common_subword(p);
+    while (!w.empty()) {
+      presentation::replace_subword(p, w);
+      w = presentation::longest_common_subword(p);
+    }
+
+    REQUIRE(presentation::length(p) == 1414);
+    REQUIRE(presentation::longest_rule_length(p) == 6);
+
+    C.short_rules(p).large_rule_length(6).number_of_threads(8).report_interval(
+        100);
+    REQUIRE(C.number_of_congruences(625) == 10);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "054",
+                          "PlacticMonoid(3) up to index 8",
+                          "[extreme][low-index][babbage]") {
+    std::array<uint64_t, 9> const num
+        = {0, 1, 29, 484, 6'896, 103'204, 1'773'360, 35'874'182, 849'953'461};
+    auto rg = ReportGuard(true);
+    auto p  = make<Presentation<word_type>>(Plactic(3));
+    for (size_t n = 2; n < 9; ++n) {
+      {
+        Sims1_ S(congruence_kind::right);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+      {
+        Sims1_ S(congruence_kind::left);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "055",
+                          "PlacticMonoid(4) up to index 6",
+                          "[extreme][low-index][babbage]") {
+    std::array<uint64_t, 7> const num
+        = {0, 1, 67, 2'794, 106'264, 4'795'980, 278'253'841};
+    auto rg = ReportGuard(true);
+    auto p  = make<Presentation<word_type>>(Plactic(4));
+    for (size_t n = 2; n < 7; ++n) {
+      {
+        Sims1_ S(congruence_kind::right);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+      {
+        Sims1_ S(congruence_kind::left);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "056",
+                          "PlacticMonoid(5) up to index 5",
+                          "[extreme][low-index][babbage]") {
+    std::array<uint64_t, 6> const num
+        = {0, 1, 145, 14'851, 1'496'113, 198'996'912};
+    auto rg = ReportGuard(true);
+    auto p  = make<Presentation<word_type>>(Plactic(5));
+    for (size_t n = 2; n < 6; ++n) {
+      {
+        Sims1_ S(congruence_kind::right);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+      {
+        Sims1_ S(congruence_kind::left);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "057",
+                          "PlacticMonoid(6) up to index 4",
+                          "[extreme][low-index][babbage]") {
+    // TODO(Sims1): run index 5 on babbage
+    std::array<uint64_t, 5> const num = {0, 1, 303, 77'409, 20'526'128};
+    auto                          rg  = ReportGuard(true);
+    auto                          p = make<Presentation<word_type>>(Plactic(6));
+    for (size_t n = 2; n < 5; ++n) {
+      {
+        Sims1_ S(congruence_kind::right);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+      {
+        Sims1_ S(congruence_kind::left);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "058",
+                          "PlacticMonoid(7) up to index 3",
+                          "[extreme][low-index][babbage]") {
+    // TODO(Sims1): run index 4 on babbage
+    std::array<uint64_t, 4> const num = {0, 1, 621, 408'024};
+    auto                          rg  = ReportGuard(true);
+    auto                          p = make<Presentation<word_type>>(Plactic(7));
+    for (size_t n = 2; n < 4; ++n) {
+      {
+        Sims1_ S(congruence_kind::right);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+      {
+        Sims1_ S(congruence_kind::left);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "059",
+                          "PlacticMonoid(8) up to index 3",
+                          "[extreme][low-index][babbage]") {
+    // TODO(Sims1): run index 4 on babbage
+    std::array<uint64_t, 4> const num = {0, 1, 1'259, 2'201'564};
+    auto                          rg  = ReportGuard(true);
+    auto                          p = make<Presentation<word_type>>(Plactic(8));
+    for (size_t n = 2; n < 4; ++n) {
+      {
+        Sims1_ S(congruence_kind::right);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
+      {
+        Sims1_ S(congruence_kind::left);
+        S.short_rules(p).number_of_threads(4);
+        REQUIRE(S.number_of_congruences(n) == num[n]);
+      }
     }
   }
 
