@@ -19,10 +19,6 @@
 // This file contains a declaration of a class for performing the "low-index
 // congruence" algorithm for semigroups and monoids.
 // TODO(Sims1):
-// * improve the reporting from MinimalRepOrc so that it
-//   (Kudryavtseva-Mazorchuk) example is a good one for this
-//   - states all settings at the start of the run
-//   - the number of congruences considered is shown
 // * be useful to have output when no congruences are found too (i.e. in
 //   Heineken group example).
 //  * check for the case that we've constructed a Sims1 but haven't added any
