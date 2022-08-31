@@ -256,6 +256,8 @@ namespace libsemigroups {
     // |s|)
     std::string power_string(std::string const& s, size_t N);
 
+    std::string group_digits(size_t num);
+
   }  // namespace detail
 }  // namespace libsemigroups
 #endif  // LIBSEMIGROUPS_STRING_HPP_
