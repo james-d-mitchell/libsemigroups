@@ -24,3 +24,5 @@ clang
 /Library/Developer/CommandLineTools/usr/include
 -isystem
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks
+-I
+/opt/homebrew/Cellar/fmt/8.1.1_1/include
