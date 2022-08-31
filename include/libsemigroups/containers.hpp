@@ -199,12 +199,28 @@ namespace libsemigroups {
 
       // Throws if the assignment operator of T throws
       void shrink_rows_to(size_type n) {
+        // TODO(Sims1) use subtable
         if (n < _nr_rows) {
           _vec.erase(_vec.begin() + n * (_nr_used_cols + _nr_unused_cols),
                      _vec.end());
           _vec.shrink_to_fit();
           _nr_rows = n;
         }
+      }
+
+      // TODO(Sims1) rename -> shrink_rows_to
+      void subtable(size_type first, size_type last) {
+        // TODO(Sims1) exceptions
+        // if (first > last) {
+        //   LIBSEMIGROUPS_EXCEPTION("the 2nd argument (size_type) must not be "
+        //                           "greater than the 1st argument
+        //                           (size_type)");
+        // }
+        auto nr_cols = _nr_used_cols + _nr_unused_cols;
+        _vec.erase(_vec.begin() + last * nr_cols, _vec.end());
+        _vec.erase(_vec.begin(), _vec.begin() + first * nr_cols);
+        _vec.shrink_to_fit();
+        _nr_rows = last - first;
       }
 
       // Throws if the assignment operator of T throws
