@@ -22,6 +22,9 @@
 // presentation, (i.e. it's consistent with its alphabet etc), and some related
 // functionality.
 
+// TODO(Presentation):
+// * add presentation::find_if, presentation::for_each,
+
 #ifndef LIBSEMIGROUPS_PRESENT_HPP_
 #define LIBSEMIGROUPS_PRESENT_HPP_
 
@@ -539,6 +542,8 @@ namespace libsemigroups {
       }
     }
 
+    // TODO(Sims1) split rules
+
     //! Add rules for an identity element.
     //!
     //! Adds rules of the form \f$ae = ea = a\f$ for every letter \f$a\f$ in
@@ -718,8 +723,14 @@ namespace libsemigroups {
     //! \exceptions
     //! \no_libsemigroups_except
     // TODO(later) complexity
-    template <typename W, typename T>
+    template <typename W,
+              typename T,
+              typename = std::enable_if_t<!std::is_same<T, W>::value>>
     void replace_subword(Presentation<W>& p, T first, T last);
+
+    // TODO(Sims1)
+    template <typename W>
+    void replace_subword(Presentation<W>& p, W const&, W const&);
 
     //! Replace non-overlapping instances of a subword via const reference.
     //!
@@ -753,7 +764,7 @@ namespace libsemigroups {
     //! \exceptions
     //! \no_libsemigroups_except
     template <typename W>
-    size_t length(Presentation<W>& p) {
+    size_t length(Presentation<W> const& p) {
       auto op = [](size_t val, W const& x) { return val + x.size(); };
       return std::accumulate(p.rules.cbegin(), p.rules.cend(), size_t(0), op);
     }
@@ -789,6 +800,41 @@ namespace libsemigroups {
     //! presentation.
     template <typename W>
     void normalize_alphabet(Presentation<W>& p);
+
+    template <typename W>
+    W commutator(W const& x, W const& X, W const& y, W const& Y);
+
+    template <typename T>
+    auto longest_rule(T first, T last);
+
+    template <typename W>
+    auto longest_rule(Presentation<W> const& p) {
+      return longest_rule(p.rules.cbegin(), p.rules.cend());
+    }
+
+    template <typename T>
+    auto shortest_rule(T first, T last);
+
+    template <typename W>
+    auto shortest_rule(Presentation<W> const& p) {
+      return shortest_rule(p.rules.cbegin(), p.rules.cend());
+    }
+
+    template <typename T>
+    auto longest_rule_length(T first, T last);
+
+    template <typename W>
+    auto longest_rule_length(Presentation<W> const& p) {
+      return longest_rule_length(p.rules.cbegin(), p.rules.cend());
+    }
+
+    template <typename T>
+    auto shortest_rule_length(T first, T last);
+
+    template <typename W>
+    auto shortest_rule_length(Presentation<W> const& p) {
+      return shortest_rule_length(p.rules.cbegin(), p.rules.cend());
+    }
 
   }  // namespace presentation
 }  // namespace libsemigroups

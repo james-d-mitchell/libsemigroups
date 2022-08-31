@@ -238,16 +238,16 @@ namespace libsemigroups {
       p.alphabet_from_rules();
       presentation::sort_rules(p);
       REQUIRE(p.rules
-              == std::vector<W>({{1, 1},
-                                 {1, 2, 1},
+              == std::vector<W>({{1, 2, 1},
+                                 {0},
+                                 {1, 1},
                                  {1, 2, 1},
                                  {1, 1, 2, 1},
-                                 {1, 2, 1},
-                                 {0},
+                                 {1, 1},
                                  {0, 1, 2, 1},
                                  {1, 2, 1},
-                                 {1, 1, 2, 1},
-                                 {1, 1}}));
+                                 {1, 2, 1},
+                                 {1, 1, 2, 1}}));
     }
 
     template <typename W>
@@ -311,6 +311,12 @@ namespace libsemigroups {
       // }
       REQUIRE(presentation::length(p) == 343);
       REQUIRE(p.rules.size() == 84);
+    }
+
+    template <typename W>
+    void check_shortlex_compare_concat() {
+      REQUIRE(presentation::shortlex_compare_concat(
+          W({0, 1, 2, 1}), W({0}), W({1, 1, 2, 1}), W({0})));
     }
 
   }  // namespace
@@ -634,5 +640,14 @@ namespace libsemigroups {
     auto rg = ReportGuard(false);
     check_redundant_rule<word_type>();
     check_redundant_rule<std::string>();
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "021",
+                          "helpers shortlex_compare_concat",
+                          "[quick][presentation]") {
+    auto rg = ReportGuard(false);
+    check_shortlex_compare_concat<word_type>();
+    check_shortlex_compare_concat<std::string>();
   }
 }  // namespace libsemigroups
