@@ -426,6 +426,11 @@ namespace libsemigroups {
       _dynamic_array_2.shrink_rows_to(n);
     }
 
+    void inline induced_subdigraph(node_type first, node_type last) {
+      _nr_nodes = last - first;
+      _dynamic_array_2.subtable(first, last);
+    }
+
     //! Adds to the out-degree.
     //!
     //! \param nr the number of new out-edges for every node.
