@@ -76,6 +76,11 @@ namespace libsemigroups {
       return result;
     }
 
+    template <typename S, typename T>
+    void xml_tag(S name, T val) {
+      std::cout << "<" << name << " value=\"" << val << "\"></" << name
+                << ">\n";
+    }
   }  // namespace
 
   ////////////////////////////////////////////////////////////////////////
@@ -105,17 +110,15 @@ namespace libsemigroups {
         std::tie(lhs, rhs) = example1(N);
         T k;
         k.set_alphabet("ab");
-        k.add_rule(lhs, rhs);
-        meter.measure([&k, &foo]() { return foo(k); });
+        meter.measure([&]() {
+          k.add_rule(lhs, rhs);
+          return foo(k);
+        });
       };  // NOLINT(readability/braces)
     }
   }
 
-  void xml_tag(char const* name, char const* val) {
-    std::cout << "<" << name << " value=\"" << val << "\"></" << name << ">\n";
-  }
-
-  TEST_CASE("Example A1 - C(4)-check - std::string", "[quick][000]", ) {
+  TEST_CASE("Example A.1 - C(4)-check - std::string", "[quick][000]", ) {
     xml_tag(
         "Title",
         "C(4)-check for $\\langle a, b \\mid abab^2\\cdots ab^n = ab^{n + 1} "
@@ -147,34 +150,42 @@ namespace libsemigroups {
 
   // <a, b, c | a(bc) ^ k a = a (cb) ^ l a>
 
-  template <typename T>
-  void c4_ex_A2() {
+  template <typename T, typename F>
+  void c4_ex_A2(F&& foo) {
     for (size_t m = 5000; m < 500000; m += 20000) {
-      BENCHMARK_ADVANCED("Length of relation words = "
-                         + std::to_string(4 * m + 4))
+      BENCHMARK_ADVANCED(std::to_string(4 * m + 4))
       (Catch::Benchmark::Chronometer meter) {
         std::string lhs = "a" + power_string("bc", m) + "a";
         std::string rhs = "a" + power_string("cb", m) + "a";
-        meter.measure([&lhs, &rhs]() {
-          Kambites<T> k;
-          k.set_alphabet("abc");
+        T           k;  // We leave the construction of k outside the metered
+                        // section so that we don't measure the time taken to
+                        // free the memory allocated for k.
+        k.set_alphabet("abc");
+        meter.measure([&]() {
           k.add_rule(lhs, rhs);
-          REQUIRE(k.small_overlap_class() >= 4);
+          foo(k);
         });
       };  // NOLINT(readability/braces)
     }
   }
 
-  TEST_CASE("Example A2: determining C(4) (std::string)", "[quick][003]", ) {
-    c4_ex_A2<std::string>();
+  TEST_CASE("Example A.2 - C(4)-check - std::string", "[quick][003]", ) {
+    xml_tag(
+        "Title",
+        "C(4)-check for $\\langle a, b, c \\mid a(bc)^ka = a (cb)^la\\rangle$");
+    xml_tag("XLabel", "Sums of lengths of relation words");
+    xml_tag("Label", "std::string");
+    c4_ex_A2<Kambites<std::string>>(
+        [](auto& k) { return k.small_overlap_class(); });
   }
 
-  TEST_CASE("Example A2: determining C(4) (MultiStringView)",
-            "[quick][004]", ) {
-    c4_ex_A2<MultiStringView>();
+  TEST_CASE("Example A.2 - C(4)-check - MultiStringView", "[quick][004]", ) {
+    xml_tag("Label", "libsemigroups::MultiStringView");
+    c4_ex_A2<Kambites<MultiStringView>>(
+        [](auto& k) { return k.small_overlap_class(); });
   }
 
-  TEST_CASE("Example A2: KnuthBendix", "[quick][005]", ) {
+  TEST_CASE("Example A.2 - KnuthBendix", "[quick][005]", ) {
     auto rg = ReportGuard(false);
     for (size_t m = 5000; m < 500000; m += 20000) {
       std::string lhs = "a" + power_string("bc", m) + "a";
@@ -283,13 +294,43 @@ namespace libsemigroups {
               << number_not_confluent_after_1_second << std::endl;
   }
 
-  TEST_CASE("Example A3: determining C(4) (std::string)", "[quick][006]", ) {
-    c4_ex_A3<std::string>(3000, 150000, 3675);
+  template <typename T, typename F>
+  void c4_ex_A3_new(F&& foo, size_t first, size_t last, size_t step) {
+    for (size_t N = first; N <= last; N += step) {
+      auto   rules = random_strings(std::string("abcdefgh"), 8, 0, N);
+      size_t M     = std::accumulate(
+          rules.cbegin(),
+          rules.cend(),
+          size_t(0),
+          [](size_t val, std::string const& s) { return val + s.size(); });
+
+      BENCHMARK_ADVANCED(std::to_string(M))
+      (Catch::Benchmark::Chronometer meter) {
+        T k;
+        k.set_alphabet("abcdefgh");
+        meter.measure([&]() {
+          for (auto it = rules.cbegin(); it != rules.cend(); it += 2) {
+            k.add_rule(*it, *(it + 1));
+          }
+          return foo(k);
+        });
+      };  // NOLINT(readability/braces)
+    }
   }
 
-  TEST_CASE("Example A3: determining C(4) (MultiStringView)",
-            "[quick][007]", ) {
-    c4_ex_A3<std::string>(3000, 150000, 3675);
+  TEST_CASE("Example A.3 - C(4)-check - std::string", "[quick][006]") {
+    xml_tag("Title",
+            "C(4)-check for random 8-generator 8-relation presentation");
+    xml_tag("XLabel", "Sums of lengths of relation words");
+    xml_tag("Label", "std::string");
+    c4_ex_A3_new<Kambites<std::string>>(
+        [](auto& k) { return k.small_overlap_class(); }, 3000, 150000, 3675);
+  }
+
+  TEST_CASE("Example A.3 - C(4)-check - MultiStringView", "[quick][007]") {
+    xml_tag("Label", "MultiStringView");
+    c4_ex_A3_new<Kambites<MultiStringView>>(
+        [](auto& k) { return k.small_overlap_class(); }, 3000, 150000, 3675);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -297,51 +338,52 @@ namespace libsemigroups {
   ////////////////////////////////////////////////////////////////////////
   // <a, b, c, d | a(bc) ^ m a = a (cb) ^ m  a,  a(bc) ^ m a = b d ^ m b >
 
-  template <typename T>
-  void c4_ex_A5() {
-    for (size_t m = 5000; m < 250000; m += 10000) {
-      BENCHMARK_ADVANCED("Length of relation words = "
-                         + std::to_string(7 * m + 8))
+  template <typename T, typename F>
+  void c4_ex_A5(F&& foo, size_t first, size_t last, size_t step) {
+    for (size_t m = first; m < last; m += step) {
+      BENCHMARK_ADVANCED(std::to_string(7 * m + 8))
       (Catch::Benchmark::Chronometer meter) {
         std::string lhs1 = "a" + power_string("bc", m) + "a";
         std::string rhs1 = "a" + power_string("cb", m) + "a";
         std::string lhs2 = "b" + power_string("d", m) + "b";
         std::string rhs2 = "a" + power_string("bc", m) + "a";
-        meter.measure([&lhs1, &rhs1, &lhs2, &rhs2]() {
-          Kambites<T> k;
-          k.set_alphabet("abcd");
+        T           k;
+        k.set_alphabet("abcd");
+        meter.measure([&]() {
           k.add_rule(lhs1, rhs1);
           k.add_rule(lhs2, rhs2);
-          REQUIRE(k.small_overlap_class() >= 4);
+          foo(k);
         });
       };  // NOLINT(readability/braces)
     }
   }
 
-  TEST_CASE("Example A5: determining C(4) (std::string)", "[quick][008]", ) {
-    c4_ex_A5<std::string>();
+  TEST_CASE("Example A.5 - C(4)-check - std::string", "[quick][008]") {
+    xml_tag("Title",
+            "C(4)-check for $\\langle a, b, c, d \\mid a(bc)^ma=a(cb)^ma,  "
+            "a(bc)^ma = b d^mb \\rangle$");
+    xml_tag("XLabel", "Sums of lengths of relation words");
+    xml_tag("Label", "std::string");
+    c4_ex_A5<Kambites<std::string>>(
+        [](auto& k) { return k.small_overlap_class(); }, 5000, 250000, 10000);
   }
 
-  TEST_CASE("Example A5: determining C(4) (MultiStringView)",
-            "[quick][009]", ) {
-    c4_ex_A5<MultiStringView>();
+  TEST_CASE("Example A.5 - C(4)-check - MultiStringView", "[quick][009]", ) {
+    xml_tag("Label", "MultiStringView");
+    c4_ex_A5<Kambites<MultiStringView>>(
+        [](auto& k) { return k.small_overlap_class(); }, 5000, 250000, 10000);
   }
 
-  TEST_CASE("Example A5: determining C(4) (KnuthBendix)", "[quick][009]", ) {
-    for (size_t m = 5000; m < 250000; m += 10000) {
-      std::string lhs1 = "a" + power_string("bc", m) + "a";
-      std::string rhs1 = "a" + power_string("cb", m) + "a";
-      std::string lhs2 = "b" + power_string("d", m) + "b";
-      std::string rhs2 = "a" + power_string("bc", m) + "a";
-      BENCHMARK_ADVANCED("Length = " + std::to_string(7 * m + 8)) {
-        fpsemigroup::KnuthBendix k;
-        k.set_alphabet("abcd");
-        k.add_rule(lhs1, rhs1);
-        k.add_rule(lhs2, rhs2);
-        REQUIRE(k.confluent());
-        return k.confluent();
-      };
-    }
+  TEST_CASE("Example A.5 - C(4)-check - KnuthBendix", "[quick][010]", ) {
+    xml_tag("Label", "KnuthBendix");
+    c4_ex_A5<fpsemigroup::KnuthBendix>(
+        [](auto& k) {
+          k.run_for(std::chrono::seconds(1));
+          return k.confluent();
+        },
+        5000,
+        250000,
+        10000);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -356,26 +398,46 @@ namespace libsemigroups {
       Kambites<T> k;
       k.set_alphabet("ab");
       k.add_rule(lhs, rhs);
-      REQUIRE(k.small_overlap_class() >= 4);
       auto random = random_strings("ab", N, 0, 4 * N + 4);
       auto u      = zip(random_sequence(lhs, rhs, N), random);
       auto v      = zip(random_sequence(lhs, rhs, N), random);
       REQUIRE(k.small_overlap_class() >= 4);
-      BENCHMARK("length = " + std::to_string(u.size() + v.size())) {
-        REQUIRE(k.equal_to(u, v));
+      BENCHMARK(std::to_string(u.size() + v.size())) {
+        k.equal_to(u, v);
       };
     }
   }
 
-  TEST_CASE("Example A1_10: equal_to (std::string)", "[quick][010]", ) {
-    equal_to_ex_A1<std::string>(10);
+  // TODO choose a word at random, then check all words of length 0 to the
+  // maximum size of possible word in the equivalence class of the random word,
+  // and time this
+
+  TEST_CASE("Example A.1 - n = 10 - equal_to - MultiStringView",
+            "[A1][equal_to][n=10]") {
+    size_t const n = 10;
+    xml_tag("Title",
+            "WpPrefix for $\\langle a, b \\mid ab^1ab^2\\cdots ab^n = "
+            "ab^{n + 1} ab^{n+2} \\cdots ab^{2n}\\rangle$");
+    xml_tag("XLabel", "The sum of the lengths of the 2 words compared");
+    xml_tag("Label", std::string("n = ") + std::to_string(n));
+    equal_to_ex_A1<MultiStringView>(n);
   }
 
-  TEST_CASE("Example A1_10: equal_to (MultiStringView)", "[quick][011]", ) {
-    equal_to_ex_A1<MultiStringView>(10);
+  TEST_CASE("Example A.1 - n = 20 - equal_to - MultiStringView",
+            "[A1][equal_to][n=20]") {
+    size_t const n = 20;
+    xml_tag("Label", std::string("n = ") + std::to_string(n));
+    equal_to_ex_A1<MultiStringView>(n);
   }
 
-  TEST_CASE("Example A1_10: equal_to (KnuthBendix)", "[quick][012]", ) {
+  TEST_CASE("Example A.1 - n = 30 - equal_to - MultiStringView",
+            "[A1][equal_to][n=30]") {
+    size_t const n = 30;
+    xml_tag("Label", std::string("n = ") + std::to_string(n));
+    equal_to_ex_A1<MultiStringView>(n);
+  }
+
+  TEST_CASE("Example A1_10: equal_to (KnuthBendix)", "[quick][013]", ) {
     for (size_t N = 100; N <= 400; N += 8) {
       std::string lhs, rhs;
       std::tie(lhs, rhs) = example1(10);
