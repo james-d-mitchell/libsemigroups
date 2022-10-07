@@ -314,41 +314,37 @@ namespace libsemigroups {
                           "008",
                           "FullTransformationMonoid(4) left",
                           "[fail][low-index][babbage]") {
-    auto                   rg = ReportGuard(true);
-    FroidurePin<Transf<4>> S({Transf<4>({1, 2, 3, 0}),
-                              Transf<4>({1, 0, 2, 3}),
-                              Transf<4>({0, 0, 1, 2})});
-    REQUIRE(S.size() == 256);
-    auto p = make<Presentation<word_type>>(S);
-    REQUIRE(p.rules.size() == 132);
-    auto q = make<Presentation<word_type>>(
-        FullTransformationMonoid(4, author::Aizenstat));
-    // q.rules.insert(q.rules.end(), p.rules.cbegin(), p.rules.cbegin() + 100);
-    // Using this presentation makes this perform terribly slowly.
+    auto rg = ReportGuard(true);
 
-    // REQUIRE(p.rules.size() == 34);
+    auto p = make<Presentation<word_type>>(
+        FullTransformationMonoid(4, author::Iwahori));
 
-    // REQUIRE(presentation::length(p) == 182);
-    // REQUIRE(presentation::length(p) == 182);
-    // REQUIRE(presentation::length(p) == 182);
+    REQUIRE(p.alphabet().size() == 4);
 
-    presentation::sort_each_rule(q);
-    presentation::sort_rules(q);
-    presentation::remove_duplicate_rules(q);
-    presentation::reduce_complements(q);
+    auto w = presentation::longest_common_subword(p);
+    while (!w.empty()) {
+      presentation::replace_subword(p, presentation::longest_common_subword(p));
+      w = presentation::longest_common_subword(p);
+    }
+
+    presentation::sort_each_rule(p);
+    presentation::sort_rules(p);
+    presentation::remove_duplicate_rules(p);
+    presentation::reduce_complements(p);
+    presentation::remove_trivial_rules(p);
+
+    do {
+      auto it = presentation::redundant_rule(p, std::chrono::milliseconds(100));
+      p.rules.erase(it, it + 2);
+    } while (presentation::length(p) > 700);
 
     Sims1_ C(congruence_kind::right);
     C.short_rules(p);
-    // REQUIRE(C.short_rules().rules.size() == 106);
-    // REQUIRE(C.long_rules().rules.size() == 48);
-
-    REQUIRE(C.number_of_threads(8).number_of_congruences(256) == 120'121);
-    // Number generated using CREAM, but Sims1 counts more for right, and too
-    // slow for left
-    // On 27/08/22 JDM ran this for a long time and it got to the next line
-    // before I killed it
-    // #1: Sims1: found 7,260,171 congruences in 48549.925781s (149/s)!
-    // TODO(Sims1) try another non-machine generated presentation
+    // Takes about 1h31m to run!
+    REQUIRE(C.number_of_threads(6).number_of_congruences(256) == 22'069'828);
+    // Sims1_ C(congruence_kind::left);
+    // C.short_rules(p);
+    // REQUIRE(C.number_of_threads(6).number_of_congruences(256) == 120'121);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Sims1",
@@ -2122,6 +2118,65 @@ namespace libsemigroups {
       Sims1_ C(congruence_kind::right);
       C.short_rules(p).number_of_threads(4);
       REQUIRE(C.number_of_congruences(factorial(n)) == num[n]);
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "073",
+                          "PartialTransformationMonoid(4)",
+                          "[fail][low-index]") {
+    auto rg = ReportGuard(true);
+    auto p  = make<Presentation<word_type>>(
+        PartialTransformationMonoid(4, author::Sutov));
+    auto w = presentation::longest_common_subword(p);
+    while (!w.empty()) {
+      presentation::replace_subword(p, presentation::longest_common_subword(p));
+      w = presentation::longest_common_subword(p);
+    }
+
+    presentation::sort_each_rule(p);
+    presentation::sort_rules(p);
+    presentation::remove_duplicate_rules(p);
+    presentation::reduce_complements(p);
+    presentation::remove_trivial_rules(p);
+
+    do {
+      auto it = presentation::redundant_rule(p, std::chrono::milliseconds(100));
+      p.rules.erase(it, it + 2);
+    } while (presentation::length(p) > 800);
+    Sims1_ C(congruence_kind::left);
+    C.short_rules(p).number_of_threads(4).report_interval(10);
+    REQUIRE(C.number_of_congruences(624) == 0);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Sims1",
+                          "074",
+                          "MonogenicSemigroup(m, r) for m, r = 1 .. 10",
+                          "[fail][low-index]") {
+    auto                                        rg = ReportGuard(false);
+    std::vector<std::array<uint64_t, 11>> const num
+        = {{1, 2, 2, 3, 2, 4, 2, 4, 3, 4},
+           {2, 4, 4, 6, 4, 8, 4, 8, 6, 8},
+           {2, 5, 5, 8, 5, 11, 5, 11, 8, 11},
+           {2, 5, 6, 10, 6, 14, 6, 14, 10, 14},
+           {2, 5, 6, 11, 7, 17, 7, 17, 12, 17},
+           {2, 5, 6, 11, 8, 19, 8, 20, 14, 20},
+           {2, 5, 6, 11, 8, 20, 9, 22, 16, 23},
+           {2, 5, 6, 11, 8, 20, 10, 24, 18, 25},
+           {2, 5, 6, 11, 8, 20, 10, 25, 19, 27},
+           {2, 5, 6, 11, 8, 20, 10, 25, 20, 29}};
+
+    for (size_t m = 1; m <= 10; ++m) {
+      for (size_t r = 1; r <= 10; ++r) {
+        // Cyclic groups
+        auto p = make<Presentation<word_type>>(MonogenicSemigroup(m, r));
+
+        Sims1_ C(congruence_kind::right);
+        C.short_rules(p);
+        std::cout << C.number_of_congruences(m + r) << ", ";
+        // REQUIRE(C.number_of_congruences(m + r) == num[m - 1][r - 1]);
+      }
+      std::cout << std::endl;
     }
   }
 
