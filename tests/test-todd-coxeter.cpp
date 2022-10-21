@@ -2752,6 +2752,24 @@ namespace libsemigroups {
       }
       REQUIRE(tc.number_of_classes() == 823543);
     }
+    LIBSEMIGROUPS_TEST_CASE("ToddCoxeter",
+                            "118",
+                            "Fibonacci(3,9)",
+                            "[todd-coxeter][fail]") {
+      auto rg = ReportGuard(true);
+      auto p  = make<Presentation<word_type>>(Fibonacci(3, 3));
+      p.alphabet(3);
+      p.validate();
+      REQUIRE(p.rules == std::vector<word_type>());
+
+      ToddCoxeter tc(twosided);
+      tc.set_number_of_generators(3);
+      for (size_t i = 0; i < p.rules.size() - 1; i += 2) {
+        tc.add_pair(p.rules[i], p.rules[i + 1]);
+      }
+      tc.strategy(ToddCoxeter::options::strategy::felsch);
+      REQUIRE(tc.number_of_classes() == 6);
+    }
 
   }  // namespace congruence
 
@@ -4317,6 +4335,7 @@ namespace libsemigroups {
                 << std::endl;
       REQUIRE(tc.size() == 5'040 / 2);
     }
+
   }  // namespace fpsemigroup
 
 }  // namespace libsemigroups

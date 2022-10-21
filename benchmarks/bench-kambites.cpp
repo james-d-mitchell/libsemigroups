@@ -390,6 +390,11 @@ namespace libsemigroups {
   // Benchmark wp-prefix - Example A.1
   ////////////////////////////////////////////////////////////////////////
 
+  // TODO
+  // * choose a word at random, then check all words of length 0 to the maximum
+  // size of possible word in the equivalence class of the random word, and
+  // time this
+
   template <typename T>
   void equal_to_ex_A1(size_t m) {
     for (size_t N = 100; N <= 400; N += 8) {
@@ -419,21 +424,21 @@ namespace libsemigroups {
             "WpPrefix for $\\langle a, b \\mid ab^1ab^2\\cdots ab^n = "
             "ab^{n + 1} ab^{n+2} \\cdots ab^{2n}\\rangle$");
     xml_tag("XLabel", "The sum of the lengths of the 2 words compared");
-    xml_tag("Label", std::string("n = ") + std::to_string(n));
+    xml_tag("Label", std::string("$n = ") + std::to_string(n) + "$");
     equal_to_ex_A1<MultiStringView>(n);
   }
 
   TEST_CASE("Example A.1 - n = 20 - equal_to - MultiStringView",
             "[A1][equal_to][n=20]") {
     size_t const n = 20;
-    xml_tag("Label", std::string("n = ") + std::to_string(n));
+    xml_tag("Label", std::string("$n = ") + std::to_string(n) + "$");
     equal_to_ex_A1<MultiStringView>(n);
   }
 
   TEST_CASE("Example A.1 - n = 30 - equal_to - MultiStringView",
             "[A1][equal_to][n=30]") {
     size_t const n = 30;
-    xml_tag("Label", std::string("n = ") + std::to_string(n));
+    xml_tag("Label", std::string("$n = ") + std::to_string(n) + "$");
     equal_to_ex_A1<MultiStringView>(n);
   }
 
@@ -1039,4 +1044,7 @@ namespace libsemigroups {
       }
     }
   }
+
+  TEST_CASE("Number of C(4) 2-generator 1-relation monoids", "[038]") {}
+
 }  // namespace libsemigroups

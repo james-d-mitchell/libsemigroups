@@ -524,5 +524,23 @@ namespace libsemigroups {
       REQUIRE(kb.number_of_classes() == 3125);
     }
 
+    LIBSEMIGROUPS_TEST_CASE("KnuthBendix",
+                            "120",
+                            "(cong) Fibonacci(4, 6)",
+                            "[extreme][congruence][knuth-bendix][cong]") {
+      auto rg = ReportGuard(true);
+
+      size_t n = 5;
+      auto   p = make<Presentation<word_type>>(Fibonacci(8, 5));
+      p.alphabet_from_rules();
+      KnuthBendix kb;
+      kb.set_number_of_generators(5);
+      for (size_t i = 0; i < p.rules.size() - 1; i += 2) {
+        kb.add_pair(p.rules[i], p.rules[i + 1]);
+      }
+      REQUIRE(!kb.is_quotient_obviously_infinite());
+      REQUIRE(kb.number_of_classes() == 3125);
+    }
+
   }  // namespace congruence
 }  // namespace libsemigroups
