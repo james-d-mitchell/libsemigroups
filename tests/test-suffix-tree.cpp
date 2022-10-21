@@ -34,6 +34,104 @@ namespace libsemigroups {
 
   using detail::SuffixTree;
 
+  namespace {
+    void check000(SuffixTree& t) {
+      REQUIRE(t.number_of_nodes() == 10);
+
+      REQUIRE(t.is_subword({0, 0, 4, 0, 0, 0}));
+      REQUIRE(t.is_subword({0, 4}));
+      REQUIRE(!t.is_subword({4, 4}));
+      REQUIRE(t.is_subword({}));
+      REQUIRE(t.is_subword({0}));
+      REQUIRE(t.is_subword({0, 0}));
+      REQUIRE(t.is_subword({0, 0, 0}));
+      REQUIRE(t.is_subword({0, 0, 0}));
+      REQUIRE(!t.is_subword({0, 0, 0, 0}));
+      REQUIRE(!t.is_subword({1}));
+      REQUIRE(t.number_of_subwords() == 16);
+      REQUIRE(cbegin_wislo(5, {}, {0, 0, 0, 0, 0, 0, 0})->empty());
+      REQUIRE(
+          std::count_if(cbegin_wislo(6, {}, {0, 0, 0, 0, 0, 0, 0, 0}),
+                        cend_wislo(6, {}, {0, 0, 0, 0, 0, 0, 0, 0}),
+                        [&t](word_type const& w) { return t.is_subword(w); })
+          == 16);
+
+      REQUIRE(t.is_subword({}));  // 1
+      REQUIRE(t.is_subword({0, 0, 4, 0, 0, 0}));
+      REQUIRE(t.is_subword({0, 0, 4, 0, 0}));
+      REQUIRE(t.is_subword({0, 0, 4, 0}));
+      REQUIRE(t.is_subword({0, 0, 4}));  // 5
+      REQUIRE(t.is_subword({0, 0}));
+      REQUIRE(t.is_subword({0}));
+      REQUIRE(t.is_subword({0, 4, 0, 0, 0}));
+      REQUIRE(t.is_subword({0, 4, 0, 0}));
+      REQUIRE(t.is_subword({0, 4, 0}));  // 10
+      REQUIRE(t.is_subword({0, 4}));
+      REQUIRE(t.is_subword({4, 0, 0, 0}));
+      REQUIRE(t.is_subword({4, 0, 0}));
+      REQUIRE(t.is_subword({4, 0}));
+      REQUIRE(t.is_subword({4}));        // 15
+      REQUIRE(t.is_subword({0, 0, 0}));  // 16
+
+      t.add_word({0, 1, 2, 3});
+      REQUIRE(t.number_of_nodes() == 15);
+
+      REQUIRE(t.is_subword({}));  // 1
+      REQUIRE(t.is_subword({0, 0, 4, 0, 0, 0}));
+      REQUIRE(t.is_subword({0, 0, 4, 0, 0}));
+      REQUIRE(t.is_subword({0, 0, 4, 0}));
+      REQUIRE(t.is_subword({0, 0, 4}));  // 5
+      REQUIRE(t.is_subword({0, 0}));
+      REQUIRE(t.is_subword({0}));
+      REQUIRE(t.is_subword({0, 4, 0, 0, 0}));
+      REQUIRE(t.is_subword({0, 4, 0, 0}));
+      REQUIRE(t.is_subword({0, 4, 0}));  // 10
+      REQUIRE(t.is_subword({0, 4}));
+      REQUIRE(t.is_subword({4, 0, 0, 0}));
+      REQUIRE(t.is_subword({4, 0, 0}));
+      REQUIRE(t.is_subword({4, 0}));
+      REQUIRE(t.is_subword({4}));        // 15
+      REQUIRE(t.is_subword({0, 0, 0}));  // 16
+
+      REQUIRE(t.is_subword({0, 1}));
+      REQUIRE(t.is_subword({0, 1, 2}));
+      REQUIRE(t.is_subword({0, 1, 2, 3}));
+      REQUIRE(t.is_subword({1}));
+      REQUIRE(t.is_subword({1, 2}));
+      REQUIRE(t.is_subword({1, 2, 3}));
+      REQUIRE(t.is_subword({2}));
+      REQUIRE(t.is_subword({2, 3}));
+      REQUIRE(t.is_subword({3}));
+
+      REQUIRE(!t.is_subword({3, 3}));
+      REQUIRE(t.number_of_subwords() == 25);
+
+      REQUIRE(!t.is_suffix({1, 2, 3, 5}));
+      REQUIRE(t.is_suffix({1, 2, 3}));
+
+      REQUIRE(t.is_suffix({}));
+      REQUIRE(t.is_suffix({0, 0, 4, 0, 0, 0}));
+      REQUIRE(t.is_suffix({0, 4, 0, 0, 0}));
+      REQUIRE(t.is_suffix({4, 0, 0, 0}));
+      REQUIRE(t.is_suffix({0, 0, 0}));
+      REQUIRE(t.is_suffix({0, 0}));
+      REQUIRE(t.is_suffix({0}));
+      REQUIRE(t.is_suffix({0, 1, 2, 3}));
+      REQUIRE(t.is_suffix({1, 2, 3}));
+      REQUIRE(t.is_suffix({2, 3}));
+      REQUIRE(t.is_suffix({3}));
+
+      REQUIRE(std::count_if(cbegin_wislo(5, {}, {0, 0, 0, 0, 0, 0, 0}),
+                            cend_wislo(5, {}, {0, 0, 0, 0, 0, 0, 0}),
+                            [&t](word_type const& w) { return t.is_suffix(w); })
+              == 11);
+
+      REQUIRE(t.maximal_piece_prefix({0, 0, 4, 0, 0, 0}) == 2);
+      REQUIRE(t.maximal_piece_prefix({0, 1, 2, 3}) == 1);
+    }
+
+  }  // namespace
+
   LIBSEMIGROUPS_TEST_CASE("SuffixTree",
                           "000",
                           "basic tests",
@@ -47,97 +145,10 @@ namespace libsemigroups {
     // d -> 3
     // e -> 4
     t.add_word({0, 0, 4, 0, 0, 0});
-    REQUIRE(t.number_of_nodes() == 10);
-
-    REQUIRE(t.is_subword({0, 0, 4, 0, 0, 0}));
-    REQUIRE(t.is_subword({0, 4}));
-    REQUIRE(!t.is_subword({4, 4}));
-    REQUIRE(t.is_subword({}));
-    REQUIRE(t.is_subword({0}));
-    REQUIRE(t.is_subword({0, 0}));
-    REQUIRE(t.is_subword({0, 0, 0}));
-    REQUIRE(t.is_subword({0, 0, 0}));
-    REQUIRE(!t.is_subword({0, 0, 0, 0}));
-    REQUIRE(!t.is_subword({1}));
-    REQUIRE(t.number_of_subwords() == 16);
-    REQUIRE(cbegin_wislo(5, {}, {0, 0, 0, 0, 0, 0, 0})->empty());
-    REQUIRE(std::count_if(cbegin_wislo(6, {}, {0, 0, 0, 0, 0, 0, 0, 0}),
-                          cend_wislo(6, {}, {0, 0, 0, 0, 0, 0, 0, 0}),
-                          [&t](word_type const& w) { return t.is_subword(w); })
-            == 16);
-
-    REQUIRE(t.is_subword({}));  // 1
-    REQUIRE(t.is_subword({0, 0, 4, 0, 0, 0}));
-    REQUIRE(t.is_subword({0, 0, 4, 0, 0}));
-    REQUIRE(t.is_subword({0, 0, 4, 0}));
-    REQUIRE(t.is_subword({0, 0, 4}));  // 5
-    REQUIRE(t.is_subword({0, 0}));
-    REQUIRE(t.is_subword({0}));
-    REQUIRE(t.is_subword({0, 4, 0, 0, 0}));
-    REQUIRE(t.is_subword({0, 4, 0, 0}));
-    REQUIRE(t.is_subword({0, 4, 0}));  // 10
-    REQUIRE(t.is_subword({0, 4}));
-    REQUIRE(t.is_subword({4, 0, 0, 0}));
-    REQUIRE(t.is_subword({4, 0, 0}));
-    REQUIRE(t.is_subword({4, 0}));
-    REQUIRE(t.is_subword({4}));        // 15
-    REQUIRE(t.is_subword({0, 0, 0}));  // 16
-
-    t.add_word({0, 1, 2, 3});
-    REQUIRE(t.number_of_nodes() == 15);
-
-    REQUIRE(t.is_subword({}));  // 1
-    REQUIRE(t.is_subword({0, 0, 4, 0, 0, 0}));
-    REQUIRE(t.is_subword({0, 0, 4, 0, 0}));
-    REQUIRE(t.is_subword({0, 0, 4, 0}));
-    REQUIRE(t.is_subword({0, 0, 4}));  // 5
-    REQUIRE(t.is_subword({0, 0}));
-    REQUIRE(t.is_subword({0}));
-    REQUIRE(t.is_subword({0, 4, 0, 0, 0}));
-    REQUIRE(t.is_subword({0, 4, 0, 0}));
-    REQUIRE(t.is_subword({0, 4, 0}));  // 10
-    REQUIRE(t.is_subword({0, 4}));
-    REQUIRE(t.is_subword({4, 0, 0, 0}));
-    REQUIRE(t.is_subword({4, 0, 0}));
-    REQUIRE(t.is_subword({4, 0}));
-    REQUIRE(t.is_subword({4}));        // 15
-    REQUIRE(t.is_subword({0, 0, 0}));  // 16
-
-    REQUIRE(t.is_subword({0, 1}));
-    REQUIRE(t.is_subword({0, 1, 2}));
-    REQUIRE(t.is_subword({0, 1, 2, 3}));
-    REQUIRE(t.is_subword({1}));
-    REQUIRE(t.is_subword({1, 2}));
-    REQUIRE(t.is_subword({1, 2, 3}));
-    REQUIRE(t.is_subword({2}));
-    REQUIRE(t.is_subword({2, 3}));
-    REQUIRE(t.is_subword({3}));
-
-    REQUIRE(!t.is_subword({3, 3}));
-    REQUIRE(t.number_of_subwords() == 25);
-
-    REQUIRE(!t.is_suffix({1, 2, 3, 5}));
-    REQUIRE(t.is_suffix({1, 2, 3}));
-
-    REQUIRE(t.is_suffix({}));
-    REQUIRE(t.is_suffix({0, 0, 4, 0, 0, 0}));
-    REQUIRE(t.is_suffix({0, 4, 0, 0, 0}));
-    REQUIRE(t.is_suffix({4, 0, 0, 0}));
-    REQUIRE(t.is_suffix({0, 0, 0}));
-    REQUIRE(t.is_suffix({0, 0}));
-    REQUIRE(t.is_suffix({0}));
-    REQUIRE(t.is_suffix({0, 1, 2, 3}));
-    REQUIRE(t.is_suffix({1, 2, 3}));
-    REQUIRE(t.is_suffix({2, 3}));
-    REQUIRE(t.is_suffix({3}));
-
-    REQUIRE(std::count_if(cbegin_wislo(5, {}, {0, 0, 0, 0, 0, 0, 0}),
-                          cend_wislo(5, {}, {0, 0, 0, 0, 0, 0, 0}),
-                          [&t](word_type const& w) { return t.is_suffix(w); })
-            == 11);
-
-    REQUIRE(t.maximal_piece_prefix({0, 0, 4, 0, 0, 0}) == 2);
-    REQUIRE(t.maximal_piece_prefix({0, 1, 2, 3}) == 1);
+    check000(t);
+    t.clear();
+    t.add_word({0, 0, 4, 0, 0, 0});
+    check000(t);
   }
 
   LIBSEMIGROUPS_TEST_CASE("SuffixTree",
@@ -595,6 +606,16 @@ namespace libsemigroups {
     t.add_word(std::string("ababa"));
     t.add_word(std::string("aaaaaaaaaaaaaaaabaaaabaaaaaaaaaaaaaaaabaaaa"));
     const_iterator first, last;
+    std::tie(first, last) = best_subword(t);
+    REQUIRE(
+        word_type(first, last)
+        == word_type(
+            {97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97}));
+    t.clear();
+    t.add_word(std::string("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+    t.add_word(std::string("bbb"));
+    t.add_word(std::string("ababa"));
+    t.add_word(std::string("aaaaaaaaaaaaaaaabaaaabaaaaaaaaaaaaaaaabaaaa"));
     std::tie(first, last) = best_subword(t);
     REQUIRE(
         word_type(first, last)

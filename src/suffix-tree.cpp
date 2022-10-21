@@ -44,11 +44,26 @@ namespace libsemigroups {
     SuffixTree::SuffixTree()
         : _map(),
           _max_word_length(0),
+          _multiplicity(),
           _next_unique_letter(static_cast<unique_letter_type>(-1)),
           _nodes(1),
           _ptr(0, 0),
           _word_begin({0}),
+          _word_index_lookup(),
           _word() {}
+
+    void SuffixTree::clear() {
+      _map.clear();
+      _max_word_length = 0;
+      _multiplicity.clear();
+      _next_unique_letter = static_cast<unique_letter_type>(-1);
+      _nodes.clear();
+      _nodes.emplace_back();
+      _ptr        = State(0, 0);
+      _word_begin = {0};
+      _word_index_lookup.clear();
+      _word.clear();
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // SuffixTree - initialisation - public

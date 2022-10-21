@@ -142,6 +142,8 @@ namespace libsemigroups {
 
       SuffixTree();
 
+      void clear();
+
       ////////////////////////////////////////////////////////////////////////
       // SuffixTree - initialisation - public
       ////////////////////////////////////////////////////////////////////////
@@ -282,48 +284,59 @@ namespace libsemigroups {
         return is_real_suffix(traverse(State(0, 0), first, last)) != UNDEFINED;
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       size_t maximal_piece_prefix(T const& x) const {
         return maximal_piece_prefix(x.cbegin(), x.cend());
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       size_t maximal_piece_prefix(T const& first, T const& last) const {
         return maximal_piece_prefix(word_type(first, last));
       }
 
+      // TODO(v3) should be in helper namespace
       size_t maximal_piece_prefix(word_type const& w) const {
         return maximal_piece_prefix(word_index(w));
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       size_t maximal_piece_suffix(T const& x) const {
         return maximal_piece_suffix(x.cbegin(), x.cend());
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       size_t maximal_piece_suffix(T const& first, T const& last) const {
         return maximal_piece_suffix(word_type(first, last));
       }
 
+      // TODO(v3) should be in helper namespace
       size_t maximal_piece_suffix(word_type const& w) const {
         return maximal_piece_suffix(word_index(w));
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       size_t number_of_pieces(T const& x) const {
         return number_of_pieces(x.cbegin(), x.cend());
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       size_t number_of_pieces(T const& first, T const& last) const {
+        // TODO(later) really copy here?
         return number_of_pieces(word_type(first, last));
       }
 
+      // TODO(v3) should be in helper namespace
       size_t number_of_pieces(word_type const& w) const {
         return number_of_pieces(word_index(w));
       }
 
+      // TODO(v3) should be in helper namespace
       State traverse(State st, word_type const& w) const {
         return traverse(st, w.cbegin(), w.cend());
       }
@@ -363,7 +376,9 @@ namespace libsemigroups {
         return st;
       }
 
+      // TODO(v3) should be in helper namespace
       std::string tikz() const;
+      // TODO(v3) should be in helper namespace
       std::string dot() const;
 
      private:
