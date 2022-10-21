@@ -456,10 +456,15 @@ namespace libsemigroups {
     }
     validate_word(u);
     validate_word(v);
+    add_rule_private_nc(std::move(u), std::move(v));
+  }
+
+  void FpSemigroupInterface::add_rule_private_nc(std::string&& u,
+                                                 std::string&& v) {
     if (u == v) {
       return;
     }
-    _rules.emplace_back(u, v);
+    _rules.emplace_back(std::move(u), std::move(v));
     add_rule_impl(_rules.back().first, _rules.back().second);
     reset();
   }

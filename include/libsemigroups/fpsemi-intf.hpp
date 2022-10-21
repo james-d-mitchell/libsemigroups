@@ -435,6 +435,10 @@ namespace libsemigroups {
       add_rule_private(std::string(u), std::string(v));
     }
 
+    void add_rule_nc(std::string const& u, std::string const& v) {
+      add_rule_private_nc(std::string(u), std::string(v));
+    }
+
     //! Add a rule using two \ref word_type const references.
     //!
     //! \param u the left-hand side of the rule being added.
@@ -880,6 +884,7 @@ namespace libsemigroups {
     void set_is_obviously_infinite(bool) const;
     void set_is_obviously_finite(bool) const;
     void add_rule_private(std::string&&, std::string&&);
+    void add_rule_private_nc(std::string&&, std::string&&);
 
     //////////////////////////////////////////////////////////////////////////////
     // FpSemigroupInterface - non-mutable data - private
