@@ -57,8 +57,11 @@ namespace libsemigroups {
       _max_word_length = 0;
       _multiplicity.clear();
       _next_unique_letter = static_cast<unique_letter_type>(-1);
-      _nodes.clear();
-      _nodes.emplace_back();
+      _free_nodes.insert(_free_nodes.end(),
+                         std::make_move_iterator(_nodes.begin() + 1),
+                         std::make_move_iterator(_nodes.end()));
+      _nodes.erase(_nodes.cbegin() + 1, _nodes.cend());
+      _nodes.back().init();
       _ptr        = State(0, 0);
       _word_begin = {0};
       _word_index_lookup.clear();
@@ -449,8 +452,7 @@ namespace libsemigroups {
         return _nodes[st.v].parent;
       }
       node_index_type id = _nodes.size();
-      _nodes.emplace_back(
-          _nodes[st.v].l, _nodes[st.v].l + st.pos, _nodes[st.v].parent);
+      new_node(_nodes[st.v].l, _nodes[st.v].l + st.pos, _nodes[st.v].parent);
       _nodes[_nodes[st.v].parent].child(_word[_nodes[st.v].l]) = id;
       _nodes[id].child(_word[_nodes[st.v].l + st.pos])         = st.v;
       _nodes[st.v].parent                                      = id;
@@ -494,7 +496,7 @@ namespace libsemigroups {
 
         auto mid  = split(_ptr);
         auto leaf = _nodes.size();
-        _nodes.emplace_back(pos, _word.size(), mid);
+        new_node(pos, _word.size(), mid);
         _nodes[mid].child(_word[pos]) = leaf;
 
         _ptr.v = get_link(mid);

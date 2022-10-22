@@ -38,10 +38,9 @@
 #ifndef LIBSEMIGROUPS_KAMBITES_HPP_
 #define LIBSEMIGROUPS_KAMBITES_HPP_
 
-#include <stdint.h>  // for uint64_t
-
 #include <algorithm>    // for min
 #include <cstddef>      // for size_t
+#include <cstdint>      // for uint64_t
 #include <functional>   // for equal_to
 #include <memory>       // for shared_ptr, unique_ptr, make_shared
 #include <string>       // for string
@@ -55,14 +54,14 @@
 #include "exception.hpp"     // for LIBSEMIGROUPS_EXCEPTION
 #include "fpsemi-intf.hpp"   // for FpSemigroupInterface
 #include "froidure-pin.hpp"  // for FroidurePin, FroidurePinTraits
-#include "int-range.hpp"
-#include "order.hpp"  // for lexicographical_compare
-#include "string-view.hpp"
-#include "string.hpp"       // for is_prefix
-#include "suffix-tree.hpp"  // for SuffixTree
-#include "types.hpp"        // for word_type, tril, letter_type
-#include "uf.hpp"           // for Duf<>
-#include "word.hpp"         // for word_to_string
+#include "int-range.hpp"     // for IntegralRange
+#include "order.hpp"         // for lexicographical_compare
+#include "string-view.hpp"   // for MultiStringView
+#include "string.hpp"        // for is_prefix
+#include "suffix-tree.hpp"   // for SuffixTree
+#include "types.hpp"         // for word_type, tril, letter_type
+#include "uf.hpp"            // for Duf<>
+#include "word.hpp"          // for word_to_string
 
 namespace libsemigroups {
   class FroidurePinBase;  // Forward decl
@@ -114,6 +113,7 @@ namespace libsemigroups {
       //!
       //! \complexity
       //! Constant
+      // TODO(KambitesBenchmarks): to tpp file
       Kambites()
           :  // Mutable
             _class(UNDEFINED),
@@ -123,6 +123,16 @@ namespace libsemigroups {
             // Non-mutable
             _relation_words(),
             _suffix_tree() {}
+
+      // TODO(KambitesBenchmarks): to tpp file
+      void clear() {
+        _class = UNDEFINED;
+        _complements.clear();
+        _have_class = false;
+        _XYZ_data.clear();
+        _relation_words.clear();
+        _suffix_tree.clear();
+      }
 
       //! Default copy constructor.
       Kambites(Kambites const&);
@@ -477,22 +487,6 @@ namespace libsemigroups {
       // Kambites - main functions - private
       ////////////////////////////////////////////////////////////////////////
 
-      // copy if const_reference, or rrvalue reference
-      template <typename S>
-      struct ForwardingTypeHelper {
-        using type = std::conditional_t<
-            std::is_rvalue_reference<S>::value
-                || (std::is_reference<S>::value
-                    && std::is_const<std::remove_reference_t<S>>::value),
-            std::remove_const_t<std::remove_reference_t<S>>,
-            std::remove_reference_t<S>&>;
-      };
-
-      template <typename S>
-      using ForwardingType = typename ForwardingTypeHelper<S>::type;
-
-      // copies u, v, and/or p if they are an rrvalue ref or a const ref.
-
       // Implementation of the function of the same name in: Kambites, M.
       // (2009). Small overlap monoids. I. The word problem. J. Algebra,
       // 321(8), 2187–2205.
@@ -561,6 +555,10 @@ namespace libsemigroups {
        public:
         Complements() = default;
         void init(std::vector<string_type> const&);
+        void clear() {
+          _complements.clear();
+          _lookup.clear();
+        }
 
         std::vector<size_t> const& of(size_t i) const {
           LIBSEMIGROUPS_ASSERT(i < _lookup.size());

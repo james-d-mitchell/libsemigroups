@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <stddef.h>  // for size_t
+#define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
 #include <algorithm>      // for count_if, all_of
+#include <cstddef>        // for size_t
 #include <iostream>       // for string, char_traits
 #include <iterator>       // for distance
 #include <memory>         // for allocator, shared_ptr
@@ -113,20 +114,6 @@ namespace libsemigroups {
       }
       return result;
     }
-
-    // std::string swap_a_and_b(std::string const& w) {
-    //   std::string result;
-    //   for (auto l : w) {
-    //     if (l == 'a') {
-    //       result += "b";
-    //     } else if (l == '#') {
-    //       result += '#';
-    //     } else {
-    //       result += "a";
-    //     }
-    //   }
-    //   return result;
-    // }
 
     auto sample(std::string A,
                 size_t      R,
@@ -1629,11 +1616,58 @@ namespace libsemigroups {
       for (auto it1 = x.cbegin(); it1 != last; ++it1) {
         for (auto it2 = it1 + 1; it2 != x.cend(); ++it2) {
           total++;
-          Kambites<std::string> k;
+          Kambites<T> k;
           k.set_alphabet("ab");
           k.add_rule(*it1, *it2);
           if (k.small_overlap_class() >= 4) {
             total_c4++;
+          }
+        }
+      }
+      return std::make_pair(total_c4, total);
+    }
+
+    template <typename T>
+    auto count_2_gen_1_rel(size_t len) {
+      Sislo lhs;
+      lhs.alphabet("ab");
+      lhs.first(len);
+      lhs.last(len + 1);
+
+      Sislo rhs;
+      lhs.alphabet("ab");
+      lhs.first(1);
+      lhs.last(len - 1);
+
+      uint64_t total_c4 = 0;
+      uint64_t total    = 0;
+
+      auto last = lhs.cbegin();
+      std::advance(last, std::distance(lhs.cbegin(), lhs.cend()) - 1);
+
+      auto lhs_end = lhs.cend();
+      auto rhs_end = rhs.cend();
+
+      Kambites<T> k;
+      k.set_alphabet("ab");
+
+      for (auto l = lhs.cbegin(); l != lhs_end; ++l) {
+        for (auto r = rhs.cbegin(); r != rhs_end; ++r) {
+          total++;
+          k.clear();
+          k.add_rule_nc(*l, *r);
+          if (k.small_overlap_class() >= 4) {
+            total_c4++;
+          }
+        }
+        if (l != last) {
+          for (auto r = l + 1; r != lhs_end; ++r) {
+            total++;
+            k.clear();
+            k.add_rule_nc(*l, *r);
+            if (k.small_overlap_class() >= 4) {
+              total_c4++;
+            }
           }
         }
       }
@@ -1645,9 +1679,30 @@ namespace libsemigroups {
         "069",
         "(fpsemi) almost all 2-generated 1-relation monoids are C(4)",
         "[extreme][kambites][fpsemigroup][fpsemi]") {
-      auto x = count_2_gen_1_rel<std::string>(1, 7);
-      REQUIRE(x.first == 1);
-      REQUIRE(x.second == 7875);
+      std::array<std::pair<uint64_t, uint64_t>, 15> const expected
+          = {std::make_pair(0, 0),
+             {0, 0},
+             {0, 0},
+             {1, 1},
+             {1, 15},
+             {1, 91},
+             {1, 435},
+             {1, 1'891},
+             {1, 7'875},
+             {3, 32'131},
+             {29, 129'795},
+             {789, 521'731},
+             {18'171, 2'092'035},
+             {235'629, 8'378'371},
+             {2'230'503, 33'533'955}};
+
+      for (size_t n = 13; n < 14; ++n) {
+        auto x = count_2_gen_1_rel<MultiStringView>(n);
+        std::cout << "n = " << n << std::endl;
+        std::cout << x << std::endl;
+
+        // REQUIRE(x == expected[n]);
+      }
     }
 
     LIBSEMIGROUPS_TEST_CASE(

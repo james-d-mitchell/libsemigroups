@@ -21,6 +21,9 @@
 //
 // https://cp-algorithms.com/string/suffix-tree-ukkonen.html
 
+// TODO(KambitesBenchmarks):
+// - replace size_t by uint32_t and see if it makes any difference
+
 #ifndef LIBSEMIGROUPS_SUFFIX_TREE_HPP_
 #define LIBSEMIGROUPS_SUFFIX_TREE_HPP_
 
@@ -87,6 +90,17 @@ namespace libsemigroups {
               link(UNDEFINED),
               children(),
               is_real_suffix(false) {}
+
+        void init(index_type      ll      = 0,
+                  index_type      rr      = 0,
+                  node_index_type pparent = UNDEFINED) {
+          l      = ll;
+          r      = rr;
+          parent = pparent;
+          link   = UNDEFINED;
+          children.clear();
+          is_real_suffix = false;
+        }
 
         size_t length() const {
           return r - l;
@@ -478,6 +492,18 @@ namespace libsemigroups {
       // Perform the phase starting with the pos letter of the word.
       void tree_extend(index_type pos);
 
+      inline void new_node(index_type      l      = 0,
+                           index_type      r      = 0,
+                           node_index_type parent = UNDEFINED) {
+        if (_free_nodes.empty()) {
+          _nodes.emplace_back(l, r, parent);
+        } else {
+          _nodes.emplace_back(std::move(_free_nodes.back()));
+          _free_nodes.pop_back();
+          _nodes.back().init(l, r, parent);
+        }
+      }
+
       ////////////////////////////////////////////////////////////////////////
       // SuffixTree - private data
       ////////////////////////////////////////////////////////////////////////
@@ -491,6 +517,7 @@ namespace libsemigroups {
       std::vector<size_t>     _multiplicity;
       unique_letter_type      _next_unique_letter;
       std::vector<Node>       _nodes;
+      std::vector<Node>       _free_nodes;
       State                   _ptr;
       std::vector<index_type> _word_begin;
       std::vector<index_type> _word_index_lookup;
