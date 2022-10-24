@@ -46,19 +46,22 @@ namespace libsemigroups {
           _max_word_length(0),
           _multiplicity(),
           _next_unique_letter(static_cast<unique_letter_type>(-1)),
-          _nodes(1),
+          _nodes(),
           _ptr(0, 0),
           _word_begin({0}),
           _word_index_lookup(),
-          _word() {}
+          _word() {
+      _nodes.push_back(new Node());
+    }
 
     void SuffixTree::clear() {
       _map.clear();
       _max_word_length = 0;
       _multiplicity.clear();
       _next_unique_letter = static_cast<unique_letter_type>(-1);
-      _nodes.clear();
-      _nodes.emplace_back();
+      _free_nodes.insert(_free_nodes.end(), _nodes.begin() + 1, _nodes.end());
+      _nodes.erase(_nodes.cbegin() + 1, _nodes.cend());
+      _nodes.back()->init();
       _ptr        = State(0, 0);
       _word_begin = {0};
       _word_index_lookup.clear();
@@ -101,9 +104,9 @@ namespace libsemigroups {
 
       for (node_index_type i = old_nr_nodes; i < _nodes.size(); ++i) {
         auto& n = _nodes[i];
-        for (auto const& child : n.children) {
+        for (auto const& child : n->children) {
           if (!is_real_letter(child.first)) {
-            n.is_real_suffix = true;
+            n->is_real_suffix = true;
             break;
           }
         }
@@ -118,8 +121,8 @@ namespace libsemigroups {
       return std::accumulate(_nodes.cbegin(),
                              _nodes.cend(),
                              size_t(0),
-                             [](size_t& tot, Node const& n) {
-                               tot += n.length();
+                             [](size_t& tot, Node const* n) {
+                               tot += n->length();
                                return tot;
                              })
              - _word.size() + 1;  // empty word
@@ -185,12 +188,12 @@ namespace libsemigroups {
 
       std::string result = "digraph {\nordering=\"out\"\n";
       for (size_t i = 0; i < _nodes.size(); ++i) {
-        auto color_index = _word_index_lookup[_nodes[i].l];
+        auto color_index = _word_index_lookup[_nodes[i]->l];
         result += std::to_string(i) + "[shape=box, width=.5, color="
                   + colors[color_index] + "]\n";
-        for (auto const& child : _nodes[i].children) {
-          auto const& l = _nodes[child.second].l;
-          auto const& r = _nodes[child.second].r;
+        for (auto const& child : _nodes[i]->children) {
+          auto const& l = _nodes[child.second]->l;
+          auto const& r = _nodes[child.second]->r;
           color_index   = _word_index_lookup[l];
           result += std::to_string(i) + "->" + std::to_string(child.second)
                     + "[color=\"" + colors[color_index] + "\" label=\"["
@@ -251,13 +254,13 @@ namespace libsemigroups {
         s += "\\";
       }
 
-      auto color_index = _word_index_lookup[_nodes[i].l];
+      auto color_index = _word_index_lookup[_nodes[i]->l];
       s += string_format("node(%d){\\color{color%d} %d}\n", i, color_index, i);
       size_t count = 0;
-      for (auto const& pair : _nodes[i].children) {
+      for (auto const& pair : _nodes[i]->children) {
         s += string_format(
             "child{%s}\n",
-            tikz_traverse(pair.second, count < _nodes[i].children.size() / 2)
+            tikz_traverse(pair.second, count < _nodes[i]->children.size() / 2)
                 .c_str());
         count++;
       }
@@ -269,10 +272,10 @@ namespace libsemigroups {
             color_index,
             color_index,
             r.c_str(),
-            _nodes[i].l,
-            _nodes[i].r,
+            _nodes[i]->l,
+            _nodes[i]->r,
             r.c_str(),
-            tikz_word(_nodes[i].l, _nodes[i].r).c_str());
+            tikz_word(_nodes[i]->l, _nodes[i]->r).c_str());
       }
       return s;
     }
@@ -287,21 +290,21 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(st.v != 0);
       LIBSEMIGROUPS_ASSERT(n.parent != UNDEFINED);
       LIBSEMIGROUPS_ASSERT(n.parent < _nodes.size());
-      if (st.pos == n.length()) {
+      if (st.pos == n->length()) {
         LIBSEMIGROUPS_ASSERT(st.v != 0);
-        return (n.is_real_suffix ? word_index(n) : UNDEFINED);
+        return (n->is_real_suffix ? word_index(*n) : UNDEFINED);
       }
 
-      return (n.is_leaf() && n.length() - 1 == st.pos ? word_index(n)
-                                                      : UNDEFINED);
+      return (n->is_leaf() && n->length() - 1 == st.pos ? word_index(*n)
+                                                        : UNDEFINED);
     }
 
     size_t SuffixTree::distance_from_root(node_index_type i) const {
       LIBSEMIGROUPS_ASSERT(i < _nodes.size());
       size_t result = 0;
-      while (_nodes[i].parent != UNDEFINED) {
-        result += _nodes[i].length();
-        i = _nodes[i].parent;
+      while (_nodes[i]->parent != UNDEFINED) {
+        result += _nodes[i]->length();
+        i = _nodes[i]->parent;
       }
       return result;
     }
@@ -319,10 +322,10 @@ namespace libsemigroups {
       index_type      r = _word_begin[j + 1];
       node_index_type m = 0;
       while (l < r) {
-        m = _nodes[m].child(_word[l]);
-        l += _nodes[m].length();
+        m = _nodes[m]->child(_word[l]);
+        l += _nodes[m]->length();
       }
-      return distance_from_root(_nodes[m].parent);
+      return distance_from_root(_nodes[m]->parent);
     }
 
     size_t SuffixTree::maximal_piece_suffix(word_index_type j) const {
@@ -339,7 +342,7 @@ namespace libsemigroups {
       size_t result = 0;
 
       for (size_t n = 0; n < _nodes.size(); ++n) {
-        if (_nodes[n].child(unique_letter(j)) != UNDEFINED) {
+        if (_nodes[n]->child(unique_letter(j)) != UNDEFINED) {
           result = std::max(distance_from_root(n), result);
         }
       }
@@ -355,11 +358,11 @@ namespace libsemigroups {
       // corresponding to the maximal_piece_prefix.
       node_index_type m = 0;
       while (l < r) {
-        m = _nodes[m].child(_word[l]);
+        m = _nodes[m]->child(_word[l]);
         LIBSEMIGROUPS_ASSERT(m != UNDEFINED);
-        l += _nodes[m].length();
+        l += _nodes[m]->length();
       }
-      return distance_from_root(_nodes[m].parent);
+      return distance_from_root(_nodes[m]->parent);
     }
 
     size_t SuffixTree::number_of_pieces(word_index_type i) const {
@@ -406,23 +409,23 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(r <= _word.size());
       LIBSEMIGROUPS_ASSERT(l <= r);
       while (l < r) {
-        if (st.pos == _nodes[st.v].length()) {
-          st = State(_nodes[st.v].child(_word[l]), 0);
+        if (st.pos == _nodes[st.v]->length()) {
+          st = State(_nodes[st.v]->child(_word[l]), 0);
           if (st.v == UNDEFINED) {
             return;
           }
         } else {
-          if (_word[_nodes[st.v].l + st.pos] != _word[l]) {
+          if (_word[_nodes[st.v]->l + st.pos] != _word[l]) {
             st.v   = UNDEFINED;
             st.pos = UNDEFINED;
             return;
           }
-          if (r - l < _nodes[st.v].length() - st.pos) {
+          if (r - l < _nodes[st.v]->length() - st.pos) {
             st.pos += r - l;
             return;
           }
-          l += _nodes[st.v].length() - st.pos;
-          st.pos = _nodes[st.v].length();
+          l += _nodes[st.v]->length() - st.pos;
+          st.pos = _nodes[st.v]->length();
         }
       }
     }
@@ -430,31 +433,30 @@ namespace libsemigroups {
     // Split the node _nodes[st.v] into two nodes, the new node
     // with edge corresponding to
     //
-    // [_nodes[st.v].l, _nodes[st.v].l + st.pos)
+    // [_nodes[st.v]->l, _nodes[st.v]->l + st.pos)
     //
     // and the old node with edge corresponding to
     //
-    // [_nodes[st.v].l + st.pos, _nodes[st.v].r)
+    // [_nodes[st.v]->l + st.pos, _nodes[st.v]->r)
     SuffixTree::node_index_type SuffixTree::split(State const& st) {
       LIBSEMIGROUPS_ASSERT(st.v != UNDEFINED);
       LIBSEMIGROUPS_ASSERT(st.v < _nodes.size());
-      LIBSEMIGROUPS_ASSERT(st.pos <= _nodes[st.v].length());
+      LIBSEMIGROUPS_ASSERT(st.pos <= _nodes[st.v]->length());
 
-      if (st.pos == _nodes[st.v].length()) {
+      if (st.pos == _nodes[st.v]->length()) {
         LIBSEMIGROUPS_ASSERT(st.v < _nodes.size());
         return st.v;
       } else if (st.pos == 0) {
         LIBSEMIGROUPS_ASSERT(st.v != 0);
-        LIBSEMIGROUPS_ASSERT(_nodes[st.v].parent < _nodes.size());
-        return _nodes[st.v].parent;
+        LIBSEMIGROUPS_ASSERT(_nodes[st.v]->parent < _nodes.size());
+        return _nodes[st.v]->parent;
       }
       node_index_type id = _nodes.size();
-      _nodes.emplace_back(
-          _nodes[st.v].l, _nodes[st.v].l + st.pos, _nodes[st.v].parent);
-      _nodes[_nodes[st.v].parent].child(_word[_nodes[st.v].l]) = id;
-      _nodes[id].child(_word[_nodes[st.v].l + st.pos])         = st.v;
-      _nodes[st.v].parent                                      = id;
-      _nodes[st.v].l += st.pos;
+      new_node(_nodes[st.v]->l, _nodes[st.v]->l + st.pos, _nodes[st.v]->parent);
+      _nodes[_nodes[st.v]->parent]->child(_word[_nodes[st.v]->l]) = id;
+      _nodes[id]->child(_word[_nodes[st.v]->l + st.pos])          = st.v;
+      _nodes[st.v]->parent                                        = id;
+      _nodes[st.v]->l += st.pos;
       LIBSEMIGROUPS_ASSERT(id < _nodes.size());
       return id;
     }
@@ -462,24 +464,24 @@ namespace libsemigroups {
     // Get the suffix link of a node by index
     SuffixTree::node_index_type SuffixTree::get_link(node_index_type v) {
       LIBSEMIGROUPS_ASSERT(v < _nodes.size());
-      if (_nodes[v].link != UNDEFINED) {
-        return _nodes[v].link;
-      } else if (_nodes[v].parent == UNDEFINED) {
+      if (_nodes[v]->link != UNDEFINED) {
+        return _nodes[v]->link;
+      } else if (_nodes[v]->parent == UNDEFINED) {
         return 0;
       }
-      auto to = get_link(_nodes[v].parent);
+      auto to = get_link(_nodes[v]->parent);
       LIBSEMIGROUPS_ASSERT(to < _nodes.size());
-      State st(to, _nodes[to].length());
-      go(st, _nodes[v].l + (_nodes[v].parent == 0), _nodes[v].r);
+      State st(to, _nodes[to]->length());
+      go(st, _nodes[v]->l + (_nodes[v]->parent == 0), _nodes[v]->r);
       LIBSEMIGROUPS_ASSERT(st.v != UNDEFINED);
-      LIBSEMIGROUPS_ASSERT(st.pos <= _nodes[st.v].length());
+      LIBSEMIGROUPS_ASSERT(st.pos <= _nodes[st.v]->length());
       // WARNING: the assignment of xxx to split(st) in the next line looks
       // redundant, but isn't! Without this the test fail when compiling
       // with gcc (9, 10, 11, at least)!
-      auto xxx       = split(st);
-      _nodes[v].link = xxx;
-      LIBSEMIGROUPS_ASSERT(_nodes[v].link < _nodes.size());
-      return _nodes[v].link;
+      auto xxx        = split(st);
+      _nodes[v]->link = xxx;
+      LIBSEMIGROUPS_ASSERT(_nodes[v]->link < _nodes.size());
+      return _nodes[v]->link;
     }
 
     // Perform the phase starting with the pos letter of the word.
@@ -494,12 +496,12 @@ namespace libsemigroups {
 
         auto mid  = split(_ptr);
         auto leaf = _nodes.size();
-        _nodes.emplace_back(pos, _word.size(), mid);
-        _nodes[mid].child(_word[pos]) = leaf;
+        new_node(pos, _word.size(), mid);
+        _nodes[mid]->child(_word[pos]) = leaf;
 
         _ptr.v = get_link(mid);
         LIBSEMIGROUPS_ASSERT(_ptr.v < _nodes.size());
-        _ptr.pos = _nodes[_ptr.v].length();
+        _ptr.pos = _nodes[_ptr.v]->length();
         if (mid == 0) {
           break;
         }

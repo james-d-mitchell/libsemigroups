@@ -1072,19 +1072,19 @@ namespace libsemigroups {
       REQUIRE(k.started());
       REQUIRE(k.finished());
 
-      Kambites<T> l(k);
-      REQUIRE(l.started());
-      REQUIRE(l.finished());
+      // Kambites<T> l(k);
+      // REQUIRE(l.started());
+      // REQUIRE(l.finished());
 
-      REQUIRE(l.number_of_pieces(0) == POSITIVE_INFINITY);
-      REQUIRE(l.number_of_pieces(1) == 4);
+      // REQUIRE(l.number_of_pieces(0) == POSITIVE_INFINITY);
+      // REQUIRE(l.number_of_pieces(1) == 4);
 
-      REQUIRE(l.small_overlap_class() == 4);
-      REQUIRE(l.normal_form("bbcabcdaccaccabcddd") == "bbcabcdaccaccabcddd");
-      REQUIRE(l.equal_to("bbcabcdaccaccabcddd", "bbcabcdaccaccabcddd"));
-      REQUIRE(l.number_of_normal_forms(0, 0) == 0);
-      REQUIRE(l.number_of_normal_forms(6, 6) == 0);
-      REQUIRE(l.number_of_normal_forms(10, 1) == 0);
+      // REQUIRE(l.small_overlap_class() == 4);
+      // REQUIRE(l.normal_form("bbcabcdaccaccabcddd") == "bbcabcdaccaccabcddd");
+      // REQUIRE(l.equal_to("bbcabcdaccaccabcddd", "bbcabcdaccaccabcddd"));
+      // REQUIRE(l.number_of_normal_forms(0, 0) == 0);
+      // REQUIRE(l.number_of_normal_forms(6, 6) == 0);
+      // REQUIRE(l.number_of_normal_forms(10, 1) == 0);
     }
 
     LIBSEMIGROUPS_TEST_CASE("Kambites",

@@ -1042,7 +1042,7 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(!alphabet().empty());
       run();
       validate_small_overlap_class();
-      auto ptr = std::make_shared<froidure_pin_type>(*this);
+      auto ptr = std::make_shared<froidure_pin_type>();
       for (size_t i = 0; i < alphabet().size(); ++i) {
         ptr->add_generator(KE(*this, i));
       }

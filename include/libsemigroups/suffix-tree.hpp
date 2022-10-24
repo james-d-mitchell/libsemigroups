@@ -91,6 +91,17 @@ namespace libsemigroups {
               children(),
               is_real_suffix(false) {}
 
+        void init(index_type      ll      = 0,
+                  index_type      rr      = 0,
+                  node_index_type pparent = UNDEFINED) {
+          l      = ll;
+          r      = rr;
+          parent = pparent;
+          link   = UNDEFINED;
+          children.clear();
+          is_real_suffix = false;
+        }
+
         size_t length() const {
           return r - l;
         }
@@ -178,7 +189,7 @@ namespace libsemigroups {
       size_t number_of_subwords() const;
 
       Node const& node(node_index_type v) const {
-        return _nodes[v];
+        return *_nodes[v];
       }
 
       size_t multiplicity(node_index_type v) const {
@@ -186,27 +197,27 @@ namespace libsemigroups {
       }
 
       bool is_leaf(node_index_type v) const {
-        return _nodes[v].is_leaf();
+        return _nodes[v]->is_leaf();
       }
 
       bool is_root(node_index_type v) const {
-        return _nodes[v].parent == UNDEFINED;
+        return _nodes[v]->parent == UNDEFINED;
       }
 
       node_index_type parent(node_index_type v) const {
-        return _nodes[v].parent;
+        return _nodes[v]->parent;
       }
 
       index_type right(node_index_type v) const {
-        return _nodes[v].r;
+        return _nodes[v]->r;
       }
 
       index_type left(node_index_type v) const {
-        return _nodes[v].l;
+        return _nodes[v]->l;
       }
 
       size_t length(node_index_type v) const {
-        return _nodes[v].length();
+        return _nodes[v]->length();
       }
 
       ////////////////////////////////////////////////////////////////////////
@@ -238,7 +249,7 @@ namespace libsemigroups {
             helper.pre_order(*this, v);
             S.push(N + v);  // so that we can tell when we've finished
             // processing the subtree starting at v
-            for (auto const& child : _nodes[v].children) {
+            for (auto const& child : _nodes[v]->children) {
               S.push(child.second);
             }
           }
@@ -351,25 +362,25 @@ namespace libsemigroups {
         }
         auto it = first;
         while (it < last) {
-          if (st.pos == _nodes[st.v].length()) {
-            st = State(_nodes[st.v].child(*it), 0);
+          if (st.pos == _nodes[st.v]->length()) {
+            st = State(_nodes[st.v]->child(*it), 0);
             if (!st.valid()) {
               return st;
             }
           } else {
-            if (_nodes[st.v].length() - st.pos
+            if (_nodes[st.v]->length() - st.pos
                 <= static_cast<size_t>(last - it)) {
-              if (!std::equal(_word.cbegin() + _nodes[st.v].l + st.pos,
-                              _word.cbegin() + _nodes[st.v].r,
+              if (!std::equal(_word.cbegin() + _nodes[st.v]->l + st.pos,
+                              _word.cbegin() + _nodes[st.v]->r,
                               it)) {
                 return State(UNDEFINED, UNDEFINED);
               } else {
-                it += _nodes[st.v].length() - st.pos;
-                st.pos = _nodes[st.v].length();
+                it += _nodes[st.v]->length() - st.pos;
+                st.pos = _nodes[st.v]->length();
               }
             } else {
               if (!std::equal(
-                      it, last, _word.cbegin() + _nodes[st.v].l + st.pos)) {
+                      it, last, _word.cbegin() + _nodes[st.v]->l + st.pos)) {
                 return State(UNDEFINED, UNDEFINED);
               }
               return State(st.v, st.pos + last - it);
@@ -468,11 +479,11 @@ namespace libsemigroups {
       // Split the node _nodes[st.v] into two nodes, the new node
       // with edge corresponding to
       //
-      // [_nodes[st.v].l, _nodes[st.v].l + st.pos)
+      // [_nodes[st.v]->l, _nodes[st.v]->l + st.pos)
       //
       // and the old node with edge corresponding to
       //
-      // [_nodes[st.v].l + st.pos, _nodes[st.v].r)
+      // [_nodes[st.v]->l + st.pos, _nodes[st.v]->r)
       node_index_type split(State const& st);
 
       // Get the suffix link of a node by index
@@ -480,6 +491,18 @@ namespace libsemigroups {
 
       // Perform the phase starting with the pos letter of the word.
       void tree_extend(index_type pos);
+
+      inline void new_node(index_type      l      = 0,
+                           index_type      r      = 0,
+                           node_index_type parent = UNDEFINED) {
+        if (_free_nodes.empty()) {
+          _nodes.emplace_back(new Node(l, r, parent));
+        } else {
+          _nodes.push_back(_free_nodes.back());
+          _free_nodes.pop_back();
+          _nodes.back()->init(l, r, parent);
+        }
+      }
 
       ////////////////////////////////////////////////////////////////////////
       // SuffixTree - private data
@@ -493,7 +516,8 @@ namespace libsemigroups {
       size_t                  _max_word_length;
       std::vector<size_t>     _multiplicity;
       unique_letter_type      _next_unique_letter;
-      std::vector<Node>       _nodes;
+      std::vector<Node*>      _nodes;
+      std::vector<Node*>      _free_nodes;
       State                   _ptr;
       std::vector<index_type> _word_begin;
       std::vector<index_type> _word_index_lookup;
