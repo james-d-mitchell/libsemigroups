@@ -1055,9 +1055,9 @@ namespace libsemigroups {
       lhs.last(len + 1);
 
       Sislo rhs;
-      lhs.alphabet("ab");
-      lhs.first(1);
-      lhs.last(len - 1);
+      rhs.alphabet("ab");
+      rhs.first(1);
+      rhs.last(len);
 
       uint64_t total_c4     = 0;
       uint64_t total        = 0;
@@ -1101,28 +1101,26 @@ namespace libsemigroups {
   TEST_CASE("C(4)-check for all 2-generated 1-relation monoids (max. word "
             "length = 5..13)",
             "[038]") {
-    std::array<std::tuple<uint64_t, uint64_t, uint64_t>, 15> const expected
+    std::array<std::tuple<uint64_t, uint64_t, uint64_t>, 14> const expected
         = {std::make_tuple(0, 0, 0),
            {0, 0, 0},
            {0, 0, 0},
-           {1, 1, 2},
-           {1, 15, 50},
-           {1, 91, 442},
-           {1, 435, 2'842},
-           {1, 1'891, 15'738},
-           {1, 7'875, 80'250},
-           {3, 32'131, 389'114},
-           {29, 129'795, 1'825'274},
-           {789, 521'731, 8'366'074},
-           {18'171, 2'092'035, 37'697'530},
-           {235'629, 8'378'371, 167'657'466},
-           {2'230'503, 33'533'955, 0}};
+           {0, 76, 392},
+           {0, 344, 2'400},
+           {0, 1'456, 12'896},
+           {0, 5'984, 64'512},
+           {2, 24'256, 308'864},
+           {26, 97'664, 1'436'160},
+           {760, 391'936, 6'540'800},
+           {17'382, 1'570'304, 29'331'456},
+           {217'458, 6'286'336, 129'959'936},
+           {1'994'874, 25'155'584, 570'286'080}};
 
     xml_tag("Title", "C(4)-check for all 2-generated 1-relation monoids");
     xml_tag("XLabel", "Maximum length of a relation word");
     xml_tag("YLabel", "Mean time in nanoseconds");
     std::vector<uint64_t> results;
-    for (size_t n = 5; n < 14; ++n) {
+    for (size_t n = 13; n < 14; ++n) {
       std::tuple<uint64_t, uint64_t, uint64_t> x;
       BENCHMARK(std::to_string(n)) {
         x = count_2_gen_1_rel<MultiStringView>(n);
@@ -1184,7 +1182,7 @@ namespace libsemigroups {
   }
 
   TEST_CASE("C(4)-check for random 2-generated 1-relation monoids "
-            "(max. word length 1000,6000..100000)",
+            "(max. word length 1000,3000..100000)",
             "[040]") {
     xml_tag("Title", "C(4)-check for random 2-generated 1-relation monoids");
     xml_tag("XLabel", "Maximum length of a relation word");
