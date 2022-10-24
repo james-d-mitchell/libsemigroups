@@ -16,6 +16,7 @@
 //
 
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
+#define CATCH_CONFIG_ENABLE_TUPLE_STRINGMAKER
 
 #include <algorithm>      // for count_if, all_of
 #include <cstddef>        // for size_t
@@ -1627,6 +1628,7 @@ namespace libsemigroups {
       return std::make_pair(total_c4, total);
     }
 
+    // TODO(KambitesBenchmarks) delete this
     template <typename T>
     auto count_2_gen_1_rel(size_t len) {
       Sislo lhs;
@@ -1639,8 +1641,9 @@ namespace libsemigroups {
       lhs.first(1);
       lhs.last(len - 1);
 
-      uint64_t total_c4 = 0;
-      uint64_t total    = 0;
+      uint64_t total_c4     = 0;
+      uint64_t total        = 0;
+      uint64_t total_length = 0;
 
       auto last = lhs.cbegin();
       std::advance(last, std::distance(lhs.cbegin(), lhs.cend()) - 1);
@@ -1654,6 +1657,7 @@ namespace libsemigroups {
       for (auto l = lhs.cbegin(); l != lhs_end; ++l) {
         for (auto r = rhs.cbegin(); r != rhs_end; ++r) {
           total++;
+          total_length += l->size() + r->size();
           k.clear();
           k.add_rule_nc(*l, *r);
           if (k.small_overlap_class() >= 4) {
@@ -1662,6 +1666,7 @@ namespace libsemigroups {
         }
         if (l != last) {
           for (auto r = l + 1; r != lhs_end; ++r) {
+            total_length += l->size() + r->size();
             total++;
             k.clear();
             k.add_rule_nc(*l, *r);
@@ -1671,37 +1676,35 @@ namespace libsemigroups {
           }
         }
       }
-      return std::make_pair(total_c4, total);
+      return std::make_tuple(total_c4, total, total_length);
     }
 
+    // TODO(KambitesBenchmarks) delete this
     LIBSEMIGROUPS_TEST_CASE(
         "Kambites",
         "069",
         "(fpsemi) almost all 2-generated 1-relation monoids are C(4)",
         "[extreme][kambites][fpsemigroup][fpsemi]") {
-      std::array<std::pair<uint64_t, uint64_t>, 15> const expected
-          = {std::make_pair(0, 0),
-             {0, 0},
-             {0, 0},
-             {1, 1},
-             {1, 15},
-             {1, 91},
-             {1, 435},
-             {1, 1'891},
-             {1, 7'875},
-             {3, 32'131},
-             {29, 129'795},
-             {789, 521'731},
-             {18'171, 2'092'035},
-             {235'629, 8'378'371},
-             {2'230'503, 33'533'955}};
+      std::array<std::tuple<uint64_t, uint64_t, uint64_t>, 15> const expected
+          = {std::make_tuple(0, 0, 0),
+             {0, 0, 0},
+             {0, 0, 0},
+             {1, 1, 2},
+             {1, 15, 50},
+             {1, 91, 442},
+             {1, 435, 2'842},
+             {1, 1'891, 0},
+             {1, 7'875, 0},
+             {3, 32'131, 0},
+             {29, 129'795, 0},
+             {789, 521'731, 0},
+             {18'171, 2'092'035, 0},
+             {235'629, 8'378'371, 0},
+             {2'230'503, 33'533'955, 167'657'466}};
 
-      for (size_t n = 13; n < 14; ++n) {
+      for (size_t n = 1; n < 4; ++n) {
         auto x = count_2_gen_1_rel<MultiStringView>(n);
-        std::cout << "n = " << n << std::endl;
-        std::cout << x << std::endl;
-
-        // REQUIRE(x == expected[n]);
+        REQUIRE(x == expected[n]);
       }
     }
 

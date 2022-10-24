@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-from bs4 import BeautifulSoup
 import os
-import sys
-from matplotlib import pyplot as plt
-import matplotlib
 import re
+import sys
+
+import matplotlib
+from bs4 import BeautifulSoup
+from matplotlib import pyplot as plt
 
 matplotlib.rcParams["mathtext.fontset"] = "stix"
 matplotlib.rcParams["font.family"] = "STIXGeneral"
@@ -17,6 +18,8 @@ def normalize_xml(xml_fnam):
     with open(xml_fnam, "r") as f:
         xml = f.read()
         xml = re.sub("&lt;", "<", xml)
+        xml = re.sub("{{", "[", xml)
+        xml = re.sub("}}", "]", xml)
     with open(xml_fnam, "w") as f:
         f.write(xml)
 
@@ -24,7 +27,8 @@ def normalize_xml(xml_fnam):
 def xml_stdout_get(xml, name):
     try:
         return xml.find("StdOut").find(name)["value"]
-    except (KeyError, TypeError):
+    except (KeyError, TypeError, NameError):
+        print("No label {} in StdOut element, skipping . . .".format(name))
         return None
 
 
@@ -46,24 +50,37 @@ def add_plot(xml_fnam):
     results = xml.find_all("BenchmarkResults")
 
     # Benchmark labels must be the value that is the x-axis
-    X = [int(x["name"]) for x in results]
-    Y = [
-        float(x.find("mean")["value"]) for x in results
-    ]  # times in nanoseconds
 
-    t, Y = time_unit(Y)
     title = xml_stdout_get(xml, "Title")
     xlabel = xml_stdout_get(xml, "XLabel")
+    ylabel = xml_stdout_get(xml, "YLabel")
     label = xml_stdout_get(xml, "Label")
-    assert label is not None
+
+    data = xml_stdout_get(xml, "Data")
+    if data is None:
+        yfunc = lambda x, y: y
+    else:
+        data = eval(data)
+        yfunc = lambda x, y: y / data[x]
+
+    X = [int(x["name"]) for x in results]
+    Y = [
+        yfunc(x, float(xml.find("mean")["value"]))
+        for x, xml in enumerate(results)
+    ]  # times in nanoseconds
+    t, Y = "nanoseconds", Y
 
     plt.plot(X, Y, "x", label=label)
     if title is not None:
         plt.title(title)
     if xlabel is not None:
         plt.xlabel(xlabel)
-    plt.ylabel("Time in {}".format(t))
-    plt.legend(loc="lower right")
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+    else:
+        plt.ylabel("Time in {}".format(t))
+    if label is not None:
+        plt.legend(loc="lower right")
 
 
 from sys import argv

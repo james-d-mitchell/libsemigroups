@@ -16,6 +16,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#define CATCH_CONFIG_ENABLE_TUPLE_STRINGMAKER
+
 #include <cstddef>   // for size_t
 #include <iostream>  // for to_string
 #include <string>    // for to_string
@@ -26,7 +28,6 @@
 
 #include "libsemigroups/kambites.hpp"      // for Kambites
 #include "libsemigroups/knuth-bendix.hpp"  // for KnuthBendix
-#include "libsemigroups/knuth-bendix.hpp"  // for random_string
 #include "libsemigroups/siso.hpp"          // for cbegin_sislo
 
 // TODO:
@@ -1045,6 +1046,165 @@ namespace libsemigroups {
     }
   }
 
-  TEST_CASE("Number of C(4) 2-generator 1-relation monoids", "[038]") {}
+  namespace {
+    template <typename T>
+    auto count_2_gen_1_rel(size_t len) {
+      Sislo lhs;
+      lhs.alphabet("ab");
+      lhs.first(len);
+      lhs.last(len + 1);
 
+      Sislo rhs;
+      lhs.alphabet("ab");
+      lhs.first(1);
+      lhs.last(len - 1);
+
+      uint64_t total_c4     = 0;
+      uint64_t total        = 0;
+      uint64_t total_length = 0;
+
+      auto last = lhs.cbegin();
+      std::advance(last, std::distance(lhs.cbegin(), lhs.cend()) - 1);
+
+      auto lhs_end = lhs.cend();
+      auto rhs_end = rhs.cend();
+
+      Kambites<T> k;
+      k.set_alphabet("ab");
+
+      for (auto l = lhs.cbegin(); l != lhs_end; ++l) {
+        for (auto r = rhs.cbegin(); r != rhs_end; ++r) {
+          total++;
+          total_length += l->size() + r->size();
+          k.clear();
+          k.add_rule_nc(*l, *r);
+          if (k.small_overlap_class() >= 4) {
+            total_c4++;
+          }
+        }
+        if (l != last) {
+          for (auto r = l + 1; r != lhs_end; ++r) {
+            total_length += l->size() + r->size();
+            total++;
+            k.clear();
+            k.add_rule_nc(*l, *r);
+            if (k.small_overlap_class() >= 4) {
+              total_c4++;
+            }
+          }
+        }
+      }
+      return std::make_tuple(total_c4, total, total_length);
+    }
+  }  // namespace
+
+  TEST_CASE("C(4)-check for all 2-generated 1-relation monoids (max. word "
+            "length = 5..13)",
+            "[038]") {
+    std::array<std::tuple<uint64_t, uint64_t, uint64_t>, 15> const expected
+        = {std::make_tuple(0, 0, 0),
+           {0, 0, 0},
+           {0, 0, 0},
+           {1, 1, 2},
+           {1, 15, 50},
+           {1, 91, 442},
+           {1, 435, 2'842},
+           {1, 1'891, 15'738},
+           {1, 7'875, 80'250},
+           {3, 32'131, 389'114},
+           {29, 129'795, 1'825'274},
+           {789, 521'731, 8'366'074},
+           {18'171, 2'092'035, 37'697'530},
+           {235'629, 8'378'371, 167'657'466},
+           {2'230'503, 33'533'955, 0}};
+
+    xml_tag("Title", "C(4)-check for all 2-generated 1-relation monoids");
+    xml_tag("XLabel", "Maximum length of a relation word");
+    xml_tag("YLabel", "Mean time in nanoseconds");
+    std::vector<uint64_t> results;
+    for (size_t n = 5; n < 14; ++n) {
+      std::tuple<uint64_t, uint64_t, uint64_t> x;
+      BENCHMARK(std::to_string(n)) {
+        x = count_2_gen_1_rel<MultiStringView>(n);
+      };
+      results.push_back(std::get<1>(x));
+      REQUIRE(x == expected[n]);
+    }
+    xml_tag("Data", detail::to_string(results));
+  }
+
+  namespace {
+    template <typename T>
+    auto count_2_gen_1_rel(std::vector<std::string> const& sample) {
+      uint64_t total_c4     = 0;
+      uint64_t total        = 0;
+      uint64_t total_length = 0;
+
+      Kambites<T> k;
+      k.set_alphabet("ab");
+
+      for (auto l = sample.cbegin(); l != sample.cend(); l += 2) {
+        for (auto r = l + 1; r != sample.cend() - 1; r += 2) {
+          total_length += l->size() + r->size();
+          total++;
+          k.clear();
+          k.add_rule_nc(*l, *r);
+          if (k.small_overlap_class() >= 4) {
+            total_c4++;
+          }
+        }
+      }
+      return std::make_tuple(total_c4, total, total_length);
+    }
+  }  // namespace
+
+  TEST_CASE("C(4)-check for random 2-generated 1-relation monoids "
+            "(max. word length 10,12..100 )",
+            "[039]") {
+    xml_tag("Title", "C(4)-check for random 2-generated 1-relation monoids");
+    xml_tag("XLabel", "Maximum length of a relation word");
+    xml_tag("YLabel", "Mean time in nanoseconds");
+
+    size_t const          sample_size = 1'000;
+    std::vector<uint64_t> results;
+
+    for (size_t n = 10; n < 100; n += 2) {
+      std::vector<std::string> sample;
+      for (size_t i = 0; i < 2 * sample_size; ++i) {
+        sample.push_back(random_string("ab", n));
+      }
+
+      std::tuple<uint64_t, uint64_t, uint64_t> x;
+      BENCHMARK(std::to_string(n)) {
+        x = count_2_gen_1_rel<MultiStringView>(sample);
+      };
+      results.push_back(std::get<1>(x));
+    }
+    xml_tag("Data", detail::to_string(results));
+  }
+
+  TEST_CASE("C(4)-check for random 2-generated 1-relation monoids "
+            "(max. word length 1000,6000..100000)",
+            "[040]") {
+    xml_tag("Title", "C(4)-check for random 2-generated 1-relation monoids");
+    xml_tag("XLabel", "Maximum length of a relation word");
+    xml_tag("YLabel", "Mean time in nanoseconds");
+
+    size_t const          sample_size = 100;
+    std::vector<uint64_t> results;
+
+    for (size_t n = 1000; n < 100000; n += 2000) {
+      std::vector<std::string> sample;
+      for (size_t i = 0; i < 2 * sample_size; ++i) {
+        sample.push_back(random_string("ab", n));
+      }
+
+      std::tuple<uint64_t, uint64_t, uint64_t> x;
+      BENCHMARK(std::to_string(n)) {
+        x = count_2_gen_1_rel<MultiStringView>(sample);
+      };
+      results.push_back(std::get<1>(x));
+    }
+    xml_tag("Data", detail::to_string(results));
+  }
 }  // namespace libsemigroups
