@@ -17,10 +17,12 @@
 
 #include "libsemigroups/string.hpp"
 
+#include <cmath>   // for log2l
 #include <random>  // for mt19937
 
 #include "libsemigroups/config.hpp"     // for LIBSEMIGROUPS_FMT_ENABLED
 #include "libsemigroups/exception.hpp"  // for LIBSEMIGROUPS_EXCEPTION
+#include "libsemigroups/word.hpp"       // for number_of_words
 
 #ifdef LIBSEMIGROUPS_FMT_ENABLED
 #include "fmt/format.h"  // for group_digits
@@ -51,14 +53,24 @@ namespace libsemigroups {
             "the 2nd argument (min) must be less than the 3rd argument (max)");
       } else if (alphabet.empty() && min != 0) {
         LIBSEMIGROUPS_EXCEPTION("expected non-empty 1st argument (alphabet)");
+        // TODO(KambitesBenchmarks) add checks that the uint64_t below won't
+        // overflow
       }
       if (max == min + 1) {
         return random_string(alphabet, min);
       }
-      static std::random_device       rd;
-      static std::mt19937             generator(rd());
-      std::uniform_int_distribution<> distribution(min, max - 1);
-      return random_string(alphabet, distribution(generator));
+      static std::random_device rd;
+      static std::mt19937       generator(rd());
+      size_t const              n     = alphabet.size();
+      uint64_t                  first = number_of_words(n, 1, min);
+      uint64_t                  last  = number_of_words(n, 1, max) - 1;
+
+      std::uniform_int_distribution<uint64_t> distribution(first, last);
+      auto val = static_cast<uint64_t>(std::log2l(distribution(generator)));
+      if (min != 0) {
+        val = (val == 0 ? 1 : val);
+      }
+      return random_string(alphabet, val);
     }
 
     std::vector<std::string> random_strings(std::string const& alphabet,
