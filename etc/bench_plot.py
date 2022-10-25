@@ -68,7 +68,7 @@ def add_plot(xml_fnam):
         yfunc(x, float(xml.find("mean")["value"]))
         for x, xml in enumerate(results)
     ]  # times in nanoseconds
-    t, Y = "nanoseconds", Y
+    t, Y = time_unit(Y)
 
     plt.plot(X, Y, "x", label=label)
     if title is not None:

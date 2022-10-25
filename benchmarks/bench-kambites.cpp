@@ -1116,11 +1116,11 @@ namespace libsemigroups {
            {217'458, 6'286'336, 129'959'936},
            {1'994'874, 25'155'584, 570'286'080}};
 
-    xml_tag("Title", "C(4)-check for all 2-generated 1-relation monoids");
+    // xml_tag("Title", "C(4)-check for all 2-generated 1-relation monoids");
     xml_tag("XLabel", "Maximum length of a relation word");
-    xml_tag("YLabel", "Mean time in nanoseconds");
+    xml_tag("YLabel", "Mean time in microseconds");
     std::vector<uint64_t> results;
-    for (size_t n = 13; n < 14; ++n) {
+    for (size_t n = 4; n < 13; ++n) {
       std::tuple<uint64_t, uint64_t, uint64_t> x;
       BENCHMARK(std::to_string(n)) {
         x = count_2_gen_1_rel<MultiStringView>(n);
