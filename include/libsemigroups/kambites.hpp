@@ -17,19 +17,23 @@
 //
 
 // This file contains the declaration of the Kambites class implementing the
-// algorithm described in:
+// algorithms described in:
 //
 // Kambites, M. (2009). Small overlap monoids. I. The word problem. J. Algebra,
 // 321(8), 2187–2205.
 //
+// and
+//
+// TODO(KambitesBenchmarks): add reference to MT+JDM paper
+//
 // for solving the word problem in small overlap monoids, and a novel algorithm
 // for computing normal forms in small overlap monoids, by Maria Tsalakou.
 
-// TODO(later)
+// TODO(later):
+// * split out tpp file
 // * check code coverage
 // * check iwyu
 // * check const
-// * check final
 // * check noexcept
 // * C(3)?
 // * allow arbitrary alphabet orders
@@ -158,6 +162,8 @@ namespace libsemigroups {
       //! least \f$4\f$.
       // Not noexcept, throws
       uint64_t size() override {
+        // TODO(KambitesBenchmarks) this can return POSITIVE_INFINITY if C(3)
+        // is satisfied too
         validate_small_overlap_class();
         return POSITIVE_INFINITY;
       }

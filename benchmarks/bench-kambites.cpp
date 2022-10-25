@@ -19,9 +19,9 @@
 #define CATCH_CONFIG_ENABLE_TUPLE_STRINGMAKER
 
 #include <cstddef>   // for size_t
+#include <fstream>   // for ofstream
 #include <iostream>  // for to_string
 #include <string>    // for to_string
-#include <unordered_set>
 
 #include "bench-main.hpp"  // for CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.hpp"       // for TEST_CASE, BENCHMARK, REQUIRE
@@ -218,7 +218,7 @@ namespace libsemigroups {
 
   namespace {
     template <typename T>
-    auto count_2_gen_1_rel(size_t len) {
+    auto c4_check_2_gen_1_rel_all(size_t len) {
       Sislo lhs;
       lhs.alphabet("ab");
       lhs.first(len);
@@ -294,7 +294,7 @@ namespace libsemigroups {
     for (size_t n = 4; n < 13; ++n) {
       std::tuple<uint64_t, uint64_t, uint64_t> x;
       BENCHMARK(std::to_string(n)) {
-        x = count_2_gen_1_rel<MultiStringView>(n);
+        x = c4_check_2_gen_1_rel_all<MultiStringView>(n);
       };
       results.push_back(std::get<1>(x));
       REQUIRE(x == expected[n]);
@@ -303,8 +303,141 @@ namespace libsemigroups {
   }
 
   namespace {
+    auto write_2_gen_1_rel_C4_monoids(std::string const& fname, size_t len) {
+      Sislo lhs;
+      lhs.alphabet("ab");
+      lhs.first(len);
+      lhs.last(len + 1);
+
+      Sislo rhs;
+      rhs.alphabet("ab");
+      rhs.first(1);
+      rhs.last(len);
+
+      auto last = lhs.cbegin();
+      std::advance(last, std::distance(lhs.cbegin(), lhs.cend()) - 1);
+
+      auto lhs_end = lhs.cend();
+      auto rhs_end = rhs.cend();
+
+      Kambites<MultiStringView> k;
+      k.set_alphabet("ab");
+      std::cout << "Writing file " << fname << " . . ." << std::endl;
+      std::ofstream file;
+      file.open(fname);
+
+      for (auto l = lhs.cbegin(); l != lhs_end; ++l) {
+        for (auto r = rhs.cbegin(); r != rhs_end; ++r) {
+          k.clear();
+          k.add_rule_nc(*l, *r);
+          if (k.small_overlap_class() >= 4) {
+            file << *l << "\n";
+            file << *r << "\n";
+          }
+        }
+        if (l != last) {
+          for (auto r = l + 1; r != lhs_end; ++r) {
+            k.clear();
+            k.add_rule_nc(*l, *r);
+            if (k.small_overlap_class() >= 4) {
+              file << *l << "\n";
+              file << *r << "\n";
+            }
+          }
+        }
+      }
+      file.close();
+    }
+    // TODO(write equality check benchmark)
+  }  // namespace
+
+  TEST_CASE("Write 2-generated 1-relation C(4) monoids to file",
+            "[equality][wpprefix][write-files]") {
+    for (size_t n = 7; n < 14; ++n) {
+      write_2_gen_1_rel_C4_monoids(
+          "2_gen_1_rel_C4_monoids_" + std::to_string(n) + ".txt", n);
+    }
+  }
+
+  // TODO(KambitesBenchmarks): finish this, probably better to use a random
+  // sample of longer words than all words, given that at present the output
+  // value of results is:
+  // {{1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2,
+  // 1, 1}}
+  TEST_CASE("Equality for all 2-generated 1-relation monoids (max. word "
+            "length = ?..?)",
+            "[099]") {
+    std::array<uint64_t, 14> const expected = {0,
+                                               0,
+                                               0,
+                                               0,
+                                               0,
+                                               0,
+                                               0,
+                                               2,
+                                               26,
+                                               760,
+                                               17'382,
+                                               217'458,
+                                               1'994'874,
+                                               14'633'098};
+    std::ifstream                  file;
+    file.open("2_gen_1_rel_C4_monoids_8.txt");
+
+    std::vector<std::string> sample;
+    std::string              line;
+
+    while (std::getline(file, line)) {
+      std::cout << line << std::endl;
+      sample.push_back(line);
+    }
+
+    REQUIRE(sample.size() == 2 * expected[8]);
+
+    Kambites<MultiStringView> k;
+    k.set_alphabet("ab");
+
+    Sislo words;
+    words.alphabet("ab");
+    words.first(8);
+    words.last(18);
+    auto                  last_word    = words.cend();
+    uint64_t              total_length = 0;
+    std::vector<uint64_t> results;
+
+    for (auto it = sample.cbegin(); it < sample.cend() - 1; it += 2) {
+      k.clear();
+      k.add_rule_nc(*it, *(it + 1));
+      REQUIRE(k.small_overlap_class() >= 4);
+      uint64_t num_equal_to_1st_relation_word = 0;
+      BENCHMARK(std::to_string(8)) {
+        num_equal_to_1st_relation_word = std::count_if(
+            words.cbegin(), last_word, [&k, &it](auto const& w) {
+              return k.equal_to(*it, w);
+            });
+      };
+      results.push_back(num_equal_to_1st_relation_word);
+    }
+    std::cout << results;
+
+    //   xml_tag("Title", "WpPrefix for all 2-generated 1-relation monoids");
+    //   xml_tag("XLabel", "Maximum length of a relation word");
+    //   xml_tag("YLabel", "Mean time in nanoseconds");
+    //   for (size_t n = 4; n < 5; ++n) {
+    //     std::tuple<uint64_t, uint64_t, uint64_t> x;
+
+    //     BENCHMARK(std::to_string(n)) {
+    //       x = c4_check_2_gen_1_rel_all<MultiStringView>(n);
+    //     };
+    //     results.push_back(std::get<1>(x));
+    //   }
+    //   xml_tag("Data", detail::to_string(results));
+  }
+
+  namespace {
     template <typename T>
-    auto count_2_gen_1_rel(std::vector<std::string> const& sample) {
+    auto
+    c4_check_2_gen_1_rel_from_sample(std::vector<std::string> const& sample) {
       uint64_t total_c4     = 0;
       uint64_t total        = 0;
       uint64_t total_length = 0;
@@ -346,7 +479,7 @@ namespace libsemigroups {
 
       std::tuple<uint64_t, uint64_t, uint64_t> x;
       BENCHMARK(std::to_string(n)) {
-        x = count_2_gen_1_rel<MultiStringView>(sample);
+        x = c4_check_2_gen_1_rel_from_sample<MultiStringView>(sample);
       };
       results.push_back(std::get<1>(x));
     }
@@ -369,7 +502,7 @@ namespace libsemigroups {
       }
 
       std::tuple<uint64_t, uint64_t, uint64_t> x
-          = count_2_gen_1_rel<MultiStringView>(sample);
+          = c4_check_2_gen_1_rel_from_sample<MultiStringView>(sample);
       std::cout << "\n\n ratio = "
                 << static_cast<long double>(std::get<0>(x)) / std::get<1>(x);
       results.push_back(std::get<1>(x));
@@ -394,7 +527,7 @@ namespace libsemigroups {
 
       std::tuple<uint64_t, uint64_t, uint64_t> x;
       BENCHMARK(std::to_string(n)) {
-        x = count_2_gen_1_rel<MultiStringView>(sample);
+        x = c4_check_2_gen_1_rel_from_sample<MultiStringView>(sample);
       };
       results.push_back(std::get<1>(x));
     }

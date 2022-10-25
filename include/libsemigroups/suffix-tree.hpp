@@ -81,6 +81,7 @@ namespace libsemigroups {
         bool                                           is_real_suffix;
 
         // Constructor
+        // TODO(v3) move to cpp
         explicit Node(index_type      ll      = 0,
                       index_type      rr      = 0,
                       node_index_type pparent = UNDEFINED)
@@ -151,13 +152,17 @@ namespace libsemigroups {
       // SuffixTree - initialisation - public
       ////////////////////////////////////////////////////////////////////////
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       void add_word(T const& first, T const& last) {
         add_word(word_type(first, last));
       }
 
+      // TODO(v3) make this the check_and_add_word, and make a nc version
+      // called add_word
       void add_word(word_type const& w);
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       void add_word(T const& w) {
         add_word(w.cbegin(), w.cend());
@@ -175,6 +180,7 @@ namespace libsemigroups {
         return -1 - _next_unique_letter;
       }
 
+      // TODO(v3) should be in helper namespace
       size_t number_of_subwords() const;
 
       Node const& node(node_index_type v) const {
@@ -220,6 +226,7 @@ namespace libsemigroups {
         return std::make_pair(_word.cbegin() + l, _word.cbegin() + r);
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       auto dfs(T& helper) const {
         std::stack<node_index_type> S;
@@ -246,15 +253,18 @@ namespace libsemigroups {
         return helper.yield(*this);
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       bool is_subword(T const& w) const {
         return is_subword(w.cbegin(), w.cend());
       }
 
+      // TODO(v3) should be in helper namespace
       bool is_subword(word_type const& w) const {
         return is_subword(w.cbegin(), w.cend());
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       bool is_subword(T const& first, T const& last) const {
         validate_word(first, last);
@@ -266,15 +276,18 @@ namespace libsemigroups {
         return traverse(State(0, 0), first, last).valid();
       }
 
+      // TODO(v3) should be in helper namespace
       bool is_suffix(word_type const& w) const {
         return is_suffix(w.cbegin(), w.cend());
       }
 
+      // TODO(v3) should be in helper namespace
       template <typename T>
       bool is_suffix(T const& w) const {
         return is_suffix(w.cbegin(), w.cend());
       }
 
+      // TODO(v3) should be in helper namespace?
       template <typename T>
       bool is_suffix(T const& first, T const& last) const {
         validate_word(first, last);
@@ -344,6 +357,7 @@ namespace libsemigroups {
         return traverse(st, w.cbegin(), w.cend());
       }
 
+      // TODO(v3) should be in helper namespace?
       template <typename T>
       State traverse(State st, T const& first, T const& last) const {
         if (last <= first || !st.valid()) {
@@ -389,8 +403,11 @@ namespace libsemigroups {
       // SuffixTree - helpers - private
       ////////////////////////////////////////////////////////////////////////
 
+      // TODO(v3) should be in helper namespace
       std::string tikz_traverse(size_t i, bool rotate = false) const;
+      // TODO(v3) should be in helper namespace
       std::string tikz_word(size_t l, size_t r) const;
+      // TODO(v3) should be in helper namespace
       std::string dot_word(size_t l, size_t r) const;
 
       bool is_real_letter(letter_type l) const noexcept {
@@ -485,6 +502,7 @@ namespace libsemigroups {
       // SuffixTree - private data
       ////////////////////////////////////////////////////////////////////////
 
+      // TODO(v3) move to top
       std::unordered_map<word_type,
                          word_index_type,
                          Hash<word_type>,
@@ -500,9 +518,11 @@ namespace libsemigroups {
       word_type               _word;
     };
 
+    // TODO(v3) give this a more sensible name, and put it somewhere else maybe
     class DFSHelper {
      public:
       using const_iterator = typename detail::SuffixTree::const_iterator;
+      // TODO(v3) to cpp file
       explicit DFSHelper(detail::SuffixTree& st)
           : _best(),
             _best_goodness(),
@@ -510,6 +530,7 @@ namespace libsemigroups {
             _num_leafs(st.number_of_nodes(), 0),
             _suffix_index() {}
 
+      // TODO(v3) to cpp file
       void pre_order(detail::SuffixTree const& st, size_t v) {
         // This is a tree so we've never seen v before!
         if (!st.is_root(v)) {
@@ -523,6 +544,7 @@ namespace libsemigroups {
         }
       }
 
+      // TODO(v3) to cpp file
       void post_order(detail::SuffixTree const& st, size_t v) {
         if (st.is_leaf(v)) {
           return;
@@ -549,6 +571,7 @@ namespace libsemigroups {
         }
       }
 
+      // TODO(v3) to cpp file
       std::pair<const_iterator, const_iterator>
       yield(detail::SuffixTree const& st) {
         if (st.is_root(_best)) {
@@ -558,6 +581,7 @@ namespace libsemigroups {
                        st.right(_best));
       }
 
+      // TODO(v3) to top of class decl
      private:
       size_t              _best;
       int                 _best_goodness;
@@ -567,6 +591,7 @@ namespace libsemigroups {
       std::vector<size_t> _suffix_index;
     };
 
+    // TODO(v3) rename suffix_tree
     namespace suffix_tree_helper {
 
       void add_words(SuffixTree& st, std::vector<word_type> const& words);
@@ -581,6 +606,7 @@ namespace libsemigroups {
 
   }  // namespace detail
 
+  // TODO(v3) is this used for anything?
   template <>
   struct Hash<detail::SuffixTree::State> {
     size_t operator()(detail::SuffixTree::State const& st) const {
