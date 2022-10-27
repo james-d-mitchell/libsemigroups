@@ -512,7 +512,7 @@ namespace libsemigroups {
                                                  size_t N) {
       // Weird looking range here so that the length of the words is approx.
       // the same as from the pseudo_random_sample_words
-      return random_strings("ab", num, 0, 4 * N * N + 7 * N + 4);
+      return random_strings("ab", 2 * num, 0, 4 * N * N + 7 * N + 4);
     }
 
     template <typename WordSampler>
@@ -735,19 +735,84 @@ namespace libsemigroups {
     }
   }  // namespace
 
-  // FIXME This seg faults or fails with the REQUIRE in line 721 fairly easily.
   TEST_CASE("Normal form for all 2-generated 1-relation monoids (max. word "
             "length = 7) pseudo-random",
             "[normal_form][n=7][pseudo]") {
     bench_normal_form(all_2_gen_1_rel_C4_monoids(7),
-                      pseudo_random_sample_words);
+                      pseudo_random_sample_words,
+                      10,
+                      90,
+                      4,
+                      "pseudo-random words");
   }
 
   TEST_CASE("Normal form for all 2-generated 1-relation monoids (max. word "
             "length = 7) uniform random",
             "[normal_form][n=7][uniform]") {
-    bench_normal_form(all_2_gen_1_rel_C4_monoids(7), random_sample_words);
+    bench_normal_form(all_2_gen_1_rel_C4_monoids(7),
+                      random_sample_words,
+                      10,
+                      90,
+                      4,
+                      "uniform random words");
   }
 
-  // TODO the same as for equal_to
+  TEST_CASE("Normal form for all 2-generated 1-relation monoids (max. word "
+            "length = 8) pseudo-random",
+            "[normal_form][n=8][pseudo]") {
+    bench_normal_form(all_2_gen_1_rel_C4_monoids(8),
+                      pseudo_random_sample_words,
+                      10,
+                      90,
+                      4,
+                      "pseudo-random words");
+  }
+
+  TEST_CASE("Normal form for all 2-generated 1-relation monoids (max. word "
+            "length = 8) uniform random",
+            "[normal_form][n=8][uniform]") {
+    bench_normal_form(all_2_gen_1_rel_C4_monoids(8),
+                      random_sample_words,
+                      10,
+                      90,
+                      4,
+                      "uniform random words");
+  }
+
+  TEST_CASE("Normal form for random 2-generated 2-relation presentation "
+            "(maximum word length = 100) with pseudo-random words N = 10, "
+            "14, .., 86",
+            "[normal_form][100][N=10][pseudo]") {
+    // Note that although N < max. length of a relation, the actual
+    // pseudo-random words used are longer than max (probably)!
+    std::vector<std::string> relations;
+    relations.push_back(random_string("ab", 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+
+    bench_normal_form(relations,
+                      pseudo_random_sample_words,
+                      10,
+                      90,
+                      4,
+                      "pseudo-random words");
+  }
+
+  TEST_CASE("Word problem for random 2-generated 2-relation presentation "
+            "(maximum word length = 100) with uniform random words N = 10, "
+            "14, .., 86",
+            "[normal_form][100][N=10][uniform]") {
+    // Note that although N < max. length of a relation, the actual
+    // random words used are longer than max (probably)!
+    std::vector<std::string> relations;
+    relations.push_back(random_string("ab", 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+
+    bench_normal_form(
+        relations, random_sample_words, 10, 90, 4, "uniform random words");
+  }
+
 }  // namespace libsemigroups
