@@ -27,7 +27,7 @@ def normalize_xml(xml_fnam):
 def xml_stdout_get(xml, name):
     try:
         return xml.find("StdOut").find(name)["value"]
-    except (KeyError, TypeError, NameError):
+    except (KeyError, TypeError, NameError, AttributeError):
         print("No label {} in StdOut element, skipping . . .".format(name))
         return None
 
@@ -61,13 +61,22 @@ def add_plot(xml_fnam):
         yfunc = lambda x, y: y
     else:
         data = eval(data)
-        yfunc = lambda x, y: y / data[x]
+        if isinstance(data, list):
+            yfunc = lambda x, y: y / data[x]
+        elif isinstance(data, int):
+            yfunc = lambda x, y: y / data
+        else:
+            raise RuntimeError(
+                "The <Data> tag should contain a list or an integer"
+            )
 
     X = [int(x["name"]) for x in results]
-    Y = [
-        yfunc(x, float(xml.find("mean")["value"]))
-        for x, xml in enumerate(results)
-    ]  # times in nanoseconds
+    Y = []
+    for x, xml in enumerate(results):
+        if xml.find("mean") is not None:
+            Y.append(yfunc(x, float(xml.find("mean")["value"])))
+    X = X[: len(Y)]
+    # times in nanoseconds
     t, Y = time_unit(Y)
 
     plt.plot(X, Y, "x", label=label)
@@ -76,7 +85,7 @@ def add_plot(xml_fnam):
     if xlabel is not None:
         plt.xlabel(xlabel)
     if ylabel is not None:
-        plt.ylabel(ylabel)
+        plt.ylabel(ylabel + " " + t)
     else:
         plt.ylabel("Time in {}".format(t))
     if label is not None:

@@ -817,6 +817,7 @@ namespace libsemigroups {
       kb.run();
       REQUIRE(kb.confluent());
       REQUIRE(kb.number_of_active_rules() == 40);
+      REQUIRE(kb.size() == 0);
     }
 
     // Von Dyck (2,3,7) group - infinite hyperbolic

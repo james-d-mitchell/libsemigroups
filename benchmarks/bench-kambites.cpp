@@ -41,7 +41,7 @@ namespace libsemigroups {
     std::string zip(std::vector<std::string> const& x,
                     std::vector<std::string> const& y) {
       LIBSEMIGROUPS_ASSERT(x.size() == y.size());
-      std::string result = "";
+      std::string result;
       for (size_t i = 0; i < x.size(); ++i) {
         result += x[i];
         result += y[i];
@@ -359,81 +359,6 @@ namespace libsemigroups {
     }
   }
 
-  // TODO(KambitesBenchmarks): finish this, probably better to use a random
-  // sample of longer words than all words, given that at present the output
-  // value of results is:
-  // {{1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2,
-  // 1, 1}}
-  TEST_CASE("Equality for all 2-generated 1-relation monoids (max. word "
-            "length = ?..?)",
-            "[099]") {
-    std::array<uint64_t, 14> const expected = {0,
-                                               0,
-                                               0,
-                                               0,
-                                               0,
-                                               0,
-                                               0,
-                                               2,
-                                               26,
-                                               760,
-                                               17'382,
-                                               217'458,
-                                               1'994'874,
-                                               14'633'098};
-    std::ifstream                  file;
-    file.open("2_gen_1_rel_C4_monoids_8.txt");
-
-    std::vector<std::string> sample;
-    std::string              line;
-
-    while (std::getline(file, line)) {
-      std::cout << line << std::endl;
-      sample.push_back(line);
-    }
-
-    REQUIRE(sample.size() == 2 * expected[8]);
-
-    Kambites<MultiStringView> k;
-    k.set_alphabet("ab");
-
-    Sislo words;
-    words.alphabet("ab");
-    words.first(8);
-    words.last(18);
-    auto                  last_word    = words.cend();
-    uint64_t              total_length = 0;
-    std::vector<uint64_t> results;
-
-    for (auto it = sample.cbegin(); it < sample.cend() - 1; it += 2) {
-      k.clear();
-      k.add_rule_nc(*it, *(it + 1));
-      REQUIRE(k.small_overlap_class() >= 4);
-      uint64_t num_equal_to_1st_relation_word = 0;
-      BENCHMARK(std::to_string(8)) {
-        num_equal_to_1st_relation_word = std::count_if(
-            words.cbegin(), last_word, [&k, &it](auto const& w) {
-              return k.equal_to(*it, w);
-            });
-      };
-      results.push_back(num_equal_to_1st_relation_word);
-    }
-    std::cout << results;
-
-    //   xml_tag("Title", "WpPrefix for all 2-generated 1-relation monoids");
-    //   xml_tag("XLabel", "Maximum length of a relation word");
-    //   xml_tag("YLabel", "Mean time in nanoseconds");
-    //   for (size_t n = 4; n < 5; ++n) {
-    //     std::tuple<uint64_t, uint64_t, uint64_t> x;
-
-    //     BENCHMARK(std::to_string(n)) {
-    //       x = c4_check_2_gen_1_rel_all<MultiStringView>(n);
-    //     };
-    //     results.push_back(std::get<1>(x));
-    //   }
-    //   xml_tag("Data", detail::to_string(results));
-  }
-
   namespace {
     template <typename T>
     auto
@@ -486,8 +411,8 @@ namespace libsemigroups {
     xml_tag("Data", detail::to_string(results));
   }
 
-  // This test case is only to compute an approx. of the ratio of C4 to total
-  // 2-generator 1-relation monoids
+  // This test case is only to compute an approx. of the ratio of C4 to
+  // total 2-generator 1-relation monoids
   TEST_CASE("C(4)-check for random 2-generated 1-relation monoids"
             "(max. word length 10..50)",
             "[041]") {
@@ -533,4 +458,296 @@ namespace libsemigroups {
     }
     xml_tag("Data", detail::to_string(results));
   }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Equality checking benchmarks
+  ////////////////////////////////////////////////////////////////////////
+
+  namespace {
+    std::vector<std::string> all_2_gen_1_rel_C4_monoids(size_t n) {
+      std::array<uint64_t, 14> const expected = {0,
+                                                 0,
+                                                 0,
+                                                 0,
+                                                 0,
+                                                 0,
+                                                 0,
+                                                 2,
+                                                 26,
+                                                 760,
+                                                 17'382,
+                                                 217'458,
+                                                 1'994'874,
+                                                 14'633'098};
+      std::ifstream                  file;
+      file.open("2_gen_1_rel_C4_monoids_" + std::to_string(n) + ".txt");
+
+      std::vector<std::string> relations;
+      std::string              line;
+
+      while (std::getline(file, line)) {
+        relations.push_back(line);
+      }
+
+      REQUIRE(relations.size() == 2 * expected[n]);
+      return relations;
+    }
+
+    std::vector<std::string> pseudo_random_sample_words(size_t             num,
+                                                        std::string const& lhs,
+                                                        std::string const& rhs,
+                                                        size_t             N) {
+      std::vector<std::string> results;
+      for (size_t i = 0; i < num; ++i) {
+        auto random = random_strings("ab", N, 0, 4 * N + 4);
+        results.push_back(zip(random_sequence(lhs, rhs, N), random));
+        results.push_back(zip(random_sequence(lhs, rhs, N), random));
+      }
+      return results;
+    }
+
+    std::vector<std::string> random_sample_words(size_t num,
+                                                 std::string const&,
+                                                 std::string const&,
+                                                 size_t N) {
+      // Weird looking range here so that the length of the words is approx.
+      // the same as from the pseudo_random_sample_words
+      return random_strings("ab", num, 0, 4 * N * N + 7 * N + 4);
+    }
+
+    template <typename WordSampler>
+    void bench_equal_to(std::vector<std::string> relations,
+                        WordSampler&&            wu,
+                        size_t                   min   = 10,
+                        size_t                   max   = 90,
+                        size_t                   step  = 4,
+                        std::string              label = "") {
+      auto data = relations.size() / 2;
+
+      Kambites<MultiStringView> k;
+      k.set_alphabet("ab");
+
+      size_t const sample_size = 10;
+
+      for (size_t N = min; N < max; N += step) {
+        BENCHMARK_ADVANCED(std::to_string(N))
+        (Catch::Benchmark::Chronometer meter) {
+          for (size_t i = 0; i < relations.size() - 1; i += 2) {
+            k.clear();
+            k.add_rule_nc(relations[i], relations[i + 1]);
+            REQUIRE(k.small_overlap_class() >= 4);
+
+            auto words = wu(sample_size, relations[i], relations[i + 1], N);
+
+            meter.measure([&]() {
+              bool result = true;
+              for (auto wit = words.cbegin(); wit < words.cend() - 1;
+                   wit += 2) {
+                result &= k.equal_to(*wit, *(wit + 1));
+              };
+              return result;
+            });
+          }
+        };
+      }
+
+      // xml_tag("Title",
+      //         "Word problem for all 2-generated 1-relation monoids with
+      //         max. " "relation word length " + std::to_string(n));
+      xml_tag("XLabel", "$N$");
+      xml_tag("YLabel", "Mean time in ");
+      if (!label.empty()) {
+        xml_tag("Label", label);
+      }
+      xml_tag("Data", detail::to_string(data));
+    }
+  }  // namespace
+
+  TEST_CASE("Word problem for all 2-generated 1-relation monoids (max. word "
+            "length = 7) pseudo-random",
+            "[equal_to][n=7][pseudo]") {
+    bench_equal_to(all_2_gen_1_rel_C4_monoids(7),
+                   pseudo_random_sample_words,
+                   10,
+                   90,
+                   4,
+                   "pseudo-random words");
+  }
+
+  TEST_CASE("Word problem for all 2-generated 1-relation monoids (max. word "
+            "length = 7) uniform random",
+            "[equal_to][n=7][uniform]") {
+    bench_equal_to(all_2_gen_1_rel_C4_monoids(7),
+                   random_sample_words,
+                   10,
+                   90,
+                   4,
+                   "uniform random words");
+  }
+
+  TEST_CASE("Word problem for all 2-generated 1-relation monoids (max. word "
+            "length = 8) pseudo-random",
+            "[equal_to][n=8][pseudo]") {
+    bench_equal_to(all_2_gen_1_rel_C4_monoids(8),
+                   pseudo_random_sample_words,
+                   10,
+                   90,
+                   4,
+                   "pseudo-random words");
+  }
+
+  TEST_CASE("Word problem for all 2-generated 1-relation monoids (max. word "
+            "length = 8) uniform random",
+            "[equal_to][n=8][uniform]") {
+    bench_equal_to(all_2_gen_1_rel_C4_monoids(8),
+                   random_sample_words,
+                   10,
+                   90,
+                   4,
+                   "uniform random words");
+  }
+
+  // For n = 9 and higher the benchmarks are super slow, probably because of
+  // the large(ish) number of C(4) presentations.
+
+  TEST_CASE("Word problem for random 2-generated 2-relation presentation "
+            "(maximum word length = 100) with pseudo-random words N = 10, "
+            "14, .., 86",
+            "[equal_to][100][N=10][pseudo]") {
+    // Note that although N < max. length of a relation, the actual
+    // pseudo-random words used are longer than max (probably)!
+    std::vector<std::string> relations;
+    relations.push_back(random_string("ab", 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+
+    bench_equal_to(relations,
+                   pseudo_random_sample_words,
+                   10,
+                   90,
+                   4,
+                   "pseudo-random words");
+  }
+
+  TEST_CASE("Word problem for random 2-generated 2-relation presentation "
+            "(maximum word length = 100) with uniform random words N = 10, "
+            "14, .., 86",
+            "[equal_to][100][N=10][uniform]") {
+    // Note that although N < max. length of a relation, the actual
+    // random words used are longer than max (probably)!
+    std::vector<std::string> relations;
+    relations.push_back(random_string("ab", 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+
+    bench_equal_to(
+        relations, random_sample_words, 10, 90, 4, "uniform random words");
+  }
+
+  TEST_CASE("Word problem for random 2-generated 2-relation presentation "
+            "(maximum word length = 100) with pseudo-random words N = 100, "
+            "140, .., 860",
+            "[equal_to][100][N=100][pseudo]") {
+    std::vector<std::string> relations;
+    relations.push_back(random_string("ab", 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+
+    bench_equal_to(relations,
+                   pseudo_random_sample_words,
+                   100,
+                   900,
+                   40,
+                   "pseudo-random words");
+  }
+
+  TEST_CASE("Word problem for random 2-generated 2-relation presentation "
+            "(maximum word length = 100) with uniform random words N = 100, "
+            "140, .., 860",
+            "[equal_to][100][N=100][uniform]") {
+    std::vector<std::string> relations;
+    relations.push_back(random_string("ab", 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+
+    bench_equal_to(
+        relations, random_sample_words, 100, 900, 40, "uniform random words");
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Normal form benchmarks
+  ////////////////////////////////////////////////////////////////////////
+
+  namespace {
+    template <typename WordSampler>
+    void bench_normal_form(std::vector<std::string> relations,
+                           WordSampler&&            wu,
+                           size_t                   min   = 10,
+                           size_t                   max   = 90,
+                           size_t                   step  = 4,
+                           std::string              label = "") {
+      auto data = relations.size() / 2;
+
+      Kambites<MultiStringView> k;
+      k.set_alphabet("ab");
+
+      size_t const sample_size = 10;
+
+      for (size_t N = min; N < max; N += step) {
+        BENCHMARK_ADVANCED(std::to_string(N))
+        (Catch::Benchmark::Chronometer meter) {
+          for (size_t i = 0; i < relations.size() - 1; i += 2) {
+            k.clear();
+            k.add_rule_nc(relations[i], relations[i + 1]);
+            REQUIRE(k.small_overlap_class() >= 4);
+
+            auto words = wu(sample_size, relations[i], relations[i + 1], N);
+
+            bool result = true;
+            meter.measure([&]() {
+              for (auto wit = words.cbegin(); wit < words.cend(); ++wit) {
+                result &= k.equal_to(k.normal_form(*wit), *wit);
+              };
+            });
+            if (!result) {
+              std::cout << "lhs = " << relations[i] << std::endl;
+              std::cout << "rhs = " << relations[i + 1] << std::endl;
+              std::cout << words << std::endl;
+            }
+            REQUIRE(result);
+          }
+        };
+      }
+
+      // xml_tag("Title",
+      //         "Word problem for all 2-generated 1-relation monoids with
+      //         max. " "relation word length " + std::to_string(n));
+      xml_tag("XLabel", "$N$");
+      xml_tag("YLabel", "Mean time in ");
+      if (!label.empty()) {
+        xml_tag("Label", label);
+      }
+      xml_tag("Data", detail::to_string(data));
+    }
+  }  // namespace
+
+  // FIXME This seg faults or fails with the REQUIRE in line 721 fairly easily.
+  TEST_CASE("Normal form for all 2-generated 1-relation monoids (max. word "
+            "length = 7) pseudo-random",
+            "[normal_form][n=7][pseudo]") {
+    bench_normal_form(all_2_gen_1_rel_C4_monoids(7),
+                      pseudo_random_sample_words);
+  }
+
+  TEST_CASE("Normal form for all 2-generated 1-relation monoids (max. word "
+            "length = 7) uniform random",
+            "[normal_form][n=7][uniform]") {
+    bench_normal_form(all_2_gen_1_rel_C4_monoids(7), random_sample_words);
+  }
+
+  // TODO the same as for equal_to
 }  // namespace libsemigroups
