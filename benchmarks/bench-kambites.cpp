@@ -815,4 +815,36 @@ namespace libsemigroups {
         relations, random_sample_words, 10, 90, 4, "uniform random words");
   }
 
+  TEST_CASE("Normal form for random 2-generated 2-relation presentation "
+            "(maximum word length = 100) with pseudo-random words N = 100, "
+            "140, .., 860",
+            "[normal_form][100][N=100][pseudo]") {
+    std::vector<std::string> relations;
+    relations.push_back(random_string("ab", 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+
+    bench_normal_form(relations,
+                      pseudo_random_sample_words,
+                      100,
+                      900,
+                      40,
+                      "pseudo-random words");
+  }
+
+  TEST_CASE("Normal form for random 2-generated 2-relation presentation "
+            "(maximum word length = 100) with uniform random words N = 100, "
+            "140, .., 860",
+            "[normal_form][100][N=100][uniform]") {
+    std::vector<std::string> relations;
+    relations.push_back(random_string("ab", 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+    relations.push_back(random_string("ab", 1, 100));
+
+    bench_normal_form(
+        relations, random_sample_words, 100, 900, 40, "uniform random words");
+  }
+
 }  // namespace libsemigroups
