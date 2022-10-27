@@ -799,7 +799,7 @@ namespace libsemigroups {
                       "pseudo-random words");
   }
 
-  TEST_CASE("Word problem for random 2-generated 2-relation presentation "
+  TEST_CASE("Normal form for random 2-generated 2-relation presentation "
             "(maximum word length = 100) with uniform random words N = 10, "
             "14, .., 86",
             "[normal_form][100][N=10][uniform]") {
