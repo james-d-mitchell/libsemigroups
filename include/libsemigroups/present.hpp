@@ -36,7 +36,7 @@
 #include <unordered_set>     // for unordered_set
 #include <vector>            // for vector
                              //
-#include <iostream>          // for cout
+// #include <iostream>          // for cout
 
 #include "constants.hpp"    // for UNDEFINED
 #include "debug.hpp"        // for LIBSEMIGROUPS_ASSERT
@@ -44,7 +44,8 @@
 #include "suffix-tree.hpp"  // for SuffixTree
 #include "uf.hpp"           // for Duf
 
-#include "string.hpp"  // for is_suffix, is_prefix, etc
+#include "digraph.hpp"  // for ActionDigraph
+#include "string.hpp"   // for is_suffix, is_prefix, etc
 
 namespace libsemigroups {
   //! No doc
@@ -1036,21 +1037,32 @@ namespace libsemigroups {
     template <typename W>
     void remove_redundant_generators(Presentation<W>& p);
 
-    enum class word_problem_certificate {
-      relation_words_have_equal_length,
-      self_overlap_free,  // i.e. already confluent, terminating rewriting
-                          // system if |u| > |v|, aka "hypersimple"
-
-    };
-
     // TODO:
-    // * left_graph, right_graph
     // * is_left_cycle_free, is_right_cycle_free, is_cycle_free
     // * is_left_cancellative, is_right_cancellative (using Theorem 2.5 for
     // general + Theorem 2.6 for 1-relator)
-    // * word problem is solvable if relation of form: aub = bva
-    // * word problem is solvable if relation of the form: w = 1-relator
     // * is_weakly_compressible, weak_compression
+
+    // TODO to tpp file
+    template <typename W>
+    auto left_graph(Presentation<W> const& p) {
+      ActionDigraph<uint16_t> ad(p.alphabet().size(), p.rules.size() / 2);
+      for (auto it = p.rules.cbegin(); it < p.rules.cend(); it += 2) {
+        ad.add_edge(p.index(it->front()),
+                    p.index((it + 1)->front()),
+                    (it - p.rules.cbegin()) / 2);
+      }
+      return ad;
+    }
+
+    // TODO to tpp file
+    template <typename W>
+    auto right_graph(Presentation<W> const& p) {
+      reverse(const_cast<Presentation<W>&>(p));
+      auto result = left_graph(p);
+      reverse(const_cast<Presentation<W>&>(p));
+      return result;
+    }
 
     // TODO to tpp file and use in replace_subword
     template <typename W>
@@ -1144,10 +1156,8 @@ namespace libsemigroups {
       W replacement;
 
       replace_subword(p, existing, replacement);
-      std::cout << p.rules << std::endl;
 
       for (auto it = set.cbegin(); it != set.cend(); ++it) {
-        std::cout << *it << std::endl;
         replace_subword(p, it->cbegin(), it->cend());
       }
       // remove rules defining new generators
@@ -1163,8 +1173,8 @@ namespace libsemigroups {
     auto is_strongly_compressible(Presentation<W> const& p) {
       auto const& u = p.rules[0];
       auto const& v = p.rules[1];
-      return u.empty() || v.empty() || u.front() != v.front()
-             || u.back() != v.back();
+      return !(u.empty() || v.empty() || u.front() != v.front()
+               || u.back() != v.back());
     }
 
     template <typename W>
@@ -1210,6 +1220,31 @@ namespace libsemigroups {
       normalize_alphabet(p);
       return true;
     }
+
+    // It's possible to do the following for non-1-relation monoids
+    template <typename W>
+    bool reduce_to_2_generators(Presentation<W>& p) {
+      if (p.rules.size() != 2) {
+        LIBSEMIGROUPS_EXCEPTION("TODO");
+      }
+
+      auto ad = left_graph(p);
+      if (!action_digraph_helper::is_acyclic(ad)) {
+        return false;
+      }
+      action_digraph_helper::symmetric_closure(ad);
+      for (auto n = ad.cbegin_nodes(); n != ad.cend_nodes(); ++n) {
+        if (*n == ad.root_of_scc(*n)) {
+          // Lots of choice here, we could replace ad.root_of_scc(0) by any
+          // other root of an scc
+          replace_subword(p, {*n}, {ad.root_of_scc(0)});
+        }
+      }
+      p.alphabet_from_rules();
+      normalize_alphabet(p);
+      return true;
+    }
+
   }  // namespace presentation
 }  // namespace libsemigroups
 

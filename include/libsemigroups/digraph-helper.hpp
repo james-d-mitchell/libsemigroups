@@ -857,6 +857,32 @@ namespace libsemigroups {
       }
       return false;
     }
+
+    template <typename T>
+    bool symmetric_closure(ActionDigraph<T>& ad) {
+      for (auto n = ad.cbegin_nodes(); n != ad.cend_nodes(); ++n) {
+        for (size_t i = 0; i < ad.out_degree(); ++i) {
+          auto m = ad.unsafe_neighbor(*n, i);
+          if (m != UNDEFINED) {
+            auto nn = ad.unsafe_neighbor(m, i);
+            if (nn != UNDEFINED && nn != *n) {
+              return false;
+            }
+          }
+        }
+      }
+
+      for (auto n = ad.cbegin_nodes(); n != ad.cend_nodes(); ++n) {
+        for (size_t i = 0; i < ad.out_degree(); ++i) {
+          auto m = ad.unsafe_neighbor(*n, i);
+          if (m != UNDEFINED) {
+            ad.add_edge(m, *n, i);
+          }
+        }
+      }
+      return true;
+    }
+
   }  // namespace action_digraph_helper
 }  // namespace libsemigroups
 #endif  // LIBSEMIGROUPS_DIGRAPH_HELPER_HPP_

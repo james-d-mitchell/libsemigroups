@@ -638,6 +638,7 @@ CHECK_FLAGS2  = [quick]
 check_PROGRAMS =  test_all
 
 EXTRA_PROGRAMS =  test_action
+EXTRA_PROGRAMS += test_1_relation
 EXTRA_PROGRAMS += test_bipart
 EXTRA_PROGRAMS += test_bitset
 EXTRA_PROGRAMS += test_bmat8
@@ -793,6 +794,9 @@ test_all_SOURCES += tests/test-uf.cpp
 test_all_SOURCES += tests/test-wilo.cpp
 test_all_SOURCES += tests/test-wislo.cpp
 test_all_SOURCES += tests/test-word.cpp
+
+test_1_relation_SOURCES =  tests/test-1-relation.cpp
+test_1_relation_SOURCES += tests/test-main.cpp
 
 test_action_SOURCES =  tests/test-action.cpp
 test_action_SOURCES += tests/test-main.cpp

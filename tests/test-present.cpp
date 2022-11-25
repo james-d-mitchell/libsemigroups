@@ -1134,6 +1134,11 @@ namespace libsemigroups {
     p.alphabet(2);
     presentation::add_rule_and_check(p, {0, 0, 1}, {0, 1});
     REQUIRE(!presentation::weakly_compress(p));
+
+    p.rules.clear();
+    presentation::add_rule_and_check(p, {1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0}, {0});
+    REQUIRE(!presentation::is_weakly_compressible(p));
+    REQUIRE(!presentation::weakly_compress(p));
   }
 
   // Approx. 800ms
@@ -1172,6 +1177,10 @@ namespace libsemigroups {
     REQUIRE(p.rules
             == std::vector<word_type>({{0, 1, 2, 0, 3, 4}, {4, 5, 1, 2, 4}}));
     REQUIRE(!presentation::strongly_compress(p));
+    p.rules.clear();
+    presentation::add_rule_and_check(p, {1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0}, {0});
+    REQUIRE(!presentation::is_strongly_compressible(p));
+    REQUIRE(!presentation::strongly_compress(p));
   }
 
   // Example 3.14 in CFNB's paper
@@ -1199,7 +1208,7 @@ namespace libsemigroups {
                           "number of strongly_compressible 1-relation monoids",
                           "[extreme][presentation]") {
     Presentation<std::string> p;
-    p.alphabet(2);
+    p.alphabet("ab");
 
     Sislo s;
     s.alphabet("ab").first("a").last("aaaaaaaaaaa");
@@ -1226,6 +1235,46 @@ namespace libsemigroups {
     // REQUIRE((double(strong_weak) + strong_not_weak + not_strong_weak) / total
     //        == 0.9315236122); 93% !!
     REQUIRE(total == 2'092'035);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "038",
+                          "left graph",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("abc");
+    presentation::add_rule_and_check(p, "ab", "baa");
+    presentation::add_rule_and_check(p, "ac", "ccb");
+
+    auto ad = presentation::left_graph(p);
+    REQUIRE(ad == action_digraph_helper::make<uint16_t>(3, {{1, 2}}));
+    ad = presentation::right_graph(p);
+    REQUIRE(ad
+            == action_digraph_helper::make<uint16_t>(
+                3, {{UNDEFINED, UNDEFINED}, {0}, {UNDEFINED, 1}}));
+
+    REQUIRE(action_digraph_helper::is_acyclic(ad));
+    REQUIRE(action_digraph_helper::symmetric_closure(ad));
+    REQUIRE(ad
+            == action_digraph_helper::make<uint16_t>(
+                3, {{1, UNDEFINED}, {0, 2}, {UNDEFINED, 1}}));
+  }
+
+  // Example 3.14 in CFNB's paper
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "039",
+                          "weak + strong compression",
+                          "[quick][presentation]") {
+    Presentation<word_type> p;
+    p.alphabet(2);
+    presentation::add_rule_and_check(
+        p, {0, 1, 0, 0, 1, 0, 1, 1}, {0, 1, 1, 0, 0, 1, 1});
+    REQUIRE(presentation::strongly_compress(p));
+    REQUIRE(p.rules
+            == std::vector<word_type>({{0, 1, 2, 0, 3, 4}, {4, 5, 1, 2, 4}}));
+    REQUIRE(presentation::reduce_to_2_generators(p));
+    REQUIRE(p.rules
+            == std::vector<word_type>({{0, 1, 1, 0, 1, 1}, {1, 1, 1, 1, 1}}));
   }
 
 }  // namespace libsemigroups
