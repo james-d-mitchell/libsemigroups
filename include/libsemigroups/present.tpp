@@ -449,28 +449,46 @@ namespace libsemigroups {
       p.rules.emplace_back(first, last);
     }
 
+    // TODO(1relation) use iterator method below
     template <typename W>
     void replace_subword(Presentation<W>& p,
                          W const&         existing,
                          W const&         replacement) {
-      if (existing.empty()) {
-        LIBSEMIGROUPS_EXCEPTION("the second argument must not be empty");
+      replace_subword(p,
+                      existing.cbegin(),
+                      existing.cend(),
+                      replacement.cbegin(),
+                      replacement.cend());
+    }
+
+    template <typename W, typename S, typename T>
+    void replace_subword(Presentation<W>& p,
+                         S                first_existing,
+                         S                last_existing,
+                         T                first_replacement,
+                         T                last_replacement) {
+      if (first_existing == last_existing) {
+        LIBSEMIGROUPS_EXCEPTION("the 2nd and 3rd argument must not be equal");
       }
-      auto rplc_sbwrd = [&existing, &replacement](W& word) {
-        auto it = std::search(
-            word.begin(), word.end(), existing.cbegin(), existing.cend());
+      auto rplc_sbwrd = [&first_existing,
+                         &last_existing,
+                         &first_replacement,
+                         &last_replacement](W& word) {
+        size_t const M  = std::distance(first_existing, last_existing);
+        size_t const N  = std::distance(first_replacement, last_replacement);
+        auto         it = std::search(
+            word.begin(), word.end(), first_existing, last_existing);
         while (it != word.end()) {
           // found existing
           auto replacement_first = it - word.begin();
-          word.erase(it, it + existing.size());
+          word.erase(it, it + M);
           word.insert(word.begin() + replacement_first,
-                      replacement.cbegin(),
-                      replacement.cend());
-          it = std::search(
-              word.begin() + replacement_first + replacement.size(),
-              word.end(),
-              existing.cbegin(),
-              existing.cend());
+                      first_replacement,
+                      last_replacement);
+          it = std::search(word.begin() + replacement_first + N,
+                           word.end(),
+                           first_existing,
+                           last_existing);
         }
       };
       std::for_each(p.rules.begin(), p.rules.end(), rplc_sbwrd);

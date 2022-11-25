@@ -20,7 +20,8 @@
 
 #include <cstddef>  // for size_t
 
-#include "catch.hpp"  // for REQUIRE, REQUIRE_THROWS_AS, REQUI...
+#include "catch.hpp"      // for REQUIRE, REQUIRE_THROWS_AS, REQUI...
+#include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
 
 #include "libsemigroups/bipart.hpp"        // for Bipartition
 #include "libsemigroups/containers.hpp"    // for StaticVector1
@@ -28,8 +29,8 @@
 #include "libsemigroups/knuth-bendix.hpp"  // for redundant_rule
 #include "libsemigroups/make-present.hpp"  // for make
 #include "libsemigroups/present.hpp"       // for Presentation
+#include "libsemigroups/siso.hpp"          // for Sislo
 #include "libsemigroups/types.hpp"         // for word_type
-#include "test-main.hpp"                   // for LIBSEMIGROUPS_TEST_CASE
 
 namespace libsemigroups {
 
@@ -88,6 +89,11 @@ namespace libsemigroups {
       presentation::add_rule(p, {4, 1}, {});
       p.alphabet_from_rules();
       REQUIRE(p.contains_empty_word());
+
+      p.alphabet({0, 1, 2, 3});
+      REQUIRE(p.alphabet() == W({0, 1, 2, 3}));
+      p.add_alphabet_from_rules();
+      REQUIRE(p.alphabet() == W({0, 1, 2, 3, 4, 5}));
     }
 
     template <typename W>
@@ -1071,6 +1077,84 @@ namespace libsemigroups {
     p.validate();
     REQUIRE_THROWS_AS(presentation::replace_subword(p, {}, {2}),
                       LibsemigroupsException);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "031",
+                          "is_self_overlap_free",
+                          "[quick][presentation]") {
+    REQUIRE(presentation::is_self_overlap_free({0, 1}));
+    REQUIRE(!presentation::is_self_overlap_free({0}));
+    REQUIRE(presentation::is_self_overlap_free({3, 5, 2, 3, 6, 4}));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "032",
+                          "maximum_self_overlap_free_prefix_suffix",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule(p, "aaa", "");
+    REQUIRE(presentation::maximum_self_overlap_free_prefix_suffix(p)
+            == p.rules[0].cbegin());
+
+    p.rules = {"abbaabbbabbbab", "abbaab"};
+    REQUIRE(presentation::maximum_self_overlap_free_prefix_suffix(p)
+            != p.rules[0].cbegin());
+    REQUIRE(
+        std::string(p.rules[0].cbegin(),
+                    presentation::maximum_self_overlap_free_prefix_suffix(p))
+        == "ab");
+    p.rules = {"abaabbab", "abbabaab"};
+    REQUIRE(
+        std::string(p.rules[0].cbegin(),
+                    presentation::maximum_self_overlap_free_prefix_suffix(p))
+        == "ab");
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "033",
+                          "weakly_compress",
+                          "[quick][presentation]") {
+    Presentation<word_type> p;
+    p.alphabet(2);
+    presentation::add_rule_and_check(
+        p, {0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1}, {0, 1, 1, 0, 0, 1});
+    presentation::weakly_compress(p);
+    REQUIRE(p.rules == std::vector<word_type>({{0, 1, 1}, {0}}));
+    p.rules.clear();
+    presentation::add_rule_and_check(
+        p, {0, 1, 0, 0, 1, 1, 0, 1}, {0, 1, 1, 0, 1, 0, 0, 1});
+    presentation::weakly_compress(p);
+    REQUIRE(p.rules == std::vector<word_type>({{0, 1}, {1, 0}}));
+    REQUIRE(!presentation::weakly_compress(p));
+    p.rules.clear();
+    presentation::add_rule_and_check(p, {0, 0, 1}, {0, 1});
+    REQUIRE(!presentation::weakly_compress(p));
+  }
+
+  // Approx. 800ms
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "034",
+                          "number of weakly_compressible 1-relation monoids",
+                          "[extreme][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet(2);
+
+    Sislo s;
+    s.alphabet("ab").first("a").last("aaaaaaaaaaa");
+    uint64_t count = 0;
+    uint64_t total = 0;
+    for (auto u = s.cbegin(); u != s.cend(); ++u) {
+      for (auto v = u + 1; v != s.cend(); ++v) {
+        ++total;
+        p.rules.clear();
+        presentation::add_rule(p, *u, *v);
+        count += presentation::is_weakly_compressible(p);
+      }
+    }
+    REQUIRE(count == 474'156);
+    REQUIRE(total == 2'092'035);
   }
 
 }  // namespace libsemigroups

@@ -164,10 +164,7 @@ namespace libsemigroups {
     // last_word).
     // Not noexcept, because std::equal isn't
     template <typename S, typename T>
-    bool is_prefix(S const& first_word,
-                   S const& last_word,
-                   T const& first_prefix,
-                   T const& last_prefix) {
+    bool is_prefix(S first_word, S last_word, T first_prefix, T last_prefix) {
       LIBSEMIGROUPS_ASSERT(first_word <= last_word);
       // Check if [first_prefix, last_prefix) equals [first_word, first_word +
       // (last_prefix - first_prefix))
@@ -222,17 +219,12 @@ namespace libsemigroups {
 
     // Returns true if [first_suffix, last_suffix) is a suffix of [first_word,
     // last_word).
-    static inline bool
-    is_suffix(std::string::const_iterator const& first_word,
-              std::string::const_iterator const& last_word,
-              std::string::const_iterator const& first_suffix,
-              std::string::const_iterator const& last_suffix) {
-      using reverse_iterator
-          = std::reverse_iterator<std::string::const_iterator>;
-      return is_prefix(reverse_iterator(last_word),
-                       reverse_iterator(first_word),
-                       reverse_iterator(last_suffix),
-                       reverse_iterator(first_suffix));
+    template <typename S, typename T>
+    bool is_suffix(S first_word, S last_word, T first_suffix, T last_suffix) {
+      return is_prefix(std::make_reverse_iterator(last_word),
+                       std::make_reverse_iterator(first_word),
+                       std::make_reverse_iterator(last_suffix),
+                       std::make_reverse_iterator(first_suffix));
     }
 
     // Check if v is a suffix of u

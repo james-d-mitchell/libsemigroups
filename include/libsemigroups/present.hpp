@@ -42,6 +42,8 @@
 #include "suffix-tree.hpp"  // for SuffixTree
 #include "uf.hpp"           // for Duf
 
+#include "string.hpp"  // for is_suffix, is_prefix
+
 namespace libsemigroups {
   //! No doc
   struct PresentationBase {};
@@ -184,6 +186,23 @@ namespace libsemigroups {
     //!
     //! \param (None)
     Presentation& alphabet_from_rules();
+
+    // TODO to tpp file, and use in alphabet_from_rules
+    Presentation<W>& add_alphabet_from_rules() {
+      size_type index = 0;
+      for (auto const& rel : rules) {
+        if (rel.empty()) {
+          contains_empty_word(true);
+        }
+        for (auto const& letter : rel) {
+          if (_alphabet_map.emplace(letter, index).second) {
+            _alphabet.push_back(letter);
+            ++index;
+          }
+        }
+      }
+      return *this;
+    }
 
     //! Get a letter in the alphabet by index
     //!
@@ -768,6 +787,13 @@ namespace libsemigroups {
                          W const&         existing,
                          W const&         replacement);
 
+    template <typename W, typename S, typename T>
+    void replace_subword(Presentation<W>& p,
+                         S                first_existing,
+                         S                last_existing,
+                         T                first_replacement,
+                         T                last_replacement);
+
     //! Replace non-overlapping instances of a subword via const reference.
     //!
     //! If \f$w=\f$`[first, last)` is a word, then replaces every
@@ -1007,6 +1033,128 @@ namespace libsemigroups {
     //! \throws LibsemigroupsException if `p.rules.size()` is odd.
     template <typename W>
     void remove_redundant_generators(Presentation<W>& p);
+
+    enum class word_problem_certificate {
+      relation_words_have_equal_length,
+      self_overlap_free,  // i.e. already confluent, terminating rewriting
+                          // system if |u| > |v|, aka "hypersimple"
+
+    };
+
+    // TODO:
+    // * left_graph, right_graph
+    // * is_left_cycle_free, is_right_cycle_free, is_cycle_free
+    // * is_left_cancellative, is_right_cancellative (using Theorem 2.5 for
+    // general + Theorem 2.6 for 1-relator)
+    // * word problem is solvable if relation of form: aub = bva
+    // * word problem is solvable if relation of the form: w = 1-relator
+    // * is_weakly_compressible, weak_compression
+
+    // TODO to tpp file and use in replace_subword
+    template <typename W>
+    auto next_generator(Presentation<W> const& p) {
+      using letter_type = typename Presentation<W>::letter_type;
+      // Find the minimum letter that is not currently in the alphabet
+      letter_type x = 0;
+      while (p.in_alphabet(x)) {
+        ++x;
+      }
+      return x;
+    }
+
+    template <typename Iterator>
+    bool is_self_overlap_free(Iterator first, Iterator last) {
+      if (std::distance(first, last) == 1) {
+        return false;
+      }
+      for (auto it = first + 1; it < last; ++it) {
+        if (detail::is_suffix(first, last, first, it)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    template <typename W>
+    bool is_self_overlap_free(W const& w) {
+      return is_self_overlap_free(w.cbegin(), w.cend());
+    }
+
+    template <typename T>
+    bool is_self_overlap_free(std::initializer_list<T> w) {
+      return is_self_overlap_free(w.begin(), w.end());
+    }
+
+    template <typename W>
+    auto maximum_self_overlap_free_prefix_suffix(Presentation<W> const& p) {
+      if (p.rules.size() != 2) {
+        LIBSEMIGROUPS_EXCEPTION("TODO");
+      }
+      auto const& u = p.rules[0];
+      auto const& v = p.rules[1];
+
+      for (auto it = u.cend(); it-- > u.cbegin() + 1;) {
+        if (detail::is_suffix(v.cbegin(), v.cend(), u.cbegin(), it)
+            && is_self_overlap_free(u.cbegin(), it)) {
+          return it;
+        }
+      }
+      return u.cbegin();
+    }
+
+    template <typename W>
+    auto is_weakly_compressible(Presentation<W> const& p) {
+      return maximum_self_overlap_free_prefix_suffix(p) != p.rules[0].cbegin();
+    }
+
+    template <typename W>
+    bool weakly_compress(Presentation<W>& p) {
+      if (p.rules.size() != 2) {
+        LIBSEMIGROUPS_EXCEPTION("TODO");
+      }
+      auto const first = p.rules[0].cbegin();
+      // TODO(1relation) we don't have to take the maximum_self_overlap free
+      // thingy, we can take any
+      auto const last = maximum_self_overlap_free_prefix_suffix(p);
+      if (last == first) {
+        return false;
+      }
+
+      std::unordered_set<W> set;
+
+      auto get_subwords = [&set, &first, &last](W const& word) {
+        auto prev = word.cbegin();
+        auto next = std::search(word.cbegin(), word.cend(), first, last);
+        while (next != word.cend()) {
+          // found existing
+          if (next != prev) {
+            set.emplace(prev, next);
+          }
+          prev = next + std::distance(first, last);
+          next = std::search(prev, word.cend(), first, last);
+        }
+      };
+      get_subwords(p.rules[0]);
+      get_subwords(p.rules[1]);
+
+      // Must copy first, last here so that we can modify p in-place
+      W existing(first, last);
+      W replacement;
+
+      replace_subword(p, existing, replacement);
+
+      for (auto it = set.cbegin(); it != set.cend(); ++it) {
+        replace_subword(p, it->cbegin(), it->cend());
+      }
+      // remove rules defining new generators
+      p.rules.erase(p.rules.begin() + 2, p.rules.end());
+      // remove old generators
+      p.alphabet_from_rules();
+      // rewrite new generators
+      normalize_alphabet(p);
+      return true;
+    }
+
   }  // namespace presentation
 }  // namespace libsemigroups
 
