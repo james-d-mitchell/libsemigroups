@@ -1084,8 +1084,9 @@ namespace libsemigroups {
                           "is_self_overlap_free",
                           "[quick][presentation]") {
     REQUIRE(presentation::is_self_overlap_free({0, 1}));
-    REQUIRE(!presentation::is_self_overlap_free({0}));
+    REQUIRE(presentation::is_self_overlap_free({0}));
     REQUIRE(presentation::is_self_overlap_free({3, 5, 2, 3, 6, 4}));
+    REQUIRE(!presentation::is_self_overlap_free({0, 1, 2, 3, 0, 1}));
   }
 
   LIBSEMIGROUPS_TEST_CASE("Presentation",
@@ -1125,10 +1126,12 @@ namespace libsemigroups {
     p.rules.clear();
     presentation::add_rule_and_check(
         p, {0, 1, 0, 0, 1, 1, 0, 1}, {0, 1, 1, 0, 1, 0, 0, 1});
-    presentation::weakly_compress(p);
+    REQUIRE(presentation::weakly_compress(p));
     REQUIRE(p.rules == std::vector<word_type>({{0, 1}, {1, 0}}));
-    REQUIRE(!presentation::weakly_compress(p));
+    REQUIRE(presentation::weakly_compress(p));
+    REQUIRE(p.rules == std::vector<word_type>({{0}, {0}}));
     p.rules.clear();
+    p.alphabet(2);
     presentation::add_rule_and_check(p, {0, 0, 1}, {0, 1});
     REQUIRE(!presentation::weakly_compress(p));
   }
@@ -1153,7 +1156,75 @@ namespace libsemigroups {
         count += presentation::is_weakly_compressible(p);
       }
     }
-    REQUIRE(count == 474'156);
+    REQUIRE(count == 1'518'129);
+    REQUIRE(total == 2'092'035);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "035",
+                          "strongly_compress",
+                          "[quick][presentation]") {
+    Presentation<word_type> p;
+    p.alphabet(2);
+    presentation::add_rule_and_check(
+        p, {0, 1, 0, 0, 1, 0, 1, 1}, {0, 1, 1, 0, 0, 1, 1});
+    REQUIRE(presentation::strongly_compress(p));
+    REQUIRE(p.rules
+            == std::vector<word_type>({{0, 1, 2, 0, 3, 4}, {4, 5, 1, 2, 4}}));
+    REQUIRE(!presentation::strongly_compress(p));
+  }
+
+  // Example 3.14 in CFNB's paper
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "036",
+                          "weak + strong compression",
+                          "[quick][presentation]") {
+    Presentation<word_type> p;
+    p.alphabet(4);
+    presentation::add_rule_and_check(p,
+                                     {0, 1, 3, 0, 3, 0, 3, 0, 2, 1, 0, 2, 0},
+                                     {0, 1, 3, 0, 3, 0, 1, 3, 0, 2, 0});
+    REQUIRE(word_type(p.rules[0].cbegin(),
+                      presentation::maximum_self_overlap_free_prefix_suffix(p))
+            == word_type({0}));
+    REQUIRE(presentation::weakly_compress(p));
+    REQUIRE(p.rules == std::vector<word_type>({{0, 1, 1, 2, 3}, {0, 1, 0, 3}}));
+    REQUIRE(presentation::strongly_compress(p));
+    REQUIRE(p.rules == std::vector<word_type>({{0, 1, 2, 3}, {0, 4, 5}}));
+  }
+
+  // Approx. ??
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "037",
+                          "number of strongly_compressible 1-relation monoids",
+                          "[extreme][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet(2);
+
+    Sislo s;
+    s.alphabet("ab").first("a").last("aaaaaaaaaaa");
+    uint64_t strong_weak     = 0;
+    uint64_t strong_not_weak = 0;
+    uint64_t not_strong_weak = 0;
+
+    uint64_t total = 0;
+    for (auto u = s.cbegin(); u != s.cend(); ++u) {
+      for (auto v = u + 1; v != s.cend(); ++v) {
+        ++total;
+        p.rules.clear();
+        presentation::add_rule(p, *u, *v);
+        auto strong = presentation::is_strongly_compressible(p);
+        auto weak   = presentation::is_weakly_compressible(p);
+        strong_weak += strong && weak;
+        strong_not_weak += strong && !weak;
+        not_strong_weak += !strong && weak;
+      }
+    }
+    REQUIRE(strong_weak == 1'139'142);
+    REQUIRE(strong_not_weak == 430'651);
+    REQUIRE(not_strong_weak == 378'987);
+    // REQUIRE((double(strong_weak) + strong_not_weak + not_strong_weak) / total
+    //        == 0.9315236122); 93% !!
     REQUIRE(total == 2'092'035);
   }
 

@@ -35,6 +35,8 @@
 #include <unordered_map>     // for unordered_map
 #include <unordered_set>     // for unordered_set
 #include <vector>            // for vector
+                             //
+#include <iostream>          // for cout
 
 #include "constants.hpp"    // for UNDEFINED
 #include "debug.hpp"        // for LIBSEMIGROUPS_ASSERT
@@ -42,7 +44,7 @@
 #include "suffix-tree.hpp"  // for SuffixTree
 #include "uf.hpp"           // for Duf
 
-#include "string.hpp"  // for is_suffix, is_prefix
+#include "string.hpp"  // for is_suffix, is_prefix, etc
 
 namespace libsemigroups {
   //! No doc
@@ -1065,7 +1067,7 @@ namespace libsemigroups {
     template <typename Iterator>
     bool is_self_overlap_free(Iterator first, Iterator last) {
       if (std::distance(first, last) == 1) {
-        return false;
+        return true;
       }
       for (auto it = first + 1; it < last; ++it) {
         if (detail::is_suffix(first, last, first, it)) {
@@ -1127,7 +1129,7 @@ namespace libsemigroups {
         auto next = std::search(word.cbegin(), word.cend(), first, last);
         while (next != word.cend()) {
           // found existing
-          if (next != prev) {
+          if (next != prev && next != prev + 1) {
             set.emplace(prev, next);
           }
           prev = next + std::distance(first, last);
@@ -1142,8 +1144,10 @@ namespace libsemigroups {
       W replacement;
 
       replace_subword(p, existing, replacement);
+      std::cout << p.rules << std::endl;
 
       for (auto it = set.cbegin(); it != set.cend(); ++it) {
+        std::cout << *it << std::endl;
         replace_subword(p, it->cbegin(), it->cend());
       }
       // remove rules defining new generators
@@ -1155,6 +1159,57 @@ namespace libsemigroups {
       return true;
     }
 
+    template <typename W>
+    auto is_strongly_compressible(Presentation<W> const& p) {
+      auto const& u = p.rules[0];
+      auto const& v = p.rules[1];
+      return u.empty() || v.empty() || u.front() != v.front()
+             || u.back() != v.back();
+    }
+
+    template <typename W>
+    bool strongly_compress(Presentation<W>& p) {
+      if (p.rules.size() != 2) {
+        LIBSEMIGROUPS_EXCEPTION("TODO");
+      }
+      auto const& u = p.rules[0];
+      auto const& v = p.rules[1];
+      if (u.empty() || v.empty() || u.front() != v.front()
+          || u.back() != v.back()) {
+        return false;
+      }
+
+      size_t k = std::min(static_cast<size_t>(
+                              detail::maximum_common_prefix(u, v).first
+                              - u.cbegin()),
+                          detail::maximum_common_suffix(u, v).size())
+                 // TODO(1relation): ensure maximum_common_prefix/suffix have
+                 // same return type
+                 + 1;
+
+      auto word_to_num = [](auto first, auto last) {
+        // TODO assert that last - first = k
+        size_t result = 0;
+        for (auto it = first; it != last; ++it) {
+          result += std::pow(2, it - first) * (*it);
+        }
+        return result;
+      };
+
+      auto compress_word = [&k, &word_to_num](W const& word) {
+        W result;
+        for (auto it = word.cbegin(); it <= word.cend() - k; ++it) {
+          // TODO(1relation) better to use a view/range
+          result.push_back(word_to_num(it, it + k));
+        }
+        return result;
+      };
+      p.rules[0] = compress_word(p.rules[0]);
+      p.rules[1] = compress_word(p.rules[1]);
+      p.alphabet_from_rules();
+      normalize_alphabet(p);
+      return true;
+    }
   }  // namespace presentation
 }  // namespace libsemigroups
 

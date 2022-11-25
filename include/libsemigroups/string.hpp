@@ -201,20 +201,23 @@ namespace libsemigroups {
                                           T const& last_word1,
                                           T        first_word2,
                                           T const& last_word2) {
-      using reverse_iterator = std::reverse_iterator<T>;
-      auto p = maximum_common_prefix(reverse_iterator(last_word1),
-                                     reverse_iterator(first_word1),
-                                     reverse_iterator(last_word2),
-                                     reverse_iterator(first_word2));
+      auto p = maximum_common_prefix(std::make_reverse_iterator(last_word1),
+                                     std::make_reverse_iterator(first_word1),
+                                     std::make_reverse_iterator(last_word2),
+                                     std::make_reverse_iterator(first_word2));
       return std::make_pair(p.first.base(), p.second.base());
     }
 
-    static inline std::string maximum_common_suffix(std::string const& u,
-                                                    std::string const& v) {
-      return std::string(
-          maximum_common_suffix(u.cbegin(), u.cend(), v.cbegin(), v.cend())
-              .first,
-          u.cend());
+    template <typename W>
+    static inline auto maximum_common_suffix(W const& u, W const& v) {
+      return W(maximum_common_suffix(u.cbegin(), u.cend(), v.cbegin(), v.cend())
+                   .first,
+               u.cend());
+    }
+
+    template <typename W>
+    static inline auto maximum_common_prefix(W const& u, W const& v) {
+      return maximum_common_prefix(u.cbegin(), u.cend(), v.cbegin(), v.cend());
     }
 
     // Returns true if [first_suffix, last_suffix) is a suffix of [first_word,
