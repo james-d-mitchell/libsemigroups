@@ -16,6 +16,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+// TODO:
+// * add logging, i.e. that provides enough information for a "proof" that the
+// word problem is solvable.
+// * write a thing that outputs python code to generate a key for the diagrams
+
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
 #include <cstddef>  // for size_t
@@ -99,7 +104,7 @@ namespace libsemigroups {
       for (auto it = first; it < last; ++it) {
         auto const& w = *it;
         for (auto suffix = w.cbegin(); suffix < w.cend(); ++suffix) {
-          for (auto prefix = suffix + 1; prefix <= w.cend(); ++prefix) {
+          for (auto prefix = suffix + 1; prefix < w.cend(); ++prefix) {
             mp.emplace(suffix, prefix);
           }
         }
@@ -108,7 +113,7 @@ namespace libsemigroups {
     }
 
     bool knuth_bendix_search(Presentation<std::string>& p,
-                             size_t                     max_depth = 3,
+                             size_t                     max_depth = 4,
                              size_t                     depth     = 0) {
       if (depth > max_depth) {
         return false;
@@ -123,18 +128,25 @@ namespace libsemigroups {
 
         k.run_for(std::chrono::milliseconds(10));
         if (k.confluent()) {
+          std::cout << std::vector<typename KnuthBendix_::rule_type>(
+              k.cbegin_rules(), k.cend_rules())
+                    << std::endl;
           std::cout << k.active_rules() << std::endl;
           return true;
         }
       } while (std::next_permutation(perm.begin(), perm.end()));
-      /*auto k = make<KnuthBendix_>(p);
+      // auto k = make<KnuthBendix_>(p);
 
-      k.run_for(std::chrono::milliseconds(10));
-      if (k.confluent()) {
-        return true;
-      }*/
+      // k.run_for(std::chrono::milliseconds(10));
+      // if (k.confluent()) {
+      //   return true;
+      // }
 
       auto sbwrds = subwords(p.rules.cbegin(), p.rules.cend());
+      // TODO sort sbwrds from longest to shortest
+      // TODO move iterator
+      // std::vector<std::string> vec_sbwrds(sbwrds.cbegin(), sbwrds.cend());
+
       for (auto const& w : sbwrds) {
         if (w.size() > 1) {
           auto q = Presentation<std::string>(p);
@@ -418,6 +430,7 @@ namespace libsemigroups {
             == std::make_pair(certificate::knuth_bendix_terminates, size_t(0)));
   }
 
+  // 13m39s
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "013",
                           "sporadic bad 50",
@@ -426,8 +439,18 @@ namespace libsemigroups {
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "ba", "abaabaa");
-    REQUIRE(has_decidable_word_problem(p)
-            == std::make_pair(certificate::knuth_bendix_terminates, size_t(0)));
+    REQUIRE(knuth_bendix_search(p));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "014",
+                          "sporadic bad 98",
+                          "[extreme][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "ba", "abaaabaa");
+    REQUIRE(knuth_bendix_search(p));
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -444,6 +467,7 @@ namespace libsemigroups {
                           "999",
                           "strongly compressible",
                           "[quick][presentation]") {
+    // knuth_bendix max_depth = 2, and run KnuthBendix for 5ms
     auto  rg = ReportGuard(false);
     Sislo s;
     s.alphabet("ab").first("").last("aaaaaaa");

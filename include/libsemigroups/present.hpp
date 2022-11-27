@@ -820,6 +820,11 @@ namespace libsemigroups {
       replace_subword(p, w.cbegin(), w.cend());
     }
 
+    template <typename W>
+    void replace_subword(Presentation<W>& p, char const* w) {
+      replace_subword(p, w, w + std::strlen(w));
+    }
+
     //! Replace instances of a word on either side of a rule by another word.
     //!
     //! If \p existing and \p replacement are words, then this function
