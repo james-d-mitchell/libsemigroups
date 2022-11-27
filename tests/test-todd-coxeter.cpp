@@ -4129,6 +4129,7 @@ namespace libsemigroups {
       tc.add_rule("XYxyXYxyXYxyXYxyXYxyXYxy", "e");
       tc.add_rule("XYXYxyxyXYXYxyxyXYXYxyxy", "e");
       tc.add_rule("xyxyxYxyxyxYxyxyxYxyxyxYxyxyxY", "e");
+      tc.congruence().strategy(options::strategy::felsch);
       REQUIRE(tc.size() == 443'520);
     }
 

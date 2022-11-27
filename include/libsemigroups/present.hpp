@@ -1224,6 +1224,7 @@ namespace libsemigroups {
     // It's possible to do the following for non-1-relation monoids
     template <typename W>
     bool reduce_to_2_generators(Presentation<W>& p) {
+      using letter_type = typename Presentation<W>::letter_type;
       if (p.rules.size() != 2) {
         LIBSEMIGROUPS_EXCEPTION("TODO");
       }
@@ -1237,7 +1238,9 @@ namespace libsemigroups {
         if (*n == ad.root_of_scc(*n)) {
           // Lots of choice here, we could replace ad.root_of_scc(0) by any
           // other root of an scc
-          replace_subword(p, {*n}, {ad.root_of_scc(0)});
+          replace_subword(p,
+                          {static_cast<letter_type>(*n)},
+                          {static_cast<letter_type>(ad.root_of_scc(0))});
         }
       }
       p.alphabet_from_rules();
