@@ -36,7 +36,7 @@
 #include <unordered_set>     // for unordered_set
 #include <vector>            // for vector
                              //
-// #include <iostream>          // for cout
+#include <iostream>          // for cout TODO delete
 
 #include "constants.hpp"    // for UNDEFINED
 #include "debug.hpp"        // for LIBSEMIGROUPS_ASSERT
@@ -770,8 +770,32 @@ namespace libsemigroups {
               typename = std::enable_if_t<!std::is_same<T, W>::value>>
     void replace_subword(Presentation<W>& p, T first, T last);
 
+    // TODO reduce overlap with replace_subword
     template <typename W, typename T>
-    void add_generator(Presentation<W>& p, T first, T last, letter_type);
+    void add_generator(Presentation<W>&                      p,
+                       T                                     first,
+                       T                                     last,
+                       typename Presentation<W>::letter_type x) {
+      if (p.in_alphabet(x)) {
+        LIBSEMIGROUPS_EXCEPTION("TODO");
+      }
+      W new_alphabet = p.alphabet();
+      new_alphabet.push_back(x);
+      p.alphabet(new_alphabet);
+      auto rplc_sbwrd = [&first, &last, &x](W& word) {
+        auto it = std::search(word.begin(), word.end(), first, last);
+        while (it != word.end()) {
+          // found [first, last)
+          *it      = x;
+          auto pos = it - word.begin();
+          word.erase(it + 1, it + (last - first));  // it not valid
+          it = std::search(word.begin() + pos + 1, word.end(), first, last);
+        }
+      };
+      std::for_each(p.rules.begin(), p.rules.end(), rplc_sbwrd);
+      p.rules.emplace_back(W({x}));
+      p.rules.emplace_back(first, last);
+    }
 
     //! Replace non-overlapping instances of a subword via const reference.
     //!
@@ -1168,15 +1192,15 @@ namespace libsemigroups {
 
       replace_subword(p, existing, replacement);
 
+      auto l = p.alphabet().size();
       for (auto it = set.cbegin(); it != set.cend(); ++it) {
-        replace_subword(p, it->cbegin(), it->cend());
+        add_generator(p, it->cbegin(), it->cend(), letters[l++]);
       }
       // remove rules defining new generators
       p.rules.erase(p.rules.begin() + 2, p.rules.end());
       // remove old generators
       p.alphabet_from_rules();
       // rewrite new generators
-      normalize_alphabet(p);
       return true;
     }
 
@@ -1221,21 +1245,23 @@ namespace libsemigroups {
         W result;
         for (auto it = word.cbegin(); it <= word.cend() - k; ++it) {
           // TODO(1relation) better to use a view/range
-          result.push_back(word_to_num(it, it + k));
+          result.push_back(word_to_num(it, it + k) + 97);
         }
         return result;
       };
       p.rules[0] = compress_word(p.rules[0]);
       p.rules[1] = compress_word(p.rules[1]);
       p.alphabet_from_rules();
-      normalize_alphabet(p);
+      // normalize_alphabet(p);
       return true;
     }
 
     // It's possible to do the following for non-1-relation monoids
     template <typename W>
     bool reduce_to_2_generators(Presentation<W>& p) {
-      using letter_type = typename Presentation<W>::letter_type;
+      static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
+      // using letter_type                = typename
+      // Presentation<W>::letter_type;
       if (p.rules.size() != 2) {
         LIBSEMIGROUPS_EXCEPTION("TODO");
       }
@@ -1249,13 +1275,11 @@ namespace libsemigroups {
         if (*n == ad.root_of_scc(*n)) {
           // Lots of choice here, we could replace ad.root_of_scc(0) by any
           // other root of an scc
-          replace_subword(p,
-                          {static_cast<letter_type>(*n)},
-                          {static_cast<letter_type>(ad.root_of_scc(0))});
+          replace_subword(p, {letters[*n]}, {letters[ad.root_of_scc(0)]});
         }
       }
       p.alphabet_from_rules();
-      normalize_alphabet(p);
+      // normalize_alphabet(p);
       return true;
     }
 

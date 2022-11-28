@@ -159,8 +159,6 @@ namespace libsemigroups {
       return k;
     }
 
-    static const std::string LETTERS = "abcdefghijklmnopqrstuvwxyz";
-
     //   void make_human_readable(Presentation<std::string>& p) {
     //     if (p.alphabet().size() > LETTERS.size()) {
     //       LIBSEMIGROUPS_EXCEPTION(
@@ -252,12 +250,13 @@ namespace libsemigroups {
       // TODO sort sbwrds from longest to shortest
       // TODO move iterator
       // std::vector<std::string> vec_sbwrds(sbwrds.cbegin(), sbwrds.cend());
+      static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
 
       for (auto const& w : sbwrds) {
         if (w.size() > 1) {
           auto q = Presentation<std::string>(p);
           presentation::add_generator(
-              q, w.cbegin(), w.cend(), LETTERS[q.alphabet().size()]);
+              q, w.cbegin(), w.cend(), letters[q.alphabet().size()]);
           if (knuth_bendix_search(log_file, q, max_depth, depth + 1)) {
             size_t const n = q.rules.size();
             log_file << "[generator " << q.rules[n - 2] << " = "
@@ -657,14 +656,14 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "999",
-                          "solve for bua = ava where |u|, |v| < 7",
+                          "solve for bua = ava where |u|, |v| < 5",
                           "[extreme][presentation]") {
     // knuth_bendix max_depth = 2, and run KnuthBendix for 5ms
     auto  rg = ReportGuard(false);
     Sislo s;
-    s.alphabet("ab").first("").last("aaaaaaa");
+    s.alphabet("ab").first("").last("aaaaa");
     auto bmp = bitmap_init_XXX(std::distance(s.cbegin(), s.cend()));
-    REQUIRE(bmp.width() == 0);
+    // REQUIRE(bmp.width() == 0);
     Presentation<std::string> p;
     p.alphabet("ab");
     size_t   x           = 0;
@@ -675,19 +674,17 @@ namespace libsemigroups {
       // TODO V = "a"
       for (auto v = s.cbegin(); v != s.cend(); ++v) {
         auto V = std::string("a") + *v + "a";
-        std::cout << U << " = " << V << " is ";
         p.rules.clear();
         presentation::add_rule(p, U, V);
         auto c = has_decidable_word_problem(p);
         bitmap_color_XXX(bmp, x, y, c.first);
+        std::cout << U << " = " << V << " is ";
         if (c.first == certificate::unknown) {
           ++undecidable;
           std::cout << "bad" << std::endl;
         } else {
           std::cout << "good (depth " << c.second << ")" << std::endl;
         }
-        // TODO proper logging of the "proof" in every case
-
         ++y;
       }
       ++x;
