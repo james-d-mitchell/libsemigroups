@@ -449,6 +449,33 @@ namespace libsemigroups {
       p.rules.emplace_back(first, last);
     }
 
+    // TODO reduce overlap with replace_subword
+    template <typename W, typename T>
+    void add_generator(Presentation<W>&                      p,
+                       T                                     first,
+                       T                                     last,
+                       typename Presentation<W>::letter_type x) {
+      if (p.in_alphabet(x)) {
+        LIBSEMIGROUPS_EXCEPTION("TODO");
+      }
+      W new_alphabet = p.alphabet();
+      new_alphabet.push_back(x);
+      p.alphabet(new_alphabet);
+      auto rplc_sbwrd = [&first, &last, &x](W& word) {
+        auto it = std::search(word.begin(), word.end(), first, last);
+        while (it != word.end()) {
+          // found [first, last)
+          *it      = x;
+          auto pos = it - word.begin();
+          word.erase(it + 1, it + (last - first));  // it not valid
+          it = std::search(word.begin() + pos + 1, word.end(), first, last);
+        }
+      };
+      std::for_each(p.rules.begin(), p.rules.end(), rplc_sbwrd);
+      p.rules.emplace_back(W({x}));
+      p.rules.emplace_back(first, last);
+    }
+
     // TODO(1relation) use iterator method below
     template <typename W>
     void replace_subword(Presentation<W>& p,

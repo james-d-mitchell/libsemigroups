@@ -770,32 +770,8 @@ namespace libsemigroups {
               typename = std::enable_if_t<!std::is_same<T, W>::value>>
     void replace_subword(Presentation<W>& p, T first, T last);
 
-    //! Replace non-overlapping instances of a subword by another word.
-    //!
-    //! If \p existing and \p replacement are words, then this function
-    //! replaces every non-overlapping instance of \p existing in every rule by
-    //! \p replacement. The presentation \p p is changed in-place.
-    //!
-    //! \tparam W the type of the words in the presentation
-    //! \param p the presentation
-    //! \param existing the word to be replaced
-    //! \param replacement the replacement word.
-    //!
-    //! \returns (None)
-    //!
-    //! \throws LibsemigroupsException if `existing` is empty.
-    // TODO(later) complexity
-    template <typename W>
-    void replace_subword(Presentation<W>& p,
-                         W const&         existing,
-                         W const&         replacement);
-
-    template <typename W, typename S, typename T>
-    void replace_subword(Presentation<W>& p,
-                         S                first_existing,
-                         S                last_existing,
-                         T                first_replacement,
-                         T                last_replacement);
+    template <typename W, typename T>
+    void add_generator(Presentation<W>& p, T first, T last, letter_type);
 
     //! Replace non-overlapping instances of a subword via const reference.
     //!
@@ -824,6 +800,33 @@ namespace libsemigroups {
     void replace_subword(Presentation<W>& p, char const* w) {
       replace_subword(p, w, w + std::strlen(w));
     }
+
+    //! Replace non-overlapping instances of a subword by another word.
+    //!
+    //! If \p existing and \p replacement are words, then this function
+    //! replaces every non-overlapping instance of \p existing in every rule by
+    //! \p replacement. The presentation \p p is changed in-place.
+    //!
+    //! \tparam W the type of the words in the presentation
+    //! \param p the presentation
+    //! \param existing the word to be replaced
+    //! \param replacement the replacement word.
+    //!
+    //! \returns (None)
+    //!
+    //! \throws LibsemigroupsException if `existing` is empty.
+    // TODO(later) complexity
+    template <typename W>
+    void replace_subword(Presentation<W>& p,
+                         W const&         existing,
+                         W const&         replacement);
+
+    template <typename W, typename S, typename T>
+    void replace_subword(Presentation<W>& p,
+                         S                first_existing,
+                         S                last_existing,
+                         T                first_replacement,
+                         T                last_replacement);
 
     //! Replace instances of a word on either side of a rule by another word.
     //!
@@ -1130,6 +1133,7 @@ namespace libsemigroups {
 
     template <typename W>
     bool weakly_compress(Presentation<W>& p) {
+      static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
       if (p.rules.size() != 2) {
         LIBSEMIGROUPS_EXCEPTION("TODO");
       }

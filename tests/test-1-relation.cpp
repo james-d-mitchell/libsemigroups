@@ -159,26 +159,26 @@ namespace libsemigroups {
       return k;
     }
 
-    void make_human_readable(Presentation<std::string>& p) {
-      static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
+    static const std::string LETTERS = "abcdefghijklmnopqrstuvwxyz";
 
-      if (p.alphabet().size() > letters.size()) {
-        LIBSEMIGROUPS_EXCEPTION(
-            "too many letters, expected at most %llu, found %llu",
-            uint64_t(letters.size()),
-            uint64_t(p.alphabet().size()));
-      }
-      std::string new_alphabet;
-      size_t      next = 2;
-      for (auto const& x : p.alphabet()) {
-        if (x == 'a' || x == 'b') {
-          new_alphabet.push_back(x);
-        } else {
-          new_alphabet.push_back(letters[next++]);
-        }
-      }
-      presentation::change_alphabet(p, new_alphabet);
-    }
+    //   void make_human_readable(Presentation<std::string>& p) {
+    //     if (p.alphabet().size() > LETTERS.size()) {
+    //       LIBSEMIGROUPS_EXCEPTION(
+    //           "too many letters, expected at most %llu, found %llu",
+    //           uint64_t(LETTERS.size()),
+    //           uint64_t(p.alphabet().size()));
+    //     }
+    //     std::string new_alphabet;
+    //     size_t      next = 2;
+    //     for (auto const& x : p.alphabet()) {
+    //       if (x == 'a' || x == 'b') {
+    //         new_alphabet.push_back(x);
+    //       } else {
+    //         new_alphabet.push_back(LETTERS[next++]);
+    //       }
+    //     }
+    //     presentation::change_alphabet(p, new_alphabet);
+    //   }
 
     template <typename T, typename SFINAE = T>
     auto make(KnuthBendix_ const& k)
@@ -194,8 +194,6 @@ namespace libsemigroups {
     }
 
     std::ostream& operator<<(std::ostream& file, Presentation<std::string> p) {
-      make_human_readable(p);
-
       file << "<";
       std::string sep = "";
       for (auto const& x : p.alphabet()) {
@@ -258,9 +256,9 @@ namespace libsemigroups {
       for (auto const& w : sbwrds) {
         if (w.size() > 1) {
           auto q = Presentation<std::string>(p);
-          presentation::replace_subword(q, w);
+          presentation::add_generator(
+              q, w.cbegin(), w.cend(), LETTERS[q.alphabet().size()]);
           if (knuth_bendix_search(log_file, q, max_depth, depth + 1)) {
-            make_human_readable(q);
             size_t const n = q.rules.size();
             log_file << "[generator " << q.rules[n - 2] << " = "
                      << q.rules[n - 1] << " added] " << q << std::endl;
