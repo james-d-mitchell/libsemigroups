@@ -1,4 +1,5 @@
 !libsemigroups.pc.in
+*.bmp
 *.gcda
 *.gcno
 *.gz
@@ -14,6 +15,7 @@
 *.swo
 *.swp
 *.tmp
+*.txt
 *~
 .!*
 .DS_Store

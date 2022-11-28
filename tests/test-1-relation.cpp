@@ -19,20 +19,17 @@
 // TODO:
 // * add logging, i.e. that provides enough information for a "proof" that the
 // word problem is solvable.
-// * write a thing that outputs python code to generate a key for the diagrams
 
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
 #include <cstddef>  // for size_t
+#include <fstream>  // for ofstream
 
 #include "catch.hpp"      // for REQUIRE, REQUIRE_THROWS_AS, REQUI...
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
 
-#include "libsemigroups/bipart.hpp"        // for Bipartition
-#include "libsemigroups/containers.hpp"    // for StaticVector1
-#include "libsemigroups/froidure-pin.hpp"  // for FroidurePin
 #include "libsemigroups/kambites.hpp"      // for Kambites
-#include "libsemigroups/knuth-bendix.hpp"  // for redundant_rule
+#include "libsemigroups/knuth-bendix.hpp"  // for KnuthBendix
 #include "libsemigroups/make-present.hpp"  // for make
 #include "libsemigroups/present.hpp"       // for Presentation
 #include "libsemigroups/siso.hpp"          // for Sislo
@@ -44,7 +41,7 @@
 #include "fmt/printf.h"
 
 namespace libsemigroups {
-  enum class certificate {
+  enum class certificate : uint8_t {
     special                          = 0,  // one side of one word is empty
     cycle_free                       = 1,  // aub = bva
     relation_words_have_equal_length = 2,
@@ -54,10 +51,65 @@ namespace libsemigroups {
     C4                          = 5,
     free_product_monogenic_free = 6,  // relation of form a ^ k = a
     knuth_bendix_terminates     = 7,
-    unknown                     = 37
-
+    unknown                     = 37,
+    none                        = 255
   };
-}
+
+  auto const& certificate_map() {
+    static const std::unordered_map<certificate, std::string> map
+        = {{certificate::special, "special"},
+           {certificate::cycle_free, "cycle-free"},
+           {certificate::relation_words_have_equal_length,
+            "relation words have equal length"},
+           {certificate::self_overlap_free, "self overlap free"},
+           {certificate::C3, "C(3) monoid"},
+           {certificate::C4, "C(4) monoid"},
+           {certificate::free_product_monogenic_free,
+            "free product monogenic and free"},
+           {certificate::knuth_bendix_terminates, "Knuth-Bendix terminates"},
+           {certificate::unknown, "unknown"},
+           {certificate::none, "none"}};
+    return map;
+  }
+
+  std::string const& to_string(certificate c) {
+    return certificate_map().find(c)->second;
+  }
+
+  std::ostream& operator<<(std::ostream& os, certificate const& c) {
+    os << to_string(c);
+    return os;
+  }
+
+  enum class reduction : uint8_t {
+    normalize_alphabet     = 0,
+    weakly_compress        = 1,
+    strongly_compress      = 2,
+    tietze                 = 3,
+    reduce_to_2_generators = 4,
+    none                   = 255
+  };
+
+  auto const& reduction_map() {
+    static const std::unordered_map<reduction, std::string> map
+        = {{reduction::normalize_alphabet, "alphabet normalized"},
+           {reduction::weakly_compress, "weakly compressed"},
+           {reduction::strongly_compress, "strongly compressed"},
+           {reduction::tietze, "tietze"},
+           {reduction::reduce_to_2_generators, "reduced to 2-generators"},
+           {reduction::none, "none"}};
+    return map;
+  }
+
+  std::string const& to_string(reduction c) {
+    return reduction_map().find(c)->second;
+  }
+
+  std::ostream& operator<<(std::ostream& os, reduction const& c) {
+    os << to_string(c);
+    return os;
+  }
+}  // namespace libsemigroups
 
 CATCH_REGISTER_ENUM(
     libsemigroups::certificate,
@@ -69,7 +121,16 @@ CATCH_REGISTER_ENUM(
     libsemigroups::certificate::C4,
     libsemigroups::certificate::free_product_monogenic_free,
     libsemigroups::certificate::knuth_bendix_terminates,
+    libsemigroups::certificate::none,
     libsemigroups::certificate::unknown);
+
+CATCH_REGISTER_ENUM(libsemigroups::reduction,
+                    libsemigroups::reduction::normalize_alphabet,
+                    libsemigroups::reduction::weakly_compress,
+                    libsemigroups::reduction::strongly_compress,
+                    libsemigroups::reduction::tietze,
+                    libsemigroups::reduction::reduce_to_2_generators,
+                    libsemigroups::reduction::none);
 
 namespace libsemigroups {
   namespace {
@@ -115,6 +176,7 @@ namespace libsemigroups {
       return mp;
     }
 
+    // TODO(now) add logging
     bool knuth_bendix_search(Presentation<std::string>& p,
                              size_t                     max_depth = 4,
                              size_t                     depth     = 0) {
@@ -131,19 +193,9 @@ namespace libsemigroups {
 
         k.run_for(std::chrono::milliseconds(10));
         if (k.confluent()) {
-          std::cout << std::vector<typename KnuthBendix_::rule_type>(
-              k.cbegin_rules(), k.cend_rules())
-                    << std::endl;
-          std::cout << k.active_rules() << std::endl;
           return true;
         }
       } while (std::next_permutation(perm.begin(), perm.end()));
-      // auto k = make<KnuthBendix_>(p);
-
-      // k.run_for(std::chrono::milliseconds(10));
-      // if (k.confluent()) {
-      //   return true;
-      // }
 
       auto sbwrds = subwords(p.rules.cbegin(), p.rules.cend());
       // TODO sort sbwrds from longest to shortest
@@ -162,27 +214,51 @@ namespace libsemigroups {
       return false;
     }
 
-    template <typename W>
-    auto has_decidable_word_problem(Presentation<W>& p, size_t depth = 0) {
-      if (p.rules.size() != 2) {
-        LIBSEMIGROUPS_EXCEPTION("TODO");
+    void log(std::ofstream&                   file,
+             Presentation<std::string> const& p,
+             certificate                      c,
+             reduction                        r) {
+      file << p.rules << "," << c << ", " << r << ", ";
+      if (c != certificate::none) {
+        // assert r is none
+        file << std::endl;
       }
+    }
+
+    template <typename W>
+    auto has_decidable_word_problem(std::ofstream&   log_file,
+                                    Presentation<W>& p,
+                                    size_t           depth) {
+      if (p.rules.size() != 2) {
+        LIBSEMIGROUPS_EXCEPTION("the presentation must have 1 relation!");
+      }
+
       auto const& u = p.rules[0];
       auto const& v = p.rules[1];
 
       if (u.empty() || v.empty()) {
+        log(log_file, p, certificate::special, reduction::none);
         return std::make_pair(certificate::special, depth);
       } else if (u.size() == v.size()) {
+        log(log_file,
+            p,
+            certificate::relation_words_have_equal_length,
+            reduction::none);
         return std::make_pair(certificate::relation_words_have_equal_length,
                               depth);
       } else if (u.front() == v.back() && v.front() == u.back()
                  && u.front() != u.back()) {
+        log(log_file, p, certificate::cycle_free, reduction::none);
         return std::make_pair(certificate::cycle_free, depth);
       }
 
       for (auto it = p.alphabet().cbegin(); it != p.alphabet().cend(); ++it) {
         if (std::search(u.cbegin(), u.cend(), it, it + 1) == u.cend()
             && std::search(v.cbegin(), v.cend(), it, it + 1) == v.cend()) {
+          log(log_file,
+              p,
+              certificate::free_product_monogenic_free,
+              reduction::none);
           return std::make_pair(certificate::free_product_monogenic_free,
                                 depth);
         }
@@ -190,13 +266,16 @@ namespace libsemigroups {
 
       if ((u.size() > v.size() && presentation::is_self_overlap_free(u))
           || (v.size() > u.size() && presentation::is_self_overlap_free(v))) {
+        log(log_file, p, certificate::self_overlap_free, reduction::none);
         return std::make_pair(certificate::self_overlap_free, depth);
       }
       {
         auto k = make<Kambites_>(p);
         if (k.small_overlap_class() == 3) {
+          log(log_file, p, certificate::C3, reduction::none);
           return std::make_pair(certificate::C3, depth);
         } else if (k.small_overlap_class() >= 4) {
+          log(log_file, p, certificate::C4, reduction::none);
           return std::make_pair(certificate::C4, depth);
         }
       }
@@ -206,51 +285,80 @@ namespace libsemigroups {
         presentation::reduce_to_2_generators(copy);
       }
 
-      if (presentation::is_weakly_compressible(p)) {
+      if (presentation::is_weakly_compressible(copy)) {
         presentation::weakly_compress(copy);
-        auto c = has_decidable_word_problem(copy, depth + 1);
+        auto c = has_decidable_word_problem(log_file, copy, depth + 1);
         if (c.first != certificate::unknown) {
+          log(log_file, copy, c.first, reduction::weakly_compress);
+          log(log_file,
+              p,
+              certificate::none,
+              reduction::reduce_to_2_generators);
           return c;
         }
       }
-      if (presentation::is_strongly_compressible(p)) {
+      if (presentation::is_strongly_compressible(copy)) {
         presentation::strongly_compress(copy);
-        auto c = has_decidable_word_problem(copy, depth + 1);
+        auto c = has_decidable_word_problem(log_file, copy, depth + 1);
         if (c.first != certificate::unknown) {
+          log(log_file, copy, c.first, reduction::strongly_compress);
+          log(log_file,
+              p,
+              certificate::none,
+              reduction::reduce_to_2_generators);
           return c;
         }
       }
       if (knuth_bendix_search(copy)) {
         // copy is 2-generated so we try that first
+        log(log_file,
+            copy,
+            certificate::knuth_bendix_terminates,
+            reduction::none);
+        log(log_file, p, certificate::none, reduction::reduce_to_2_generators);
         return std::make_pair(certificate::knuth_bendix_terminates, depth);
       }
       if (p.alphabet().size() > 2 && knuth_bendix_search(p)) {
+        log(log_file, p, certificate::knuth_bendix_terminates, reduction::none);
         return std::make_pair(certificate::knuth_bendix_terminates, depth);
       }
 
+      log(log_file, p, certificate::unknown, reduction::none);
       return std::make_pair(certificate::unknown, depth);
     }
 
-    template <typename Function>
-    Presentation<std::string> find_example(size_t min_depth, Function&& pred) {
-      Sislo s;
-      s.alphabet("ab").first("a").last("aaaaaaaaaaa");
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      for (auto u = s.cbegin(); u != s.cend(); ++u) {
-        for (auto v = u + 1; v != s.cend(); ++v) {
-          p.rules.clear();
-          presentation::add_rule(p, *u, *v);
-          if (pred(p)) {
-            if (has_decidable_word_problem(p).second >= min_depth) {
-              return p;
-            }
-          }
-        }
-      }
-      p.rules.clear();
-      return p;
+    template <typename W>
+    auto has_decidable_word_problem(Presentation<W>& p) {
+      std::string log_filename
+          = std::string("tmp/") + p.rules[0] + "_" + p.rules[1] + ".txt";
+      std::ofstream log_file(log_filename);
+      auto          result = has_decidable_word_problem(log_file, p, 0);
+      log_file.close();
+      fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", log_filename);
+      return result;
     }
+
+    // template <typename Function>
+    // Presentation<std::string> find_example(size_t min_depth, Function&& pred)
+    // {
+    //   Sislo s;
+    //   s.alphabet("ab").first("a").last("aaaaaaaaaaa");
+    //   Presentation<std::string> p;
+    //   p.alphabet("ab");
+    //   for (auto u = s.cbegin(); u != s.cend(); ++u) {
+    //     for (auto v = u + 1; v != s.cend(); ++v) {
+    //       p.rules.clear();
+    //       presentation::add_rule(p, *u, *v);
+    //       if (pred(p)) {
+    //         if (has_decidable_word_problem(p).second >= min_depth) {
+    //           return p;
+    //         }
+    //       }
+    //     }
+    //   }
+    //   p.rules.clear();
+    //   return p;
+    // }
 
     auto bitmap_init_XXX(size_t N) {
       bitmap_image bmp(N, N);
@@ -283,23 +391,22 @@ namespace libsemigroups {
     }
 
     void print_key() {
-      static const std::unordered_map<certificate, std::string> map
-          = {{certificate::special, "special"},
-             {certificate::cycle_free, "cycle-free"},
-             {certificate::relation_words_have_equal_length,
-              "relation words have equal length"},
-             {certificate::self_overlap_free, "self overlap free"},
-             {certificate::C3, "C(3) monoid"},
-             {certificate::C4, "C(4) monoid"},
-             {certificate::free_product_monogenic_free,
-              "free product monogenic and free"},
-             {certificate::knuth_bendix_terminates, "Knuth-Bendix terminates"},
-             {certificate::unknown, "unknown"}};
+      auto const& map          = certificate_map();
+      size_t      max_text_len = 0;
+      for (auto const& x : map) {
+        if (x.second.size() > max_text_len) {
+          max_text_len = x.second.size();
+        }
+      }
+
+      auto pad = [&max_text_len](std::string str) {
+        return str + std::string(max_text_len - str.size(), ' ');
+      };
 
       for (auto const& x : map) {
         auto cert = static_cast<size_t>(x.first);
         auto colo = to_fmt_color(colors[cert]);
-        fmt::print(fmt::emphasis::bold | fmt::bg(colo), x.second);
+        fmt::print(fmt::emphasis::bold | fmt::bg(colo), pad(x.second));
         fmt::print(fmt::bg(fmt::color::black), "\n");
       }
     }
@@ -379,7 +486,8 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "006",
                           "unknown",
-                          "[quick][presentation]") {
+                          "[extreme][presentation]") {
+    auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "bababbbabba", "a");
@@ -427,6 +535,7 @@ namespace libsemigroups {
                           "010",
                           "knuth_bendix_terminates",
                           "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "bbbbb", "aaabaa");
@@ -438,6 +547,7 @@ namespace libsemigroups {
                           "011",
                           "knuth_bendix_terminates",
                           "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "ba", "aaa");
@@ -494,9 +604,15 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "017",
+                          "spdlog test",
+                          "[extreme][presentation]") {}
+
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "998",
                           "strongly compressible",
-                          "[quick][presentation]") {
+                          "[fail][presentation]") {
+    // Doesn't fail just don't want to run
     print_key();
     // auto p = find_example(1, [](auto const& p) {
     //   return presentation::is_strongly_compressible(p);
@@ -506,8 +622,8 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "999",
-                          "strongly compressible",
-                          "[quick][presentation]") {
+                          "solve for bua = ava where |u|, |v| < 7",
+                          "[extreme][presentation]") {
     // knuth_bendix max_depth = 2, and run KnuthBendix for 5ms
     auto  rg = ReportGuard(false);
     Sislo s;
@@ -541,6 +657,7 @@ namespace libsemigroups {
       }
       ++x;
     }
+    print_key();
     bmp.save_image("2_gen_1_rel.bmp");
     REQUIRE(undecidable == 13);
   }
