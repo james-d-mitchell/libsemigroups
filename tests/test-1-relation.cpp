@@ -40,6 +40,9 @@
 
 #include "bitmap_image.hpp"
 
+#include "fmt/color.h"
+#include "fmt/printf.h"
+
 namespace libsemigroups {
   enum class certificate {
     special                          = 0,  // one side of one word is empty
@@ -266,6 +269,10 @@ namespace libsemigroups {
            {116, 10, 255},  {153, 0, 0},    {255, 255, 128}, {255, 255, 0},
            {255, 80, 5},    {255, 000, 000}};
 
+    fmt::rgb to_fmt_color(rgb_t const& x) {
+      return fmt::rgb(x.red, x.green, x.blue);
+    }
+
     rgb_t to_color(certificate c) {
       return colors[static_cast<size_t>(c)];
     }
@@ -275,6 +282,27 @@ namespace libsemigroups {
       bmp.set_pixel(x, y, to_color(c));
     }
 
+    void print_key() {
+      static const std::unordered_map<certificate, std::string> map
+          = {{certificate::special, "special"},
+             {certificate::cycle_free, "cycle-free"},
+             {certificate::relation_words_have_equal_length,
+              "relation words have equal length"},
+             {certificate::self_overlap_free, "self overlap free"},
+             {certificate::C3, "C(3) monoid"},
+             {certificate::C4, "C(4) monoid"},
+             {certificate::free_product_monogenic_free,
+              "free product monogenic and free"},
+             {certificate::knuth_bendix_terminates, "Knuth-Bendix terminates"},
+             {certificate::unknown, "unknown"}};
+
+      for (auto const& x : map) {
+        auto cert = static_cast<size_t>(x.first);
+        auto colo = to_fmt_color(colors[cert]);
+        fmt::print(fmt::emphasis::bold | fmt::bg(colo), x.second);
+        fmt::print(fmt::bg(fmt::color::black), "\n");
+      }
+    }
   }  // namespace
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -454,13 +482,26 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "015",
+                          "sporadic bad 98",
+                          "[extreme][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "ba", "abaaabaa");
+    presentation::reverse(p);
+    REQUIRE(knuth_bendix_search(p));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "998",
                           "strongly compressible",
                           "[quick][presentation]") {
-    auto p = find_example(1, [](auto const& p) {
-      return presentation::is_strongly_compressible(p);
-    });
-    REQUIRE(p.rules == std::vector<std::string>());
+    print_key();
+    // auto p = find_example(1, [](auto const& p) {
+    //   return presentation::is_strongly_compressible(p);
+    // });
+    // REQUIRE(p.rules == std::vector<std::string>());
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
