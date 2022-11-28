@@ -557,7 +557,7 @@ namespace libsemigroups {
         return;
       }
 
-      std::unordered_map<letter_type, letter_type> old_to_new;
+      std::map<letter_type, letter_type> old_to_new;
       for (size_t i = 0; i < p.alphabet().size(); ++i) {
         old_to_new.emplace(p.letter(i), new_alphabet[i]);
       }
