@@ -894,6 +894,14 @@ namespace libsemigroups {
     template <typename W>
     void normalize_alphabet(Presentation<W>& p);
 
+    template <typename W>
+    void change_alphabet(Presentation<W>& p, W const& new_alphabet);
+
+    inline void change_alphabet(Presentation<std::string>& p,
+                                char const*                new_alphabet) {
+      change_alphabet(p, std::string(new_alphabet));
+    }
+
     //! Returns an iterator pointing at the left hand side of the first
     //! rule of maximal length in the given range.
     //!
@@ -1041,12 +1049,6 @@ namespace libsemigroups {
     //! \throws LibsemigroupsException if `p.rules.size()` is odd.
     template <typename W>
     void remove_redundant_generators(Presentation<W>& p);
-
-    // TODO:
-    // * is_left_cycle_free, is_right_cycle_free, is_cycle_free
-    // * is_left_cancellative, is_right_cancellative (using Theorem 2.5 for
-    // general + Theorem 2.6 for 1-relator)
-    // * is_weakly_compressible, weak_compression
 
     // TODO to tpp file
     template <typename W>

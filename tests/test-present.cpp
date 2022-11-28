@@ -1111,6 +1111,9 @@ namespace libsemigroups {
         std::string(p.rules[0].cbegin(),
                     presentation::maximum_self_overlap_free_prefix_suffix(p))
         == "ab");
+    REQUIRE(presentation::weakly_compress(p));
+    presentation::change_alphabet(p, "ab");
+    REQUIRE(p.rules == std::vector<std::string>({"ab", "ba"}));
   }
 
   LIBSEMIGROUPS_TEST_CASE("Presentation",
@@ -1275,6 +1278,20 @@ namespace libsemigroups {
     REQUIRE(presentation::reduce_to_2_generators(p));
     REQUIRE(p.rules
             == std::vector<word_type>({{0, 1, 1, 0, 1, 1}, {1, 1, 1, 1, 1}}));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "040",
+                          "change_alphabet",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "ba", "abaaabaa");
+    presentation::replace_subword(p, "ba");
+    presentation::change_alphabet(p, "abc");
+    REQUIRE(p.rules == std::vector<std::string>({"c", "acaaca", "c", "ba"}));
+    REQUIRE(p.alphabet() == "abc");
+    REQUIRE_NOTHROW(p.validate());
   }
 
 }  // namespace libsemigroups

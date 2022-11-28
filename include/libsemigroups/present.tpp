@@ -539,6 +539,39 @@ namespace libsemigroups {
 #endif
     }
 
+    template <typename W>
+    void change_alphabet(Presentation<W>& p, W const& new_alphabet) {
+      using letter_type = typename Presentation<W>::letter_type;
+
+      p.validate();
+
+      if (new_alphabet.size() != p.alphabet().size()) {
+        LIBSEMIGROUPS_EXCEPTION("TODO");
+      }
+      W new_alphabet_copy = new_alphabet;
+      W old_alphabet_copy = p.alphabet();
+      std::sort(new_alphabet_copy.begin(), new_alphabet_copy.end());
+      std::sort(old_alphabet_copy.begin(), old_alphabet_copy.end());
+
+      if (new_alphabet_copy == old_alphabet_copy) {
+        return;
+      }
+
+      std::unordered_map<letter_type, letter_type> old_to_new;
+      for (size_t i = 0; i < p.alphabet().size(); ++i) {
+        old_to_new.emplace(p.letter(i), new_alphabet[i]);
+      }
+      for (auto& rule : p.rules) {
+        std::for_each(rule.begin(), rule.end(), [&old_to_new](letter_type& x) {
+          x = old_to_new.find(x)->second;
+        });
+      }
+      p.alphabet(new_alphabet);
+#ifdef LIBSEMIGROUPS_DEBUG
+      p.validate();
+#endif
+    }
+
     template <typename T>
     T longest_rule(T first, T last) {
       detail::validate_iterator_distance(first, last);
