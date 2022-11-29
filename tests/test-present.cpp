@@ -1294,4 +1294,24 @@ namespace libsemigroups {
     REQUIRE_NOTHROW(p.validate());
   }
 
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "041",
+                          "weakly_compress",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    // FIXME this is not weakly compressible!!
+    presentation::add_rule_and_check(p, "baabaa", "ababa");
+    // REQUIRE(detail::is_suffix("ababa", "ab"));
+
+    REQUIRE(
+        std::string(p.rules[0].cbegin(),
+                    presentation::maximum_self_overlap_free_prefix_suffix(p))
+        == "ba");
+    REQUIRE(presentation::weakly_compress(p));
+    REQUIRE(p.alphabet() == "a");
+    REQUIRE(p.alphabet().size() == 1);
+    REQUIRE(p.rules == std::vector<std::string>({"aa", "a"}));
+  }
+
 }  // namespace libsemigroups

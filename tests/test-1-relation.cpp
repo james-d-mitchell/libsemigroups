@@ -47,6 +47,7 @@ namespace libsemigroups {
     C4                          = 5,
     free_product_monogenic_free = 6,  // relation of form a ^ k = a
     knuth_bendix_terminates     = 7,
+    monogenic                   = 8,
     unknown                     = 37,
     none                        = 255
   };
@@ -119,6 +120,7 @@ CATCH_REGISTER_ENUM(
     libsemigroups::certificate::C4,
     libsemigroups::certificate::free_product_monogenic_free,
     libsemigroups::certificate::knuth_bendix_terminates,
+    libsemigroups::certificate::monogenic,
     libsemigroups::certificate::none,
     libsemigroups::certificate::unknown);
 
@@ -199,9 +201,12 @@ namespace libsemigroups {
         sep = ", ";
       }
       file << " | ";
-      sep = "";
+      sep             = "";
+      auto empty_word = u8"\u03B5";
       for (auto it = p.rules.cbegin(); it < p.rules.cend(); it += 2) {
-        file << sep << *it << " = " << *(it + 1);
+        file << sep << (it->empty() ? empty_word : *it) << " = ";
+        ++it;
+        file << (it->empty() ? empty_word : *it);
         sep = ", ";
       }
       file << ">";
@@ -225,8 +230,10 @@ namespace libsemigroups {
 
     bool knuth_bendix_search(std::ofstream&             log_file,
                              Presentation<std::string>& p,
-                             size_t                     max_depth = 3,
-                             size_t                     depth     = 0) {
+                             size_t                     max_depth = 2,  // make
+                                                                        // this
+                             // configurable
+                             size_t depth = 0) {
       if (depth > max_depth) {
         return false;
       }
@@ -279,7 +286,10 @@ namespace libsemigroups {
       auto const& u = p.rules[0];
       auto const& v = p.rules[1];
 
-      if (u.empty() || v.empty()) {
+      if (p.alphabet().size() == 1) {
+        log_file << "[monogenic] " << p << std::endl;
+        return std::make_pair(certificate::monogenic, depth);
+      } else if (u.empty() || v.empty()) {
         log_file << "[special] " << p << std::endl;
         return std::make_pair(certificate::special, depth);
       } else if (u.size() == v.size()) {
@@ -356,7 +366,7 @@ namespace libsemigroups {
           log_file << "[reduced to 2-generators] " << p << " (original) -> "
                    << copy << " (reduced)" << std::endl;
         }
-        log_file << "[original presentation] " << p;
+        log_file << "[original presentation] " << p << std::endl;
         return std::make_pair(certificate::knuth_bendix_terminates, depth);
       }
       if (p.alphabet().size() > 2 && knuth_bendix_search(log_file, p)) {
@@ -647,6 +657,43 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "016",
+                          "weirdness",
+                          "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "baabaa", "aba");
+    REQUIRE(has_decidable_word_problem(p).first == certificate::monogenic);
+    REQUIRE(has_decidable_word_problem(p).second == 1);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "017",
+                          "robustness",
+                          "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "babaa", "abaaba");
+    auto c = has_decidable_word_problem(p);
+    REQUIRE(c.first == certificate::monogenic);
+    REQUIRE(c.second == 1);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "018",
+                          "robustness",
+                          "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "baaaa", "abbaba");
+    auto c = has_decidable_word_problem(p);
+    REQUIRE(c.first == certificate::knuth_bendix_terminates);
+    REQUIRE(c.second == 1);
+  }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "998",
                           "strongly compressible",
                           "[fail][presentation]") {
@@ -691,7 +738,7 @@ namespace libsemigroups {
     }
     print_key();
     bmp.save_image("2_gen_1_rel.bmp");
-    REQUIRE(undecidable == 13);
+    REQUIRE(undecidable == 4);
   }
 
 }  // namespace libsemigroups

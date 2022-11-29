@@ -1200,7 +1200,6 @@ namespace libsemigroups {
       p.rules.erase(p.rules.begin() + 2, p.rules.end());
       // remove old generators
       p.alphabet_from_rules();
-      // rewrite new generators
       return true;
     }
 
@@ -1244,7 +1243,6 @@ namespace libsemigroups {
       auto compress_word = [&k, &word_to_num](W const& word) {
         W result;
         for (auto it = word.cbegin(); it <= word.cend() - k; ++it) {
-          // TODO(1relation) better to use a view/range
           result.push_back(word_to_num(it, it + k) + 97);
         }
         return result;
@@ -1259,6 +1257,7 @@ namespace libsemigroups {
     // It's possible to do the following for non-1-relation monoids
     template <typename W>
     bool reduce_to_2_generators(Presentation<W>& p) {
+      using letter_type                = typename Presentation<W>::letter_type;
       static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
       // using letter_type                = typename
       // Presentation<W>::letter_type;
@@ -1275,7 +1274,10 @@ namespace libsemigroups {
         if (*n == ad.root_of_scc(*n)) {
           // Lots of choice here, we could replace ad.root_of_scc(0) by any
           // other root of an scc
-          replace_subword(p, {letters[*n]}, {letters[ad.root_of_scc(0)]});
+          replace_subword(
+              p,
+              {static_cast<letter_type>(letters[*n])},
+              {static_cast<letter_type>(letters[ad.root_of_scc(0)])});
         }
       }
       p.alphabet_from_rules();

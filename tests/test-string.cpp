@@ -40,6 +40,7 @@ namespace libsemigroups {
     REQUIRE(!detail::is_suffix("ababaaa", "bab"));
     REQUIRE(!detail::is_suffix("ababaaa", "xxxx"));
     REQUIRE(!detail::is_suffix("ababaaa", "babaaax"));
+    REQUIRE(detail::is_suffix("ababa", "ab"));
   }
 
   LIBSEMIGROUPS_TEST_CASE("string",
