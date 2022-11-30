@@ -490,28 +490,18 @@ namespace libsemigroups {
       using letter_type = typename Presentation<W>::letter_type;
 
       p.validate();
-      W    norm_alpha;
-      bool requires_normalization = false;
-      for (auto const& l : p.alphabet()) {
-        if (l != letter(p, p.index(l))) {
-          requires_normalization = true;
-          break;
-        }
-      }
-      if (!requires_normalization) {
-        return;
-      }
-
-      for (size_t i = 0; i < p.alphabet().size(); ++i) {
-        norm_alpha.push_back(letter(p, i));
-      }
 
       for (auto& rule : p.rules) {
         std::for_each(rule.begin(), rule.end(), [&p](letter_type& x) {
           x = letter(p, p.index(x));
         });
       }
-      p.alphabet(norm_alpha);
+      W A(p.alphabet().size(), 0);
+
+      for (size_t i = 0; i < p.alphabet().size(); ++i) {
+        A[i] = letter(p, i);
+      }
+      p.alphabet(std::move(A));
 #ifdef LIBSEMIGROUPS_DEBUG
       p.validate();
 #endif

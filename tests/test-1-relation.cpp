@@ -38,18 +38,24 @@
 
 namespace libsemigroups {
   enum class certificate : uint8_t {
-    special                          = 0,  // one side of one word is empty
+    // NEVER for bua = ava
+    special = 0,  // one side of one word is empty
+    // NEVER for bua = ava
     cycle_free                       = 1,  // aub = bva
     relation_words_have_equal_length = 2,
     self_overlap_free = 3,  // i.e. already confluent, terminating rewriting
                             // system if |u| > |v|, aka "hypersimple"
-    C3                          = 4,
-    C4                          = 5,
+    C3 = 4,
+    C4 = 5,
+    // NEVER for bua = ava
     free_product_monogenic_free = 6,  // relation of form a ^ k = a
     knuth_bendix_terminates     = 7,
-    monogenic                   = 8,
-    unknown                     = 37,
-    none                        = 255
+    // NEVER for bua = ava
+    monogenic                        = 8,
+    equal_number_of_occurrences_of_a = 9,   // Theorem 4.9
+    equal_number_of_occurrences_of_b = 10,  // Theorem 4.9
+    unknown                          = 37,
+    none                             = 255
   };
 
   auto const& certificate_map() {
@@ -69,15 +75,6 @@ namespace libsemigroups {
     return map;
   }
 
-  std::string const& to_string(certificate c) {
-    return certificate_map().find(c)->second;
-  }
-
-  std::ostream& operator<<(std::ostream& os, certificate const& c) {
-    os << to_string(c);
-    return os;
-  }
-
   enum class reduction : uint8_t {
     normalize_alphabet     = 0,
     weakly_compress        = 1,
@@ -88,26 +85,6 @@ namespace libsemigroups {
     none                   = 255
   };
 
-  auto const& reduction_map() {
-    static const std::unordered_map<reduction, std::string> map
-        = {{reduction::normalize_alphabet, "alphabet normalized"},
-           {reduction::weakly_compress, "weakly compressed"},
-           {reduction::strongly_compress, "strongly compressed"},
-           {reduction::tietze, "tietze"},
-           {reduction::reduce_to_2_generators, "reduced to 2-generators"},
-           {reduction::knuth_bendix, "Knuth-Bendix active rules"},
-           {reduction::none, "none"}};
-    return map;
-  }
-
-  std::string const& to_string(reduction c) {
-    return reduction_map().find(c)->second;
-  }
-
-  std::ostream& operator<<(std::ostream& os, reduction const& c) {
-    os << to_string(c);
-    return os;
-  }
 }  // namespace libsemigroups
 
 CATCH_REGISTER_ENUM(
@@ -203,7 +180,7 @@ namespace libsemigroups {
       file << " | ";
       sep             = "";
       auto empty_word = u8"\u03B5";
-      for (auto it = p.rules.cbegin(); it < p.rules.cend(); it += 2) {
+      for (auto it = p.rules.cbegin(); it < p.rules.cend(); ++it) {
         file << sep << (it->empty() ? empty_word : *it) << " = ";
         ++it;
         file << (it->empty() ? empty_word : *it);
@@ -228,14 +205,13 @@ namespace libsemigroups {
       return mp;
     }
 
-    bool knuth_bendix_search(std::ofstream&             log_file,
+    auto knuth_bendix_search(std::ofstream&             log_file,
                              Presentation<std::string>& p,
-                             size_t                     max_depth = 2,  // make
-                                                                        // this
-                             // configurable
-                             size_t depth = 0) {
+                             size_t                     max_depth,
+                             std::chrono::milliseconds  run_for,
+                             size_t                     depth = 0) {
       if (depth > max_depth) {
-        return false;
+        return std::make_pair(false, depth);
       }
       auto                lphbt = p.alphabet();
       std::vector<size_t> perm(lphbt.size(), 0);
@@ -245,11 +221,11 @@ namespace libsemigroups {
         p.alphabet(lphbt);
         auto k = make<KnuthBendix_>(p);
 
-        k.run_for(std::chrono::milliseconds(5));
+        k.run_for(run_for);
         if (k.confluent()) {
           log_file << "[knuth-bendix] " << make<Presentation<std::string>>(k)
                    << std::endl;
-          return true;
+          return std::make_pair(true, depth);
         }
       } while (std::next_permutation(perm.begin(), perm.end()));
 
@@ -257,28 +233,30 @@ namespace libsemigroups {
       // TODO sort sbwrds from longest to shortest
       // TODO move iterator
       // std::vector<std::string> vec_sbwrds(sbwrds.cbegin(), sbwrds.cend());
-      static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
 
       for (auto const& w : sbwrds) {
         if (w.size() > 1) {
           auto q = Presentation<std::string>(p);
-          presentation::add_generator(
-              q, w.cbegin(), w.cend(), letters[q.alphabet().size()]);
-          if (knuth_bendix_search(log_file, q, max_depth, depth + 1)) {
+          presentation::replace_subword(q, w.cbegin(), w.cend());
+          auto kb
+              = knuth_bendix_search(log_file, q, max_depth, run_for, depth + 1);
+          if (kb.first) {
             size_t const n = q.rules.size();
             log_file << "[generator " << q.rules[n - 2] << " = "
                      << q.rules[n - 1] << " added] " << q << std::endl;
-            return true;
+            return std::make_pair(true, kb.second);
           }
         }
       }
-      return false;
+      return std::make_pair(false, depth);
     }
 
     template <typename W>
-    auto has_decidable_word_problem(std::ofstream&   log_file,
-                                    Presentation<W>& p,
-                                    size_t           depth) {
+    auto has_decidable_word_problem(std::ofstream&            log_file,
+                                    Presentation<W>&          p,
+                                    size_t                    depth,
+                                    size_t                    kb_max_depth,
+                                    std::chrono::milliseconds kb_run_for) {
       if (p.rules.size() != 2) {
         LIBSEMIGROUPS_EXCEPTION("the presentation must have 1 relation!");
       }
@@ -327,91 +305,88 @@ namespace libsemigroups {
         }
       }
 
-      auto copy = p;
-      if (p.alphabet().size() > 2) {
-        presentation::reduce_to_2_generators(copy);
-      }
+      // auto copy = p;
+      // if (p.alphabet().size() > 2) {
+      //   presentation::reduce_to_2_generators(copy);
+      // }
 
-      if (presentation::is_weakly_compressible(copy)) {
-        Presentation<std::string> precompressed(copy);
-        presentation::weakly_compress(copy);
-        auto c = has_decidable_word_problem(log_file, copy, depth + 1);
-        if (c.first != certificate::unknown) {
-          log_file << "[weakly compressed] " << precompressed
-                   << " (original) -> " << copy << " (compressed)" << std::endl;
-          if (p.alphabet().size() > 2) {
-            log_file << "[reduced to 2-generators] " << p << " (original) -> "
-                     << copy << " (reduced)" << std::endl;
-          }
-          return c;
-        }
-      }
-      if (presentation::is_strongly_compressible(copy)) {
-        Presentation<std::string> precompressed(copy);
-        presentation::strongly_compress(copy);
-        auto c = has_decidable_word_problem(log_file, copy, depth + 1);
-        if (c.first != certificate::unknown) {
-          log_file << "[strongly compressed] " << precompressed
-                   << " (original) -> " << copy << " (compressed)" << std::endl;
-          if (p.alphabet().size() > 2) {
-            log_file << "[reduced to 2-generators] " << p << " (original) -> "
-                     << copy << " (reduced)" << std::endl;
-          }
-          return c;
-        }
-      }
-      if (knuth_bendix_search(log_file, copy)) {
-        // copy is 2-generated so we try that first
-        if (p.alphabet().size() > 2) {
-          log_file << "[reduced to 2-generators] " << p << " (original) -> "
-                   << copy << " (reduced)" << std::endl;
-        }
+      // bua = ava type presentations are never weakly compressible
+      // if (presentation::is_weakly_compressible(copy)) {
+      //   Presentation<std::string> precompressed(copy);
+      //   presentation::weakly_compress(copy);
+      //   auto c = has_decidable_word_problem(log_file, copy, depth + 1);
+      //   if (c.first != certificate::unknown) {
+      //     log_file << "[weakly compressed] " << precompressed
+      //              << " (original) -> " << copy << " (compressed)" <<
+      //              std::endl;
+      //     if (p.alphabet().size() > 2) {
+      //       log_file << "[reduced to 2-generators] " << p << " (original) ->
+      //       "
+      //                << copy << " (reduced)" << std::endl;
+      //     }
+      //     return c;
+      //   }
+      // }
+
+      // bua = ava type presentations are never strongly compressible
+      // if (presentation::is_strongly_compressible(copy)) {
+      //   std::cout << "Here\n!";
+      //   Presentation<std::string> precompressed(copy);
+      //   presentation::strongly_compress(copy);
+      //   auto c = has_decidable_word_problem(log_file, copy, depth + 1);
+      //   if (c.first != certificate::unknown) {
+      //     log_file << "[strongly compressed] " << precompressed
+      //              << " (original) -> " << copy << " (compressed)" <<
+      //              std::endl;
+      //     if (p.alphabet().size() > 2) {
+      //       log_file << "[reduced to 2-generators] " << p << " (original) ->
+      //       "
+      //                << copy << " (reduced)" << std::endl;
+      //     }
+      //     return c;
+      //   }
+      // }
+      auto kb = knuth_bendix_search(log_file, p, kb_max_depth, kb_run_for);
+
+      if (kb.first) {
+        // p is 2-generated so we try that first
+        // if (p.alphabet().size() > 2) {
+        //   log_file << "[reduced to 2-generators] " << p << " (original) -> "
+        //            << copy << " (reduced)" << std::endl;
+        // }
         log_file << "[original presentation] " << p << std::endl;
-        return std::make_pair(certificate::knuth_bendix_terminates, depth);
+        return std::make_pair(certificate::knuth_bendix_terminates,
+                              depth + kb.second);
       }
-      if (p.alphabet().size() > 2 && knuth_bendix_search(log_file, p)) {
-        log_file << "[reduced to 2-generators] " << p << " (original) -> "
-                 << copy << " (reduced)" << std::endl;
-        return std::make_pair(certificate::knuth_bendix_terminates, depth);
-      }
+      // Since we never compress, we can't have more than 2 generators
+      // if (p.alphabet().size() > 2) {
+      //   kb = knuth_bendix_search(log_file, p);
+      //   if (kb.first) {
+      //     log_file << "[reduced to 2-generators] " << p << " (original) -> "
+      //              << copy << " (reduced)" << std::endl;
+      //     return std::make_pair(certificate::knuth_bendix_terminates,
+      //                           depth + kb.second);
+      //   }
+      // }
 
       log_file << "| FAILED |" << std::endl;
       return std::make_pair(certificate::unknown, depth);
     }
 
     template <typename W>
-    auto has_decidable_word_problem(Presentation<W>& p) {
+    auto has_decidable_word_problem(Presentation<W>&          p,
+                                    size_t                    kb_depth = 2,
+                                    std::chrono::milliseconds kb_run_for
+                                    = std::chrono::milliseconds(5)) {
       std::string log_filename
           = std::string("tmp/") + p.rules[0] + "_" + p.rules[1] + ".txt";
       std::ofstream log_file(log_filename);
-      auto          result = has_decidable_word_problem(log_file, p, 0);
+      auto          result
+          = has_decidable_word_problem(log_file, p, 0, kb_depth, kb_run_for);
       log_file.close();
       fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", log_filename);
       return result;
     }
-
-    // template <typename Function>
-    // Presentation<std::string> find_example(size_t min_depth, Function&&
-    // pred)
-    // {
-    //   Sislo s;
-    //   s.alphabet("ab").first("a").last("aaaaaaaaaaa");
-    //   Presentation<std::string> p;
-    //   p.alphabet("ab");
-    //   for (auto u = s.cbegin(); u != s.cend(); ++u) {
-    //     for (auto v = u + 1; v != s.cend(); ++v) {
-    //       p.rules.clear();
-    //       presentation::add_rule(p, *u, *v);
-    //       if (pred(p)) {
-    //         if (has_decidable_word_problem(p).second >= min_depth) {
-    //           return p;
-    //         }
-    //       }
-    //     }
-    //   }
-    //   p.rules.clear();
-    //   return p;
-    // }
 
     auto bitmap_init_XXX(size_t N) {
       bitmap_image bmp(N, N);
@@ -555,7 +530,7 @@ namespace libsemigroups {
     presentation::add_rule_and_check(p, "abaabbab", "ababaab");
     REQUIRE(presentation::is_weakly_compressible(p));
     REQUIRE(has_decidable_word_problem(p)
-            == std::make_pair(certificate::self_overlap_free, size_t(1)));
+            == std::make_pair(certificate::knuth_bendix_terminates, size_t(0)));
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -573,15 +548,16 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "009",
-                          "strongly compressible",
+                          "weakly compressible",
                           "[quick][presentation]") {
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "aba", "a");
     // This is strongly compressible but doesn't use that
     REQUIRE(presentation::is_strongly_compressible(p));
+    REQUIRE(presentation::is_weakly_compressible(p));
     REQUIRE(has_decidable_word_problem(p)
-            == std::make_pair(certificate::special, size_t(1)));
+            == std::make_pair(certificate::knuth_bendix_terminates, size_t(0)));
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -605,7 +581,7 @@ namespace libsemigroups {
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "ba", "aaa");
     REQUIRE(has_decidable_word_problem(p)
-            == std::make_pair(certificate::knuth_bendix_terminates, size_t(0)));
+            == std::make_pair(certificate::knuth_bendix_terminates, size_t(1)));
   }
 
   // Takes 1m33s
@@ -617,8 +593,8 @@ namespace libsemigroups {
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "ba", "aabaaaa");
-    REQUIRE(has_decidable_word_problem(p)
-            == std::make_pair(certificate::knuth_bendix_terminates, size_t(0)));
+    REQUIRE(has_decidable_word_problem(p, 3)
+            == std::make_pair(certificate::knuth_bendix_terminates, size_t(3)));
   }
 
   // 13m39s
@@ -659,26 +635,25 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "016",
                           "weirdness",
-                          "[quick][presentation]") {
+                          "[extreme][presentation]") {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "baabaa", "aba");
-    REQUIRE(has_decidable_word_problem(p).first == certificate::monogenic);
-    REQUIRE(has_decidable_word_problem(p).second == 1);
+    REQUIRE(has_decidable_word_problem(p).first == certificate::unknown);
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "017",
                           "robustness",
-                          "[quick][presentation]") {
+                          "[extreme][presentation]") {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "babaa", "abaaba");
     auto c = has_decidable_word_problem(p);
-    REQUIRE(c.first == certificate::monogenic);
-    REQUIRE(c.second == 1);
+    REQUIRE(c.first == certificate::knuth_bendix_terminates);
+    REQUIRE(c.second == 2);
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -738,7 +713,57 @@ namespace libsemigroups {
     }
     print_key();
     bmp.save_image("2_gen_1_rel.bmp");
-    REQUIRE(undecidable == 4);
+    REQUIRE(undecidable == 35);
   }
 
 }  // namespace libsemigroups
+   //  std::string const& to_string(certificate c) {
+   //    return certificate_map().find(c)->second;
+   //  }
+   //
+   //  std::ostream& operator<<(std::ostream& os, certificate const& c) {
+   //    os << to_string(c);
+   //    return os;
+   //  }
+   //  auto const& reduction_map() {
+   //    static const std::unordered_map<reduction, std::string> map
+   //        = {{reduction::normalize_alphabet, "alphabet normalized"},
+   //           {reduction::weakly_compress, "weakly compressed"},
+   //           {reduction::strongly_compress, "strongly compressed"},
+   //           {reduction::tietze, "tietze"},
+   //           {reduction::reduce_to_2_generators, "reduced to
+   //           2-generators"}, {reduction::knuth_bendix, "Knuth-Bendix active
+   //           rules"}, {reduction::none, "none"}};
+   //    return map;
+   //  }
+   //
+   //  std::string const& to_string(reduction c) {
+   //    return reduction_map().find(c)->second;
+   //  }
+   //
+   //  std::ostream& operator<<(std::ostream& os, reduction const& c) {
+   //    os << to_string(c);
+   //    return os;
+   //  }
+   // template <typename Function>
+   // Presentation<std::string> find_example(size_t min_depth, Function&&
+   // pred)
+   // {
+   //   Sislo s;
+   //   s.alphabet("ab").first("a").last("aaaaaaaaaaa");
+   //   Presentation<std::string> p;
+   //   p.alphabet("ab");
+   //   for (auto u = s.cbegin(); u != s.cend(); ++u) {
+   //     for (auto v = u + 1; v != s.cend(); ++v) {
+   //       p.rules.clear();
+   //       presentation::add_rule(p, *u, *v);
+   //       if (pred(p)) {
+   //         if (has_decidable_word_problem(p).second >= min_depth) {
+   //           return p;
+   //         }
+   //       }
+   //     }
+   //   }
+   //   p.rules.clear();
+   //   return p;
+   // }

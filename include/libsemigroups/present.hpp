@@ -1153,6 +1153,7 @@ namespace libsemigroups {
         }
       }
       LIBSEMIGROUPS_ASSERT(false);  // Can't reach here
+      return letter(p, 0);
     }
 
     // TODO to tpp file
