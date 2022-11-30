@@ -19,7 +19,11 @@
 // TODO:
 // * add a row or column for bua = a case
 // * could try compressing presentations after Tietze transformations
-// * implement Algorithm A.
+// * Algorithm A doesn't help, it's a process for checking equality of given
+// words in a 1-relation semigroup, not a means of solving the WP in general
+// (i.e. it'd be necessary to run it for all pairs of words to know if the WP
+// is solvable).
+// * try a BFS in knuth_bendix_search
 
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
@@ -755,13 +759,13 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "999",
-                          "solve for bua = ava where |u|, |v| < 7",
+                          "solve for bua = ava where |u|, |v| < 10",
                           "[fail][presentation]") {
     // Doesn't fail just slow
     // knuth_bendix max_depth = 2, and run KnuthBendix for 5ms
     auto  rg = ReportGuard(false);
     Sislo s;
-    s.alphabet("ab").first("").last("aaaaa");
+    s.alphabet("ab").first("").last("aaaaaaaaaa");
     auto bmp = bitmap_init_XXX(std::distance(s.cbegin(), s.cend()));
     // REQUIRE(bmp.width() == 0);
     Presentation<std::string> p;
@@ -826,11 +830,17 @@ namespace libsemigroups {
         }
       }
       std::swap(bad, next_bad);
+      if (depth == 3) {
+        break;
+      }
     }
 
-    print_key();
+    std::cout << "Total " << bmp.width() * bmp.width() << " instances!"
+              << std::endl;
+    std::cout << "Couldn't solve " << undecidable << " instances!" << std::endl;
     std::cout << "Writing 2_gen_1_rel.bmp . . ." << std::endl;
     bmp.save_image("2_gen_1_rel.bmp");
+    print_key();
     // REQUIRE(undecidable == 16);
   }
 
