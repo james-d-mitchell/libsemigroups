@@ -344,7 +344,7 @@ namespace libsemigroups {
       if (watier1(u)) {
         // only this way around applies since u = bua and v = ava
         log_file << "[Watier 1] " << p << std::endl;
-        return std::make_pair(certificate::watier2, depth);
+        return std::make_pair(certificate::watier1, depth);
       }
 
       if ((u.size() > v.size() && presentation::is_self_overlap_free(u))
@@ -469,300 +469,301 @@ namespace libsemigroups {
   //   REQUIRE(has_decidable_word_problem(p).first == certificate::special);
   // }
 
-  namespace bua_ava {
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "001",
-                            "relations of equal length",
-                            "[quick][presentation]") {
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "ba", "aa");
-      REQUIRE(has_decidable_word_problem(p).first
-              == certificate::relation_words_have_equal_length);
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "001",
+                          "relations of equal length",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "ba", "aa");
+    REQUIRE(has_decidable_word_problem(p).first
+            == certificate::relation_words_have_equal_length);
+  }
 
-    //      LIBSEMIGROUPS_TEST_CASE("1-relation",
-    //                              "002",
-    //                              "cycle-free",
-    //                              "[quick][presentation]") {
-    //        Presentation<std::string> p;
-    //        p.alphabet("ab");
-    //        presentation::add_rule_and_check(p, "ab", "baa");
-    //        REQUIRE(has_decidable_word_problem(p).first ==
-    //        certificate::cycle_free);
-    //      }
+  //      LIBSEMIGROUPS_TEST_CASE("1-relation",
+  //                              "002",
+  //                              "cycle-free",
+  //                              "[quick][presentation]") {
+  //        Presentation<std::string> p;
+  //        p.alphabet("ab");
+  //        presentation::add_rule_and_check(p, "ab", "baa");
+  //        REQUIRE(has_decidable_word_problem(p).first ==
+  //        certificate::cycle_free);
+  //      }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "003",
-                            "equal number of occurrences of b",
-                            "[quick][presentation]") {
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "baaa", "baa");
-      REQUIRE(has_decidable_word_problem(p).first
-              == certificate::equal_number_of_occurrences_of_b);
-      p.rules.clear();
-      presentation::add_rule_and_check(p, "baa", "baaa");
-      REQUIRE(has_decidable_word_problem(p).first
-              == certificate::equal_number_of_occurrences_of_b);
-      p.rules.clear();
-      presentation::add_rule_and_check(p, "abaababb", "abbaabb");
-      REQUIRE(has_decidable_word_problem(p).first
-              == certificate::equal_number_of_occurrences_of_b);
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "003",
+                          "equal number of occurrences of b",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "baaa", "baa");
+    REQUIRE(has_decidable_word_problem(p).first
+            == certificate::equal_number_of_occurrences_of_b);
+    p.rules.clear();
+    presentation::add_rule_and_check(p, "baa", "baaa");
+    REQUIRE(has_decidable_word_problem(p).first
+            == certificate::equal_number_of_occurrences_of_b);
+    p.rules.clear();
+    presentation::add_rule_and_check(p, "abaababb", "abbaabb");
+    REQUIRE(has_decidable_word_problem(p).first
+            == certificate::equal_number_of_occurrences_of_b);
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "004",
-                            "equal_number_of_occurrences_of_a",
-                            "[quick][presentation]") {
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "bbbbbbaaab", "bababbbab");
-      REQUIRE(has_decidable_word_problem(p).first
-              == certificate::equal_number_of_occurrences_of_a);
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "004",
+                          "equal_number_of_occurrences_of_a",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "bbbbbbaaab", "bababbbab");
+    REQUIRE(has_decidable_word_problem(p).first
+            == certificate::equal_number_of_occurrences_of_a);
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "005",
-                            "C(3)",
-                            "[quick][presentation]") {
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "aaba", "abbab");
-      REQUIRE(has_decidable_word_problem(p).first == certificate::C3);
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "005",
+                          "C(3)",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "aaba", "abbab");
+    REQUIRE(has_decidable_word_problem(p).first == certificate::C3);
+  }
 
-    // Takes 13s with depth 2
-    // Takes 0.7s with depth 1
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "006",
-                            "least unknown example",
-                            "[extreme][presentation]") {
-      auto                      rg = ReportGuard(false);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "bababbbabba", "a");
-      auto c = has_decidable_word_problem(p, 1);
-      REQUIRE(c.first == certificate::knuth_bendix_terminates);
-      REQUIRE(c.second == 1);
-    }
+  // Takes 0.7s with depth 1
+  // TODO Check if this is still the case
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "006",
+                          "least unknown example",
+                          "[extreme][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "bababbbabba", "a");
+    auto c = has_decidable_word_problem(p, 2);
+    REQUIRE(c.first == certificate::knuth_bendix_terminates);
+    REQUIRE(c.second == 2);
+  }
 
-    // LIBSEMIGROUPS_TEST_CASE("1-relation",
-    //                         "007",
-    //                         "weakly compressible",
-    //                         "[quick][presentation]") {
-    //   Presentation<std::string> p;
-    //   p.alphabet("ab");
-    //   presentation::add_rule_and_check(p, "abaabbab", "ababaab");
-    //   REQUIRE(presentation::is_weakly_compressible(p));  // not used
-    //   REQUIRE(has_decidable_word_problem(p)
-    //           ==
-    //           std::make_pair(certificate::equal_number_of_occurrences_of_a,
-    //                             size_t(0)));
-    // }
+  // LIBSEMIGROUPS_TEST_CASE("1-relation",
+  //                         "007",
+  //                         "weakly compressible",
+  //                         "[quick][presentation]") {
+  //   Presentation<std::string> p;
+  //   p.alphabet("ab");
+  //   presentation::add_rule_and_check(p, "abaabbab", "ababaab");
+  //   REQUIRE(presentation::is_weakly_compressible(p));  // not used
+  //   REQUIRE(has_decidable_word_problem(p)
+  //           ==
+  //           std::make_pair(certificate::equal_number_of_occurrences_of_a,
+  //                             size_t(0)));
+  // }
 
-    // LIBSEMIGROUPS_TEST_CASE("1-relation",
-    //                         "008",
-    //                         "free product monogenic and free",
-    //                         "[quick][presentation]") {
-    //   Presentation<std::string> p;
-    //   p.alphabet("ab");
-    //   presentation::add_rule_and_check(p, "aa", "a");
-    //   REQUIRE(presentation::is_strongly_compressible(p));
-    //   REQUIRE(has_decidable_word_problem(p)
-    //           == std::make_pair(certificate::free_product_monogenic_free,
-    //                             size_t(0)));
-    // }
+  // LIBSEMIGROUPS_TEST_CASE("1-relation",
+  //                         "008",
+  //                         "free product monogenic and free",
+  //                         "[quick][presentation]") {
+  //   Presentation<std::string> p;
+  //   p.alphabet("ab");
+  //   presentation::add_rule_and_check(p, "aa", "a");
+  //   REQUIRE(presentation::is_strongly_compressible(p));
+  //   REQUIRE(has_decidable_word_problem(p)
+  //           == std::make_pair(certificate::free_product_monogenic_free,
+  //                             size_t(0)));
+  // }
 
-    // LIBSEMIGROUPS_TEST_CASE("1-relation",
-    //                         "009",
-    //                         "weakly compressible",
-    //                         "[quick][presentation]") {
-    //   Presentation<std::string> p;
-    //   p.alphabet("ab");
-    //   presentation::add_rule_and_check(p, "aba", "a");
-    //   // This is strongly compressible but doesn't use that
-    //   REQUIRE(presentation::is_strongly_compressible(p));
-    //   REQUIRE(presentation::is_weakly_compressible(p));
-    //   REQUIRE(
-    //       has_decidable_word_problem(p)
-    //       == std::make_pair(certificate::knuth_bendix_terminates,
-    //       size_t(0)));
-    // }
+  // LIBSEMIGROUPS_TEST_CASE("1-relation",
+  //                         "009",
+  //                         "weakly compressible",
+  //                         "[quick][presentation]") {
+  //   Presentation<std::string> p;
+  //   p.alphabet("ab");
+  //   presentation::add_rule_and_check(p, "aba", "a");
+  //   // This is strongly compressible but doesn't use that
+  //   REQUIRE(presentation::is_strongly_compressible(p));
+  //   REQUIRE(presentation::is_weakly_compressible(p));
+  //   REQUIRE(
+  //       has_decidable_word_problem(p)
+  //       == std::make_pair(certificate::knuth_bendix_terminates,
+  //       size_t(0)));
+  // }
 
-    // LIBSEMIGROUPS_TEST_CASE("1-relation",
-    //                         "010",
-    //                         "knuth_bendix_terminates",
-    //                         "[quick][presentation]") {
-    //   auto                      rg = ReportGuard(false);
-    //   Presentation<std::string> p;
-    //   p.alphabet("ab");
-    //   presentation::add_rule_and_check(p, "bbbbb", "aaabaa");
-    //   REQUIRE(
-    //       has_decidable_word_problem(p)
-    //       == std::make_pair(certificate::knuth_bendix_terminates,
-    //       size_t(0)));
-    // }
+  // LIBSEMIGROUPS_TEST_CASE("1-relation",
+  //                         "010",
+  //                         "knuth_bendix_terminates",
+  //                         "[quick][presentation]") {
+  //   auto                      rg = ReportGuard(false);
+  //   Presentation<std::string> p;
+  //   p.alphabet("ab");
+  //   presentation::add_rule_and_check(p, "bbbbb", "aaabaa");
+  //   REQUIRE(
+  //       has_decidable_word_problem(p)
+  //       == std::make_pair(certificate::knuth_bendix_terminates,
+  //       size_t(0)));
+  // }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "011",
-                            "knuth_bendix_terminates",
-                            "[quick][presentation]") {
-      auto                      rg = ReportGuard(false);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "ba", "aaa");
-      REQUIRE(has_decidable_word_problem(p)
-              == std::make_pair(certificate::watier1, size_t(0)));
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "011",
+                          "knuth_bendix_terminates",
+                          "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "ba", "aaa");
+    REQUIRE(has_decidable_word_problem(p)
+            == std::make_pair(certificate::watier1, size_t(0)));
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "012",
-                            "sporadic bad 40",
-                            "[quick][presentation]") {
-      auto                      rg = ReportGuard(false);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "ba", "aabaaaa");
-      REQUIRE(has_decidable_word_problem(p)
-              == std::make_pair(certificate::equal_number_of_occurrences_of_b,
-                                size_t(0)));
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "012",
+                          "sporadic bad 40",
+                          "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "ba", "aabaaaa");
+    REQUIRE(has_decidable_word_problem(p)
+            == std::make_pair(certificate::equal_number_of_occurrences_of_b,
+                              size_t(0)));
+  }
 
-    // 13m39s
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "013",
-                            "sporadic bad 50",
-                            "[extreme][presentation]") {
-      auto                      rg = ReportGuard(false);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "ba", "abaabaa");
-      // REQUIRE(knuth_bendix_search(p));
-    }
+  // 13m39s
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "013",
+                          "sporadic bad 50",
+                          "[extreme][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "ba", "abaabaa");
+    // REQUIRE(knuth_bendix_search(p));
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "014",
-                            "sporadic bad 98",
-                            "[extreme][presentation]") {
-      auto                      rg = ReportGuard(false);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "ba", "abaaabaa");
-      // REQUIRE(knuth_bendix_search(p));
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "014",
+                          "sporadic bad 98",
+                          "[extreme][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "ba", "abaaabaa");
+    // REQUIRE(knuth_bendix_search(p));
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "015",
-                            "sporadic bad 98",
-                            "[extreme][presentation]") {
-      auto                      rg = ReportGuard(false);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "ba", "abaaabaa");
-      presentation::reverse(p);
-      // REQUIRE(knuth_bendix_search(p));
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "015",
+                          "sporadic bad 98",
+                          "[extreme][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "ba", "abaaabaa");
+    presentation::reverse(p);
+    // REQUIRE(knuth_bendix_search(p));
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "016",
-                            "weirdness",
-                            "[extreme][presentation]") {
-      auto                      rg = ReportGuard(false);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "baabaa", "aba");
-      REQUIRE(has_decidable_word_problem(p).first == certificate::unknown);
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "016",
+                          "weirdness",
+                          "[extreme][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "baabaa", "aba");
+    REQUIRE(has_decidable_word_problem(p).first == certificate::unknown);
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "017",
-                            "robustness",
-                            "[quick][presentation]") {
-      auto                      rg = ReportGuard(false);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "babaa", "abaaba");
-      auto c = has_decidable_word_problem(p);
-      REQUIRE(c.first == certificate::equal_number_of_occurrences_of_b);
-      REQUIRE(c.second == 0);
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "017",
+                          "robustness",
+                          "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "babaa", "abaaba");
+    auto c = has_decidable_word_problem(p);
+    REQUIRE(c.first == certificate::equal_number_of_occurrences_of_b);
+    REQUIRE(c.second == 0);
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "018",
-                            "robustness",
-                            "[quick][presentation]") {
-      auto                      rg = ReportGuard(false);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      presentation::add_rule_and_check(p, "baaaa", "abbaba");
-      auto c = has_decidable_word_problem(p);
-      REQUIRE(c.first == certificate::watier1);
-      REQUIRE(c.second == 0);
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "018",
+                          "robustness",
+                          "[quick][presentation]") {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "baaaa", "abbaba");
+    auto c = has_decidable_word_problem(p);
+    REQUIRE(c.first == certificate::watier1);
+    REQUIRE(c.second == 0);
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "019",
-                            "watier1",
-                            "[quick][presentation]") {
-      REQUIRE(watier1("baaaa"));
-      REQUIRE(watier1("bbbabbaab"));
-      REQUIRE(!watier1("bbbabbaabbbb"));
-      REQUIRE(!watier1("bbbabbbabaa"));
-      REQUIRE(!watier1("bbbabbababbabbb"));
-      REQUIRE(watier1("bbbbbb"));
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "019",
+                          "watier1",
+                          "[quick][presentation]") {
+    REQUIRE(watier1("baaaa"));
+    REQUIRE(watier1("bbbabbaab"));
+    REQUIRE(!watier1("bbbabbaabbbb"));
+    REQUIRE(!watier1("bbbabbbabaa"));
+    REQUIRE(!watier1("bbbabbababbabbb"));
+    REQUIRE(watier1("bbbbbb"));
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "998",
-                            "strongly compressible",
-                            "[fail][presentation]") {
-      // Doesn't fail just don't want to run
-      print_key();
-    }
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "998",
+                          "strongly compressible",
+                          "[fail][presentation]") {
+    // Doesn't fail just don't want to run
+    print_key();
+  }
 
-    LIBSEMIGROUPS_TEST_CASE("1-relation",
-                            "999",
-                            "solve for bua = ava where |u|, |v| < 5",
-                            "[fail][presentation]") {
-      // Doesn't fail just slow
-      // knuth_bendix max_depth = 2, and run KnuthBendix for 5ms
-      auto  rg = ReportGuard(false);
-      Sislo s;
-      s.alphabet("ab").first("").last("aaaaa");
-      auto bmp = bitmap_init_XXX(std::distance(s.cbegin(), s.cend()));
-      // REQUIRE(bmp.width() == 0);
-      Presentation<std::string> p;
-      p.alphabet("ab");
-      size_t   x           = 0;
-      uint64_t undecidable = 0;
-      for (auto u = s.cbegin(); u != s.cend(); ++u) {
-        size_t y = 0;
-        auto   U = std::string("b") + *u + "a";
-        // TODO V = "a"
-        for (auto v = s.cbegin(); v != s.cend(); ++v) {
-          auto V = std::string("a") + *v + "a";
-          p.rules.clear();
-          presentation::add_rule(p, U, V);
-          auto c
-              = has_decidable_word_problem(p, 1, std::chrono::milliseconds(2));
-          bitmap_color_XXX(bmp, x, y, c.first);
-          std::cout << U << " = " << V << " is ";
-          if (c.first == certificate::unknown) {
-            ++undecidable;
-            std::cout << "bad" << std::endl;
-          } else {
-            std::cout << "good (depth " << c.second << ")" << std::endl;
-          }
-          ++y;
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "999",
+                          "solve for bua = ava where |u|, |v| < 7",
+                          "[fail][presentation]") {
+    // Doesn't fail just slow
+    // knuth_bendix max_depth = 2, and run KnuthBendix for 5ms
+    auto  rg = ReportGuard(false);
+    Sislo s;
+    s.alphabet("ab").first("").last("aaaaaaa");
+    auto bmp = bitmap_init_XXX(std::distance(s.cbegin(), s.cend()));
+    // REQUIRE(bmp.width() == 0);
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    size_t   x           = 0;
+    uint64_t undecidable = 0;
+    for (auto u = s.cbegin(); u != s.cend(); ++u) {
+      size_t y = 0;
+      auto   U = std::string("b") + *u + "a";
+      // TODO V = "a"
+      for (auto v = s.cbegin(); v != s.cend(); ++v) {
+        auto V = std::string("a") + *v + "a";
+        p.rules.clear();
+        presentation::add_rule(p, U, V);
+        auto c = has_decidable_word_problem(p, 1, std::chrono::milliseconds(2));
+        bitmap_color_XXX(bmp, x, y, c.first);
+        std::cout << U << " = " << V << " is ";
+        if (c.first == certificate::unknown) {
+          ++undecidable;
+          std::cout << "bad" << std::endl;
+        } else {
+          std::cout << "good (depth " << c.second << ")" << std::endl;
         }
-        ++x;
+        ++y;
       }
-      print_key();
-      bmp.save_image("2_gen_1_rel.bmp");
-      REQUIRE(undecidable == 16);
+      ++x;
     }
-  }  // namespace bua_ava
+    print_key();
+    std::cout << "Total " << bmp.width() * bmp.width() << " instances!"
+              << std::endl;
+    std::cout << "Couldn't solve " << undecidable << " instances!" << std::endl;
+    std::cout << "Writing 2_gen_1_rel.bmp . . ." << std::endl;
+    bmp.save_image("2_gen_1_rel.bmp");
+    // REQUIRE(undecidable == 16);
+  }
 
 }  // namespace libsemigroups
    //  std::string const& to_string(certificate c) {
