@@ -16,6 +16,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+// TODO:
+// * different colours for different depths
+// * add a row or column for bua = a case
+
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
 #include <cstddef>  // for size_t
@@ -70,6 +74,11 @@ namespace libsemigroups {
            {certificate::free_product_monogenic_free,
             "free product monogenic and free"},
            {certificate::knuth_bendix_terminates, "Knuth-Bendix terminates"},
+           {certificate::monogenic, "monogenic"},
+           {certificate::equal_number_of_occurrences_of_a,
+            "equal number of occurrences of letter a"},
+           {certificate::equal_number_of_occurrences_of_b,
+            "equal number of occurrences of letter b"},
            {certificate::unknown, "unknown"},
            {certificate::none, "none"}};
     return map;
@@ -98,6 +107,8 @@ CATCH_REGISTER_ENUM(
     libsemigroups::certificate::free_product_monogenic_free,
     libsemigroups::certificate::knuth_bendix_terminates,
     libsemigroups::certificate::monogenic,
+    libsemigroups::certificate::equal_number_of_occurrences_of_a,
+    libsemigroups::certificate::equal_number_of_occurrences_of_b,
     libsemigroups::certificate::none,
     libsemigroups::certificate::unknown);
 
@@ -137,25 +148,6 @@ namespace libsemigroups {
       }
       return k;
     }
-
-    //   void make_human_readable(Presentation<std::string>& p) {
-    //     if (p.alphabet().size() > LETTERS.size()) {
-    //       LIBSEMIGROUPS_EXCEPTION(
-    //           "too many letters, expected at most %llu, found %llu",
-    //           uint64_t(LETTERS.size()),
-    //           uint64_t(p.alphabet().size()));
-    //     }
-    //     std::string new_alphabet;
-    //     size_t      next = 2;
-    //     for (auto const& x : p.alphabet()) {
-    //       if (x == 'a' || x == 'b') {
-    //         new_alphabet.push_back(x);
-    //       } else {
-    //         new_alphabet.push_back(LETTERS[next++]);
-    //       }
-    //     }
-    //     presentation::change_alphabet(p, new_alphabet);
-    //   }
 
     template <typename T, typename SFINAE = T>
     auto make(KnuthBendix_ const& k)
@@ -197,12 +189,16 @@ namespace libsemigroups {
       for (auto it = first; it < last; ++it) {
         auto const& w = *it;
         for (auto suffix = w.cbegin(); suffix < w.cend(); ++suffix) {
-          for (auto prefix = suffix + 1; prefix < w.cend(); ++prefix) {
+          for (auto prefix = suffix + 2; prefix < w.cend(); ++prefix) {
             mp.emplace(suffix, prefix);
           }
         }
       }
-      return mp;
+      std::vector<std::string> words(mp.cbegin(), mp.cend());
+      std::sort(words.begin(), words.end(), [](auto const& u, auto const& v) {
+        return shortlex_compare(v, u);
+      });
+      return words;
     }
 
     auto knuth_bendix_search(std::ofstream&             log_file,
@@ -287,6 +283,35 @@ namespace libsemigroups {
           return std::make_pair(certificate::free_product_monogenic_free,
                                 depth);
         }
+      }
+
+      int a_count = 0;
+      int b_count = 0;
+
+      for (auto const& c : u) {
+        if (c == 'a') {
+          a_count++;
+        } else if (c == 'b') {
+          b_count++;
+        }
+      }
+
+      for (auto const& c : v) {
+        if (c == 'a') {
+          a_count--;
+        } else if (c == 'b') {
+          b_count--;
+        }
+      }
+
+      if (a_count == 0) {
+        log_file << "[equal number of occurrences of a] " << p << std::endl;
+        return std::make_pair(certificate::equal_number_of_occurrences_of_a,
+                              depth);
+      } else if (b_count == 0) {
+        log_file << "[equal number of occurrences of b] " << p << std::endl;
+        return std::make_pair(certificate::equal_number_of_occurrences_of_b,
+                              depth);
       }
 
       if ((u.size() > v.size() && presentation::is_self_overlap_free(u))
@@ -473,31 +498,32 @@ namespace libsemigroups {
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "003",
-                          "self-overlap free",
+                          "equal number of occurrences of b",
                           "[quick][presentation]") {
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "baaa", "baa");
     REQUIRE(has_decidable_word_problem(p).first
-            == certificate::self_overlap_free);
+            == certificate::equal_number_of_occurrences_of_b);
     p.rules.clear();
     presentation::add_rule_and_check(p, "baa", "baaa");
     REQUIRE(has_decidable_word_problem(p).first
-            == certificate::self_overlap_free);
+            == certificate::equal_number_of_occurrences_of_b);
     p.rules.clear();
     presentation::add_rule_and_check(p, "abaababb", "abbaabb");
     REQUIRE(has_decidable_word_problem(p).first
-            == certificate::self_overlap_free);
+            == certificate::equal_number_of_occurrences_of_b);
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "004",
-                          "C(4)",
+                          "equal_number_of_occurrences_of_a",
                           "[quick][presentation]") {
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "bbbbbbaaab", "bababbbab");
-    REQUIRE(has_decidable_word_problem(p).first == certificate::C4);
+    REQUIRE(has_decidable_word_problem(p).first
+            == certificate::equal_number_of_occurrences_of_a);
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -510,15 +536,19 @@ namespace libsemigroups {
     REQUIRE(has_decidable_word_problem(p).first == certificate::C3);
   }
 
+  // Takes 13s with depth 2
+  // Takes 0.7s with depth 1
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "006",
-                          "unknown",
+                          "least unknown example",
                           "[extreme][presentation]") {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "bababbbabba", "a");
-    REQUIRE(has_decidable_word_problem(p).first == certificate::unknown);
+    auto c = has_decidable_word_problem(p, 1);
+    REQUIRE(c.first == certificate::knuth_bendix_terminates);
+    REQUIRE(c.second == 1);
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -528,9 +558,10 @@ namespace libsemigroups {
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "abaabbab", "ababaab");
-    REQUIRE(presentation::is_weakly_compressible(p));
+    REQUIRE(presentation::is_weakly_compressible(p));  // not used
     REQUIRE(has_decidable_word_problem(p)
-            == std::make_pair(certificate::knuth_bendix_terminates, size_t(0)));
+            == std::make_pair(certificate::equal_number_of_occurrences_of_a,
+                              size_t(0)));
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -584,17 +615,17 @@ namespace libsemigroups {
             == std::make_pair(certificate::knuth_bendix_terminates, size_t(1)));
   }
 
-  // Takes 1m33s
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "012",
                           "sporadic bad 40",
-                          "[extreme][presentation]") {
+                          "[quick][presentation]") {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "ba", "aabaaaa");
-    REQUIRE(has_decidable_word_problem(p, 3)
-            == std::make_pair(certificate::knuth_bendix_terminates, size_t(3)));
+    REQUIRE(has_decidable_word_problem(p)
+            == std::make_pair(certificate::equal_number_of_occurrences_of_b,
+                              size_t(0)));
   }
 
   // 13m39s
@@ -646,14 +677,14 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "017",
                           "robustness",
-                          "[extreme][presentation]") {
+                          "[quick][presentation]") {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
     presentation::add_rule_and_check(p, "babaa", "abaaba");
     auto c = has_decidable_word_problem(p);
-    REQUIRE(c.first == certificate::knuth_bendix_terminates);
-    REQUIRE(c.second == 2);
+    REQUIRE(c.first == certificate::equal_number_of_occurrences_of_b);
+    REQUIRE(c.second == 0);
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -679,7 +710,8 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "999",
                           "solve for bua = ava where |u|, |v| < 5",
-                          "[extreme][presentation]") {
+                          "[fail][presentation]") {
+    // Doesn't fail just slow
     // knuth_bendix max_depth = 2, and run KnuthBendix for 5ms
     auto  rg = ReportGuard(false);
     Sislo s;
