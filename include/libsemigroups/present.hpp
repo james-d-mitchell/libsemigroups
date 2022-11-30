@@ -1199,6 +1199,7 @@ namespace libsemigroups {
       return is_self_overlap_free(w.begin(), w.end());
     }
 
+    // TODO make private
     template <typename W>
     auto maximum_self_overlap_free_prefix_suffix(Presentation<W> const& p) {
       if (p.rules.size() != 2) {
@@ -1207,6 +1208,7 @@ namespace libsemigroups {
       auto const& u = p.rules[0];
       auto const& v = p.rules[1];
 
+      // TODO better way of doing this
       for (auto it = u.cend(); it-- > u.cbegin() + 1;) {
         if (detail::is_suffix(u.cbegin(), u.cend(), u.cbegin(), it)
             && detail::is_suffix(v.cbegin(), v.cend(), u.cbegin(), it)

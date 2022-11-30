@@ -487,14 +487,13 @@ namespace libsemigroups {
 
     template <typename W>
     void normalize_alphabet(Presentation<W>& p) {
-      using size_type   = typename Presentation<W>::size_type;
       using letter_type = typename Presentation<W>::letter_type;
 
       p.validate();
       W    norm_alpha;
       bool requires_normalization = false;
-      for (auto const& letter : p.alphabet()) {
-        if (static_cast<size_type>(letter) != p.index(letter)) {
+      for (auto const& l : p.alphabet()) {
+        if (l != letter(p, p.index(l))) {
           requires_normalization = true;
           break;
         }
@@ -503,14 +502,14 @@ namespace libsemigroups {
         return;
       }
 
-      for (auto const& letter : p.alphabet()) {
-        norm_alpha.push_back(p.index(letter));
+      for (size_t i = 0; i < p.alphabet().size(); ++i) {
+        norm_alpha.push_back(letter(p, i));
       }
 
-      std::sort(norm_alpha.begin(), norm_alpha.end());
       for (auto& rule : p.rules) {
-        std::for_each(
-            rule.begin(), rule.end(), [&p](letter_type& x) { x = p.index(x); });
+        std::for_each(rule.begin(), rule.end(), [&p](letter_type& x) {
+          x = letter(p, p.index(x));
+        });
       }
       p.alphabet(norm_alpha);
 #ifdef LIBSEMIGROUPS_DEBUG

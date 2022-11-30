@@ -919,13 +919,13 @@ namespace libsemigroups {
                 {"bb", "a", "bcb", "a", "abcb", "a", "bbcb", "a"}));
     REQUIRE(p.alphabet() == "abc");
     presentation::normalize_alphabet(p);
-    REQUIRE(p.letter(0) == 0);
-    REQUIRE(p.letter(1) == 1);
-    REQUIRE(p.letter(2) == 2);
+    REQUIRE(p.letter(0) == presentation::letter(p, 0));
+    REQUIRE(p.letter(1) == presentation::letter(p, 1));
+    REQUIRE(p.letter(2) == presentation::letter(p, 2));
     p.validate();
 
-    Presentation<std::string> q;
-    presentation::add_rule(p, "abcb", "bcb");
+    presentation::add_rule(p, "abcb", "ecb");
+    REQUIRE(!p.in_alphabet('e'));
     // Not valid
     REQUIRE_THROWS_AS(presentation::normalize_alphabet(p),
                       LibsemigroupsException);
