@@ -17,8 +17,9 @@
 //
 
 // TODO:
-// * different colours for different depths
 // * add a row or column for bua = a case
+// * could try compressing presentations after Tietze transformations
+// * implement Algorithm A.
 
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
@@ -43,17 +44,17 @@
 namespace libsemigroups {
 
   enum class certificate : uint8_t {
-    relation_words_have_equal_length = 2,
-    self_overlap_free = 3,  // i.e. already confluent, terminating rewriting
+    relation_words_have_equal_length = 0,
+    self_overlap_free = 1,  // i.e. already confluent, terminating rewriting
                             // system if |u| > |v|, aka "hypersimple"
-    C3                               = 4,
-    C4                               = 5,
-    knuth_bendix_terminates          = 7,
-    equal_number_of_occurrences_of_a = 9,   // Theorem 4.9
-    equal_number_of_occurrences_of_b = 10,  // Theorem 4.9
-    watier1                          = 12,  // Theorem 4.10
-    watier2                          = 13,  // Theorem 4.11
-    unknown                          = 37,
+    C3                               = 2,
+    C4                               = 3,
+    knuth_bendix_terminates          = 4,
+    equal_number_of_occurrences_of_a = 5,  // Theorem 4.9
+    equal_number_of_occurrences_of_b = 6,  // Theorem 4.9
+    watier1                          = 7,  // Theorem 4.10
+    watier2                          = 8,  // Theorem 4.11
+    unknown                          = 9,
   };
 
   auto const& certificate_map() {
@@ -224,45 +225,77 @@ namespace libsemigroups {
       return bmp;
     }
 
-    const rgb_t colors[38]
-        = {{255, 0, 255},   {0, 117, 220},  {153, 63, 0},    {76, 0, 92},
-           {57, 255, 20},   {0, 92, 49},    {43, 206, 72},   {128, 128, 128},
-           {148, 255, 181}, {143, 124, 0},  {157, 204, 0},   {194, 0, 136},
-           {0, 51, 128},    {255, 164, 5},  {255, 168, 187}, {66, 102, 0},
-           {255, 0, 16},    {94, 241, 242}, {0, 153, 143},   {224, 255, 102},
-           {116, 10, 255},  {153, 0, 0},    {255, 255, 128}, {255, 255, 0},
-           {255, 80, 5},    {255, 000, 000}};
+    const rgb_t colors[10]
+        = {{64, 64, 64},   // relation_words_have_equal_length
+           {204, 160, 0},  // self_overlap_free
+           {255, 0, 255},  // C3
+           {76, 0, 92},    // C4
+           {0, 0, 0},      // NOT USED
+           {0, 92, 49},    // equal_number_of_occurrences_of_a
+           {43, 206, 72},  // equal_number_of_occurrences_of_b
+           {0, 80, 157},   // watier1
+           {0, 41, 107},   // watier2
+           {0, 0, 0}};
+
+    const std::array<rgb_t, 6> knuth_bendix_colors = {rgb_t({232, 93, 4}),
+                                                      rgb_t({220, 47, 2}),
+                                                      rgb_t({208, 0, 0}),
+                                                      rgb_t({157, 2, 8}),
+                                                      rgb_t({106, 4, 15}),
+                                                      rgb_t({55, 6, 23})};
 
     fmt::rgb to_fmt_color(rgb_t const& x) {
       return fmt::rgb(x.red, x.green, x.blue);
     }
 
-    rgb_t to_color(certificate c) {
-      return colors[static_cast<size_t>(c)];
+    rgb_t to_color(certificate c, size_t depth) {
+      if (c != certificate::knuth_bendix_terminates) {
+        return colors[static_cast<size_t>(c)];
+      } else {
+        return knuth_bendix_colors[depth];
+      }
     }
 
-    auto
-    bitmap_color_XXX(bitmap_image& bmp, size_t x, size_t y, certificate c) {
-      bmp.set_pixel(x, y, to_color(c));
+    auto bitmap_color_XXX(bitmap_image& bmp,
+                          size_t        x,
+                          size_t        y,
+                          certificate   c,
+                          size_t        depth) {
+      bmp.set_pixel(x, y, to_color(c, depth));
     }
 
     void print_key() {
-      auto const& map          = certificate_map();
-      size_t      max_text_len = 0;
+      auto const&                                      map = certificate_map();
+      size_t                                           max_text_len = 0;
+      std::vector<std::pair<certificate, std::string>> vec;
       for (auto const& x : map) {
         if (x.second.size() > max_text_len) {
           max_text_len = x.second.size();
         }
+        vec.push_back(x);
       }
 
       auto pad = [&max_text_len](std::string str) {
         return str + std::string(max_text_len - str.size(), ' ');
       };
 
-      for (auto const& x : map) {
-        auto cert = static_cast<size_t>(x.first);
-        auto colo = to_fmt_color(colors[cert]);
-        fmt::print(fmt::emphasis::bold | fmt::bg(colo), pad(x.second));
+      std::sort(vec.begin(), vec.end(), [](auto const& x, auto const& y) {
+        return x.second < y.second;
+      });
+
+      for (auto const& x : vec) {
+        if (x.first != certificate::knuth_bendix_terminates) {
+          auto cert = static_cast<size_t>(x.first);
+          auto colo = to_fmt_color(colors[cert]);
+          fmt::print(fmt::emphasis::bold | fmt::bg(colo), pad(x.second));
+          fmt::print(fmt::bg(fmt::color::black), "\n");
+        }
+      }
+      for (size_t i = 0; i < knuth_bendix_colors.size(); ++i) {
+        auto colo = to_fmt_color(knuth_bendix_colors[i]);
+        fmt::print(
+            fmt::emphasis::bold | fmt::bg(colo),
+            pad("Knuth-Bendix terminates at depth " + std::to_string(i)));
         fmt::print(fmt::bg(fmt::color::black), "\n");
       }
     }
@@ -728,13 +761,14 @@ namespace libsemigroups {
     // knuth_bendix max_depth = 2, and run KnuthBendix for 5ms
     auto  rg = ReportGuard(false);
     Sislo s;
-    s.alphabet("ab").first("").last("aaaaaaa");
+    s.alphabet("ab").first("").last("aaaaa");
     auto bmp = bitmap_init_XXX(std::distance(s.cbegin(), s.cend()));
     // REQUIRE(bmp.width() == 0);
     Presentation<std::string> p;
     p.alphabet("ab");
-    size_t   x           = 0;
-    uint64_t undecidable = 0;
+    size_t                   x           = 0;
+    uint64_t                 undecidable = 0;
+    std::vector<std::string> bad;
     for (auto u = s.cbegin(); u != s.cend(); ++u) {
       size_t y = 0;
       auto   U = std::string("b") + *u + "a";
@@ -744,11 +778,13 @@ namespace libsemigroups {
         p.rules.clear();
         presentation::add_rule(p, U, V);
         auto c = has_decidable_word_problem(p, 1, std::chrono::milliseconds(2));
-        bitmap_color_XXX(bmp, x, y, c.first);
+        bitmap_color_XXX(bmp, x, y, c.first, c.second);
         std::cout << U << " = " << V << " is ";
         if (c.first == certificate::unknown) {
           ++undecidable;
-          std::cout << "bad" << std::endl;
+          std::cout << "BAD" << std::endl;
+          bad.push_back(*u);
+          bad.push_back(*v);
         } else {
           std::cout << "good (depth " << c.second << ")" << std::endl;
         }
@@ -756,10 +792,43 @@ namespace libsemigroups {
       }
       ++x;
     }
+
+    size_t depth = 1;
+    while (!bad.empty()) {
+      std::vector<std::string> next_bad;
+      std::cout << "Total " << bmp.width() * bmp.width() << " instances!"
+                << std::endl;
+      std::cout << "Couldn't solve " << undecidable << " instances!"
+                << std::endl;
+      std::cout << "Writing 2_gen_1_rel.bmp . . ." << std::endl;
+      bmp.save_image("2_gen_1_rel.bmp");
+      undecidable = 0;
+      depth       = depth + 1;
+
+      for (auto it = bad.cbegin(); it != bad.cend(); it += 2) {
+        p.rules.clear();
+        auto u = it, v = (it + 1);
+        auto U = std::string("b") + *u + "a", V = std::string("a") + *v + "a";
+        presentation::add_rule(p, U, V);
+        auto c = has_decidable_word_problem(
+            p, depth, std::chrono::milliseconds(5));
+        std::cout << U << " = " << V << " is ";
+        if (c.first != certificate::unknown) {
+          size_t x = s.position(*u);
+          size_t y = s.position(*v);
+          bitmap_color_XXX(bmp, x, y, c.first, c.second);
+          std::cout << "good (depth " << c.second << ")" << std::endl;
+        } else {
+          ++undecidable;
+          next_bad.push_back(std::move(*u));
+          next_bad.push_back(std::move(*v));
+          std::cout << "BAD" << std::endl;
+        }
+      }
+      std::swap(bad, next_bad);
+    }
+
     print_key();
-    std::cout << "Total " << bmp.width() * bmp.width() << " instances!"
-              << std::endl;
-    std::cout << "Couldn't solve " << undecidable << " instances!" << std::endl;
     std::cout << "Writing 2_gen_1_rel.bmp . . ." << std::endl;
     bmp.save_image("2_gen_1_rel.bmp");
     // REQUIRE(undecidable == 16);

@@ -16,11 +16,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <string>  // for string
-#include <vector>  // for vector
-
 #include "catch.hpp"      // for REQUIRE etc
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
+#include <string>         // for string
+#include <vector>         // for vector
 
 #include "libsemigroups/order.hpp"  // for LexicographicalCompare
 #include "libsemigroups/siso.hpp"   // for cbegin_silo, cbegin_sislo
@@ -320,5 +319,19 @@ namespace libsemigroups {
     REQUIRE(it++ == it2++);
     REQUIRE(it == it2);
     REQUIRE(++it == ++it2);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("sislo", "010", "position", "[sislo][quick]") {
+    Sislo s;
+    s.alphabet("ab").first("").last("aaaaaaaaaa");
+    size_t i = 0;
+    for (auto it = s.cbegin(); it != s.cend(); ++it) {
+      REQUIRE(s.position(*it) == i++);
+    }
+    i = 0;
+    s.alphabet("ab").first("ababab").last("aabababb");
+    for (auto it = s.cbegin(); it != s.cend(); ++it) {
+      REQUIRE(s.position(*it) == i++);
+    }
   }
 }  // namespace libsemigroups

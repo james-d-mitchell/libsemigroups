@@ -31,6 +31,7 @@
 #ifndef LIBSEMIGROUPS_SISO_HPP_
 #define LIBSEMIGROUPS_SISO_HPP_
 
+#include <cmath>     // for pow
 #include <cstddef>   // for size_t, ptrdiff_t, ...
 #include <iterator>  // for forward_iterator_tag
 #include <string>    // for string
@@ -249,13 +250,15 @@ namespace libsemigroups {
 
   class Sislo {
    public:
-    Sislo()             = default;
+    Sislo()
+        : _alphabet(), _first(), _last(), _pos_first(UNDEFINED), _pos_last() {}
     Sislo(Sislo const&) = default;
     Sislo(Sislo&&)      = default;
     Sislo& operator=(Sislo const&) = default;
     Sislo& operator=(Sislo&&) = default;
 
     Sislo& alphabet(std::string const& lphbt) {
+      reset();
       _alphabet = lphbt;
       return *this;
     }
@@ -269,11 +272,13 @@ namespace libsemigroups {
     }
 
     Sislo& first(std::string const& first) {
+      reset();
       _first = first;
       return *this;
     }
 
     Sislo& first(size_t min) {
+      reset();
       _first = std::string(min, letter(0));
       return *this;
     }
@@ -283,11 +288,13 @@ namespace libsemigroups {
     }
 
     Sislo& last(std::string const& last) {
+      reset();
       _last = last;
       return *this;
     }
 
     Sislo& last(size_t max) {
+      reset();
       _last = std::string(max, letter(0));
       return *this;
     }
@@ -304,10 +311,41 @@ namespace libsemigroups {
       return cend_sislo(_alphabet, _first, _last);
     }
 
+    size_t position(std::string const& w) const {
+      if (_pos_first == UNDEFINED) {
+        _pos_first = absolute_position(_first);
+        _pos_last  = absolute_position(_last);
+      }
+
+      size_t pos = absolute_position(w);
+      if (_pos_first <= pos && pos < _pos_last) {
+        return pos - _pos_first;
+      }
+      return UNDEFINED;
+    }
+
    private:
-    std::string _alphabet;
-    std::string _first;
-    std::string _last;
+    void reset() {
+      _pos_first = UNDEFINED;
+    }
+
+    size_t absolute_position(std::string const& w) const {
+      size_t       result = 0;
+      size_t const n      = _alphabet.size();
+      auto         first = w.cbegin(), last = w.cend();
+      for (auto it = first; it != last; ++it) {
+        result += std::pow(n, last - it - 1)
+                  * (std::find(_alphabet.cbegin(), _alphabet.cend(), (*it))
+                     - _alphabet.cbegin());
+      }
+      return result + number_of_words(_alphabet.size(), 0, w.size());
+    }
+
+    std::string    _alphabet;
+    std::string    _first;
+    std::string    _last;
+    mutable size_t _pos_first;
+    mutable size_t _pos_last;
   };
 
 }  // namespace libsemigroups
