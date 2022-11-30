@@ -1091,21 +1091,13 @@ namespace libsemigroups {
     template <typename W>
     void remove_redundant_generators(Presentation<W>& p);
 
-    // TODO to tpp file
-    template <typename W>
-    inline auto first_unused_letter(Presentation<W> const& p) {
-      using letter_type = typename Presentation<W>::letter_type;
-      // Find the minimum letter that is not currently in the alphabet
-      letter_type x = 0;
-      while (p.in_alphabet(x)) {
-        ++x;
-      }
-      return x;
-    }
-
     template <typename W>
     typename Presentation<W>::letter_type letter(Presentation<W> const&,
                                                  size_t i) {
+      // TODO add exception
+      // if (p.alphabet().size() == std::numeric_limits<letter_type>::max()) {
+      //   LIBSEMIGROUPS_EXCEPTION("TODO");
+      // }
       return static_cast<typename Presentation<W>::letter_type>(i);
     }
 
@@ -1141,32 +1133,21 @@ namespace libsemigroups {
       LIBSEMIGROUPS_EXCEPTION("TODO");
     }
 
-    // TODO move to tpp file
-    template <>
-    inline auto first_unused_letter(Presentation<std::string> const& p) {
-      using letter_type = typename Presentation<std::string>::letter_type;
+    // TODO to tpp file
+    template <typename W>
+    inline auto first_unused_letter(Presentation<W> const& p) {
+      using letter_type = typename Presentation<W>::letter_type;
+      using size_type   = typename W::size_type;
 
-      if (p.alphabet().size() == std::numeric_limits<letter_type>::max()) {
+      auto max_letter
+          = static_cast<size_type>(std::numeric_limits<letter_type>::max());
+
+      if (p.alphabet().size() == max_letter) {
         LIBSEMIGROUPS_EXCEPTION("TODO");
       }
 
-      for (letter_type x = 97; x < 123; ++x) {
-        if (!p.in_alphabet(x)) {
-          return x;
-        }
-      }
-      for (letter_type x = 65; x < 91; ++x) {
-        if (!p.in_alphabet(x)) {
-          return x;
-        }
-      }
-      for (letter_type x = 48; x < 58; ++x) {
-        if (!p.in_alphabet(x)) {
-          return x;
-        }
-      }
-      for (letter_type x = 0; x < std::numeric_limits<letter_type>::max();
-           ++x) {
+      for (size_type i = 0; i < max_letter; ++i) {
+        auto x = letter(p, i);
         if (!p.in_alphabet(x)) {
           return x;
         }
