@@ -425,28 +425,7 @@ namespace libsemigroups {
     // what it currently does
     template <typename W, typename T, typename>
     void replace_subword(Presentation<W>& p, T first, T last) {
-      using letter_type = typename Presentation<W>::letter_type;
-      // Find the minimum letter that is not currently in the alphabet
-      letter_type x = 0;
-      while (p.in_alphabet(x)) {
-        ++x;
-      }
-      W new_alphabet = p.alphabet();
-      new_alphabet.push_back(x);
-      p.alphabet(new_alphabet);
-      auto rplc_sbwrd = [&first, &last, &x](W& word) {
-        auto it = std::search(word.begin(), word.end(), first, last);
-        while (it != word.end()) {
-          // found [first, last)
-          *it      = x;
-          auto pos = it - word.begin();
-          word.erase(it + 1, it + (last - first));  // it not valid
-          it = std::search(word.begin() + pos + 1, word.end(), first, last);
-        }
-      };
-      std::for_each(p.rules.begin(), p.rules.end(), rplc_sbwrd);
-      p.rules.emplace_back(W({x}));
-      p.rules.emplace_back(first, last);
+      add_generator(p, first, last, first_unused_letter(p));
     }
 
     // TODO(1relation) use iterator method below

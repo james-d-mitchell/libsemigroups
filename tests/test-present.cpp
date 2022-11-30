@@ -303,7 +303,7 @@ namespace libsemigroups {
         presentation::add_rule(p, {1, 2, 1}, {0});
         p.alphabet_from_rules();
         REQUIRE(presentation::longest_common_subword(p) == W({1, 2, 1}));
-        presentation::replace_subword(p, W({1, 2, 1}));
+        presentation::add_generator(p, W({1, 2, 1}), 3);
         REQUIRE(p.rules
                 == std::vector<W>({{0, 3},
                                    {3},
@@ -328,7 +328,7 @@ namespace libsemigroups {
         presentation::add_rule(p, {2, 4, 2}, {1});
         p.alphabet_from_rules();
         REQUIRE(presentation::longest_common_subword(p) == W({2, 4, 2}));
-        presentation::replace_subword(p, W({2, 4, 2}));
+        presentation::add_generator(p, W({2, 4, 2}), 0);
         REQUIRE(p.rules
                 == std::vector<W>({{1, 0},
                                    {0},
@@ -1124,15 +1124,14 @@ namespace libsemigroups {
     p.alphabet(2);
     presentation::add_rule_and_check(
         p, {0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1}, {0, 1, 1, 0, 0, 1});
-    presentation::weakly_compress(p);
+    REQUIRE(presentation::weakly_compress(p));
     REQUIRE(p.rules == std::vector<word_type>({{0, 1, 1}, {0}}));
     p.rules.clear();
     presentation::add_rule_and_check(
         p, {0, 1, 0, 0, 1, 1, 0, 1}, {0, 1, 1, 0, 1, 0, 0, 1});
     REQUIRE(presentation::weakly_compress(p));
     REQUIRE(p.rules == std::vector<word_type>({{0, 1}, {1, 0}}));
-    REQUIRE(presentation::weakly_compress(p));
-    REQUIRE(p.rules == std::vector<word_type>({{0}, {0}}));
+    REQUIRE(!presentation::weakly_compress(p));
     p.rules.clear();
     p.alphabet(2);
     presentation::add_rule_and_check(p, {0, 0, 1}, {0, 1});
@@ -1300,18 +1299,44 @@ namespace libsemigroups {
                           "[quick][presentation]") {
     Presentation<std::string> p;
     p.alphabet("ab");
-    // FIXME this is not weakly compressible!!
     presentation::add_rule_and_check(p, "baabaa", "ababa");
     // REQUIRE(detail::is_suffix("ababa", "ab"));
 
     REQUIRE(
         std::string(p.rules[0].cbegin(),
                     presentation::maximum_self_overlap_free_prefix_suffix(p))
-        == "ba");
-    REQUIRE(presentation::weakly_compress(p));
-    REQUIRE(p.alphabet() == "a");
-    REQUIRE(p.alphabet().size() == 1);
-    REQUIRE(p.rules == std::vector<std::string>({"aa", "a"}));
+        == "");
+    REQUIRE(!presentation::weakly_compress(p));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "042",
+                          "first_unused_letter/letter",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "baabaa", "ababa");
+    REQUIRE(presentation::first_unused_letter(p) == 'c');
+    p.alphabet("abcdefghijklmnopq");
+    REQUIRE(presentation::first_unused_letter(p) == 'r');
+    p.alphabet("abcdefghijklmnopqrstuvwxyz");
+    REQUIRE(presentation::first_unused_letter(p) == 'A');
+    p.alphabet("abcdefgijklmnopqrstuvwxyz");
+    REQUIRE(presentation::first_unused_letter(p) == 'h');
+    p.alphabet("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    REQUIRE(presentation::first_unused_letter(p) == '0');
+    p.alphabet("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ02");
+    REQUIRE(presentation::first_unused_letter(p) == '1');
+    std::string const letters
+        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    std::unordered_set<char> set;
+    for (size_t i = 0; i < letters.size(); ++i) {
+      REQUIRE(letters[i] == presentation::letter(p, i));
+      REQUIRE(set.insert(letters[i]).second);
+    }
+    for (size_t i = letters.size(); i < 256; ++i) {
+      REQUIRE(set.insert(presentation::letter(p, i)).second);
+    }
   }
 
 }  // namespace libsemigroups

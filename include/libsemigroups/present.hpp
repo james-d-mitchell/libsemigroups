@@ -747,29 +747,6 @@ namespace libsemigroups {
     template <typename W>
     W longest_common_subword(Presentation<W>& p);
 
-    //! Replace non-overlapping instances of a subword via iterators.
-    //!
-    //! If \f$w=\f$`[first, last)` is a word, then this function replaces every
-    //! non-overlapping instance of \f$w\f$ in every rule, adds a new generator
-    //! \f$z\f$, and the rule \f$w = z\f$. The new generator and rule are added
-    //! even if \f$w\f$ is not a subword of any rule.
-    //!
-    //! \tparam W the type of the words in the presentation
-    //! \tparam T the type of the 2nd and 3rd parameters (iterators)
-    //! \param p the presentation
-    //! \param first the start of the subword to replace
-    //! \param last one beyond the end of the subword to replace
-    //!
-    //! \returns (None)
-    //!
-    //! \exceptions
-    //! \no_libsemigroups_except
-    // TODO(later) complexity
-    template <typename W,
-              typename T,
-              typename = std::enable_if_t<!std::is_same<T, W>::value>>
-    void replace_subword(Presentation<W>& p, T first, T last);
-
     // TODO reduce overlap with replace_subword
     template <typename W, typename T>
     void add_generator(Presentation<W>&                      p,
@@ -796,6 +773,43 @@ namespace libsemigroups {
       p.rules.emplace_back(W({x}));
       p.rules.emplace_back(first, last);
     }
+
+    template <typename W>
+    void add_generator(Presentation<W>&                      p,
+                       W const&                              w,
+                       typename Presentation<W>::letter_type x) {
+      add_generator(p, w.cbegin(), w.cend(), x);
+    }
+
+    template <typename W>
+    void add_generator(Presentation<W>&                      p,
+                       char const*                           w,
+                       typename Presentation<W>::letter_type x) {
+      add_generator(p, w, w + std::strlen(w), x);
+    }
+
+    //! Replace non-overlapping instances of a subword via iterators.
+    //!
+    //! If \f$w=\f$`[first, last)` is a word, then this function replaces every
+    //! non-overlapping instance of \f$w\f$ in every rule, adds a new generator
+    //! \f$z\f$, and the rule \f$w = z\f$. The new generator and rule are added
+    //! even if \f$w\f$ is not a subword of any rule.
+    //!
+    //! \tparam W the type of the words in the presentation
+    //! \tparam T the type of the 2nd and 3rd parameters (iterators)
+    //! \param p the presentation
+    //! \param first the start of the subword to replace
+    //! \param last one beyond the end of the subword to replace
+    //!
+    //! \returns (None)
+    //!
+    //! \exceptions
+    //! \no_libsemigroups_except
+    // TODO(later) complexity
+    template <typename W,
+              typename T,
+              typename = std::enable_if_t<!std::is_same<T, W>::value>>
+    void replace_subword(Presentation<W>& p, T first, T last);
 
     //! Replace non-overlapping instances of a subword via const reference.
     //!
@@ -1079,6 +1093,89 @@ namespace libsemigroups {
 
     // TODO to tpp file
     template <typename W>
+    inline auto first_unused_letter(Presentation<W> const& p) {
+      using letter_type = typename Presentation<W>::letter_type;
+      // Find the minimum letter that is not currently in the alphabet
+      letter_type x = 0;
+      while (p.in_alphabet(x)) {
+        ++x;
+      }
+      return x;
+    }
+
+    template <typename W>
+    typename Presentation<W>::letter_type letter(Presentation<W> const&,
+                                                 size_t i) {
+      return static_cast<typename Presentation<W>::letter_type>(i);
+    }
+
+    template <>
+    inline typename Presentation<std::string>::letter_type
+    letter(Presentation<std::string> const&, size_t i) {
+      // Choose visible characters a-zA-Z0-9 first before anything else
+      // The ascii ranges for these characters are: [97, 123), [65, 91),
+      // [48, 58) so the remaining range of chars that are appended to the end
+      // after these chars are [0,48), [58, 65), [91, 97), [123, 255)
+      static std::string letters
+          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      bool first_call = true;
+      if (first_call) {
+        letters.resize(256);
+        std::iota(
+            letters.begin() + 62, letters.begin() + 110, static_cast<char>(0));
+        std::iota(letters.begin() + 110,
+                  letters.begin() + 117,
+                  static_cast<char>(58));
+        std::iota(letters.begin() + 117,
+                  letters.begin() + 123,
+                  static_cast<char>(91));
+        std::iota(letters.begin() + 123,
+                  letters.begin() + 256,
+                  static_cast<char>(123));
+        first_call = false;
+      }
+
+      if (i < letters.size()) {
+        return letters[i];
+      }
+      LIBSEMIGROUPS_EXCEPTION("TODO");
+    }
+
+    // TODO move to tpp file
+    template <>
+    inline auto first_unused_letter(Presentation<std::string> const& p) {
+      using letter_type = typename Presentation<std::string>::letter_type;
+
+      if (p.alphabet().size() == std::numeric_limits<letter_type>::max()) {
+        LIBSEMIGROUPS_EXCEPTION("TODO");
+      }
+
+      for (letter_type x = 97; x < 123; ++x) {
+        if (!p.in_alphabet(x)) {
+          return x;
+        }
+      }
+      for (letter_type x = 65; x < 91; ++x) {
+        if (!p.in_alphabet(x)) {
+          return x;
+        }
+      }
+      for (letter_type x = 48; x < 58; ++x) {
+        if (!p.in_alphabet(x)) {
+          return x;
+        }
+      }
+      for (letter_type x = 0; x < std::numeric_limits<letter_type>::max();
+           ++x) {
+        if (!p.in_alphabet(x)) {
+          return x;
+        }
+      }
+      LIBSEMIGROUPS_ASSERT(false);  // Can't reach here
+    }
+
+    // TODO to tpp file
+    template <typename W>
     auto left_graph(Presentation<W> const& p) {
       ActionDigraph<uint16_t> ad(p.alphabet().size(), p.rules.size() / 2);
       for (auto it = p.rules.cbegin(); it < p.rules.cend(); it += 2) {
@@ -1096,18 +1193,6 @@ namespace libsemigroups {
       auto result = left_graph(p);
       reverse(const_cast<Presentation<W>&>(p));
       return result;
-    }
-
-    // TODO to tpp file and use in replace_subword
-    template <typename W>
-    auto next_generator(Presentation<W> const& p) {
-      using letter_type = typename Presentation<W>::letter_type;
-      // Find the minimum letter that is not currently in the alphabet
-      letter_type x = 0;
-      while (p.in_alphabet(x)) {
-        ++x;
-      }
-      return x;
     }
 
     template <typename Iterator>
@@ -1142,7 +1227,9 @@ namespace libsemigroups {
       auto const& v = p.rules[1];
 
       for (auto it = u.cend(); it-- > u.cbegin() + 1;) {
-        if (detail::is_suffix(v.cbegin(), v.cend(), u.cbegin(), it)
+        if (detail::is_suffix(u.cbegin(), u.cend(), u.cbegin(), it)
+            && detail::is_suffix(v.cbegin(), v.cend(), u.cbegin(), it)
+            && detail::is_prefix(v.cbegin(), v.cend(), u.cbegin(), it)
             && is_self_overlap_free(u.cbegin(), it)) {
           return it;
         }
@@ -1157,9 +1244,13 @@ namespace libsemigroups {
 
     template <typename W>
     bool weakly_compress(Presentation<W>& p) {
-      static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
       if (p.rules.size() != 2) {
-        LIBSEMIGROUPS_EXCEPTION("TODO");
+        return false;
+        // LIBSEMIGROUPS_EXCEPTION("the argument must be a 2-generator "
+        //                        "1-relation presentation, found "
+        //                        "%llu-generator %llu-relation presentation",
+        //                        uint64_t(p.alphabet().size()),
+        //                        uint64_t(p.rules.size() / 2));
       }
       auto const first = p.rules[0].cbegin();
       // TODO(1relation) we don't have to take the maximum_self_overlap free
@@ -1192,14 +1283,14 @@ namespace libsemigroups {
 
       replace_subword(p, existing, replacement);
 
-      auto l = p.alphabet().size();
       for (auto it = set.cbegin(); it != set.cend(); ++it) {
-        add_generator(p, it->cbegin(), it->cend(), letters[l++]);
+        replace_subword(p, it->cbegin(), it->cend());
       }
       // remove rules defining new generators
       p.rules.erase(p.rules.begin() + 2, p.rules.end());
       // remove old generators
       p.alphabet_from_rules();
+      presentation::normalize_alphabet(p);
       return true;
     }
 
@@ -1214,7 +1305,12 @@ namespace libsemigroups {
     template <typename W>
     bool strongly_compress(Presentation<W>& p) {
       if (p.rules.size() != 2) {
-        LIBSEMIGROUPS_EXCEPTION("TODO");
+        return false;
+        // LIBSEMIGROUPS_EXCEPTION("the argument must be a 2-generator "
+        //                         "1-relation presentation, found "
+        //                         "%llu-generator %llu-relation presentation",
+        //                         uint64_t(p.alphabet().size()),
+        //                         uint64_t(p.rules.size() / 2));
       }
       auto const& u = p.rules[0];
       auto const& v = p.rules[1];
@@ -1243,26 +1339,22 @@ namespace libsemigroups {
       auto compress_word = [&k, &word_to_num](W const& word) {
         W result;
         for (auto it = word.cbegin(); it <= word.cend() - k; ++it) {
-          result.push_back(word_to_num(it, it + k) + 97);
+          result.push_back(word_to_num(it, it + k));
         }
         return result;
       };
       p.rules[0] = compress_word(p.rules[0]);
       p.rules[1] = compress_word(p.rules[1]);
       p.alphabet_from_rules();
-      // normalize_alphabet(p);
+      normalize_alphabet(p);
       return true;
     }
 
     // It's possible to do the following for non-1-relation monoids
     template <typename W>
     bool reduce_to_2_generators(Presentation<W>& p) {
-      using letter_type                = typename Presentation<W>::letter_type;
-      static const std::string letters = "abcdefghijklmnopqrstuvwxyz";
-      // using letter_type                = typename
-      // Presentation<W>::letter_type;
       if (p.rules.size() != 2) {
-        LIBSEMIGROUPS_EXCEPTION("TODO");
+        return false;
       }
 
       auto ad = left_graph(p);
@@ -1274,14 +1366,11 @@ namespace libsemigroups {
         if (*n == ad.root_of_scc(*n)) {
           // Lots of choice here, we could replace ad.root_of_scc(0) by any
           // other root of an scc
-          replace_subword(
-              p,
-              {static_cast<letter_type>(letters[*n])},
-              {static_cast<letter_type>(letters[ad.root_of_scc(0)])});
+          replace_subword(p, {letter(p, *n)}, {letter(p, ad.root_of_scc(0))});
         }
       }
       p.alphabet_from_rules();
-      // normalize_alphabet(p);
+      normalize_alphabet(p);
       return true;
     }
 
