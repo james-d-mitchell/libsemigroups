@@ -27,8 +27,9 @@
 
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
-#include <cstddef>  // for size_t
-#include <fstream>  // for ofstream
+#include <cstddef>     // for size_t
+#include <filesystem>  // for create_directory
+#include <fstream>     // for ofstream
 
 #include "catch.hpp"      // for REQUIRE, REQUIRE_THROWS_AS, REQUI...
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEST_CASE
@@ -217,6 +218,50 @@ namespace libsemigroups {
                      << q.rules[n - 1] << " added] " << q << std::endl;
             return std::make_pair(true, kb.second);
           }
+        }
+      }
+      return std::make_pair(false, depth);
+    }
+
+    auto knuth_bendix_random_search(std::ofstream&             log_file,
+                                    Presentation<std::string>& p,
+                                    size_t                     max_depth,
+                                    std::chrono::milliseconds  run_for,
+                                    size_t                     depth = 0) {
+      if (depth > max_depth) {
+        return std::make_pair(false, depth);
+      }
+
+      static std::random_device rd;
+      static std::mt19937       g(rd());
+      auto                      lphbt = p.alphabet();
+      std::vector<size_t>       perm(lphbt.size(), 0);
+      std::iota(perm.begin(), perm.end(), 0);
+      for (size_t i = 0; i < 10; ++i) {
+        std::shuffle(perm.begin(), perm.end(), g);
+        detail::apply_permutation(lphbt, perm);
+        p.alphabet(lphbt);
+        auto k = make<KnuthBendix_>(p);
+
+        k.run_for(run_for);
+        if (k.confluent()) {
+          log_file << "[knuth-bendix] " << make<Presentation<std::string>>(k)
+                   << std::endl;
+          return std::make_pair(true, depth);
+        }
+      }
+
+      for (size_t i = 0; i < 3; ++i) {
+        std::string w = detail::random_string(p.alphabet(), 2, 10);
+        auto        q = Presentation<std::string>(p);
+        presentation::replace_subword(q, w.cbegin(), w.cend());
+        auto kb
+            = knuth_bendix_search(log_file, q, max_depth, run_for, depth + 1);
+        if (kb.first) {
+          size_t const n = q.rules.size();
+          log_file << "[generator " << q.rules[n - 2] << " = " << q.rules[n - 1]
+                   << " added] " << q << std::endl;
+          return std::make_pair(true, kb.second);
         }
       }
       return std::make_pair(false, depth);
@@ -479,16 +524,45 @@ namespace libsemigroups {
       return std::make_pair(certificate::unknown, depth);
     }
 
+    static size_t SUBDIRINDEX    = 0;
+    static size_t SUBDIRCAPACITY = 0;
+
     template <typename W>
     auto has_decidable_word_problem(Presentation<W>&          p,
                                     size_t                    kb_depth = 2,
                                     std::chrono::milliseconds kb_run_for
                                     = std::chrono::milliseconds(5)) {
+      std::filesystem::create_directory("tmp");
+
+      if (SUBDIRCAPACITY == 0) {
+        SUBDIRCAPACITY = 10000;
+        ++SUBDIRINDEX;
+        auto subdirname = std::string(fmt::format("{:03}", SUBDIRINDEX));
+        std::filesystem::create_directory("tmp/" + subdirname);
+      }
+      auto subdirname = std::string("tmp/" + fmt::format("{:03}", SUBDIRINDEX));
       std::string log_filename
-          = std::string("tmp/") + p.rules[0] + "_" + p.rules[1] + ".txt";
+          = subdirname + "/" + p.rules[0] + "_" + p.rules[1] + ".txt";
       std::ofstream log_file(log_filename);
       auto          result
           = has_decidable_word_problem(log_file, p, 0, kb_depth, kb_run_for);
+      log_file.close();
+      --SUBDIRCAPACITY;
+      fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", log_filename);
+      return result;
+    }
+
+    template <typename W>
+    auto has_hard_decidable_word_problem(Presentation<W>& p,
+                                         size_t           kb_depth = 10,
+                                         std::chrono::milliseconds kb_run_for
+                                         = std::chrono::milliseconds(5)) {
+      std::filesystem::create_directory("hardcases");
+      std::string log_filename
+          = "hardcases/" + p.rules[0] + "_" + p.rules[1] + ".txt";
+      std::ofstream log_file(log_filename);
+      auto          result
+          = knuth_bendix_random_search(log_file, p, kb_depth, kb_run_for);
       log_file.close();
       fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", log_filename);
       return result;
@@ -750,11 +824,22 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
-                          "998",
-                          "strongly compressible",
+                          "997",
+                          "print_key",
                           "[fail][presentation]") {
     // Doesn't fail just don't want to run
     print_key();
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "998",
+                          "hard cases",
+                          "[fail][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "bababa", "abba");
+    auto c = has_decidable_word_problem(p, 4, std::chrono::milliseconds(10));
+    REQUIRE(c.first != certificate::unknown);
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -765,7 +850,7 @@ namespace libsemigroups {
     // knuth_bendix max_depth = 2, and run KnuthBendix for 5ms
     auto  rg = ReportGuard(false);
     Sislo s;
-    s.alphabet("ab").first("").last("aaaaaaaaaa");
+    s.alphabet("ab").first("").last("aaaaaaa");
     auto bmp = bitmap_init_XXX(std::distance(s.cbegin(), s.cend()));
     // REQUIRE(bmp.width() == 0);
     Presentation<std::string> p;
