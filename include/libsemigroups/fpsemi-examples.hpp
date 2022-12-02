@@ -448,6 +448,8 @@ namespace libsemigroups {
     //! \throws LibsemigroupsException if `r = 0`
     std::vector<relation_type> monogenic_semigroup(size_t m, size_t r);
 
+    std::vector<relation_type> cyclic_inverse_monoid(size_t n);
+
     //! A non-presentation for the symmetric group.
     //!
     //! Returns a vector of relations giving a monoid presentation which is

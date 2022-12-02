@@ -411,8 +411,8 @@ namespace libsemigroups {
             "letter index out of bounds in word %s, expected "
             "value in [0, %d), got %d",
             detail::to_string(w).c_str(),
-            l,
-            _nr_gens);
+            _nr_gens,
+            l);
       }
     }
   }

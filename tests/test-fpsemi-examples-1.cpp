@@ -755,5 +755,31 @@ namespace libsemigroups {
       REQUIRE(tc.number_of_classes() == 72);
     }
 
+    LIBSEMIGROUPS_TEST_CASE("fpsemi-examples",
+                            "053",
+                            "cyclic_inverse_monoid",
+                            "[fpsemi-examples][quick]") {
+      auto rg = ReportGuard(false);
+      REQUIRE_THROWS_AS(fpsemigroup::cyclic_inverse_monoid(0),
+                        LibsemigroupsException);
+      for (size_t n = 1; n < 10; ++n) {
+        auto p = make<Presentation<word_type>>(
+            fpsemigroup::cyclic_inverse_monoid(n));
+        REQUIRE(p.rules.size() == (n * n + 3 * n + 4));
+        p.alphabet(n + 2);
+        presentation::replace_word(p, word_type({}), {n + 1});
+        presentation::add_identity_rules(p, n + 1);
+        p.alphabet_from_rules();
+        p.validate();
+
+        ToddCoxeter tc(congruence_kind::twosided);
+        tc.set_number_of_generators(n + 2);
+        for (size_t i = 0; i < p.rules.size() - 1; i += 2) {
+          tc.add_pair(p.rules[i], p.rules[i + 1]);
+        }
+        REQUIRE(tc.number_of_classes() == n * std::pow(2, n) - n + 1);
+      }
+    }
+
   }  // namespace congruence
 }  // namespace libsemigroups

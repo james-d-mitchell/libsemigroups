@@ -1268,13 +1268,51 @@ namespace libsemigroups {
     }
 
     std::vector<relation_type> monogenic_semigroup(size_t m, size_t r) {
-      std::vector<relation_type> result;
       if (r == 0) {
         LIBSEMIGROUPS_EXCEPTION(
             "expected 2nd argument to be strictly positive, found %llu",
             uint64_t(r));
       }
+      std::vector<relation_type> result;
       result.emplace_back(word_type({0}) ^ (m + r), word_type({0}) ^ m);
+      return result;
+    }
+
+    // From https://arxiv.org/pdf/2211.02155.pdf
+    std::vector<relation_type> cyclic_inverse_monoid(size_t n) {
+      if (n == 0) {
+        LIBSEMIGROUPS_EXCEPTION("the argument must not be 0");
+      }
+
+      word_type              g = {0};
+      std::vector<word_type> e(n, {0});
+      size_t                 inc = 1;
+      std::for_each(e.begin(), e.end(), [&inc](auto& w) { w[0] += inc++; });
+      std::vector<relation_type> result;
+
+      // R1
+      result.emplace_back(g ^ n, word_type({}));
+      // R2
+      for (size_t i = 0; i < n; ++i) {
+        result.emplace_back(e[i] ^ 2, e[i]);
+      }
+      // R3
+      for (size_t i = 0; i < n - 1; ++i) {
+        for (size_t j = i + 1; j < n; ++j) {
+          result.emplace_back(e[i] * e[j], e[j] * e[i]);
+        }
+      }
+
+      // R4
+      result.emplace_back(g * e[0], e[n - 1] * g);
+      for (size_t i = 0; i < n - 1; ++i) {
+        result.emplace_back(g * e[i + 1], e[i] * g);
+      }
+
+      // R5
+      word_type prod(n, 0);
+      std::iota(prod.begin(), prod.end(), size_t(1));
+      result.emplace_back(g * prod, prod);
       return result;
     }
 
@@ -1759,4 +1797,5 @@ namespace libsemigroups {
       return oss;
     }
   }  // namespace fpsemigroup
+     //
 }  // namespace libsemigroups
