@@ -323,7 +323,7 @@ namespace libsemigroups {
       }
       return UNDEFINED;
     }
-
+    // TODO operator+ for adding a suffix/prefix to every word returned
    private:
     void reset() {
       _pos_first = UNDEFINED;

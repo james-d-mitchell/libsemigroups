@@ -24,6 +24,7 @@
 //   words in a 1-relation semigroup, not a means of solving the WP in general
 //   (i.e. it'd be necessary to run it for all pairs of words to know if the WP
 //   is solvable).
+// * don't write a log file for equal length words
 
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
@@ -43,8 +44,11 @@
 
 #include "bitmap_image.hpp"
 
+#include "fmt/chrono.h"
 #include "fmt/color.h"
 #include "fmt/printf.h"
+
+using namespace std::literals::chrono_literals;
 
 namespace libsemigroups {
 
@@ -239,16 +243,53 @@ namespace libsemigroups {
       auto          result = knuth_bendix_search(
           log_file, p, max_depth, run_for, depth, min_depth);
       log_file.close();
-      fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", log_filename);
+      // fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", log_filename);
       return result;
     }
 
-    auto bitmap_init_XXX(size_t x, size_t y) {
-      bitmap_image bmp(x, y);
-      bmp.clear();
-      bmp.set_all_channels(255, 255, 255);
-      return bmp;
-    }
+    class BitMap {
+     private:
+      bitmap_image _image;
+
+     public:
+      BitMap(size_t x, size_t y) : _image(x, y) {
+        _image.clear();
+        _image.set_all_channels(255, 255, 255);
+      }
+
+      BitMap(std::string const& fnam) : _image(fnam) {
+        if (!std::filesystem::exists(fnam)) {
+          LIBSEMIGROUPS_EXCEPTION(FORMAT("file {} does not exist", fnam));
+        }
+      }
+
+      ~BitMap() {
+        save();
+      }
+
+      void save() {
+        auto name
+            = fmt::format("bua_ava_{}x{}.bmp", _image.width(), _image.height());
+        fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", name);
+        _image.save_image(name);
+      }
+
+      void reshape(size_t x, size_t y) {
+        if (x < _image.width() && y < _image.height()) {
+          LIBSEMIGROUPS_EXCEPTION("TODO");
+        }
+
+        bitmap_image result(x, y);
+        result.clear();
+        result.set_all_channels(255, 255, 255);
+        _image.region(0, 0, _image.width(), _image.height(), result);
+        _image = result;
+      }
+
+      bitmap_image& image() {
+        return _image;
+      }
+    };
 
     const rgb_t colors[10]
         = {{128, 128, 128},  // relation_words_have_equal_length
@@ -530,6 +571,15 @@ namespace libsemigroups {
                                     size_t                    kb_depth = 2,
                                     std::chrono::milliseconds kb_run_for
                                     = std::chrono::milliseconds(5)) {
+      auto const& u = p.rules[0];
+      auto const& v = p.rules[1];
+
+      if (u.size() == v.size()) {
+        // Avoid writing when words have equal lengths
+        return std::make_pair(certificate::relation_words_have_equal_length,
+                              size_t(0));
+      }
+
       static size_t subdirindex    = 0;
       static size_t subdircapacity = 0;
 
@@ -549,7 +599,7 @@ namespace libsemigroups {
           = has_decidable_word_problem(log_file, p, 0, kb_depth, kb_run_for);
       log_file.close();
       --subdircapacity;
-      fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", log_filename);
+      // fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", log_filename);
       return result;
     }
   }  // namespace
@@ -765,6 +815,20 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "021",
+                          "BitMap",
+                          "[fail][presentation]") {
+    BitMap bm(1, 1);
+    bm.image().set_pixel(0, 0, 0, 0, 0);
+    bm.reshape(1, 2);
+    bm.save();
+
+    BitMap bm1("bua_ava_1x2.bmp");
+    bm.reshape(2, 2);
+    bm.image().set_pixel(1, 1, 0, 0, 0);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "997",
                           "print_key",
                           "[fail][presentation]") {
@@ -784,99 +848,180 @@ namespace libsemigroups {
         knuth_bendix_search(p, 5, std::chrono::milliseconds(10), 0, 5).first);
   }
 
+  class Solver {
+   private:
+    size_t                    _x;
+    size_t                    _y;
+    BitMap                    _bmp;
+    std::vector<std::string>  _bad;
+    std::pair<size_t, size_t> _pad;
+
+   public:
+    Solver(std::string const& filename, size_t n, size_t max_depth = 3)
+        : _x(), _y(), _bmp(filename), _bad(), _pad(n + 2, n + 2) {
+      auto rg          = ReportGuard(false);
+      auto height_orig = _bmp.image().height();
+      auto width_orig  = _bmp.image().width();
+
+      Sislo u_sislo, v_sislo;
+      u_sislo.alphabet("ab").first(n).last(n + 1);
+      v_sislo.alphabet("ab").first(n).last(n + 1);
+      size_t m = std::distance(u_sislo.cbegin(), u_sislo.cend());
+      _bmp.reshape(width_orig + m, height_orig + m);
+
+      solve_all(u_sislo, v_sislo, width_orig, height_orig);
+
+      u_sislo.first(0).last(n);
+      v_sislo.first(n).last(n + 1);
+      solve_all(u_sislo, v_sislo, 0, height_orig);
+      solve_all(v_sislo, u_sislo, width_orig, 1);
+      u_sislo.first("a").last("b");
+      solve_all(
+          v_sislo, u_sislo, width_orig, 0, [](auto const& u) { return u; });
+
+      u_sislo.first(0).last(n + 1);
+
+      Presentation<std::string> p;
+      p.alphabet("ab");
+      size_t depth = 1;
+      while (!_bad.empty()) {
+        std::vector<std::string> next_bad;
+        std::cout << "Total " << _bmp.image().width() * _bmp.image().height()
+                  << " instances!" << std::endl;
+        std::cout << "Couldn't solve " << _bad.size() / 2 << " instances!"
+                  << std::endl;
+        _bmp.save();
+        depth = depth + 1;
+        set_pad();
+        std::swap(_bad, next_bad);
+        size_t good = 0;
+
+        for (auto it = next_bad.cbegin(); it != next_bad.cend(); it += 2) {
+          p.rules.clear();
+          auto        U = it, V = (it + 1);
+          std::string u, v;
+          u  = std::string(U->cbegin() + 1, U->cend() - 1);
+          _x = u_sislo.position(u);
+          if (V->size() > 1) {
+            auto v = std::string(V->cbegin() + 1, V->cend() - 1);
+            _y     = u_sislo.position(v) + 1;
+          } else {
+            _y = 0;
+          }
+
+          if (solve_one(p, *U, *V, depth, 5ms)) {
+            good++;
+          }
+          size_t const k = std::to_string(next_bad.size() / 2).size();
+          fmt::print(fmt::emphasis::bold,
+                     "\t[{0:{4}} (bad) | {1:{4}} (good) | at {2:{4}}/{3}]\n",
+                     _bad.size() / 2,
+                     good,
+                     _bad.size() / 2 + good,
+                     next_bad.size() / 2,
+                     k);
+        }
+        if (depth == max_depth) {
+          break;
+        }
+      }
+
+      std::cout << "Total " << _bmp.image().width() * _bmp.image().height()
+                << " instances!" << std::endl;
+      std::cout << "Couldn't solve " << _bad.size() / 2 << " instances!"
+                << std::endl;
+      print_key();
+    }
+
+   private:
+    void set_pad() {
+      _pad.first  = 0;
+      _pad.second = 0;
+
+      for (auto it = _bad.cbegin(); it < _bad.cend(); it += 2) {
+        if (it->size() > _pad.first) {
+          _pad.first = it->size();
+        }
+        if (it->size() + (it + 1)->size() > _pad.second) {
+          _pad.second = it->size() + (it + 1)->size();
+        }
+      }
+    }
+
+    void solve_all(
+        Sislo&                                         u_sislo,
+        Sislo&                                         v_sislo,
+        size_t                                         x_init,
+        size_t                                         y_init,
+        std::function<std::string(std::string const&)> v_func
+        = [](std::string const& v) { return "a" + v + "a"; }) {
+      Presentation<std::string> p;
+      p.alphabet("ab");
+      _x         = x_init;
+      auto ulast = u_sislo.cend();
+      for (auto u = u_sislo.cbegin(); u != ulast; ++u) {
+        auto U     = std::string("b") + *u + "a";
+        _y         = y_init;
+        auto vlast = v_sislo.cend();
+        for (auto v = v_sislo.cbegin(); v != vlast; ++v) {
+          std::string V = v_func(*v);
+          solve_one(p, U, V);
+          fmt::print("\n");
+          ++_y;
+        }
+        ++_x;
+      }
+    }
+
+    bool solve_one(Presentation<std::string>& p,
+                   std::string const&         u,
+                   std::string const&         v,
+                   size_t                     depth   = 1,
+                   std::chrono::milliseconds  run_for = 2ms) {
+      p.rules.clear();
+      presentation::add_rule(p, u, v);
+      std::cout << fmt::format(fmt::emphasis::bold,
+                               "Solving: {0:>{1}} = {2:.<{3}}... ",
+                               u,
+                               _pad.first,
+                               v + " ",
+                               _pad.second)
+                << std::flush;
+      auto c = has_decidable_word_problem(p, depth, run_for);
+      bitmap_color_XXX(_bmp.image(), _x, _y, c.first, c.second);
+      if (c.first == certificate::unknown) {
+        fmt::print(fmt::emphasis::underline, "BAD");
+        fmt::print("            ");
+        _bad.push_back(u);
+        _bad.push_back(v);
+        return false;
+      } else {
+        fmt::print(fmt::emphasis::underline, "GOOD");
+        fmt::print(" (depth {})", c.second);
+        return true;
+      }
+    }
+  };
+
   LIBSEMIGROUPS_TEST_CASE("1-relation",
                           "999",
                           "solve for bua = ava where |u|, |v| < 10",
                           "[fail][presentation]") {
     // Doesn't fail just slow
-    auto  rg = ReportGuard(false);
-    Sislo s;
-    s.alphabet("ab").first("").last("aaab");
-    size_t                    n   = std::distance(s.cbegin(), s.cend());
-    auto                      bmp = bitmap_init_XXX(n - 1, n);
-    Presentation<std::string> p;
-    p.alphabet("ab");
-    size_t                   x           = 0;
-    uint64_t                 undecidable = 0;
-    std::vector<std::string> bad;
-    auto                     last = s.cbegin();
-    std::advance(last, n - 1);
-    for (auto u = s.cbegin(); u != last; ++u) {
-      size_t y = 1;
-      auto   U = std::string("b") + *u + "a";
-      // TODO V = "a"
-      for (auto v = s.cbegin(); v != s.cend(); ++v) {
-        std::string V;
-        if (v->size() == s.last().size()) {
-          y = 0;
-          V = "a";
-        } else {
-          V = std::string("a") + *v + "a";
-        }
-        p.rules.clear();
-        presentation::add_rule(p, U, V);
-        auto c = has_decidable_word_problem(p, 1, std::chrono::milliseconds(2));
-        bitmap_color_XXX(bmp, x, y, c.first, c.second);
-        std::cout << U << " = " << V << " is ";
-        if (c.first == certificate::unknown) {
-          ++undecidable;
-          std::cout << "BAD" << std::endl;
-          bad.push_back(*u);
-          bad.push_back(*v);
-        } else {
-          // TODO print out number of good/bad and progress
-          std::cout << "good (depth " << c.second << ")" << std::endl;
-        }
-        ++y;
-      }
-      ++x;
-    }
-
-    size_t depth = 1;
-    while (!bad.empty()) {
-      std::vector<std::string> next_bad;
-      std::cout << "Total " << bmp.width() * bmp.width() << " instances!"
-                << std::endl;
-      std::cout << "Couldn't solve " << undecidable << " instances!"
-                << std::endl;
-      std::cout << "Writing 2_gen_1_rel.bmp . . ." << std::endl;
-      bmp.save_image("2_gen_1_rel.bmp");
-      undecidable = 0;
-      depth       = depth + 1;
-
-      for (auto it = bad.cbegin(); it != bad.cend(); it += 2) {
-        p.rules.clear();
-        auto u = it, v = (it + 1);
-        auto U = std::string("b") + *u + "a", V = std::string("a") + *v + "a";
-        presentation::add_rule(p, U, V);
-        auto c = has_decidable_word_problem(
-            p, depth, std::chrono::milliseconds(5));
-        std::cout << U << " = " << V << " is ";
-        if (c.first != certificate::unknown) {
-          size_t x = s.position(*u);
-          size_t y = s.position(*v) + 1;
-          bitmap_color_XXX(bmp, x, y, c.first, c.second);
-          std::cout << "good (depth " << c.second << ")" << std::endl;
-        } else {
-          ++undecidable;
-          next_bad.push_back(std::move(*u));
-          next_bad.push_back(std::move(*v));
-          std::cout << "BAD" << std::endl;
-        }
-      }
-      std::swap(bad, next_bad);
-      if (depth == 3) {
-        break;
-      }
-    }
-
-    std::cout << "Total " << bmp.width() * bmp.width() << " instances!"
-              << std::endl;
-    std::cout << "Couldn't solve " << undecidable << " instances!" << std::endl;
-    std::cout << "Writing 2_gen_1_rel.bmp . . ." << std::endl;
-    bmp.save_image("2_gen_1_rel.bmp");
-    print_key();
-    // REQUIRE(undecidable == 16);
+    // {
+    //   BitMap bm(1, 2);
+    //   bm.image().set_pixel(
+    //       0, 0, to_color(certificate::equal_number_of_occurrences_of_a,
+    //       0));
+    //   bm.image().set_pixel(
+    //       0, 1, to_color(certificate::relation_words_have_equal_length,
+    //       0));
+    // }
+    // Solver("bua_ava_1x2.bmp", 1);
+    // Solver("bua_ava_3x4.bmp", 2);
+    // Solver("bua_ava_7x8.bmp", 3);
+    // Solver("bua_ava_15x16.bmp", 4);
+    Solver("bua_ava_31x32.bmp", 5, 2);
   }
 
 }  // namespace libsemigroups
