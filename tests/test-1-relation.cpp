@@ -350,6 +350,91 @@ namespace libsemigroups {
       return true;
     }
 
+    class AdianA : public Runner {
+     private:
+      std::string _bua;
+      std::string _ava;
+      std::string _word;
+      char        _letter;
+      bool        _is_divisible;
+
+     public:
+      AdianA() : _bua(), _ava(), _word(), _letter(), _is_divisible(false) {}
+
+      void init(Presentation<std::string> const& p) {
+        if (p.rules.size() != 2) {
+          LIBSEMIGROUPS_EXCEPTION("TODO");
+        }
+        auto const& u = p.rules[0];
+        auto const& v = p.rules[1];
+        if (u.front() == v.front() || u.back() != v.back()) {
+          LIBSEMIGROUPS_EXCEPTION("TODO");
+        }
+        _bua = u;
+        _ava = v;
+        if (_bua.front() != 'b') {
+          std::swap(_bua, _ava);
+        }
+      }
+
+      bool is_left_divisible(std::string const& w, char x) {
+        _word         = w;
+        _letter       = x;
+        _is_divisible = false;
+        run();
+        return _is_divisible;
+      }
+
+      using const_iterator = std::string::const_iterator;
+      using iterator       = std::string::iterator;
+
+      const_iterator cbegin() {
+        return _word.cbegin();
+      }
+
+     private:
+      iterator next_prefix(iterator it) {
+        if (*it == 'a') {
+          return detail::maximum_common_prefix(
+                     it, _word.end(), _ava.begin(), _ava.end())
+              .first;
+        } else {
+          return detail::maximum_common_prefix(
+                     it, _word.end(), _bua.begin(), _bua.end())
+              .first;
+        }
+      }
+
+      iterator begin() {
+        return _word.begin();
+      }
+
+      void run_impl() override {
+        iterator first = begin();
+        iterator last;
+        while (first < _word.end()) {
+          if (_word.front() == _letter) {
+            _is_divisible = true;
+            return;
+          }
+          last = next_prefix(first);
+          if (std::equal(first, last, _bua.cbegin(), _bua.cend())) {
+            _word.replace(first, last, _ava.cbegin(), _ava.cend());
+            first = _word.begin();
+          } else if (std::equal(first, last, _ava.cbegin(), _ava.cend())) {
+            _word.replace(first, last, _bua.cbegin(), _bua.cend());
+            first = _word.begin();
+          } else {
+            first = last;
+          }
+        }
+      }
+
+      bool finished_impl() const override {
+        return false;
+      }
+    };
+
     template <typename W>
     auto has_decidable_word_problem(std::ofstream&            log_file,
                                     Presentation<W>&          p,
@@ -799,6 +884,65 @@ namespace libsemigroups {
     REQUIRE(!watier1("bbbabbbabaa"));
     REQUIRE(!watier1("bbbabbababbabbb"));
     REQUIRE(watier1("bbbbbb"));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("1-relation",
+                          "020",
+                          "AdianA - 1",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule_and_check(p, "baabaa", "aba");
+    std::string w = "bbbabbaa";
+
+    AdianA a;
+    a.init(p);
+    REQUIRE(a.is_left_divisible("aaba", 'b'));
+    REQUIRE(a.is_left_divisible("aaaba", 'b'));
+    REQUIRE(a.is_left_divisible("aaaaaaaaaaaba", 'b'));
+    REQUIRE(!a.is_left_divisible(w, 'a'));
+    REQUIRE(a.is_left_divisible(w, 'b'));
+    REQUIRE(a.is_left_divisible("aaaaaaba", 'a'));
+
+    Sislo s;
+    s.alphabet("ab").first("a").last("aaaaaaaaaaaaaa");
+
+    auto n = std::count_if(s.cbegin(), s.cend(), [&a](auto const& w) {
+      return !a.is_left_divisible(w, 'a') && !a.is_left_divisible(w, 'b');
+    });
+    REQUIRE(n == 0);
+
+    p.rules.clear();
+    presentation::add_rule_and_check(p, "bababa", "abba");
+    a.init(p);
+    n = std::count_if(s.cbegin(), s.cend(), [&a](auto const& w) {
+      return !a.is_left_divisible(w, 'a') && !a.is_left_divisible(w, 'b');
+    });
+    REQUIRE(n == 0);
+
+    p.rules.clear();
+    presentation::add_rule_and_check(p, "baabba", "aa");
+    a.init(p);
+    n = std::count_if(s.cbegin(), s.cend(), [&a](auto const& w) {
+      return !a.is_left_divisible(w, 'a') && !a.is_left_divisible(w, 'b');
+    });
+    REQUIRE(n == 0);
+
+    // auto first = a.cbegin();
+    // auto last  = a.next_prefix(first);
+    // REQUIRE(std::string(first, last) == "b");
+    // first = last;
+    // last  = a.next_prefix(first);
+    // REQUIRE(std::string(first, last) == "b");
+    // first = last;
+    // last  = a.next_prefix(first);
+    // REQUIRE(std::string(first, last) == "ba");
+    // first = last;
+    // last  = a.next_prefix(first);
+    // REQUIRE(std::string(first, last) == "b");
+    // first = last;
+    // last  = a.next_prefix(first);
+    // REQUIRE(std::string(first, last) == "baa");
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",

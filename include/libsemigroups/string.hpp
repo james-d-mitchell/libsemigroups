@@ -184,10 +184,10 @@ namespace libsemigroups {
     }
 
     template <typename T>
-    std::pair<T, T> maximum_common_prefix(T        first_word1,
-                                          T const& last_word1,
-                                          T        first_word2,
-                                          T const& last_word2) {
+    std::pair<T, T> maximum_common_prefix(T first_word1,
+                                          T last_word1,
+                                          T first_word2,
+                                          T last_word2) {
       while (*first_word1 == *first_word2 && first_word1 < last_word1
              && first_word2 < last_word2) {
         ++first_word1;
