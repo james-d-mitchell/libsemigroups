@@ -268,8 +268,14 @@ namespace libsemigroups {
       }
 
       void save() {
-        auto name
-            = fmt::format("bua_ava_{}x{}.bmp", _image.width(), _image.height());
+        size_t      index = 0;
+        std::string name;
+        do {
+          name = fmt::format("bua_ava_{}x{}.{:03}.bmp",
+                             _image.width(),
+                             _image.height(),
+                             index++);
+        } while (std::filesystem::exists(name));
         fmt::print(fmt::emphasis::bold, "Writing {} . . .\n", name);
         _image.save_image(name);
       }
@@ -886,8 +892,6 @@ namespace libsemigroups {
       size_t depth = 1;
       while (!_bad.empty()) {
         std::vector<std::string> next_bad;
-        std::cout << "Total " << _bmp.image().width() * _bmp.image().height()
-                  << " instances!" << std::endl;
         std::cout << "Couldn't solve " << _bad.size() / 2 << " instances!"
                   << std::endl;
         _bmp.save();
@@ -912,9 +916,10 @@ namespace libsemigroups {
           if (solve_one(p, *U, *V, depth, 5ms)) {
             good++;
           }
-          size_t const k = std::to_string(next_bad.size() / 2).size();
+          size_t const k
+              = std::max(size_t(2), std::to_string(next_bad.size() / 2).size());
           fmt::print(fmt::emphasis::bold,
-                     "\t[{0:{4}} (bad) | {1:{4}} (good) | at {2:{4}}/{3}]\n",
+                     " [{0:{4}} (bad) | {1:{4}} (good) | at {2:{4}}/{3}]\n",
                      _bad.size() / 2,
                      good,
                      _bad.size() / 2 + good,
@@ -957,16 +962,30 @@ namespace libsemigroups {
         = [](std::string const& v) { return "a" + v + "a"; }) {
       Presentation<std::string> p;
       p.alphabet("ab");
-      _x         = x_init;
-      auto ulast = u_sislo.cend();
+      _x                  = x_init;
+      auto          ulast = u_sislo.cend();
+      static size_t good  = 0;
+      static size_t todo  = 0;
+      todo += std::distance(u_sislo.cbegin(), ulast)
+              * std::distance(v_sislo.cbegin(), v_sislo.cend());
+      size_t const k = std::max(size_t(2), std::to_string(todo).size());
+
       for (auto u = u_sislo.cbegin(); u != ulast; ++u) {
         auto U     = std::string("b") + *u + "a";
         _y         = y_init;
         auto vlast = v_sislo.cend();
         for (auto v = v_sislo.cbegin(); v != vlast; ++v) {
           std::string V = v_func(*v);
-          solve_one(p, U, V);
-          fmt::print("\n");
+          if (solve_one(p, U, V)) {
+            good++;
+          }
+          fmt::print(fmt::emphasis::bold,
+                     " [{0:{4}} (bad) | {1:{4}} (good) | at {2:{4}}/{3}]\n",
+                     _bad.size() / 2,
+                     good,
+                     _bad.size() / 2 + good,
+                     todo,
+                     k);
           ++_y;
         }
         ++_x;
@@ -985,13 +1004,13 @@ namespace libsemigroups {
                                u,
                                _pad.first,
                                v + " ",
-                               _pad.second)
+                               _pad.second + 1)
                 << std::flush;
       auto c = has_decidable_word_problem(p, depth, run_for);
       bitmap_color_XXX(_bmp.image(), _x, _y, c.first, c.second);
       if (c.first == certificate::unknown) {
         fmt::print(fmt::emphasis::underline, "BAD");
-        fmt::print("            ");
+        fmt::print("           ");
         _bad.push_back(u);
         _bad.push_back(v);
         return false;
@@ -1018,10 +1037,10 @@ namespace libsemigroups {
     //       0));
     // }
     // Solver("bua_ava_1x2.bmp", 1);
-    // Solver("bua_ava_3x4.bmp", 2);
+    Solver("bua_ava_3x4.bmp", 2);
     // Solver("bua_ava_7x8.bmp", 3);
     // Solver("bua_ava_15x16.bmp", 4);
-    Solver("bua_ava_31x32.bmp", 5, 2);
+    // Solver("bua_ava_31x32.bmp", 5, 2);
   }
 
 }  // namespace libsemigroups
