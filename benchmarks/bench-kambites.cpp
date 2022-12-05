@@ -419,7 +419,7 @@ namespace libsemigroups {
     size_t const          sample_size = 1'000;
     std::vector<uint64_t> results;
 
-    for (size_t n = 10; n < 50; n += 1) {
+    for (size_t n = 10; n < 51; n += 1) {
       std::vector<std::string> sample;
       for (size_t i = 0; i < sample_size; ++i) {
         sample.push_back(random_string("ab", n));
@@ -428,8 +428,10 @@ namespace libsemigroups {
 
       std::tuple<uint64_t, uint64_t, uint64_t> x
           = c4_check_2_gen_1_rel_from_sample<MultiStringView>(sample);
-      std::cout << "\n\n ratio = "
-                << static_cast<long double>(std::get<0>(x)) / std::get<1>(x);
+      std::cout << "n = " << n << std::endl;
+      std::cout << "ratio = "
+                << static_cast<long double>(std::get<0>(x)) / std::get<1>(x)
+                << std::endl;
       results.push_back(std::get<1>(x));
     }
   }
