@@ -1037,10 +1037,12 @@ namespace libsemigroups {
     //       0));
     // }
     // Solver("bua_ava_1x2.bmp", 1);
-    Solver("bua_ava_3x4.bmp", 2);
-    // Solver("bua_ava_7x8.bmp", 3);
-    // Solver("bua_ava_15x16.bmp", 4);
-    // Solver("bua_ava_31x32.bmp", 5, 2);
+    // Solver("bua_ava_3x4.003.bmp", 2);
+    // Solver("bua_ava_7x8.000.bmp", 3);
+    // Solver("bua_ava_15x16.001.bmp", 4);
+    // Solver("bua_ava_31x32.002.bmp", 5, 2);
+    // Solver("bua_ava_63x64.001.bmp", 6, 2);
+    Solver("bua_ava_127x128.001.bmp", 7, 2);
   }
 
 }  // namespace libsemigroups

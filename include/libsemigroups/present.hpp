@@ -1110,7 +1110,7 @@ namespace libsemigroups {
       // after these chars are [0,48), [58, 65), [91, 97), [123, 255)
       static std::string letters
           = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      bool first_call = true;
+      static bool first_call = true;
       if (first_call) {
         letters.resize(256);
         std::iota(
