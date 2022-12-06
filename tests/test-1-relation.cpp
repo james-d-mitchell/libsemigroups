@@ -430,6 +430,42 @@ namespace libsemigroups {
         return _is_divisible;
       }
 
+      std::string prefix_decomposition(std::string const& w) {
+        _word         = w;
+        _letter       = w[0] == 'a' ? 'b' : 'a';
+        _is_divisible = false;
+
+        std::string result;
+        std::string sep;
+        iterator    first = begin();
+        iterator    last;
+        while (first < _word.end()) {
+          if (_word.front() == _letter) {
+            _is_divisible = true;
+            return _word;
+          }
+          last = next_prefix(first);
+          if (std::equal(first, last, _bua.cbegin(), _bua.cend())) {
+            _word.replace(first, last, _ava.cbegin(), _ava.cend());
+            first = _word.begin();
+            result.clear();
+            sep.clear();
+          } else if (std::equal(first, last, _ava.cbegin(), _ava.cend())) {
+            _word.replace(first, last, _bua.cbegin(), _bua.cend());
+            first = _word.begin();
+            result.clear();
+            sep.clear();
+          } else {
+            result += sep;
+            result.append(first, last);
+            sep   = "|";
+            first = last;
+          }
+        }
+        return result;
+      }
+
+     private:
       using const_iterator = std::string::const_iterator;
       using iterator       = std::string::iterator;
 
@@ -437,7 +473,6 @@ namespace libsemigroups {
         return _word.cbegin();
       }
 
-     private:
       iterator next_prefix(iterator it) {
         if (*it == 'a') {
           return detail::maximum_common_prefix(
@@ -718,9 +753,18 @@ namespace libsemigroups {
                           "[extreme][presentation]") {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
-    p.alphabet("ab");
-    presentation::add_rule_and_check(p, "baabaa", "aba");
-    REQUIRE(has_decidable_word_problem(p).first == certificate::unknown);
+    presentation::add_rule(p, "baabaa", "aba");
+    p.alphabet("abc");
+    Sislo s;
+    s.alphabet("ab").first("aa").last("aaaaaaa");
+    for (auto it = s.cbegin(); it != s.cend(); ++it) {
+      p.rules.erase(p.rules.cbegin() + 2, p.rules.cend());
+      presentation::add_rule(p, *it, std::string("c"));
+      if (knuth_bendix_search(p, 1, 2ms, 0).first) {
+        std::cout << p.rules << std::endl;
+        break;
+      }
+    }
   }
 
   LIBSEMIGROUPS_TEST_CASE("1-relation",
@@ -772,6 +816,9 @@ namespace libsemigroups {
 
     AdianA a;
     a.init(p);
+
+    REQUIRE(a.prefix_decomposition(w) == "b|b|ba|b|baa");
+
     REQUIRE(a.is_left_divisible("aaba", 'b'));
     REQUIRE(a.is_left_divisible("aaaba", 'b'));
     REQUIRE(a.is_left_divisible("aaaaaaaaaaaba", 'b'));
@@ -786,6 +833,18 @@ namespace libsemigroups {
       return !a.is_left_divisible(w, 'a') && !a.is_left_divisible(w, 'b');
     });
     REQUIRE(n == 0);
+    size_t count = 0;
+    n = std::to_string(std::distance(s.cbegin(), s.cend())).size() - 1;
+    for (auto it = s.cbegin(); it != s.cend(); ++it) {
+      if (!a.is_left_divisible(*it, 'a')) {
+        fmt::print("{0:0>{1}}: {2} -> {3}\n",
+                   count++,
+                   n,
+                   *it,
+                   a.prefix_decomposition(*it));
+      }
+    }
+    REQUIRE(count == 7212);
 
     p.rules.clear();
     presentation::add_rule_and_check(p, "bababa", "abba");
