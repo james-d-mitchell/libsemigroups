@@ -233,9 +233,7 @@ namespace libsemigroups {
     }
 
     template <typename W>
-    void add_inverse_rules(Presentation<W>&                      p,
-                           W const&                              vals,
-                           typename Presentation<W>::letter_type id) {
+    void validate_semigroup_inverses(Presentation<W>& p, W const& vals) {
       p.validate_word(vals.begin(), vals.end());
 
       if (vals.size() != p.alphabet().size()) {
@@ -256,13 +254,6 @@ namespace libsemigroups {
 
       // Check that (x ^ - 1) ^ -1 = x
       for (size_t i = 0; i < p.alphabet().size(); ++i) {
-        if (p.letter(i) == id && vals[i] != id) {
-          LIBSEMIGROUPS_EXCEPTION(
-              "invalid inverses, the identity is %c, but %c ^ -1 != %c",
-              p.letter(i),
-              p.letter(i),
-              vals[i]);
-        }
         for (size_t j = 0; j < p.alphabet().size(); ++j) {
           if (p.letter(j) == vals[i]) {
             if (vals[j] != p.letter(i)) {
@@ -276,6 +267,23 @@ namespace libsemigroups {
             break;
           }
         }
+      }
+    }
+
+    template <typename W>
+    void add_inverse_rules(Presentation<W>&                      p,
+                           W const&                              vals,
+                           typename Presentation<W>::letter_type id) {
+      validate_semigroup_inverses(p, vals);
+
+      // Check that id ^ -1 = id
+      if (id != UNDEFINED && vals[p.index(id)] != id) {
+        LIBSEMIGROUPS_EXCEPTION(
+            "invalid inverses, the identity is %s, but %s ^ -1 = %s != %s",
+            detail::to_string(id).c_str(),
+            detail::to_string(id).c_str(),
+            detail::to_string(vals[p.index(id)]).c_str(),
+            detail::to_string(id).c_str());
       }
 
       W rhs;
@@ -431,9 +439,9 @@ namespace libsemigroups {
       // the length of the presentation as much as possible.
       word_type::const_iterator first, last;
       std::tie(first, last) = st.dfs(helper);
-      // It'd be more pleasing to return first and last here, but they point at
-      // the word contained in the SuffixTree st, which is destroyed after we
-      // exit this function.
+      // It'd be more pleasing to return first and last here, but they point
+      // at the word contained in the SuffixTree st, which is destroyed after
+      // we exit this function.
       return W(first, last);
     }
 
@@ -635,6 +643,8 @@ namespace libsemigroups {
     typename Presentation<W>::letter_type letter(Presentation<W> const&,
                                                  size_t i) {
       using letter_type = typename Presentation<W>::letter_type;
+      static_assert(std::is_unsigned<letter_type>::value,
+                    "the Presentation<W>::letter_type must be unsigned!");
       if (i >= std::numeric_limits<letter_type>::max()) {
         LIBSEMIGROUPS_EXCEPTION(
             "expected a value in the range [0, %llu) found %llu",
@@ -642,6 +652,31 @@ namespace libsemigroups {
             uint64_t(i));
       }
       return static_cast<typename Presentation<W>::letter_type>(i);
+    }
+
+    template <typename W>
+    typename Presentation<W>::letter_type inverse(Presentation<W> const& p,
+                                                  size_t                 i) {
+      using letter_type = typename Presentation<W>::letter_type;
+      static_assert(std::is_unsigned<letter_type>::value,
+                    "the Presentation<W>::letter_type must be unsigned!");
+      if (i >= std::numeric_limits<letter_type>::max()) {
+        LIBSEMIGROUPS_EXCEPTION(
+            "expected a letter in the range [0, %llu) found %llu",
+            uint64_t(std::numeric_limits<letter_type>::max()),
+            uint64_t(i));
+      } else if (i + p.alphabet().size()
+                 >= std::numeric_limits<letter_type>::max()) {
+        LIBSEMIGROUPS_EXCEPTION(
+            "invalid letter %llu, the inverse would be %llu, but inverses "
+            "must "
+            "be in the range [0, %llu)",
+            uint64_t(i),
+            uint64_t(i + p.alphabet().size()),
+            uint64_t(std::numeric_limits<letter_type>::max()));
+      }
+      // Don't call letter to avoid checks twice
+      return static_cast<letter_type>(i + p.alphabet().size());
     }
 
     template <>
@@ -687,6 +722,35 @@ namespace libsemigroups {
       return letters[i];
     }
 
+    template <>
+    typename Presentation<std::string>::letter_type
+    inverse(Presentation<std::string> const& p, size_t i) {
+      using letter_type = typename Presentation<std::string>::letter_type;
+      letter(p, i);  // to bound check i
+      if (p.alphabet().size() + i
+          >= std::numeric_limits<letter_type>::max()
+                 - std::numeric_limits<letter_type>::min()) {
+        LIBSEMIGROUPS_EXCEPTION(
+            "invalid letter %llu, the inverse would be %llu, but inverses "
+            "must "
+            "be in the range [0, %llu)",
+            uint64_t(i),
+            uint64_t(i + p.alphabet().size()),
+            uint64_t(std::numeric_limits<letter_type>::max()
+                     - std::numeric_limits<letter_type>::min()));
+      }
+      if (p.alphabet().size() <= 26) {
+        if (i < 26) {
+          return letter(p, i + 26);  // a -> A
+        } else if (i < 52) {
+          return letter(p, i - 26);  // A -> a
+        }
+      }
+      size_t offset = (p.in_alphabet(letter(p, i)) ? 0 : 1);
+      return static_cast<typename Presentation<std::string>::letter_type>(
+          i + p.alphabet().size() + offset);
+    }
+
     template <typename W>
     auto first_unused_letter(Presentation<W> const& p) {
       using letter_type = typename Presentation<W>::letter_type;
@@ -698,7 +762,8 @@ namespace libsemigroups {
 
       if (p.alphabet().size() == max_letter) {
         LIBSEMIGROUPS_EXCEPTION(
-            "the alphabet of the 1st argument already has the maximum size of "
+            "the alphabet of the 1st argument already has the maximum size "
+            "of "
             "%llu, there are no unused generators",
             uint64_t(std::numeric_limits<letter_type>::max()
                      - std::numeric_limits<letter_type>::min()));

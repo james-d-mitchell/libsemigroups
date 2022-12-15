@@ -595,8 +595,9 @@ namespace libsemigroups {
     //!
     //! The letter in \c a with index \c i in \p vals is the inverse of the
     //! letter in alphabet() with index \c i. The rules added are \f$a_ib_i =
-    //! e\f$ where the alphabet is \f$\{a_1, \ldots, a_n\}\f$; the parameter \p
-    //! vals is \f$\{b_1, \ldots, b_n\}\f$; and \f$e\f$ is the 3rd parameter.
+    //! e\f$ where the alphabet is \f$\{a_1, \ldots, a_n\}\f$; the parameter
+    //! \p vals is \f$\{b_1, \ldots, b_n\}\f$; and \f$e\f$ is the 3rd
+    //! parameter.
     //!
     //! \tparam W the type of the words in the presentation
     //! \param p the presentation to add rules to
@@ -608,8 +609,8 @@ namespace libsemigroups {
     //!
     //! \throws LibsemigroupsException if any of the following apply:
     //! * the length of \p vals is not equal to `alphabet().size()`;
-    //! * the letters in \p vals are not exactly those in `alphabet()` (perhaps
-    //! in a different order);
+    //! * the letters in \p vals are not exactly those in `alphabet()`
+    //! (perhaps in a different order);
     //! * \f$(a_i ^ {-1}) ^ {-1} = a_i\f$ does not hold for some \f$i\f$;
     //! * \f$e ^ {-1} = e\f$ does not hold
     //!
@@ -620,12 +621,17 @@ namespace libsemigroups {
                            W const&                              vals,
                            typename Presentation<W>::letter_type e = UNDEFINED);
 
+    // TODO(now) doc
+    template <typename W>
+    void validate_semigroup_inverses(Presentation<W>& p, W const& vals);
+
     //! Add rules for inverses.
     //!
     //! The letter in \c a with index \c i in \p vals is the inverse of the
     //! letter in alphabet() with index \c i. The rules added are \f$a_ib_i =
-    //! e\f$ where the alphabet is \f$\{a_1, \ldots, a_n\}\f$; the parameter \p
-    //! vals is \f$\{b_1, \ldots, b_n\}\f$; and \f$e\f$ is the 3rd parameter.
+    //! e\f$ where the alphabet is \f$\{a_1, \ldots, a_n\}\f$; the parameter
+    //! \p vals is \f$\{b_1, \ldots, b_n\}\f$; and \f$e\f$ is the 3rd
+    //! parameter.
     //!
     //! \tparam W the type of the words in the presentation
     //! \param p the presentation to add rules to
@@ -637,8 +643,8 @@ namespace libsemigroups {
     //!
     //! \throws LibsemigroupsException if any of the following apply:
     //! * the length of \p vals is not equal to `alphabet().size()`;
-    //! * the letters in \p vals are not exactly those in `alphabet()` (perhaps
-    //! in a different order);
+    //! * the letters in \p vals are not exactly those in `alphabet()`
+    //! (perhaps in a different order);
     //! * \f$(a_i ^ {-1}) ^ {-1} = a_i\f$ does not hold for some \f$i\f$;
     //! * \f$e ^ {-1} = e\f$ does not hold
     //!
@@ -652,10 +658,10 @@ namespace libsemigroups {
 
     //! Remove duplicate rules.
     //!
-    //! Removes all but one instance of any duplicate rules (if any). Note that
-    //! rules of the form \f$u = v\f$ and \f$v = u\f$ (if any) are considered
-    //! duplicates. Also note that the rules may be reordered by this function
-    //! even if there are no duplicate rules.
+    //! Removes all but one instance of any duplicate rules (if any). Note
+    //! that rules of the form \f$u = v\f$ and \f$v = u\f$ (if any) are
+    //! considered duplicates. Also note that the rules may be reordered by
+    //! this function even if there are no duplicate rules.
     //!
     //! \tparam W the type of the words in the presentation
     //! \param p the presentation
@@ -668,8 +674,8 @@ namespace libsemigroups {
 
     //! Remove rules consisting of identical words.
     //!
-    //! Removes all instance of rules (if any) where the left hand side and the
-    //! right hand side are identical.
+    //! Removes all instance of rules (if any) where the left hand side and
+    //! the right hand side are identical.
     //!
     //! \tparam W the type of the words in the presentation
     //! \param p the presentation
@@ -730,9 +736,10 @@ namespace libsemigroups {
     //!
     //! If it is possible to find a subword \f$w\f$ of the rules \f$u_1 = v_1,
     //! \ldots, u_n = v_n\f$ such that the introduction of a new generator
-    //! \f$z\f$ and the relation \f$z = w\f$ reduces the `presentation::length`
-    //! of the presentation, then this function returns the word \f$w\f$. If no
-    //! such word can be found, then a word of length \f$0\f$ is returned.
+    //! \f$z\f$ and the relation \f$z = w\f$ reduces the
+    //! `presentation::length` of the presentation, then this function returns
+    //! the word \f$w\f$. If no such word can be found, then a word of length
+    //! \f$0\f$ is returned.
     //!
     //! \tparam W the type of the words in the presentation
     //! \param p the presentation
@@ -747,10 +754,10 @@ namespace libsemigroups {
 
     //! Replace non-overlapping instances of a subword via iterators.
     //!
-    //! If \f$w=\f$`[first, last)` is a word, then this function replaces every
-    //! non-overlapping instance of \f$w\f$ in every rule, adds a new generator
-    //! \f$z\f$, and the rule \f$w = z\f$. The new generator and rule are added
-    //! even if \f$w\f$ is not a subword of any rule.
+    //! If \f$w=\f$`[first, last)` is a word, then this function replaces
+    //! every non-overlapping instance of \f$w\f$ in every rule, adds a new
+    //! generator \f$z\f$, and the rule \f$w = z\f$. The new generator and
+    //! rule are added even if \f$w\f$ is not a subword of any rule.
     //!
     //! \tparam W the type of the words in the presentation
     //! \tparam T the type of the 2nd and 3rd parameters (iterators)
@@ -770,8 +777,8 @@ namespace libsemigroups {
     //! Replace non-overlapping instances of a subword via const reference.
     //!
     //! If \f$w=\f$`[first, last)` is a word, then replaces every
-    //! non-overlapping instance (from left to right) of \f$w\f$ in every rule,
-    //! adds a new generator \f$z\f$, and the rule \f$w = z\f$. The new
+    //! non-overlapping instance (from left to right) of \f$w\f$ in every
+    //! rule, adds a new generator \f$z\f$, and the rule \f$w = z\f$. The new
     //! generator and rule are added even if \f$w\f$ is not a subword of any
     //! rule.
     //!
@@ -792,8 +799,8 @@ namespace libsemigroups {
     //! Replace non-overlapping instances of a subword via `char const*`.
     //!
     //! If \f$w=\f$`[first, last)` is a word, then replaces every
-    //! non-overlapping instance (from left to right) of \f$w\f$ in every rule,
-    //! adds a new generator \f$z\f$, and the rule \f$w = z\f$. The new
+    //! non-overlapping instance (from left to right) of \f$w\f$ in every
+    //! rule, adds a new generator \f$z\f$, and the rule \f$w = z\f$. The new
     //! generator and rule are added even if \f$w\f$ is not a subword of any
     //! rule.
     //!
@@ -810,8 +817,8 @@ namespace libsemigroups {
     //! Replace non-overlapping instances of a subword by another word.
     //!
     //! If \p existing and \p replacement are words, then this function
-    //! replaces every non-overlapping instance of \p existing in every rule by
-    //! \p replacement. The presentation \p p is changed in-place.
+    //! replaces every non-overlapping instance of \p existing in every rule
+    //! by \p replacement. The presentation \p p is changed in-place.
     //!
     //! \tparam W the type of the words in the presentation
     //! \param p the presentation
@@ -832,8 +839,9 @@ namespace libsemigroups {
     //! Adds the rule with left hand side `[lhs_begin, lhs_end)` and
     //! right hand side `[rhs_begin, rhs_end)` to the rules.
     //!
-    //! \tparam S the type of the first two parameters (iterators, or pointers)
-    //! \tparam T the type of the second two parameters (iterators, or pointers)
+    //! \tparam S the type of the first two parameters (iterators, or
+    //! pointers) \tparam T the type of the second two parameters (iterators,
+    //! or pointers)
     //!
     //! \param first_existing an iterator pointing to the first letter of the
     //! existing subword to be replaced
@@ -1090,8 +1098,8 @@ namespace libsemigroups {
 
     //! Remove any trivially redundant generators.
     //!
-    //! If one side of any of the rules in the presentation \p p is a letter \c
-    //! a and the other side of the rule does not contain \c a, then this
+    //! If one side of any of the rules in the presentation \p p is a letter
+    //! \c a and the other side of the rule does not contain \c a, then this
     //! function replaces every occurrence of \c a in every rule by the other
     //! side of the rule. This substitution is performed for every such
     //! rule in the presentation; and the trivial rules (with both sides being
@@ -1110,9 +1118,10 @@ namespace libsemigroups {
     //!
     //! This function returns the \f$i\f$-th letter in the alphabet consisting
     //! of all possible letters of type Presentation<W>::letter_type. This
-    //! function exists so that visible ASCII characters occur before invisible
-    //! ones, so that when manipulating presentations over `std::string`s the
-    //! human readable characters are used before non-readable ones.
+    //! function exists so that visible ASCII characters occur before
+    //! invisible ones, so that when manipulating presentations over
+    //! `std::string`s the human readable characters are used before
+    //! non-readable ones.
     //!
     //! \tparam W the type of the words in the presentation
     //!
@@ -1123,15 +1132,19 @@ namespace libsemigroups {
     template <typename W>
     typename Presentation<W>::letter_type letter(Presentation<W> const&,
                                                  size_t i);
+    // TODO(now): doc
+    template <typename W>
+    typename Presentation<W>::letter_type inverse(Presentation<W> const&,
+                                                  size_t i);
 
     //! Return a possible letter by index.
     //!
     //! This function returns the \f$i\f$-th letter in the alphabet consisting
-    //! of all possible letters of type Presentation<std::string>::letter_type.
-    //! This function exists so that visible ASCII characters occur before
-    //! invisible ones, so that when manipulating presentations over
-    //! `std::string`s the human readable characters are used before
-    //! non-readable ones.
+    //! of all possible letters of type
+    //! Presentation<std::string>::letter_type. This function exists so that
+    //! visible ASCII characters occur before invisible ones, so that when
+    //! manipulating presentations over `std::string`s the human readable
+    //! characters are used before non-readable ones.
     //!
     //! \tparam W the type of the words in the presentation
     //!
@@ -1143,10 +1156,16 @@ namespace libsemigroups {
     inline typename Presentation<std::string>::letter_type
     letter(Presentation<std::string> const&, size_t i);
 
+    // TODO(now): doc
+    template <>
+    inline typename Presentation<std::string>::letter_type
+    inverse(Presentation<std::string> const&, size_t i);
+
     //! Returns the first letter **not** in the alphabet of a presentation.
     //!
     //! This function returns `letter(p, i)` when `i` is the least possible
-    //! value such that `!p.in_alphabet(letter(p, i))` if such a letter exists.
+    //! value such that `!p.in_alphabet(letter(p, i))` if such a letter
+    //! exists.
     //!
     //! \returns A `letter_type`.
     //!
@@ -1156,6 +1175,43 @@ namespace libsemigroups {
     auto first_unused_letter(Presentation<W> const& p);
 
   }  // namespace presentation
+
+  template <typename W>
+  class InversePresentation : public Presentation<W> {
+   public:
+    using word_type      = typename Presentation<W>::word_type;
+    using letter_type    = typename Presentation<W>::letter_type;
+    using const_iterator = typename Presentation<W>::const_iterator;
+    using iterator       = typename Presentation<W>::iterator;
+    using size_type      = typename Presentation<W>::size_type;
+
+   private:
+    word_type _inverses;
+
+   public:
+    using Presentation<W>::Presentation;
+
+    // TODO to tpp
+    InversePresentation& inverses(word_type const& w) {
+      presentation::validate_semigroup_inverses(*this, w);
+      // Set the alphabet to include the inverses
+      _inverses = w;
+      return *this;
+    }
+
+    word_type const& inverses() const noexcept {
+      return inverses;
+    }
+
+    // TODO to tpp
+    letter_type inverse(letter_type x) {
+      if (_inverses.empty()) {
+        LIBSEMIGROUPS_EXCEPTION("no inverses have been defined")
+      }
+      return _inverses[this->index(x)];
+    }
+  };
+
 }  // namespace libsemigroups
 
 #include "present.tpp"

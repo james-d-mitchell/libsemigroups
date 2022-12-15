@@ -1185,4 +1185,39 @@ namespace libsemigroups {
     REQUIRE_THROWS_AS(p.alphabet(256), LibsemigroupsException);
   }
 
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "034",
+                          "InversePresentation",
+                          "[quick][presentation]") {
+    InversePresentation<std::string> p;
+    p.alphabet("ab");
+    // Inverses must be the same symbols as alphabet
+    REQUIRE_THROWS_AS(p.inverses("AB"), LibsemigroupsException);
+    // Same size
+    REQUIRE_THROWS_AS(p.inverses("a"), LibsemigroupsException);
+    // Duplicate free
+    REQUIRE_THROWS_AS(p.inverses("aa"), LibsemigroupsException);
+
+    p.inverses("ab");
+    REQUIRE(p.inverse('a') == 'a');
+    REQUIRE(p.inverse('b') == 'b');
+
+    p.alphabet("abAB");
+    p.inverses("ABab");
+
+    REQUIRE(p.inverse('a') == 'A');
+    REQUIRE(p.inverse('b') == 'B');
+    REQUIRE(p.inverse('A') == 'a');
+    REQUIRE(p.inverse('B') == 'b');
+
+    // x ^ -1 ^ - 1 = x
+    REQUIRE_THROWS_AS(p.inverses("bABa"), LibsemigroupsException);
+    REQUIRE_THROWS_AS(p.inverses("BAab"), LibsemigroupsException);
+    p.inverses("BAba");
+    REQUIRE(p.inverse('a') == 'B');
+    REQUIRE(p.inverse('b') == 'A');
+    REQUIRE(p.inverse('A') == 'b');
+    REQUIRE(p.inverse('B') == 'a');
+  }
+
 }  // namespace libsemigroups
