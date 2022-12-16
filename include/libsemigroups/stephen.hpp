@@ -50,9 +50,6 @@ namespace libsemigroups {
   //! [Applications of automata theory to presentations of monoids and inverse
   //! monoids](https://rb.gy/brsuvc) by J. B. Stephen.
   class Stephen : public Runner {
-    using internal_digraph_type
-        = detail::ToddCoxeterDigraph<DigraphWithSources<size_t>>;
-
    public:
     //! The return type of the function \ref word_graph.
     using digraph_type = ActionDigraph<size_t>;
@@ -61,12 +58,16 @@ namespace libsemigroups {
     using node_type = typename digraph_type::node_type;
 
    private:
+    using internal_digraph_type
+        = detail::ToddCoxeterDigraph<DigraphWithSources<size_t>>;
+    using label_type = typename digraph_type::label_type;
+
     // Data members
-    bool                    _finished;
-    node_type               _accept_state;
-    Presentation<word_type> _presentation;
-    word_type               _word;
-    internal_digraph_type   _word_graph;
+    bool                                     _finished;
+    node_type                                _accept_state;
+    std::unique_ptr<Presentation<word_type>> _presentation;
+    word_type                                _word;
+    internal_digraph_type                    _word_graph;
 
    public:
     //! Default constructor.
@@ -91,13 +92,13 @@ namespace libsemigroups {
     explicit Stephen(P&& p);
 
     //! Default copy constructor
-    Stephen(Stephen const&) = default;
+    // TODO Stephen(Stephen const&) = default;
 
     //! Default move constructor
     Stephen(Stephen&&) = default;
 
     //! Default copy assignment operator
-    Stephen& operator=(Stephen const&) = default;
+    // TODO Stephen& operator=(Stephen const&) = default;
 
     //! Default move assignment operator
     Stephen& operator=(Stephen&&) = default;
@@ -132,7 +133,7 @@ namespace libsemigroups {
     //! \exceptions
     //! \noexcept
     Presentation<word_type> const& presentation() const noexcept {
-      return _presentation;
+      return *_presentation;
     }
 
     //! Set the word.
@@ -215,18 +216,19 @@ namespace libsemigroups {
     using lvalue_tag     = std::true_type;
     using non_lvalue_tag = std::false_type;
 
-    bool finished_impl() const noexcept {
+    bool finished_impl() const noexcept override {
       return _finished;
     }
 
     template <typename P>
     void init_impl(P&&, lvalue_tag);
-    void init_impl(Presentation<word_type>&&, non_lvalue_tag);
+    void init_impl(std::unique_ptr<Presentation<word_type>>&&, non_lvalue_tag);
 
     void report_status(
         std::chrono::high_resolution_clock::time_point const& start_time);
     void reset() noexcept;
-    void run_impl();
+    void run_impl() override;
+
     void standardize();
     void validate() const;
   };
@@ -241,7 +243,9 @@ namespace libsemigroups {
     static_assert(std::is_base_of<PresentationBase, std::decay_t<P>>::value,
                   "the template parameter P must be derived from "
                   "PresentationBase");
-    init(std::move(make<Presentation<word_type>>(p)));
+    // TODO this copies the presentation twice
+    auto pp = make<Presentation<word_type>>(p);
+    init(std::move(std::make_unique<Presentation<word_type>>(pp)));
   }
 
   template <typename P>
@@ -250,6 +254,15 @@ namespace libsemigroups {
     init_impl(std::forward<P>(p), std::is_lvalue_reference<P>());
     return *this;
   }
+
+  template <>
+  Stephen& Stephen::init(std::unique_ptr<Presentation<word_type>>&& p) {
+    p->validate();
+    init_impl(std::move(p), non_lvalue_tag());
+    return *this;
+  }
+
+  class StephenB : public Stephen {};
 
   namespace stephen {
     //! The return type of \ref cbegin_words_accepted and \ref
