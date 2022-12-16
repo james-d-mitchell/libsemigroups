@@ -1100,4 +1100,158 @@ namespace libsemigroups {
                       LibsemigroupsException);
     REQUIRE_THROWS_AS(S.run(), LibsemigroupsException);
   }
+
+  LIBSEMIGROUPS_TEST_CASE("StephenB",
+                          "032",
+                          "step_hen SchutzenbergerGraph test case 000",
+                          "[stephen][quick]") {
+    detail::StringToWord string_to_word("abcABC");
+
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("abcABC"));
+    p.inverses(string_to_word("ABCabc"));
+
+    auto S = StephenB(p);
+
+    S.set_word(string_to_word("aBcAbC")).run();
+
+    REQUIRE(S.finished());
+    REQUIRE(S.word_graph().number_of_nodes() == 7);
+    REQUIRE(!stephen::accepts(S, string_to_word("BaAbaBcAbC")));
+    REQUIRE(stephen::accepts(S, string_to_word("aBcCbBcAbC")));
+
+    S.set_word(string_to_word("aBcCbBcAbC"));
+    REQUIRE(stephen::accepts(S, string_to_word("aBcAbC")));
+
+    S.set_word(string_to_word("BaAbaBcAbC"));
+    REQUIRE(stephen::accepts(S, string_to_word("aBcAbC")));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("StephenB",
+                          "033",
+                          "step_hen SchutzenbergerGraph test case 002",
+                          "[stephen][quick]") {
+    detail::StringToWord           string_to_word("abcABC");
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("abcABC"));
+    p.inverses(string_to_word("ABCabc"));
+
+    auto S = StephenB(p);
+    S.set_word(string_to_word("aBbcABAabCc")).run();
+
+    REQUIRE(S.accept_state() == 4);
+    REQUIRE(action_digraph_helper::follow_path(S.word_graph(), 0, S.word())
+            == 4);
+    REQUIRE(stephen::number_of_words_accepted(S) == POSITIVE_INFINITY);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("StephenB",
+                          "034",
+                          "step_hen SchutzenbergerGraph test case 003",
+                          "[stephen][quick]") {
+    detail::StringToWord           string_to_word("xyXY");
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("xyXY"));
+    p.inverses(string_to_word("XYxy"));
+
+    auto S = StephenB(p);
+    S.set_word(string_to_word("xxxyyy")).run();
+
+    REQUIRE(stephen::accepts(S, string_to_word("xxxyyyYYYXXXxxxyyy")));
+    S.set_word(string_to_word("xxxyyyYYYXXXxxxyyy"));
+    REQUIRE(stephen::accepts(S, string_to_word("xxxyyy")));
+    REQUIRE(!stephen::accepts(S, string_to_word("xxx")));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("StephenB",
+                          "035",
+                          "step_hen SchutzenbergerGraph test case 004",
+                          "[stephen][quick]") {
+    detail::StringToWord           string_to_word("xyXY");
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("xyXY"));
+    p.inverses(string_to_word("XYxy"));
+    presentation::add_rule_and_check(
+        p, string_to_word("xyXxyX"), string_to_word("xyX"));
+
+    auto S = StephenB(p);
+    // FIXME seems like every word is accepted when we don't set the word
+    S.set_word(string_to_word("xyXyy"));
+    std::string ys = "";
+    for (size_t i = 0; i < 10; ++i) {
+      REQUIRE(
+          stephen::accepts(S, string_to_word(std::string("x") + ys + "Xyy")));
+      ys += "y";
+    }
+
+    REQUIRE(!stephen::accepts(S, string_to_word("xXyx")));
+    REQUIRE(!stephen::accepts(S, string_to_word("xXxx")));
+    REQUIRE(!stephen::accepts(S, string_to_word("xXxy")));
+    REQUIRE(!stephen::accepts(S, string_to_word("xXxX")));
+    REQUIRE(!stephen::accepts(S, string_to_word("xXyY")));
+    REQUIRE(stephen::accepts(S, string_to_word("xyXyy")));
+    REQUIRE(stephen::number_of_words_accepted(S) == POSITIVE_INFINITY);
+    REQUIRE(S.word_graph().number_of_nodes() == 4);
+    REQUIRE(S.word_graph().number_of_edges() == 8);
+
+    REQUIRE(S.word_graph()
+            == action_digraph_helper::make<typename Stephen::node_type>(
+                4,
+                {{1, 2, UNDEFINED, UNDEFINED},
+                 {UNDEFINED, 1, 0, 1},
+                 {UNDEFINED, 3, UNDEFINED, 0},
+                 {UNDEFINED, UNDEFINED, UNDEFINED, 2}}));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("StephenB",
+                          "036",
+                          "step_hen SchutzenbergerGraph test case 005",
+                          "[stephen][quick]") {
+    detail::StringToWord           string_to_word("xyXY");
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("xyXY"));
+    p.inverses(string_to_word("XYxy"));
+    presentation::add_rule_and_check(
+        p, string_to_word("xyXxyX"), string_to_word("xyX"));
+    presentation::add_rule_and_check(
+        p, string_to_word("xyxy"), string_to_word("xy"));
+
+    auto S = StephenB(p);
+    S.set_word(string_to_word("xyXyy"));
+    REQUIRE(stephen::accepts(S, string_to_word("y")));
+    REQUIRE(stephen::accepts(S, string_to_word("xxxxxxxxxxxxx")));
+    REQUIRE(stephen::accepts(S, string_to_word("xyXxyxyxyxyxyXyy")));
+    REQUIRE(S.word_graph().number_of_nodes() == 1);
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("StephenB",
+                          "037",
+                          "step_hen SchutzenbergerGraph test case 006",
+                          "[stephen][quick]") {
+    detail::StringToWord           string_to_word("abcABC");
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("abcABC"));
+    p.inverses(string_to_word("ABCabc"));
+    presentation::add_rule_and_check(
+        p, string_to_word("ac"), string_to_word("ca"));
+    presentation::add_rule_and_check(
+        p, string_to_word("ab"), string_to_word("ba"));
+    presentation::add_rule_and_check(
+        p, string_to_word("bc"), string_to_word("cb"));
+
+    StephenB S(p);
+    S.set_word(string_to_word("BaAbaBcAbC"));
+    S.run();
+    REQUIRE(S.word_graph().number_of_nodes() == 7);
+    REQUIRE(S.word_graph()
+            == action_digraph_helper::make<typename Stephen::node_type>(
+                7,
+                {{1, UNDEFINED, 2, UNDEFINED, 3, UNDEFINED},
+                 {UNDEFINED, UNDEFINED, UNDEFINED, 0, 4, UNDEFINED},
+                 {UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, 5, 0},
+                 {4, 0, 5, UNDEFINED, UNDEFINED, UNDEFINED},
+                 {UNDEFINED, 1, 6, 3, UNDEFINED, UNDEFINED},
+                 {6, 2, UNDEFINED, UNDEFINED, UNDEFINED, 3},
+                 {UNDEFINED, UNDEFINED, UNDEFINED, 5, UNDEFINED, 4}}));
+  }
 }  // namespace libsemigroups

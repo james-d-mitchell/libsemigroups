@@ -50,6 +50,8 @@ namespace libsemigroups {
   //! [Applications of automata theory to presentations of monoids and inverse
   //! monoids](https://rb.gy/brsuvc) by J. B. Stephen.
   class Stephen : public Runner {
+    friend class StephenB;
+
    public:
     //! The return type of the function \ref word_graph.
     using digraph_type = ActionDigraph<size_t>;
@@ -103,7 +105,7 @@ namespace libsemigroups {
     //! Default move assignment operator
     Stephen& operator=(Stephen&&) = default;
 
-    ~Stephen() = default;
+    virtual ~Stephen() = default;
 
     //! Initialize from a presentation.
     //!
@@ -217,10 +219,34 @@ namespace libsemigroups {
       void operator()(internal_digraph_type& wg,
                       node_type              from,
                       node_type              to,
-                      label_type             letter) const noexcept {
+                      label_type             letter,
+                      Presentation<word_type> const&) const noexcept {
         wg.add_edge_nc(from, to, letter);
       }
     };
+
+    template <typename DefEdge>
+    std::pair<bool, node_type>
+    complete_path(internal_digraph_type&    wg,
+                  node_type                 c,
+                  word_type::const_iterator first,
+                  word_type::const_iterator last) noexcept {
+      word_type::const_iterator it;
+      std::tie(c, it)
+          = action_digraph_helper::last_node_on_path_nc(wg, c, first, last);
+      auto def_edge = DefEdge();
+      bool result   = false;
+      for (; it < last; ++it) {
+        node_type d = wg.unsafe_neighbor(c, *it);
+        if (d == UNDEFINED) {
+          d = wg.new_node();
+          def_edge(wg, c, d, *it, presentation());
+          result = true;
+        }
+        c = d;
+      }
+      return std::make_pair(result, c);
+    }
 
     using lvalue_tag     = std::true_type;
     using non_lvalue_tag = std::false_type;
@@ -238,8 +264,75 @@ namespace libsemigroups {
         std::chrono::high_resolution_clock::time_point const& start_time);
     void reset() noexcept;
 
+    // TODO to tpp
     template <typename DefEdge>
-    void run_impl();
+    void run_impl() {
+      auto start_time = std::chrono::high_resolution_clock::now();
+      validate();  // throws if no presentation is defined
+      _word_graph.init(presentation());
+      complete_path<DefEdge>(_word_graph, 0, _word.cbegin(), _word.cend());
+      node_type& current     = _word_graph.cursor();
+      auto const rules_begin = presentation().rules.cbegin();
+      auto const rules_end   = presentation().rules.cend();
+      bool       did_change  = true;
+      auto       def_edge    = DefEdge();
+
+      do {
+        current    = 0;
+        did_change = false;
+        while (current != _word_graph.first_free_node() && !stopped()) {
+          for (auto it = rules_begin; it < rules_end; it += 2) {
+            node_type                 u_end;
+            word_type::const_iterator rit;
+            bool                      did_def = false;
+            std::tie(u_end, rit) = action_digraph_helper::last_node_on_path_nc(
+                _word_graph, current, it->cbegin(), it->cend());
+            node_type c;
+            if (rit == it->cend()) {
+              ++it;
+              std::tie(did_def, c) = complete_path<DefEdge>(
+                  _word_graph, current, it->cbegin(), it->cend() - 1);
+              node_type v_end = _word_graph.unsafe_neighbor(c, it->back());
+              if (v_end == UNDEFINED) {
+                did_def = true;
+                def_edge(_word_graph, c, u_end, it->back(), presentation());
+              } else if (u_end != v_end) {
+                did_def = true;
+                _word_graph.coincide_nodes(u_end, v_end);
+                _word_graph.process_coincidences();
+              }
+              --it;
+            } else {
+              ++it;
+              node_type v_end;
+              std::tie(v_end, rit)
+                  = action_digraph_helper::last_node_on_path_nc(
+                      _word_graph, current, it->cbegin(), it->cend());
+              if (rit == it->cend()) {
+                --it;
+                c = complete_path<DefEdge>(
+                        _word_graph, current, it->cbegin(), it->cend() - 1)
+                        .second;
+                u_end = _word_graph.unsafe_neighbor(c, it->back());
+                LIBSEMIGROUPS_ASSERT(u_end == UNDEFINED);
+                def_edge(_word_graph, c, v_end, it->back(), presentation());
+                did_def = true;
+              } else {
+                --it;
+              }
+            }
+            did_change |= did_def;
+          }
+          did_change |= _word_graph.process_coincidences();
+          report_status(start_time);
+          current = _word_graph.next_active_node(current);
+        }
+      } while (did_change && !stopped());
+      if (!stopped()) {
+        _finished = true;
+        standardize();
+      }
+    }
 
     void run_impl() override {
       run_impl<EdgeDefiner>();
@@ -277,7 +370,41 @@ namespace libsemigroups {
     return *this;
   }
 
-  class StephenB : public Stephen {};
+  class StephenB : public Stephen {
+   public:
+    explicit StephenB(InversePresentation<word_type> const& p) : Stephen() {
+      // TODO improve!
+      Stephen::init(static_cast<std::unique_ptr<Presentation<word_type>>>(
+          std::make_unique<InversePresentation<word_type>>(p)));
+    }
+
+   private:
+    struct EdgeDefiner {
+      void operator()(internal_digraph_type&         wg,
+                      node_type                      from,
+                      node_type                      to,
+                      label_type                     l,
+                      Presentation<word_type> const& p) const {
+        wg.add_edge_nc(from, to, l);
+        auto const& pp = static_cast<InversePresentation<word_type> const&>(p);
+        // convert l (which is an index)
+        // -> actual letter
+        // -> inverse of letter
+        // -> index of inverse of letter
+        auto ll             = pp.index(pp.inverse(pp.letter(l)));
+        auto inverse_target = wg.neighbor(to, ll);
+        if (inverse_target != UNDEFINED && inverse_target != from) {
+          wg.coincide_nodes(from, inverse_target);
+          return;
+        }
+        wg.add_edge_nc(to, from, ll);
+      }
+    };
+
+    void run_impl() override {
+      Stephen::run_impl<EdgeDefiner>();
+    }
+  };
 
   namespace stephen {
     //! The return type of \ref cbegin_words_accepted and \ref

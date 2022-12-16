@@ -1191,8 +1191,11 @@ namespace libsemigroups {
    public:
     using Presentation<W>::Presentation;
 
+    // TODO validate that checks that inverses are set
     // TODO to tpp
     InversePresentation& inverses(word_type const& w) {
+      // TODO maybe don't validate here but only in the validate function to be
+      // written.
       presentation::validate_semigroup_inverses(*this, w);
       // Set the alphabet to include the inverses
       _inverses = w;
@@ -1204,7 +1207,7 @@ namespace libsemigroups {
     }
 
     // TODO to tpp
-    letter_type inverse(letter_type x) {
+    letter_type inverse(letter_type x) const {
       if (_inverses.empty()) {
         LIBSEMIGROUPS_EXCEPTION("no inverses have been defined")
       }

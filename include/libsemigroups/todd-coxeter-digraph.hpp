@@ -106,17 +106,12 @@ namespace libsemigroups {
 
       void reserve(size_t n);
 
-      template <typename DefEdge>
-      std::pair<bool, node_type>
-      complete_path(node_type                 c,
-                    word_type::const_iterator first,
-                    word_type::const_iterator last) noexcept;
-
       void coincide_nodes(node_type x, node_type y) {
         _coinc.emplace(x, y);
       }
 
-      void process_coincidences();
+      // true means that graph changed
+      bool process_coincidences();
 
       void swap_nodes(node_type c, node_type d);
 
@@ -124,9 +119,7 @@ namespace libsemigroups {
         return _stats;
       }
 
-      void stats_check_point();
-
-     private:
+      void      stats_check_point();
       node_type new_node();
     };
 

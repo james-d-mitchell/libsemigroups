@@ -45,31 +45,9 @@ namespace libsemigroups {
     }
 
     template <typename BaseDigraph>
-    template <typename DefEdge>
-    std::pair<bool, typename ToddCoxeterDigraph<BaseDigraph>::node_type>
-    ToddCoxeterDigraph<BaseDigraph>::complete_path(
-        node_type                 c,
-        word_type::const_iterator first,
-        word_type::const_iterator last) noexcept {
-      word_type::const_iterator it;
-      std::tie(c, it)
-          = action_digraph_helper::last_node_on_path_nc(*this, c, first, last);
-      auto def_edge = DefEdge();
-      bool result   = false;
-      for (; it < last; ++it) {
-        LIBSEMIGROUPS_ASSERT(unsafe_neighbor(c, *it) == UNDEFINED);
-        node_type d = new_node();
-        def_edge(*this, c, d, *it);
-        result = true;
-        c      = d;
-      }
-      return std::make_pair(result, c);
-    }
-
-    template <typename BaseDigraph>
-    void ToddCoxeterDigraph<BaseDigraph>::process_coincidences() {
+    bool ToddCoxeterDigraph<BaseDigraph>::process_coincidences() {
       if (_coinc.empty()) {
-        return;
+        return false;
       }
 
       auto new_edge_func = [](node_type, letter_type) {};
@@ -95,7 +73,7 @@ namespace libsemigroups {
       }
 
       if (_coinc.empty()) {
-        return;
+        return true;
       }
 
       while (!_coinc.empty()) {
@@ -151,6 +129,7 @@ namespace libsemigroups {
         }
         c = next_active_node(c);
       }
+      return true;
     }
 
     template <typename BaseDigraph>
