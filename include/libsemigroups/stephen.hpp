@@ -212,6 +212,14 @@ namespace libsemigroups {
     // we cache the return value.
     node_type accept_state();
 
+    // TODO this shouldn't be public
+    static void add_edge(internal_digraph_type& wg,
+                         node_type              from,
+                         node_type              to,
+                         label_type             letter) {
+      wg.add_edge_nc(from, to, letter);
+    }
+
    private:
     using lvalue_tag     = std::true_type;
     using non_lvalue_tag = std::false_type;
@@ -220,6 +228,10 @@ namespace libsemigroups {
       return _finished;
     }
 
+    template <typename T>
+    void run_impl_impl();
+
+    // TODO clean all of this up!
     template <typename P>
     void init_impl(P&&, lvalue_tag);
     void init_impl(std::unique_ptr<Presentation<word_type>>&&, non_lvalue_tag);
@@ -227,8 +239,10 @@ namespace libsemigroups {
     void report_status(
         std::chrono::high_resolution_clock::time_point const& start_time);
     void reset() noexcept;
-    void run_impl() override;
 
+    void run_impl() override {
+      run_impl_impl<Stephen>();
+    }
     void standardize();
     void validate() const;
   };

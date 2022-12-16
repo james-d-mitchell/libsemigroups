@@ -45,6 +45,7 @@ namespace libsemigroups {
     }
 
     template <typename BaseDigraph>
+    template <typename T>
     std::pair<bool, typename ToddCoxeterDigraph<BaseDigraph>::node_type>
     ToddCoxeterDigraph<BaseDigraph>::complete_path(
         node_type                 c,
@@ -57,7 +58,7 @@ namespace libsemigroups {
       for (; it < last; ++it) {
         LIBSEMIGROUPS_ASSERT(unsafe_neighbor(c, *it) == UNDEFINED);
         node_type d = new_node();
-        BaseDigraph::add_edge_nc(c, d, *it);
+        T::add_edge(*this, c, d, *it);
         result = true;
         c      = d;
       }
