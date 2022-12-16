@@ -106,7 +106,7 @@ namespace libsemigroups {
 
       void reserve(size_t n);
 
-      template <typename T>
+      template <typename DefEdge>
       std::pair<bool, node_type>
       complete_path(node_type                 c,
                     word_type::const_iterator first,

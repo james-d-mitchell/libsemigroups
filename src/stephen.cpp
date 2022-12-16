@@ -140,16 +140,17 @@ namespace libsemigroups {
     _accept_state = UNDEFINED;
   }
 
-  template <typename T>
-  void Stephen::run_impl_impl() {
+  template <typename DefEdge>
+  void Stephen::run_impl() {
     auto start_time = std::chrono::high_resolution_clock::now();
     validate();  // throws if no presentation is defined
     _word_graph.init(presentation());
-    _word_graph.complete_path<T>(0, _word.cbegin(), _word.cend());
+    _word_graph.complete_path<DefEdge>(0, _word.cbegin(), _word.cend());
     node_type& current     = _word_graph.cursor();
     auto const rules_begin = presentation().rules.cbegin();
     auto const rules_end   = presentation().rules.cend();
     bool       did_change  = true;
+    auto       def_edge    = DefEdge();
 
     do {
       current    = 0;
@@ -164,12 +165,12 @@ namespace libsemigroups {
           node_type c;
           if (rit == it->cend()) {
             ++it;
-            std::tie(did_def, c) = _word_graph.complete_path<T>(
+            std::tie(did_def, c) = _word_graph.complete_path<DefEdge>(
                 current, it->cbegin(), it->cend() - 1);
             node_type v_end = _word_graph.unsafe_neighbor(c, it->back());
             if (v_end == UNDEFINED) {
               did_def = true;
-              T::add_edge(_word_graph, c, u_end, it->back());
+              def_edge(_word_graph, c, u_end, it->back());
             } else if (u_end != v_end) {
               did_def = true;
               _word_graph.coincide_nodes(u_end, v_end);
@@ -184,11 +185,12 @@ namespace libsemigroups {
             if (rit == it->cend()) {
               --it;
               c = _word_graph
-                      .complete_path<T>(current, it->cbegin(), it->cend() - 1)
+                      .complete_path<DefEdge>(
+                          current, it->cbegin(), it->cend() - 1)
                       .second;
               u_end = _word_graph.unsafe_neighbor(c, it->back());
               LIBSEMIGROUPS_ASSERT(u_end == UNDEFINED);
-              T::add_edge(_word_graph, c, v_end, it->back());
+              def_edge(_word_graph, c, v_end, it->back());
               did_def = true;
             } else {
               --it;
