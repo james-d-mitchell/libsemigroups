@@ -299,15 +299,21 @@ namespace libsemigroups {
             bool                      did_def = false;
             std::tie(u_end, rit) = action_digraph_helper::last_node_on_path_nc(
                 _word_graph, current, it->cbegin(), it->cend());
-            node_type c;
+            node_type c, v_end;
             if (rit == it->cend()) {
               ++it;
-              std::tie(did_def, c) = complete_path<DefEdge>(
-                  _word_graph, current, it->cbegin(), it->cend() - 1);
-              node_type v_end = _word_graph.unsafe_neighbor(c, it->back());
+              if (it->empty()) {
+                did_def = false;
+                c       = current;
+                v_end   = c;
+              } else {
+                std::tie(did_def, c) = complete_path<DefEdge>(
+                    _word_graph, current, it->cbegin(), it->cend() - 1);
+                v_end = _word_graph.unsafe_neighbor(c, it->back());
+              }
               if (v_end == UNDEFINED) {
+                LIBSEMIGROUPS_ASSERT(!it->empty());
                 did_def = true;
-                // FIXME what to do if it->empty()?
                 def_edge(_word_graph, c, u_end, it->back(), presentation());
               } else if (u_end != v_end) {
                 did_def = true;
@@ -317,19 +323,29 @@ namespace libsemigroups {
               --it;
             } else {
               ++it;
-              node_type v_end;
               std::tie(v_end, rit)
                   = action_digraph_helper::last_node_on_path_nc(
                       _word_graph, current, it->cbegin(), it->cend());
               if (rit == it->cend()) {
                 --it;
-                c = complete_path<DefEdge>(
-                        _word_graph, current, it->cbegin(), it->cend() - 1)
-                        .second;
-                u_end = _word_graph.unsafe_neighbor(c, it->back());
-                LIBSEMIGROUPS_ASSERT(u_end == UNDEFINED);
-                def_edge(_word_graph, c, v_end, it->back(), presentation());
-                did_def = true;
+                if (it->empty()) {
+                  did_def = false;
+                  c       = current;
+                  u_end   = c;
+                } else {
+                  std::tie(did_def, c) = complete_path<DefEdge>(
+                      _word_graph, current, it->cbegin(), it->cend() - 1);
+                  u_end = _word_graph.unsafe_neighbor(c, it->back());
+                }
+                if (u_end == UNDEFINED) {
+                  LIBSEMIGROUPS_ASSERT(!it->empty());
+                  did_def = true;
+                  def_edge(_word_graph, c, v_end, it->back(), presentation());
+                } else if (u_end != v_end) {
+                  did_def = true;
+                  _word_graph.coincide_nodes(u_end, v_end);
+                  _word_graph.process_coincidences();
+                }
               } else {
                 --it;
               }
@@ -418,7 +434,9 @@ namespace libsemigroups {
           wg.coincide_nodes(from, inverse_target);
           return;
         }
+        // if (to != from || l != ll) {
         wg.add_edge_nc(to, from, ll);
+        // }
       }
     };
 
@@ -434,8 +452,9 @@ namespace libsemigroups {
     using const_iterator_words_accepted =
         typename Stephen::digraph_type::const_pstislo_iterator;
 
-    //! The return type of \ref cbegin_left_factors and \ref cend_left_factors.
-    //! This is the same as \ref ActionDigraph::const_pislo_iterator.
+    //! The return type of \ref cbegin_left_factors and \ref
+    //! cend_left_factors. This is the same as \ref
+    //! ActionDigraph::const_pislo_iterator.
     using const_iterator_left_factors =
         typename Stephen::digraph_type::const_pislo_iterator;
 
@@ -465,9 +484,9 @@ namespace libsemigroups {
     //!
     //! This function triggers the algorithm implemented in this class (if it
     //! hasn't been triggered already), and then returns \c true if the input
-    //! word \p w is a left factor of Stephen::word in the semigroup defined by
-    //! Stephen::presentation. A word is a left factor of Stephen::word if it
-    //! labels a path in Stephen::word_graph with source \c 0.
+    //! word \p w is a left factor of Stephen::word in the semigroup defined
+    //! by Stephen::presentation. A word is a left factor of Stephen::word if
+    //! it labels a path in Stephen::word_graph with source \c 0.
     //!
     //! \param s the Stephen instance
     //! \param w a const reference to the input word.
@@ -567,8 +586,8 @@ namespace libsemigroups {
     //!
     //! This function returns the number of words that are equivalent to
     //! Stephen::word in the instance \p s with length between \p min and \p
-    //! max. This is the same as the number of paths in Stephen::word_graph (if
-    //! Stephen::run has been called) with source \c 0, target
+    //! max. This is the same as the number of paths in Stephen::word_graph
+    //! (if Stephen::run has been called) with source \c 0, target
     //! Stephen::accept_state,  and length in the range \p min to \p max.
     //!
     //! \param s the Stephen instance.
@@ -594,9 +613,10 @@ namespace libsemigroups {
     //! Returns the number of left factors with length in a given range.
     //!
     //! This function returns the number of left factors of the Stephen::word
-    //! in the instance \p s with length between \p min and \p max. This is the
-    //! same as the number of paths in Stephen::word_graph (if Stephen::run has
-    //! been called) with source \c 0 and length in the range \p min to \p max.
+    //! in the instance \p s with length between \p min and \p max. This is
+    //! the same as the number of paths in Stephen::word_graph (if
+    //! Stephen::run has been called) with source \c 0 and length in the range
+    //! \p min to \p max.
     //!
     //! \param s the Stephen instance.
     //! \param min the minimum length of a word (default: 0).

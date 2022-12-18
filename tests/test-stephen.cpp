@@ -1272,4 +1272,23 @@ namespace libsemigroups {
     REQUIRE(S.word_graph().number_of_nodes() == 1);
     REQUIRE(!stephen::accepts(S, string_to_word("x")));
   }
+
+  LIBSEMIGROUPS_TEST_CASE("Stephen", "039", "empty word", "[stephen][quick]") {
+    auto p = fpsemigroup::make<Presentation<word_type>>(
+        fpsemigroup::symmetric_inverse_monoid(4));
+    REQUIRE(p.contains_empty_word());
+    REQUIRE(p.alphabet().size() == 4);
+
+    auto s = Stephen(p);
+    s.set_word({}).run();
+    REQUIRE(s.word_graph().number_of_nodes() == 24);
+    s.set_word({0}).run();
+    REQUIRE(s.word_graph().number_of_nodes() == 24);
+    s.set_word({1}).run();
+    REQUIRE(s.word_graph().number_of_nodes() == 24);
+    s.set_word({2}).run();
+    REQUIRE(s.word_graph().number_of_nodes() == 24);
+    s.set_word({3}).run();
+    REQUIRE(s.word_graph().number_of_nodes() == 48);
+  }
 }  // namespace libsemigroups

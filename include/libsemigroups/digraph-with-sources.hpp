@@ -170,9 +170,13 @@ namespace libsemigroups {
     // _word_graph.target(d, x) = c
     void add_source(node_type c, letter_type x, node_type d) noexcept {
       LIBSEMIGROUPS_ASSERT(x < this->out_degree());
-      // c -> e -> ... -->  c -> d -> e -> ..
-      _preim_next.set(d, x, _preim_init.get(c, x));
-      _preim_init.set(c, x, d);
+      // If d = _preim_init(c, x), then preim_next(d, x) = d, which means that
+      // if we try to loop over preimages we'll enter an infinite loop.
+      if (d != _preim_init.get(c, x)) {
+        // c -> e -> ... -->  c -> d -> e -> ..
+        _preim_next.set(d, x, _preim_init.get(c, x));
+        _preim_init.set(c, x, d);
+      }
     }
 
    private:
@@ -183,10 +187,10 @@ namespace libsemigroups {
 
   namespace digraph_with_sources {
     // Return value indicates whether or not the graph was modified.
+    // TODO(now) to tpp file
     template <typename T>
     bool standardize(T& d, Forest& f) {
-      // TODO(later): should be DigraphWithSourcesBase, and really this should
-      // be in namespace  digraph_with_sources
+      // TODO(later): should be DigraphWithSourcesBase
       static_assert(
           std::is_base_of<ActionDigraphBase, T>::value,
           "the template parameter T must be derived from ActionDigraphBase");

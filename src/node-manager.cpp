@@ -341,7 +341,6 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
 
     void NodeManager::debug_validate_forwd_bckwd() const {
-      REPORT_DEBUG_DEFAULT("validating the doubly linked list of nodes...\n");
       LIBSEMIGROUPS_ASSERT(_forwd.size() == _bckwd.size());
       LIBSEMIGROUPS_ASSERT(_bckwd.size() == _ident.size());
       node_type number_of_nodes = 0;
@@ -365,7 +364,6 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(number_of_nodes == _forwd.size());
       LIBSEMIGROUPS_ASSERT(number_of_nodes == _bckwd.size());
       LIBSEMIGROUPS_ASSERT(number_of_nodes == _ident.size());
-      REPORT_DEBUG_DEFAULT("...doubly linked list of nodes ok\n");
     }
 #endif
   }  // namespace detail
