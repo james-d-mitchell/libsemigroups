@@ -1203,7 +1203,7 @@ namespace libsemigroups {
     }
 
     word_type const& inverses() const noexcept {
-      return inverses;
+      return _inverses;
     }
 
     // TODO to tpp

@@ -1254,4 +1254,22 @@ namespace libsemigroups {
                  {6, 2, UNDEFINED, UNDEFINED, UNDEFINED, 3},
                  {UNDEFINED, UNDEFINED, UNDEFINED, 5, UNDEFINED, 4}}));
   }
+
+  LIBSEMIGROUPS_TEST_CASE("Stephen", "038", "corner case", "[stephen][quick]") {
+    detail::StringToWord string_to_word("x");
+
+    Presentation<word_type> p;
+    p.contains_empty_word(true);
+
+    p.alphabet(string_to_word("x"));
+    presentation::add_rule_and_check(
+        p, string_to_word("xxxx"), string_to_word("xx"));
+
+    Stephen S(p);
+    S.set_word(string_to_word(""));
+    S.run();
+    REQUIRE(S.accept_state() == 0);
+    REQUIRE(S.word_graph().number_of_nodes() == 1);
+    REQUIRE(!stephen::accepts(S, string_to_word("x")));
+  }
 }  // namespace libsemigroups

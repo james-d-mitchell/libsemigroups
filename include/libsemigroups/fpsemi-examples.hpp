@@ -292,9 +292,9 @@ namespace libsemigroups {
     //! ------ | ----- | --------------- | ------------- | ----------
     //! `author::Burnside + author::Miller`| `0` | \f$n - 1\f$ | \f$n^3 - 5n^2 + 9n - 5\f$ | p.464 of [10.1017/CBO9781139237253][]   <!-- NOLINT -->
     //! `author::Carmichael`               | `0` | \f$n - 1\f$ | \f$(n - 1)^2\f$  | Comment 9.5.2 of [10.1007/978-1-84800-281-4][]   <!-- NOLINT -->
-    //! `author::Coxeter + author::Moser`  | `0` | \f$n - 1\f$ | \f$n(n + 1)/2\f$ | Ch.3, Prop 1.2 of [hdl.handle.net/10023/2821][]  <!-- NOLINT --> 
+    //! `author::Coxeter + author::Moser`  | `0` | \f$n - 1\f$ | \f$n(n + 1)/2\f$ | Ch.3, Prop 1.2 of [hdl.handle.net/10023/2821][]  <!-- NOLINT -->
     //! `author::Moore`                    | `0` | \f$2\f$     | \f$n + 1\f$      | Ch. 3, Prop 1.1 of [hdl.handle.net/10023/2821][] <!-- NOLINT -->
-    //! ^                                  | `1` | \f$n - 1\f$ | \f$n(n + 1)/2\f$ | Comment 9.5.3 of [10.1007/978-1-84800-281-4][]   <!-- NOLINT --> 
+    //! ^                                  | `1` | \f$n - 1\f$ | \f$n(n + 1)/2\f$ | Comment 9.5.3 of [10.1007/978-1-84800-281-4][]   <!-- NOLINT -->
     //!
     //! [10.1017/CBO9781139237253]: https://doi.org/10.1017/CBO9781139237253
     //! [10.1007/978-1-84800-281-4]: https://doi.org/10.1007/978-1-84800-281-4
@@ -576,11 +576,11 @@ namespace libsemigroups {
         tc.add_pair(w.first, w.second);
       }
     }
-
-    template <typename T,
-              typename = std::enable_if_t<
-                  std::is_same<Presentation<word_type>, T>::value>>
-    T make(std::vector<relation_type> const& rels) {
+    // TODO(v3) remove from fpsemigroup namespace and move to make-present.hpp
+    template <typename T, typename SFINAE = T>
+    auto make(std::vector<relation_type> const& rels)
+        -> std::enable_if_t<std::is_same<Presentation<word_type>, T>::value,
+                            SFINAE> {
       Presentation<word_type> p;
       for (auto const& rel : rels) {
         p.add_rule(rel.first.cbegin(),
@@ -589,6 +589,27 @@ namespace libsemigroups {
                    rel.second.cend());
       }
       p.alphabet_from_rules();
+      p.validate();
+      return p;
+    }
+
+    template <typename T, typename SFINAE = T>
+    auto make(std::vector<relation_type> const& rels) -> std::enable_if_t<
+        std::is_same<InversePresentation<word_type>, T>::value,
+        SFINAE> {
+      InversePresentation<word_type> p;
+      for (auto const& rel : rels) {
+        p.add_rule(rel.first.cbegin(),
+                   rel.first.cend(),
+                   rel.second.cbegin(),
+                   rel.second.cend());
+      }
+      p.alphabet_from_rules();
+      presentation::normalize_alphabet(p);
+      p.alphabet(2 * p.alphabet().size());
+      auto invs = p.alphabet();
+      std::rotate(invs.begin(), invs.begin() + invs.size() / 2, invs.end());
+      p.inverses(std::move(invs));
       p.validate();
       return p;
     }

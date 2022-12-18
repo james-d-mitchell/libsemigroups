@@ -67,9 +67,11 @@ namespace libsemigroups {
     // Data members
     bool                                     _finished;
     node_type                                _accept_state;
-    std::unique_ptr<Presentation<word_type>> _presentation;
-    word_type                                _word;
-    internal_digraph_type                    _word_graph;
+    std::unique_ptr<Presentation<word_type>> _presentation;  // TODO use
+                                                             // shared_ptr
+                                                             // instead
+    word_type             _word;
+    internal_digraph_type _word_graph;
 
    public:
     //! Default constructor.
@@ -94,7 +96,13 @@ namespace libsemigroups {
     explicit Stephen(P&& p);
 
     //! Default copy constructor
-    // TODO Stephen(Stephen const&) = default;
+    Stephen(Stephen const& that)
+        : _finished(that._finished),
+          _accept_state(that._accept_state),
+          _presentation(
+              std::make_unique<Presentation<word_type>>(that.presentation())),
+          _word(that._word),
+          _word_graph(that._word_graph) {}
 
     //! Default move constructor
     Stephen(Stephen&&) = default;
@@ -223,7 +231,7 @@ namespace libsemigroups {
                       Presentation<word_type> const&) const noexcept {
         wg.add_edge_nc(from, to, letter);
       }
-    };
+    };  // namespace libsemigroups
 
     template <typename DefEdge>
     std::pair<bool, node_type>
@@ -231,6 +239,10 @@ namespace libsemigroups {
                   node_type                 c,
                   word_type::const_iterator first,
                   word_type::const_iterator last) noexcept {
+      if (first == last) {
+        return std::make_pair(false, c);
+      }
+      LIBSEMIGROUPS_ASSERT(first < last);
       word_type::const_iterator it;
       std::tie(c, it)
           = action_digraph_helper::last_node_on_path_nc(wg, c, first, last);
@@ -295,6 +307,7 @@ namespace libsemigroups {
               node_type v_end = _word_graph.unsafe_neighbor(c, it->back());
               if (v_end == UNDEFINED) {
                 did_def = true;
+                // FIXME what to do if it->empty()?
                 def_edge(_word_graph, c, u_end, it->back(), presentation());
               } else if (u_end != v_end) {
                 did_def = true;
@@ -376,6 +389,14 @@ namespace libsemigroups {
       // TODO improve!
       Stephen::init(static_cast<std::unique_ptr<Presentation<word_type>>>(
           std::make_unique<InversePresentation<word_type>>(p)));
+    }
+
+    StephenB(StephenB const& that) : Stephen(that) {
+      // TODO improve!
+      auto pp = static_cast<InversePresentation<word_type> const&>(
+          that.presentation());
+      // TODO imporve multiple copies!
+      _presentation = std::make_unique<InversePresentation<word_type>>(pp);
     }
 
    private:
