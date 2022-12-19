@@ -60,6 +60,11 @@ namespace libsemigroups {
       return _stephens.size();
     }
 
+    uint64_t number_of_d_classes() {
+      run();
+      return _graph.number_of_scc();
+    }
+
    private:
     bool finished_impl() const override {
       return _finished;

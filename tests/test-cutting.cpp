@@ -125,6 +125,7 @@ namespace libsemigroups {
     auto c = Cutting(p);
     REQUIRE(c.size() == 130'922);
     REQUIRE(c.number_of_r_classes() == 128);
+    REQUIRE(c.number_of_d_classes() == 8);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Cutting",

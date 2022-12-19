@@ -49,6 +49,9 @@ namespace libsemigroups {
   //! congruence::ToddCoxeter) and originates in
   //! [Applications of automata theory to presentations of monoids and inverse
   //! monoids](https://rb.gy/brsuvc) by J. B. Stephen.
+
+  // TODO template for unique_ptr or shared_ptr to Presentation, then
+  // using Stephen = StephenV3<std::unique_ptr<...>>();
   class Stephen : public Runner {
     friend class StephenB;
 
@@ -67,11 +70,9 @@ namespace libsemigroups {
     // Data members
     bool                                     _finished;
     node_type                                _accept_state;
-    std::unique_ptr<Presentation<word_type>> _presentation;  // TODO use
-                                                             // shared_ptr
-                                                             // instead
-    word_type             _word;
-    internal_digraph_type _word_graph;
+    std::unique_ptr<Presentation<word_type>> _presentation;
+    word_type                                _word;
+    internal_digraph_type                    _word_graph;
 
    public:
     //! Default constructor.
@@ -96,6 +97,7 @@ namespace libsemigroups {
     explicit Stephen(P&& p);
 
     //! Default copy constructor
+    // TODO to tpp file
     Stephen(Stephen const& that)
         : _finished(that._finished),
           _accept_state(that._accept_state),
@@ -231,8 +233,9 @@ namespace libsemigroups {
                       Presentation<word_type> const&) const noexcept {
         wg.add_edge_nc(from, to, letter);
       }
-    };  // namespace libsemigroups
+    };
 
+    // TODO to tpp
     template <typename DefEdge>
     std::pair<bool, node_type>
     complete_path(internal_digraph_type&    wg,
@@ -276,129 +279,20 @@ namespace libsemigroups {
         std::chrono::high_resolution_clock::time_point const& start_time);
     void reset() noexcept;
 
-    // TODO to tpp
     template <typename DefEdge>
-    void run_impl() {
-      auto start_time = std::chrono::high_resolution_clock::now();
-      validate();  // throws if no presentation is defined
-      _word_graph.init(presentation());
-      complete_path<DefEdge>(_word_graph, 0, _word.cbegin(), _word.cend());
-      node_type& current     = _word_graph.cursor();
-      auto const rules_begin = presentation().rules.cbegin();
-      auto const rules_end   = presentation().rules.cend();
-      bool       did_change  = true;
-      auto       def_edge    = DefEdge();
-
-      do {
-        current    = 0;
-        did_change = false;
-        while (current != _word_graph.first_free_node() && !stopped()) {
-          for (auto it = rules_begin; it < rules_end; it += 2) {
-            node_type                 u_end;
-            word_type::const_iterator rit;
-            bool                      did_def = false;
-            std::tie(u_end, rit) = action_digraph_helper::last_node_on_path_nc(
-                _word_graph, current, it->cbegin(), it->cend());
-            node_type c, v_end;
-            if (rit == it->cend()) {
-              ++it;
-              if (it->empty()) {
-                did_def = false;
-                c       = current;
-                v_end   = c;
-              } else {
-                std::tie(did_def, c) = complete_path<DefEdge>(
-                    _word_graph, current, it->cbegin(), it->cend() - 1);
-                v_end = _word_graph.unsafe_neighbor(c, it->back());
-              }
-              if (v_end == UNDEFINED) {
-                LIBSEMIGROUPS_ASSERT(!it->empty());
-                did_def = true;
-                def_edge(_word_graph, c, u_end, it->back(), presentation());
-              } else if (u_end != v_end) {
-                did_def = true;
-                _word_graph.coincide_nodes(u_end, v_end);
-                _word_graph.process_coincidences();
-              }
-              --it;
-            } else {
-              ++it;
-              std::tie(v_end, rit)
-                  = action_digraph_helper::last_node_on_path_nc(
-                      _word_graph, current, it->cbegin(), it->cend());
-              if (rit == it->cend()) {
-                --it;
-                if (it->empty()) {
-                  did_def = false;
-                  c       = current;
-                  u_end   = c;
-                } else {
-                  std::tie(did_def, c) = complete_path<DefEdge>(
-                      _word_graph, current, it->cbegin(), it->cend() - 1);
-                  u_end = _word_graph.unsafe_neighbor(c, it->back());
-                }
-                if (u_end == UNDEFINED) {
-                  LIBSEMIGROUPS_ASSERT(!it->empty());
-                  did_def = true;
-                  def_edge(_word_graph, c, v_end, it->back(), presentation());
-                } else if (u_end != v_end) {
-                  did_def = true;
-                  _word_graph.coincide_nodes(u_end, v_end);
-                  _word_graph.process_coincidences();
-                }
-              } else {
-                --it;
-              }
-            }
-            did_change |= did_def;
-          }
-          did_change |= _word_graph.process_coincidences();
-          report_status(start_time);
-          current = _word_graph.next_active_node(current);
-        }
-      } while (did_change && !stopped());
-      if (!stopped()) {
-        _finished = true;
-        standardize();
-      }
-    }
+    void run_impl_actual();
 
     void run_impl() override {
-      run_impl<EdgeDefiner>();
+      run_impl_actual<EdgeDefiner>();
     }
     void standardize();
     void validate() const;
   };
+}  // namespace libsemigroups
 
-  template <typename P, typename SFINAE>
-  Stephen::Stephen(P&& p) : Stephen() {
-    init_impl(std::forward<P>(p), std::is_lvalue_reference<P>());
-  }
+#include "stephen.tpp"
 
-  template <typename P>
-  void Stephen::init_impl(P&& p, lvalue_tag) {
-    static_assert(std::is_base_of<PresentationBase, std::decay_t<P>>::value,
-                  "the template parameter P must be derived from "
-                  "PresentationBase");
-    // TODO this copies the presentation twice
-    auto pp = make<Presentation<word_type>>(p);
-    init(std::move(std::make_unique<Presentation<word_type>>(pp)));
-  }
-
-  template <typename P>
-  Stephen& Stephen::init(P&& p) {
-    p.validate();
-    init_impl(std::forward<P>(p), std::is_lvalue_reference<P>());
-    return *this;
-  }
-
-  template <>
-  Stephen& Stephen::init(std::unique_ptr<Presentation<word_type>>&& p) {
-    p->validate();
-    init_impl(std::move(p), non_lvalue_tag());
-    return *this;
-  }
-
+namespace libsemigroups {
   class StephenB : public Stephen {
    public:
     explicit StephenB(InversePresentation<word_type> const& p) : Stephen() {
@@ -441,7 +335,7 @@ namespace libsemigroups {
     };
 
     void run_impl() override {
-      Stephen::run_impl<EdgeDefiner>();
+      Stephen::run_impl_actual<EdgeDefiner>();
     }
   };
 

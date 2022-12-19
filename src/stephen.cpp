@@ -41,13 +41,6 @@ namespace libsemigroups {
   // Public
   ////////////////////////////////////////////////////////////////////////
 
-  Stephen::Stephen()
-      : _finished(false),
-        _accept_state(UNDEFINED),
-        _presentation(std::make_unique<Presentation<word_type>>()),
-        _word(),
-        _word_graph() {}
-
   Stephen& Stephen::set_word(word_type const& w) {
     presentation().validate_word(w.cbegin(), w.cend());
     reset();
@@ -76,21 +69,6 @@ namespace libsemigroups {
   ////////////////////////////////////////////////////////////////////////
   // Private Member Functions
   ////////////////////////////////////////////////////////////////////////
-
-  void Stephen::init_impl(std::unique_ptr<Presentation<word_type>>&& p,
-                          non_lvalue_tag) {
-    if (p->alphabet().empty()) {
-      LIBSEMIGROUPS_EXCEPTION(
-          "the argument (Presentation) must not have 0 generators");
-    }
-    reset();
-    _presentation = std::move(p);
-    presentation::normalize_alphabet(*_presentation);
-    _word_graph.init(*_presentation);
-    _word.clear();
-    // TODO version of this for a Presentation<word_type>&& which just moves
-    // the argument into *_presentation.
-  }
 
   void Stephen::report_status(
       std::chrono::high_resolution_clock::time_point const& start_time) {
