@@ -22,7 +22,7 @@
 #include <chrono>       // for high_resolution_clock
 #include <cstddef>      // for size_t
 #include <cstdint>      // for size_t
-#include <type_traits>  // for decay_t, is_base_of
+#include <type_traits>  // for decay_t, is_base_of_v
 #include <utility>      // for forward
 #include <vector>       // for vector
 
@@ -42,7 +42,6 @@
 namespace libsemigroups {
 
   namespace v3 {
-    struct StephenBase {};
 
     //! Defined in ``stephen.hpp``.
     //!
@@ -57,7 +56,7 @@ namespace libsemigroups {
     //! inverse monoids](https://rb.gy/brsuvc) by J. B. Stephen.
 
     template <typename PresentationType = Presentation<word_type>>
-    class Stephen : public Runner, StephenBase {
+    class Stephen : public Runner {
       // TODO static_assert that PresentationType is either
       // Presentation<word_type> or InversePresentation<word_type>
       friend class StephenB;
@@ -126,7 +125,7 @@ namespace libsemigroups {
       //! \throws LibsemigroupsException if `p.alphabet().size()` is `0`.
       template <typename P,
                 typename = std::enable_if_t<
-                    std::is_base_of<PresentationBase, std::decay_t<P>>::value>>
+                    std::is_base_of_v<PresentationBase, std::decay_t<P>>>>
       explicit Stephen(P&& p);
 
       //! Default copy constructor
@@ -524,14 +523,14 @@ namespace libsemigroups {
     //! The return type of \ref cbegin_words_accepted and \ref
     //! cend_words_accepted. This is the same as
     //! \ref ActionDigraph::const_pstislo_iterator.
-    using const_iterator_words_accepted =
-        typename Stephen::digraph_type::const_pstislo_iterator;
+    using const_iterator_words_accepted
+        = Stephen::digraph_type::const_pstislo_iterator;
 
     //! The return type of \ref cbegin_left_factors and \ref
     //! cend_left_factors. This is the same as \ref
     //! ActionDigraph::const_pislo_iterator.
-    using const_iterator_left_factors =
-        typename Stephen::digraph_type::const_pislo_iterator;
+    using const_iterator_left_factors
+        = Stephen::digraph_type::const_pislo_iterator;
 
     //! Check if a word is equivalent to Stephen::word.
     //!

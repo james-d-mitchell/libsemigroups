@@ -64,7 +64,7 @@ namespace libsemigroups {
     }
 
     // Since std::is_invocable is only introduced in C++17, we use this
-    //
+    // TODO(C++17): remove use of IsCallable
     // from: https://stackoverflow.com/q/15393938/
     // Only works if there are no overloads of operator() in type T.
     template <typename T, typename = void>
