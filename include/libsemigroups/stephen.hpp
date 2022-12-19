@@ -327,54 +327,6 @@ namespace libsemigroups {
 
 #include "stephen.tpp"
 
-// namespace libsemigroups {
-//   class StephenB : public Stephen {
-//    public:
-//     explicit StephenB(InversePresentation<word_type> const& p) : Stephen() {
-//       // TODO improve!
-//       Stephen::init(static_cast<std::unique_ptr<Presentation<word_type>>>(
-//           std::make_unique<InversePresentation<word_type>>(p)));
-//     }
-//
-//     StephenB(StephenB const& that) : Stephen(that) {
-//       // TODO improve!
-//       auto pp = static_cast<InversePresentation<word_type> const&>(
-//           that.presentation());
-//       // TODO imporve multiple copies!
-//       _presentation = std::make_unique<InversePresentation<word_type>>(pp);
-//     }
-//
-//    private:
-//     struct EdgeDefiner {
-//       void operator()(internal_digraph_type&         wg,
-//                       node_type                      from,
-//                       node_type                      to,
-//                       label_type                     l,
-//                       Presentation<word_type> const& p) const {
-//         wg.add_edge_nc(from, to, l);
-//         auto const& pp = static_cast<InversePresentation<word_type>
-//         const&>(p);
-//         // convert l (which is an index)
-//         // -> actual letter
-//         // -> inverse of letter
-//         // -> index of inverse of letter
-//         auto ll             = pp.index(pp.inverse(pp.letter(l)));
-//         auto inverse_target = wg.neighbor(to, ll);
-//         if (inverse_target != UNDEFINED && inverse_target != from) {
-//           wg.coincide_nodes(from, inverse_target);
-//           return;
-//         }
-//         // if (to != from || l != ll) {
-//         wg.add_edge_nc(to, from, ll);
-//         // }
-//       }
-//     };
-//
-//     void run_impl() override {
-//       Stephen::run_impl_actual<EdgeDefiner>();
-//     }
-//   };
-
 namespace libsemigroups {
   namespace v3 {
     namespace stephen {
