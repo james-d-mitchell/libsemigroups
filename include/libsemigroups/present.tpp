@@ -233,7 +233,7 @@ namespace libsemigroups {
     }
 
     template <typename W>
-    void validate_semigroup_inverses(Presentation<W>& p, W const& vals) {
+    void validate_semigroup_inverses(Presentation<W> const& p, W const& vals) {
       p.validate_word(vals.begin(), vals.end());
 
       if (vals.size() != p.alphabet().size()) {

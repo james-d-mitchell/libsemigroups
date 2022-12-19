@@ -24,7 +24,8 @@ namespace libsemigroups {
 
     template <typename BaseDigraph>
     struct ToddCoxeterDigraph<BaseDigraph>::Settings {
-      uint64_t large_collapse = 100'000;
+      uint64_t large_collapse        = 100'000;
+      uint64_t coincidence_threshold = 0;
     };
 
     template <typename BaseDigraph>
@@ -46,7 +47,7 @@ namespace libsemigroups {
 
     template <typename BaseDigraph>
     bool ToddCoxeterDigraph<BaseDigraph>::process_coincidences() {
-      if (_coinc.empty()) {
+      if (_coinc.size() <= _settings.coincidence_threshold) {
         return false;
       }
 

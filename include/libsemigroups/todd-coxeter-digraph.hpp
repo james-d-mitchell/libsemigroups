@@ -100,6 +100,15 @@ namespace libsemigroups {
         return _settings.large_collapse;
       }
 
+      ToddCoxeterDigraph& coincidence_threshold(size_t val) noexcept {
+        _settings.coincidence_threshold = val;
+        return *this;
+      }
+
+      size_t coincidence_threshold() const noexcept {
+        return _settings.coincidence_threshold;
+      }
+
       node_type& cursor() {
         return _current;
       }

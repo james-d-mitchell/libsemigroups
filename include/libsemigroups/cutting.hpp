@@ -44,6 +44,7 @@ namespace libsemigroups {
           _stephens(),
           _finished(false),
           _graph(0, p.alphabet().size()) {
+      _presentation->validate();
       _presentation->contains_empty_word(true);  // TODO
       _stephens.emplace_back(_presentation);
       _stephens.back().set_word(word_type({}));

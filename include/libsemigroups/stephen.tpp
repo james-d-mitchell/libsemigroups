@@ -128,6 +128,7 @@ namespace libsemigroups {
         auto inverse_target = wg.neighbor(to, ll);
         if (inverse_target != UNDEFINED && inverse_target != from) {
           wg.coincide_nodes(from, inverse_target);
+          wg.process_coincidences();
           return;
         }
         wg.add_edge_nc(to, from, ll);
@@ -301,7 +302,6 @@ namespace libsemigroups {
             }
             did_change |= did_def;
           }
-          did_change |= _word_graph.process_coincidences();
           report_status(start_time);
           current = _word_graph.next_active_node(current);
         }

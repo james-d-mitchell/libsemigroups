@@ -44,6 +44,7 @@ namespace libsemigroups {
 
   namespace v3 {
 
+    // TODO(Cutting): move to stl.hpp
     namespace detail {
       template <typename T>
       struct IsStdSharedPtrHelper : std::false_type {};

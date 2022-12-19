@@ -122,6 +122,19 @@ namespace libsemigroups {
     // REQUIRE(p.alphabet() == word_type({0, 1, 2, 3, 4, 5, 6, 7}));
     // REQUIRE(p.inverses() == word_type({4, 5, 6, 7, 0, 1, 2, 3}));
 
+    REQUIRE(presentation::length(p) == 340);
+    presentation::sort_each_rule(p);
+    presentation::sort_rules(p);
+
+    // TODO the following mess up the inverses
+    // presentation::replace_subword(p,
+    // presentation::longest_common_subword(p)); REQUIRE(presentation::length(p)
+    // == 316); presentation::replace_subword(p,
+    // presentation::longest_common_subword(p)); REQUIRE(presentation::length(p)
+    // == 302); presentation::replace_subword(p,
+    // presentation::longest_common_subword(p)); REQUIRE(presentation::length(p)
+    // == 288);
+
     auto c = Cutting(p);
     REQUIRE(c.size() == 130'922);
     REQUIRE(c.number_of_r_classes() == 128);

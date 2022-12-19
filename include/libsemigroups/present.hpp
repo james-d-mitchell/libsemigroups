@@ -623,7 +623,7 @@ namespace libsemigroups {
 
     // TODO(now) doc
     template <typename W>
-    void validate_semigroup_inverses(Presentation<W>& p, W const& vals);
+    void validate_semigroup_inverses(Presentation<W> const& p, W const& vals);
 
     //! Add rules for inverses.
     //!
@@ -1196,7 +1196,6 @@ namespace libsemigroups {
     InversePresentation& inverses(word_type const& w) {
       // TODO maybe don't validate here but only in the validate function to be
       // written.
-      presentation::validate_semigroup_inverses(*this, w);
       // Set the alphabet to include the inverses
       _inverses = w;
       return *this;
@@ -1212,6 +1211,11 @@ namespace libsemigroups {
         LIBSEMIGROUPS_EXCEPTION("no inverses have been defined")
       }
       return _inverses[this->index(x)];
+    }
+
+    void validate() const {
+      Presentation<W>::validate();
+      presentation::validate_semigroup_inverses(*this, inverses());
     }
   };
 
