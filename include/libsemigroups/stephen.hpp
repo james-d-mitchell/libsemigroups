@@ -144,7 +144,6 @@ namespace libsemigroups {
       explicit Stephen(P&& p);
 
       //! Default copy constructor
-      // TODO to tpp file
       Stephen(Stephen const& that) = default;
 
       //! Default move constructor
@@ -305,8 +304,6 @@ namespace libsemigroups {
 
       template <typename P>
       void init_impl(P&&, lvalue_tag);
-
-      void init_impl(presentation_type&, lvalue_tag);
 
       void init_impl(presentation_type&&, non_lvalue_tag);
 
