@@ -50,6 +50,7 @@ namespace libsemigroups {
       _stephens.back().set_word(word_type({}));
     }
 
+    // TODO to cpp
     uint64_t size() {
       run();
       uint64_t result = 0;
@@ -75,6 +76,7 @@ namespace libsemigroups {
       return _finished;
     }
 
+    // TODO to cpp
     void run_impl() override {
       if (finished()) {
         return;
@@ -92,6 +94,9 @@ namespace libsemigroups {
           word[0] = letter;
           tmp.set_word(word).run();
           bool old = false;
+          // TODO try multiplying the Stephen for letter by _stephen[j], then
+          // since Stephen's are standardized, we can possibly do a binary
+          // search in the sorted list of _stephens...
           for (size_t j = 0; j < _stephens.size(); ++j) {
             if (v3::stephen::is_left_factor(_stephens[j], word)) {
               if (v3::stephen::is_left_factor(tmp, _stephens[j].word())) {

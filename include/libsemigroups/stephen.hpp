@@ -39,7 +39,9 @@
 // TODO
 // * use presentation_type not PresentationType everywhere
 // * iwyu
-
+// * operator* method for Stephens (i.e. identify the accept_state() of the
+// first with the initial state of the second, then determinise.
+//
 namespace libsemigroups {
 
   namespace v3 {
