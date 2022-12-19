@@ -43,6 +43,24 @@ namespace libsemigroups {
 
   namespace v3 {
 
+    namespace detail {
+      template <typename T>
+      struct IsStdSharedPtrHelper : std::false_type {};
+
+      template <typename T>
+      struct IsStdSharedPtrHelper<std::shared_ptr<Presentation<T>>>
+          : std::true_type {};
+
+      template <typename T>
+      struct IsStdSharedPtrHelper<std::shared_ptr<InversePresentation<T>>>
+          : std::true_type {};
+
+    }  // namespace detail
+       //
+    template <typename T>
+    static constexpr bool IsStdSharedPtr
+        = detail::IsStdSharedPtrHelper<T>::value;
+
     //! Defined in ``stephen.hpp``.
     //!
     //! On this page we describe the functionality in ``libsemigroups``
@@ -55,14 +73,27 @@ namespace libsemigroups {
     //! [Applications of automata theory to presentations of monoids and
     //! inverse monoids](https://rb.gy/brsuvc) by J. B. Stephen.
 
-    template <typename PresentationType = Presentation<word_type>>
+    template <typename ConstructFrom = Presentation<word_type>>
     class Stephen : public Runner {
-      // TODO static_assert that PresentationType is either
-      // Presentation<word_type> or InversePresentation<word_type>
-      friend class StephenB;
+      template <typename T>
+      struct PresentationType {
+        using type = T;
+      };
+
+      template <>
+      struct PresentationType<std::shared_ptr<Presentation<word_type>>> {
+        using type = Presentation<word_type>;
+      };
+
+      template <>
+      struct PresentationType<std::shared_ptr<InversePresentation<word_type>>> {
+        using type = InversePresentation<word_type>;
+      };
 
      public:
-      using presentation_type = PresentationType;
+      using construct_from_type = ConstructFrom;
+      using presentation_type = typename PresentationType<ConstructFrom>::type;
+
       //! The return type of the function \ref word_graph.
       using digraph_type = ActionDigraph<size_t>;
 
@@ -70,17 +101,33 @@ namespace libsemigroups {
       using node_type = digraph_type::node_type;
 
      private:
-      using internal_digraph_type
-          = detail::ToddCoxeterDigraph<DigraphWithSources<size_t>>;
+      template <typename P>
+      static constexpr bool can_construct_from() {
+        using Q = std::decay_t<P>;
+        return (IsPresentation<Q> && IsPresentation<construct_from_type>)
+               || std::is_same_v<Q, construct_from_type>;
+      }
+      using internal_digraph_type = ::libsemigroups::detail::ToddCoxeterDigraph<
+          DigraphWithSources<size_t>>;
       using label_type = digraph_type::label_type;
+
+      template <typename P>
+      static constexpr auto& deref_if_necessary(P&& p) {
+        if constexpr (!IsPresentation<std::decay_t<P>>) {
+          return *p;
+        } else {
+          return p;
+        }
+      }
 
       // Data members
       bool                  _finished;
       node_type             _accept_state;
-      presentation_type     _presentation;
+      construct_from_type   _presentation;
       word_type             _word;
       internal_digraph_type _word_graph;
 
+      // TODO to tpp
       void def_edge(internal_digraph_type&   wg,
                     node_type                from,
                     node_type                to,
@@ -124,8 +171,7 @@ namespace libsemigroups {
       //! \throws LibsemigroupsException if `p.validate()` throws.
       //! \throws LibsemigroupsException if `p.alphabet().size()` is `0`.
       template <typename P,
-                typename = std::enable_if_t<
-                    std::is_base_of_v<PresentationBase, std::decay_t<P>>>>
+                typename = std::enable_if_t<can_construct_from<P>()>>
       explicit Stephen(P&& p);
 
       //! Default copy constructor
@@ -172,7 +218,7 @@ namespace libsemigroups {
       // TODO(Cutting version of this when _presentation is a shared_ptr (or
       // just a ptr)
       presentation_type const& presentation() const noexcept {
-        return _presentation;
+        return deref_if_necessary(_presentation);
       }
 
       //! Set the word.
@@ -288,7 +334,7 @@ namespace libsemigroups {
       template <typename P>
       void init_impl(P&&, lvalue_tag);
 
-      void init_impl(presentation_type&&, non_lvalue_tag);
+      void init_impl(construct_from_type&&, non_lvalue_tag);
 
       void report_status(
           std::chrono::high_resolution_clock::time_point const& start_time);

@@ -16,115 +16,87 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-// This file contains some of the implementation of the Stephen class.
+// This file contains the implementation of the Stephen class template.
 
 namespace libsemigroups {
   namespace v3 {
-    template <typename PresentationType>
-    Stephen<PresentationType>::Stephen()
+
+    template <typename ConstructFrom>
+    Stephen<ConstructFrom>::Stephen()
         : _finished(false),
           _accept_state(UNDEFINED),
           _presentation(),
           _word(),
           _word_graph() {}
 
-    template <typename PresentationType>
-    template <typename P, typename>
-    Stephen<PresentationType>::Stephen(P&& p) : Stephen() {
-      // static_assert(
-      //     std::is_base_of<PresentationBase, std::decay_t<P>>::value ||,
-      //    "the template parameter P must be derived from PresentationBase");
-      // TODO(Cutting) static assert that P is dervied from PresentationBase or
-      // that it's a unique_ptr
-
+    template <typename ConstructFrom>
+    template <typename P,
+              typename>  // 2nd template param is to avoid
+                         // overloading the copy/move constructors
+    Stephen<ConstructFrom>::Stephen(P&& p) : Stephen() {
+      static_assert(can_construct_from<P>());
       init_impl(std::forward<P>(p), std::is_lvalue_reference<P>());
     }
 
-    template <typename PresentationType>
+    template <typename ConstructFrom>
     template <typename P>
-    Stephen<PresentationType>& Stephen<PresentationType>::init(P&& p) {
-      static_assert(
-          std::is_base_of<PresentationBase, std::decay_t<P>>::value,
-          "the template parameter P must be derived from PresentationBase");
-      p.validate();
+    Stephen<ConstructFrom>& Stephen<ConstructFrom>::init(P&& p) {
+      static_assert(can_construct_from<P>());
+      deref_if_necessary(p).validate();
       init_impl(std::forward<P>(p), std::is_lvalue_reference<P>());
       return *this;
     }
 
-    // TODO only enable this function if presentation_type is a shared_ptr
-    // template <>
-    //
-    // Stephen& Stephen::init(std::shared_ptr<presentation_type>&& p) {
-    //   p->validate();
-    //   init_impl(std::move(p), non_lvalue_tag());
-    //   return *this;
-    // }
-    //
-    template <typename PresentationType>
+    template <typename ConstructFrom>
     template <typename P>
-    void Stephen<PresentationType>::init_impl(P&& p, lvalue_tag) {
-      init_impl(std::move(make<presentation_type>(p)), non_lvalue_tag());
+    void Stephen<ConstructFrom>::init_impl(P&& p, lvalue_tag) {
+      if constexpr (IsPresentation<construct_from_type>) {
+        init_impl(std::move(make<construct_from_type>(p)), non_lvalue_tag());
+      } else {
+        init_impl(std::move(std::make_shared<presentation_type>(*p)),
+                  non_lvalue_tag());
+      }
     }
 
-    template <typename PresentationType>
-    void Stephen<PresentationType>::init_impl(PresentationType&& p,
-                                              non_lvalue_tag) {
-      if (p.alphabet().empty()) {
+    template <typename ConstructFrom>
+    void Stephen<ConstructFrom>::init_impl(ConstructFrom&& p, non_lvalue_tag) {
+      if (deref_if_necessary(p).alphabet().empty()) {
         LIBSEMIGROUPS_EXCEPTION(
             "the argument (Presentation) must not have 0 generators");
       }
       reset();
+
       _presentation = std::move(p);
-      presentation::normalize_alphabet(_presentation);
-      _word_graph.init(_presentation);
+      presentation::normalize_alphabet(deref_if_necessary(_presentation));
+
+      _word_graph.init(presentation());
       _word.clear();
     }
-
-    // template <
-    //           typename PresentationType>
-    // void Stephen<
-    // PresentationType>::init_impl(std::unique_ptr<Presentation<word_type>>&&
-    // p,
-    //                         non_lvalue_tag) {
-    //   if (p->alphabet().empty()) {
-    //     LIBSEMIGROUPS_EXCEPTION(
-    //         "the argument (Presentation) must not have 0 generators");
-    //   }
-    //   reset();
-    //   _presentation = std::move(p);
-    //   presentation::normalize_alphabet(*_presentation);
-    //   _word_graph.init(*_presentation);
-    //   _word.clear();
-    //   // TODO version of this for a Presentation<word_type>&& which just
-    //   moves
-    //   // the argument into *_presentation.
-    // }
 
     ////////////////////////////////////////////////////////////////////////
     // Public
     ////////////////////////////////////////////////////////////////////////
 
-    template <typename PresentationType>
-    Stephen<PresentationType>&
-    Stephen<PresentationType>::set_word(word_type const& w) {
+    template <typename ConstructFrom>
+    Stephen<ConstructFrom>&
+    Stephen<ConstructFrom>::set_word(word_type const& w) {
       presentation().validate_word(w.cbegin(), w.cend());
       reset();
       _word = w;
       return *this;
     }
 
-    template <typename PresentationType>
-    Stephen<PresentationType>&
-    Stephen<PresentationType>::set_word(word_type&& w) {
+    template <typename ConstructFrom>
+    Stephen<ConstructFrom>& Stephen<ConstructFrom>::set_word(word_type&& w) {
       presentation().validate_word(w.cbegin(), w.cend());
       reset();
       _word = std::move(w);
       return *this;
     }
 
-    template <typename PresentationType>
-    typename Stephen<PresentationType>::node_type
-    Stephen<PresentationType>::accept_state() {
+    template <typename ConstructFrom>
+    typename Stephen<ConstructFrom>::node_type
+    Stephen<ConstructFrom>::accept_state() {
       if (_accept_state == UNDEFINED) {
         using action_digraph_helper::last_node_on_path_nc;
         run();
@@ -139,8 +111,8 @@ namespace libsemigroups {
     // Private Member Functions
     ////////////////////////////////////////////////////////////////////////
 
-    template <typename PresentationType>
-    void Stephen<PresentationType>::report_status(
+    template <typename ConstructFrom>
+    void Stephen<ConstructFrom>::report_status(
         std::chrono::high_resolution_clock::time_point const& start_time) {
       if (!report()) {
         return;
@@ -166,53 +138,55 @@ namespace libsemigroups {
                           "diff");
         REPORT_DEFAULT_V3("Stephen: " + std::string(60, '-') + "\n");
       }
+      using ::libsemigroups::detail::group_digits;
       REPORT_DEFAULT_V3(
           "Stephen: %11s | %11s | %11s | %11s | "
           "(%llus)\n",
-          detail::group_digits(_word_graph.number_of_nodes_active()).c_str(),
+          group_digits(_word_graph.number_of_nodes_active()).c_str(),
           ("+"
-           + detail::group_digits(int64_t(_word_graph.number_of_nodes_defined()
-                                          - stats.prev_nodes_defined)))
+           + group_digits(int64_t(_word_graph.number_of_nodes_defined()
+                                  - stats.prev_nodes_defined)))
               .c_str(),
           ("-"
-           + detail::group_digits(int64_t(_word_graph.number_of_nodes_killed()
-                                          - stats.prev_nodes_killed)))
+           + group_digits(int64_t(_word_graph.number_of_nodes_killed()
+                                  - stats.prev_nodes_killed)))
               .c_str(),
-          ((diff < 0 ? "" : "+") + detail::group_digits(diff)).c_str(),
+          ((diff < 0 ? "" : "+") + group_digits(diff)).c_str(),
           total_time.count());
       _word_graph.stats_check_point();
     }
 
-    template <typename PresentationType>
-    void Stephen<PresentationType>::reset() noexcept {
+    template <typename ConstructFrom>
+    void Stephen<ConstructFrom>::reset() noexcept {
       _finished     = false;
       _accept_state = UNDEFINED;
     }
 
-    template <typename PresentationType>
-    void Stephen<PresentationType>::standardize() {
+    template <typename ConstructFrom>
+    void Stephen<ConstructFrom>::standardize() {
       digraph_with_sources::standardize(_word_graph);
       _word_graph.shrink_to_fit(_word_graph.number_of_nodes_active());
     }
 
-    template <typename PresentationType>
-    void Stephen<PresentationType>::validate() const {
+    template <typename ConstructFrom>
+    void Stephen<ConstructFrom>::validate() const {
       if (presentation().alphabet().empty()) {
         LIBSEMIGROUPS_EXCEPTION("no presentation defined, use Stephen::init to "
                                 "set the presentation");
       }
     }
 
-    template <typename PresentationType>
-    void Stephen<PresentationType>::run_impl() {
+    template <typename ConstructFrom>
+    void Stephen<ConstructFrom>::run_impl() {
       auto start_time = std::chrono::high_resolution_clock::now();
       validate();  // throws if no presentation is defined
-      _word_graph.init(presentation());
+      _word_graph.init(deref_if_necessary(presentation()));
       complete_path(_word_graph, 0, _word.cbegin(), _word.cend());
-      node_type& current     = _word_graph.cursor();
-      auto const rules_begin = presentation().rules.cbegin();
-      auto const rules_end   = presentation().rules.cend();
-      bool       did_change  = true;
+      node_type& current = _word_graph.cursor();
+      auto const rules_begin
+          = deref_if_necessary(presentation()).rules.cbegin();
+      auto const rules_end  = deref_if_necessary(presentation()).rules.cend();
+      bool       did_change = true;
 
       do {
         current    = 0;
@@ -290,16 +264,16 @@ namespace libsemigroups {
 
     namespace stephen {
 
-      template <typename PresentationType>
-      bool accepts(Stephen<PresentationType>& s, word_type const& w) {
+      template <typename ConstructFrom>
+      bool accepts(Stephen<ConstructFrom>& s, word_type const& w) {
         using action_digraph_helper::follow_path;
         s.run();
         LIBSEMIGROUPS_ASSERT(s.accept_state() != UNDEFINED);
         return s.accept_state() == follow_path(s.word_graph(), 0, w);
       }
 
-      template <typename PresentationType>
-      bool is_left_factor(Stephen<PresentationType>& s, word_type const& w) {
+      template <typename ConstructFrom>
+      bool is_left_factor(Stephen<ConstructFrom>& s, word_type const& w) {
         using action_digraph_helper::last_node_on_path;
         s.run();
         return last_node_on_path(s.word_graph(), 0, w.cbegin(), w.cend()).second

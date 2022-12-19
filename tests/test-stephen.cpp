@@ -1324,4 +1324,33 @@ namespace libsemigroups {
     s.set_word({3}).run();
     REQUIRE(s.word_graph().number_of_nodes() == 48);
   }
+
+  LIBSEMIGROUPS_TEST_CASE("Stephen", "041", "shared_ptr", "[stephen][quick]") {
+    detail::StringToWord           string_to_word("abcABC");
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("abcABC"));
+    p.inverses(string_to_word("ABCabc"));
+    presentation::add_rule_and_check(
+        p, string_to_word("ac"), string_to_word("ca"));
+    presentation::add_rule_and_check(
+        p, string_to_word("ab"), string_to_word("ba"));
+    presentation::add_rule_and_check(
+        p, string_to_word("bc"), string_to_word("cb"));
+
+    auto ptr = std::make_shared<decltype(p)>(p);
+    auto S = v3::Stephen<std::shared_ptr<InversePresentation<word_type>>>(ptr);
+    S.set_word(string_to_word("BaAbaBcAbC"));
+    S.run();
+    REQUIRE(S.word_graph().number_of_nodes() == 7);
+    REQUIRE(S.word_graph()
+            == action_digraph_helper::make<typename Stephen::node_type>(
+                7,
+                {{1, UNDEFINED, 2, UNDEFINED, 3, UNDEFINED},
+                 {UNDEFINED, UNDEFINED, UNDEFINED, 0, 4, UNDEFINED},
+                 {UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, 5, 0},
+                 {4, 0, 5, UNDEFINED, UNDEFINED, UNDEFINED},
+                 {UNDEFINED, 1, 6, 3, UNDEFINED, UNDEFINED},
+                 {6, 2, UNDEFINED, UNDEFINED, UNDEFINED, 3},
+                 {UNDEFINED, UNDEFINED, UNDEFINED, 5, UNDEFINED, 4}}));
+  }
 }  // namespace libsemigroups
