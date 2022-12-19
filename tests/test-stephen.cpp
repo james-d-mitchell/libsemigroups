@@ -1101,33 +1101,59 @@ namespace libsemigroups {
     REQUIRE_THROWS_AS(S.run(), LibsemigroupsException);
   }
 
+  LIBSEMIGROUPS_TEST_CASE("Stephen",
+                          "032",
+                          "step_hen SchutzenbergerGraph test case 000",
+                          "[stephen][quick]") {
+    detail::StringToWord string_to_word("abcABC");
+
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("abcABC"));
+    p.inverses(string_to_word("ABCabc"));
+
+    auto S = v3::Stephen<InversePresentation<word_type>>(p);
+
+    S.set_word(string_to_word("aBcAbC")).run();
+
+    REQUIRE(S.finished());
+    REQUIRE(S.word_graph().number_of_nodes() == 7);
+    REQUIRE(!v3::stephen::accepts(S, string_to_word("BaAbaBcAbC")));
+    REQUIRE(v3::stephen::accepts(S, string_to_word("aBcCbBcAbC")));
+
+    S.set_word(string_to_word("aBcCbBcAbC"));
+    REQUIRE(v3::stephen::accepts(S, string_to_word("aBcAbC")));
+
+    S.set_word(string_to_word("BaAbaBcAbC"));
+    REQUIRE(v3::stephen::accepts(S, string_to_word("aBcAbC")));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Stephen",
+                          "033",
+                          "step_hen SchutzenbergerGraph test case 000",
+                          "[stephen][quick]") {
+    InversePresentation<std::string> p;
+    p.alphabet("abcABC");
+    p.inverses("ABCabc");
+
+    auto S = v3::Stephen<InversePresentation<word_type>>(p);
+
+    detail::StringToWord string_to_word(p.alphabet());
+
+    S.set_word(string_to_word("aBcAbC")).run();
+
+    REQUIRE(S.finished());
+    REQUIRE(S.word_graph().number_of_nodes() == 7);
+    REQUIRE(!v3::stephen::accepts(S, string_to_word("BaAbaBcAbC")));
+    REQUIRE(v3::stephen::accepts(S, string_to_word("aBcCbBcAbC")));
+
+    S.set_word(string_to_word("aBcCbBcAbC"));
+    REQUIRE(v3::stephen::accepts(S, string_to_word("aBcAbC")));
+
+    S.set_word(string_to_word("BaAbaBcAbC"));
+    REQUIRE(v3::stephen::accepts(S, string_to_word("aBcAbC")));
+  }
+
   /*  LIBSEMIGROUPS_TEST_CASE("StephenB",
-                            "032",
-                            "step_hen SchutzenbergerGraph test case 000",
-                            "[stephen][quick]") {
-      detail::StringToWord string_to_word("abcABC");
-
-      InversePresentation<word_type> p;
-      p.alphabet(string_to_word("abcABC"));
-      p.inverses(string_to_word("ABCabc"));
-
-      auto S = StephenB(p);
-
-      S.set_word(string_to_word("aBcAbC")).run();
-
-      REQUIRE(S.finished());
-      REQUIRE(S.word_graph().number_of_nodes() == 7);
-      REQUIRE(!stephen::accepts(S, string_to_word("BaAbaBcAbC")));
-      REQUIRE(stephen::accepts(S, string_to_word("aBcCbBcAbC")));
-
-      S.set_word(string_to_word("aBcCbBcAbC"));
-      REQUIRE(stephen::accepts(S, string_to_word("aBcAbC")));
-
-      S.set_word(string_to_word("BaAbaBcAbC"));
-      REQUIRE(stephen::accepts(S, string_to_word("aBcAbC")));
-    }
-
-    LIBSEMIGROUPS_TEST_CASE("StephenB",
                             "033",
                             "step_hen SchutzenbergerGraph test case 002",
                             "[stephen][quick]") {

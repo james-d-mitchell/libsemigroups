@@ -109,13 +109,12 @@ namespace libsemigroups {
   //!
   //! \returns A value of type \p S.
   //! \throws LibsemigroupsException if `p.validate()` throws.
-  template <typename S,
-            typename T,
-            typename F,
-            typename
-            = std::enable_if_t<std::is_base_of<PresentationBase, S>::value
-                               && std::is_base_of<PresentationBase, T>::value>>
-  S make(T const& p, F&& f) {
+  template <typename S, typename T, typename F, typename SFINAE = S>
+  auto make(T const& p, F&& f)
+      -> std::enable_if_t<std::is_base_of<PresentationBase, S>::value
+                              && std::is_base_of<PresentationBase, T>::value
+                              && !IsInversePresentation<T>,
+                          SFINAE> {
     using s_word_type = typename S::word_type;
     p.validate();
     // Must call p.validate otherwise p.index(val) might seg fault below
@@ -126,7 +125,7 @@ namespace libsemigroups {
     new_alphabet.resize(p.alphabet().size());
     std::transform(
         p.alphabet().cbegin(), p.alphabet().cend(), new_alphabet.begin(), f);
-    result.alphabet(new_alphabet);
+    result.alphabet(std::move(new_alphabet));
     s_word_type rel;
     for (auto it = p.rules.cbegin(); it != p.rules.cend(); ++it) {
       rel.resize(it->size());
@@ -134,6 +133,23 @@ namespace libsemigroups {
       result.rules.push_back(rel);
       rel.clear();
     }
+    return result;
+  }
+
+  template <typename S, typename T, typename F, typename SFINAE = S>
+  auto make(T const& p, F&& f)
+      -> std::enable_if_t<IsInversePresentation<S> && IsInversePresentation<T>,
+                          SFINAE> {
+    using s_word_type = typename S::word_type;
+    // call the function above, everything initialised except inverses
+    auto result = make<S>(
+        static_cast<Presentation<typename T::word_type> const&>(p), f);
+
+    s_word_type new_inverses;
+    new_inverses.resize(p.alphabet().size());
+    std::transform(
+        p.inverses().cbegin(), p.inverses().cend(), new_inverses.begin(), f);
+    result.inverses(std::move(new_inverses));
     return result;
   }
 

@@ -36,6 +36,9 @@
 #include "todd-coxeter-digraph.hpp"  // for ToddCoxeterDigraph
 #include "types.hpp"                 // for word_type
 
+// TODO
+// * use presentation_type not PresentationType everywhere
+
 namespace libsemigroups {
 
   namespace v3 {
@@ -55,6 +58,8 @@ namespace libsemigroups {
 
     template <typename PresentationType = Presentation<word_type>>
     class Stephen : public Runner, StephenBase {
+      // TODO static_assert that PresentationType is either
+      // Presentation<word_type> or InversePresentation<word_type>
       friend class StephenB;
 
      public:
@@ -65,10 +70,9 @@ namespace libsemigroups {
       //! The type of the nodes of a \ref digraph_type.
       using node_type = typename digraph_type::node_type;
 
+     private:
       using internal_digraph_type
           = detail::ToddCoxeterDigraph<DigraphWithSources<size_t>>;
-
-     private:
       using label_type = typename digraph_type::label_type;
 
       // Data members
@@ -79,12 +83,41 @@ namespace libsemigroups {
       internal_digraph_type _word_graph;
 
       struct EdgeDefiner {
-        void operator()(internal_digraph_type& wg,
+        template <typename SFINAE = void>
+        auto operator()(internal_digraph_type& wg,
                         node_type              from,
                         node_type              to,
                         label_type             letter,
-                        Presentation<word_type> const&) const noexcept {
+                        Presentation<word_type> const&) const
+            -> std::enable_if_t<!IsInversePresentation<presentation_type>,
+                                SFINAE>
+
+        {
           wg.add_edge_nc(from, to, letter);
+        }
+
+        template <typename SFINAE = void>
+        auto operator()(internal_digraph_type&                wg,
+                        node_type                             from,
+                        node_type                             to,
+                        label_type                            l,
+                        InversePresentation<word_type> const& p) const
+            -> std::enable_if_t<IsInversePresentation<presentation_type>,
+                                SFINAE> {
+          wg.add_edge_nc(from, to, l);
+          // convert l (which is an index)
+          // -> actual letter
+          // -> inverse of letter
+          // -> index of inverse of letter
+          auto ll             = p.index(p.inverse(p.letter(l)));
+          auto inverse_target = wg.neighbor(to, ll);
+          if (inverse_target != UNDEFINED && inverse_target != from) {
+            wg.coincide_nodes(from, inverse_target);
+            return;
+          }
+          // if (to != from || l != ll) {
+          wg.add_edge_nc(to, from, ll);
+          // }
         }
       };
 
@@ -112,19 +145,13 @@ namespace libsemigroups {
 
       //! Default copy constructor
       // TODO to tpp file
-      Stephen(Stephen const& that)
-          : _finished(that._finished),
-            _accept_state(that._accept_state),
-            _presentation(
-                std::make_unique<Presentation<word_type>>(that.presentation())),
-            _word(that._word),
-            _word_graph(that._word_graph) {}
+      Stephen(Stephen const& that) = default;
 
       //! Default move constructor
       Stephen(Stephen&&) = default;
 
       //! Default copy assignment operator
-      // TODO Stephen& operator=(Stephen const&) = default;
+      Stephen& operator=(Stephen const&) = default;
 
       //! Default move assignment operator
       Stephen& operator=(Stephen&&) = default;
@@ -160,7 +187,7 @@ namespace libsemigroups {
       //! \noexcept
       // TODO(Cutting version of this when _presentation is a shared_ptr (or
       // just a ptr)
-      Presentation<word_type> const& presentation() const noexcept {
+      presentation_type const& presentation() const noexcept {
         return _presentation;
       }
 
@@ -276,14 +303,16 @@ namespace libsemigroups {
         return _finished;
       }
 
-      // TODO clean all of this up!
       template <typename P>
       void init_impl(P&&, lvalue_tag);
 
-      void init_impl(PresentationType&&, non_lvalue_tag);
+      void init_impl(presentation_type&, lvalue_tag);
+
+      void init_impl(presentation_type&&, non_lvalue_tag);
 
       void report_status(
           std::chrono::high_resolution_clock::time_point const& start_time);
+
       void reset() noexcept;
 
       void run_impl() override;

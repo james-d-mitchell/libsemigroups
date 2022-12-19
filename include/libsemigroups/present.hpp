@@ -1215,6 +1215,21 @@ namespace libsemigroups {
     }
   };
 
+  namespace detail {
+    // TODO IsPresentation and then remove is_base_of<PresentationBase> and
+    // PresentationBase itself completely
+    template <typename T>
+    struct IsInversePresentationHelper : std::false_type {};
+
+    template <typename T>
+    struct IsInversePresentationHelper<InversePresentation<T>>
+        : std::true_type {};
+  }  // namespace detail
+
+  template <typename T>
+  static constexpr bool IsInversePresentation
+      = detail::IsInversePresentationHelper<T>::value;
+
 }  // namespace libsemigroups
 
 #include "present.tpp"
