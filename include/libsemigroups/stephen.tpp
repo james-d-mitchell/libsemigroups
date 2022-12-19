@@ -53,8 +53,7 @@ namespace libsemigroups {
       if constexpr (IsPresentation<construct_from_type>) {
         init_impl(std::move(make<construct_from_type>(p)), non_lvalue_tag());
       } else {
-        init_impl(std::move(std::make_shared<presentation_type>(*p)),
-                  non_lvalue_tag());
+        init_impl(std::move(construct_from_type(p)), non_lvalue_tag());
       }
     }
 
@@ -110,6 +109,57 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
     // Private Member Functions
     ////////////////////////////////////////////////////////////////////////
+
+    template <typename ConstructFrom>
+    void Stephen<ConstructFrom>::def_edge(internal_digraph_type&   wg,
+                                          node_type                from,
+                                          node_type                to,
+                                          label_type               letter,
+                                          presentation_type const& p) const {
+      if constexpr (!IsInversePresentation<presentation_type>) {
+        wg.add_edge_nc(from, to, letter);
+      } else {
+        wg.add_edge_nc(from, to, letter);
+        // convert l (which is an index)
+        // -> actual letter
+        // -> inverse of letter
+        // -> index of inverse of letter
+        auto ll             = p.index(p.inverse(p.letter(letter)));
+        auto inverse_target = wg.neighbor(to, ll);
+        if (inverse_target != UNDEFINED && inverse_target != from) {
+          wg.coincide_nodes(from, inverse_target);
+          return;
+        }
+        wg.add_edge_nc(to, from, ll);
+      }
+    }
+
+    template <typename ConstructFrom>
+    std::pair<bool, typename Stephen<ConstructFrom>::node_type>
+    Stephen<ConstructFrom>::complete_path(
+        internal_digraph_type&    wg,
+        node_type                 c,
+        word_type::const_iterator first,
+        word_type::const_iterator last) noexcept {
+      if (first == last) {
+        return std::make_pair(false, c);
+      }
+      LIBSEMIGROUPS_ASSERT(first < last);
+      word_type::const_iterator it;
+      std::tie(c, it)
+          = action_digraph_helper::last_node_on_path_nc(wg, c, first, last);
+      bool result = false;
+      for (; it < last; ++it) {
+        node_type d = wg.unsafe_neighbor(c, *it);
+        if (d == UNDEFINED) {
+          d = wg.new_node();
+          def_edge(wg, c, d, *it, presentation());
+          result = true;
+        }
+        c = d;
+      }
+      return std::make_pair(result, c);
+    }
 
     template <typename ConstructFrom>
     void Stephen<ConstructFrom>::report_status(

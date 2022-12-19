@@ -115,7 +115,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Cutting",
                           "004",
                           "symmetric_inverse_monoid",
-                          "[cutting][quick]") {
+                          "[cutting][extreme]") {
     auto p = fpsemigroup::make<InversePresentation<word_type>>(
         fpsemigroup::symmetric_inverse_monoid(7));
 

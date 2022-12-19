@@ -30,21 +30,21 @@ namespace libsemigroups {
         = v3::Stephen<std::shared_ptr<InversePresentation<word_type>>>;
 
    private:
-    InversePresentation<word_type> _presentation;
-    std::vector<stephen_type>      _stephens;
-    bool                           _finished;
+    std::shared_ptr<InversePresentation<word_type>> _presentation;
+    std::vector<stephen_type>                       _stephens;
+    bool                                            _finished;
     // TODO use StephenB::node_type
     ActionDigraph<size_t> _graph;
 
    public:
     // TODO to cpp
-    Cutting(InversePresentation<word_type> const& p)
+    explicit Cutting(InversePresentation<word_type> const& p)
         : Runner(),
-          _presentation(p),
+          _presentation(std::make_shared<InversePresentation<word_type>>(p)),
           _stephens(),
           _finished(false),
           _graph(0, p.alphabet().size()) {
-      _presentation.contains_empty_word(true);  // TODO
+      _presentation->contains_empty_word(true);  // TODO
       _stephens.emplace_back(_presentation);
       _stephens.back().set_word(word_type({}));
     }
@@ -80,13 +80,14 @@ namespace libsemigroups {
       }
 
       stephen_type tmp(_presentation);
+      auto const&  p = *_presentation;
 
       for (size_t i = 0; i < _stephens.size(); ++i) {
         auto& s    = _stephens[i];
         auto  word = s.word();
         word.insert(word.begin(), 0);
         _graph.add_nodes(1);
-        for (auto const& letter : _presentation.alphabet()) {
+        for (auto const& letter : p.alphabet()) {
           word[0] = letter;
           tmp.set_word(word).run();
           bool old = false;
@@ -111,4 +112,4 @@ namespace libsemigroups {
 
 }  // namespace libsemigroups
 
-#endif
+#endif  // LIBSEMIGROUPS_CUTTING_HPP_

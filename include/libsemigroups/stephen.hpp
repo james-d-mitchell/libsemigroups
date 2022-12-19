@@ -38,6 +38,7 @@
 
 // TODO
 // * use presentation_type not PresentationType everywhere
+// * iwyu
 
 namespace libsemigroups {
 
@@ -90,6 +91,22 @@ namespace libsemigroups {
         using type = InversePresentation<word_type>;
       };
 
+      template <typename P>
+      static constexpr bool can_construct_from() {
+        using Q = std::decay_t<P>;
+        return (IsPresentation<Q> && IsPresentation<construct_from_type>)
+               || (std::is_same_v<Q, construct_from_type> && IsStdSharedPtr<Q>);
+      }
+
+      template <typename P>
+      static constexpr auto& deref_if_necessary(P&& p) {
+        if constexpr (!IsPresentation<std::decay_t<P>>) {
+          return *p;
+        } else {
+          return p;
+        }
+      }
+
      public:
       using construct_from_type = ConstructFrom;
       using presentation_type = typename PresentationType<ConstructFrom>::type;
@@ -101,24 +118,9 @@ namespace libsemigroups {
       using node_type = digraph_type::node_type;
 
      private:
-      template <typename P>
-      static constexpr bool can_construct_from() {
-        using Q = std::decay_t<P>;
-        return (IsPresentation<Q> && IsPresentation<construct_from_type>)
-               || std::is_same_v<Q, construct_from_type>;
-      }
       using internal_digraph_type = ::libsemigroups::detail::ToddCoxeterDigraph<
           DigraphWithSources<size_t>>;
       using label_type = digraph_type::label_type;
-
-      template <typename P>
-      static constexpr auto& deref_if_necessary(P&& p) {
-        if constexpr (!IsPresentation<std::decay_t<P>>) {
-          return *p;
-        } else {
-          return p;
-        }
-      }
 
       // Data members
       bool                  _finished;
@@ -126,32 +128,6 @@ namespace libsemigroups {
       construct_from_type   _presentation;
       word_type             _word;
       internal_digraph_type _word_graph;
-
-      // TODO to tpp
-      void def_edge(internal_digraph_type&   wg,
-                    node_type                from,
-                    node_type                to,
-                    label_type               letter,
-                    presentation_type const& p) const
-
-      {
-        if constexpr (!IsInversePresentation<presentation_type>) {
-          wg.add_edge_nc(from, to, letter);
-        } else {
-          wg.add_edge_nc(from, to, letter);
-          // convert l (which is an index)
-          // -> actual letter
-          // -> inverse of letter
-          // -> index of inverse of letter
-          auto ll             = p.index(p.inverse(p.letter(letter)));
-          auto inverse_target = wg.neighbor(to, ll);
-          if (inverse_target != UNDEFINED && inverse_target != from) {
-            wg.coincide_nodes(from, inverse_target);
-            return;
-          }
-          wg.add_edge_nc(to, from, ll);
-        }
-      }
 
      public:
       //! Default constructor.
@@ -215,8 +191,6 @@ namespace libsemigroups {
       //!
       //! \exceptions
       //! \noexcept
-      // TODO(Cutting version of this when _presentation is a shared_ptr (or
-      // just a ptr)
       presentation_type const& presentation() const noexcept {
         return deref_if_necessary(_presentation);
       }
@@ -298,31 +272,17 @@ namespace libsemigroups {
       node_type accept_state();
 
      private:
-      // TODO to tpp
+      void def_edge(internal_digraph_type&   wg,
+                    node_type                from,
+                    node_type                to,
+                    label_type               letter,
+                    presentation_type const& p) const;
+
       std::pair<bool, node_type>
       complete_path(internal_digraph_type&    wg,
                     node_type                 c,
                     word_type::const_iterator first,
-                    word_type::const_iterator last) noexcept {
-        if (first == last) {
-          return std::make_pair(false, c);
-        }
-        LIBSEMIGROUPS_ASSERT(first < last);
-        word_type::const_iterator it;
-        std::tie(c, it)
-            = action_digraph_helper::last_node_on_path_nc(wg, c, first, last);
-        bool result = false;
-        for (; it < last; ++it) {
-          node_type d = wg.unsafe_neighbor(c, *it);
-          if (d == UNDEFINED) {
-            d = wg.new_node();
-            def_edge(wg, c, d, *it, presentation());
-            result = true;
-          }
-          c = d;
-        }
-        return std::make_pair(result, c);
-      }
+                    word_type::const_iterator last) noexcept;
 
       using lvalue_tag     = std::true_type;
       using non_lvalue_tag = std::false_type;
@@ -356,87 +316,20 @@ namespace libsemigroups {
 namespace libsemigroups {
   namespace v3 {
     namespace stephen {
-      //! The return type of \ref cbegin_words_accepted and \ref
-      //! cend_words_accepted. This is the same as
-      //! \ref ActionDigraph::const_pstislo_iterator.
       template <typename PresentationType>
       using const_iterator_words_accepted = typename Stephen<
           PresentationType>::digraph_type::const_pstislo_iterator;
 
-      //! The return type of \ref cbegin_left_factors and \ref
-      //! cend_left_factors. This is the same as \ref
-      //! ActionDigraph::const_pislo_iterator.
       template <typename PresentationType>
       using const_iterator_left_factors = typename Stephen<
           PresentationType>::digraph_type::const_pislo_iterator;
 
-      //! Check if a word is equivalent to Stephen::word.
-      //!
-      //! This function triggers the algorithm implemented in this class (if it
-      //! hasn't been triggered already), and then returns \c true if the input
-      //! word \p w is equivalent to Stephen::word in the semigroup defined by
-      //! Stephen::presentation. A word is equivalent to Stephen::word if it
-      //! labels a path in Stephen::word_graph with source \c 0 and target
-      //! Stephen::accept_state.
-      //!
-      //! \param s the Stephen instance
-      //! \param w a const reference to the input word.
-      //!
-      //! \returns A \c bool.
-      //!
-      //! \throws LibsemigroupsException if no presentation was set at
-      //! the construction of \p s or with Stephen::init.
-      //!
-      //! \warning The problem of determining whether two words are equal in
-      //! a finitely presented semigroup is undecidable in general, and this
-      //! function may never terminate.
       template <typename PresentationType>
       bool accepts(Stephen<PresentationType>& s, word_type const& w);
 
-      //! Check if a word is a left factor of Stephen::word.
-      //!
-      //! This function triggers the algorithm implemented in this class (if it
-      //! hasn't been triggered already), and then returns \c true if the input
-      //! word \p w is a left factor of Stephen::word in the semigroup defined
-      //! by Stephen::presentation. A word is a left factor of Stephen::word
-      //! if it labels a path in Stephen::word_graph with source \c 0.
-      //!
-      //! \param s the Stephen instance
-      //! \param w a const reference to the input word.
-      //!
-      //! \returns A \c bool.
-      //!
-      //! \throws LibsemigroupsException if no presentation was set at
-      //! the construction of \p s or with Stephen::init.
-      //!
-      //! \warning The problem of determining whether a word is a left factor of
-      //! another word in a finitely presented semigroup is undecidable in
-      //! general, and this function may never terminate.
       template <typename PresentationType>
       bool is_left_factor(Stephen<PresentationType>& s, word_type const& w);
 
-      //! Returns an iterator pointing at the first word equivalent to
-      //! Stephen::word in short-lex order.
-      //!
-      //! This function triggers the algorithm implemented in this class (if it
-      //! hasn't been triggered already).
-      //!
-      //! \param s the Stephen instance
-      //! \param min the minimum length of an equivalent word (default: 0)
-      //! \param max the maximum length of an equivalent word (default:
-      //! POSITIVE_INFINITY)
-      //!
-      //! \returns A \c const_iterator.
-      //!
-      //! \throws LibsemigroupsException if no presentation was set at
-      //! the construction of \p s or with Stephen::init.
-      //!
-      //! \warning The problem of determining whether two words are equal in
-      //! a finitely presented semigroup is undecidable in general, and this
-      //! function may never terminate.
-      //!
-      //! \sa ActionDigraph::cbegin_pstislo for more information about the
-      //! iterators returned by this function.
       template <typename PresentationType>
       const_iterator_words_accepted<PresentationType>
       cbegin_words_accepted(Stephen<PresentationType>& s,
@@ -446,11 +339,6 @@ namespace libsemigroups {
         return s.word_graph().cbegin_pstislo(0, s.accept_state(), min, max);
       }
 
-      //! Returns an iterator pointing one past the last word equivalent to
-      //! Stephen::word.
-      //!
-      //! \sa \ref cbegin_words_accepted for more information.
-      // Not noexcept because cend_pstislo isn't
       template <typename PresentationType>
       const_iterator_words_accepted<PresentationType>
       cend_words_accepted(Stephen<PresentationType>& s) {
@@ -458,29 +346,6 @@ namespace libsemigroups {
         return s.word_graph().cend_pstislo();
       }
 
-      //! Returns an iterator pointing at the first word (in short-lex order)
-      //! that is a left factor of Stephen::word.
-      //!
-      //! This function triggers the algorithm implemented in this class (if it
-      //! hasn't been triggered already).
-      //!
-      //! \param s the Stephen instance
-      //! \param min the minimum length of an equivalent word (default: 0)
-      //! \param max the maximum length of an equivalent word (default:
-      //! POSITIVE_INFINITY)
-      //!
-      //! \returns A \c const_iterator_left_factors.
-      //!
-      //! \throws LibsemigroupsException if no presentation was set at
-      //! the construction of \p s or with Stephen::init.
-      //!
-      //! \warning The problem of determining whether a word is a left factor of
-      //! another word in a finitely presented semigroup is undecidable in
-      //! general, and this function may never terminate.
-      //!
-      //! \sa ActionDigraph::cbegin_pislo for more information about the
-      //! iterators returned by this function.
-      // Not noexcept because cbegin_pislo isn't
       template <typename PresentationType>
       const_iterator_left_factors<PresentationType>
       cbegin_left_factors(Stephen<PresentationType>& s,
@@ -490,11 +355,6 @@ namespace libsemigroups {
         return s.word_graph().cbegin_pislo(0, min, max);
       }
 
-      //! Returns an iterator pointing one past the last word that is a left
-      //! factor of Stephen::word.
-      //!
-      //! \sa \ref cbegin_left_factors for more information.
-      // Not noexcept because cend_pislo isn't
       template <typename PresentationType>
       const_iterator_left_factors<PresentationType>
       cend_left_factors(Stephen<PresentationType>& s) {
@@ -502,27 +362,6 @@ namespace libsemigroups {
         return s.word_graph().cend_pislo();
       }
 
-      //! Returns the number of words accepted with length in a given range.
-      //!
-      //! This function returns the number of words that are equivalent to
-      //! Stephen::word in the instance \p s with length between \p min and \p
-      //! max. This is the same as the number of paths in Stephen::word_graph
-      //! (if Stephen::run has been called) with source \c 0, target
-      //! Stephen::accept_state,  and length in the range \p min to \p max.
-      //!
-      //! \param s the Stephen instance.
-      //! \param min the minimum length of a word (default: 0).
-      //! \param max one more than the maximum length of a word (default:
-      //! POSITIVE_INFINITY).
-      //!
-      //! \returns A \c uint64_t.
-      //!
-      //! \throws LibsemigroupsException if no presentation was set at
-      //! the construction of \p s or with Stephen::init.
-      //!
-      //!
-      //! \sa ActionDigraph::number_of_paths.
-      // Not noexcept because number_of_paths isn't
       template <typename PresentationType>
       uint64_t number_of_words_accepted(Stephen<PresentationType>& s,
                                         size_t                     min = 0,
@@ -531,30 +370,6 @@ namespace libsemigroups {
         return s.word_graph().number_of_paths(0, s.accept_state(), min, max);
       }
 
-      //! Returns the number of left factors with length in a given range.
-      //!
-      //! This function returns the number of left factors of the
-      //! Stephen::word in the instance \p s with length between \p min and \p
-      //! max. This is the same as the number of paths in Stephen::word_graph
-      //! (if Stephen::run has been called) with source \c 0 and length in the
-      //! range \p min to \p max.
-      //!
-      //! \param s the Stephen instance.
-      //! \param min the minimum length of a word (default: 0).
-      //! \param max one more than the maximum length of a word (default:
-      //! POSITIVE_INFINITY).
-      //!
-      //! \returns A \c uint64_t.
-      //!
-      //! \throws LibsemigroupsException if no presentation was set at
-      //! the construction of \p s or with Stephen::init.
-      //!
-      //! \sa ActionDigraph::number_of_paths.
-      //!
-      //! \throws LibsemigroupsException if no presentation was set at
-      //! construction or with Stephen::init.
-      // Number of words that represent left factors of word()
-      // Not noexcept because number_of_paths isn't
       template <typename PresentationType>
       uint64_t number_of_left_factors(Stephen<PresentationType>& s,
                                       size_t                     min = 0,
