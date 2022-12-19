@@ -68,12 +68,12 @@ namespace libsemigroups {
       using digraph_type = ActionDigraph<size_t>;
 
       //! The type of the nodes of a \ref digraph_type.
-      using node_type = typename digraph_type::node_type;
+      using node_type = digraph_type::node_type;
 
      private:
       using internal_digraph_type
           = detail::ToddCoxeterDigraph<DigraphWithSources<size_t>>;
-      using label_type = typename digraph_type::label_type;
+      using label_type = digraph_type::label_type;
 
       // Data members
       bool                  _finished;
@@ -82,44 +82,30 @@ namespace libsemigroups {
       word_type             _word;
       internal_digraph_type _word_graph;
 
-      struct EdgeDefiner {
-        template <typename SFINAE = void>
-        auto operator()(internal_digraph_type& wg,
-                        node_type              from,
-                        node_type              to,
-                        label_type             letter,
-                        Presentation<word_type> const&) const
-            -> std::enable_if_t<!IsInversePresentation<presentation_type>,
-                                SFINAE>
+      void def_edge(internal_digraph_type&   wg,
+                    node_type                from,
+                    node_type                to,
+                    label_type               letter,
+                    presentation_type const& p) const
 
-        {
+      {
+        if constexpr (!IsInversePresentation<presentation_type>) {
           wg.add_edge_nc(from, to, letter);
-        }
-
-        template <typename SFINAE = void>
-        auto operator()(internal_digraph_type&                wg,
-                        node_type                             from,
-                        node_type                             to,
-                        label_type                            l,
-                        InversePresentation<word_type> const& p) const
-            -> std::enable_if_t<IsInversePresentation<presentation_type>,
-                                SFINAE> {
-          wg.add_edge_nc(from, to, l);
+        } else {
+          wg.add_edge_nc(from, to, letter);
           // convert l (which is an index)
           // -> actual letter
           // -> inverse of letter
           // -> index of inverse of letter
-          auto ll             = p.index(p.inverse(p.letter(l)));
+          auto ll             = p.index(p.inverse(p.letter(letter)));
           auto inverse_target = wg.neighbor(to, ll);
           if (inverse_target != UNDEFINED && inverse_target != from) {
             wg.coincide_nodes(from, inverse_target);
             return;
           }
-          // if (to != from || l != ll) {
           wg.add_edge_nc(to, from, ll);
-          // }
         }
-      };
+      }
 
      public:
       //! Default constructor.
@@ -268,7 +254,6 @@ namespace libsemigroups {
 
      private:
       // TODO to tpp
-      template <typename DefEdge>
       std::pair<bool, node_type>
       complete_path(internal_digraph_type&    wg,
                     node_type                 c,
@@ -281,8 +266,7 @@ namespace libsemigroups {
         word_type::const_iterator it;
         std::tie(c, it)
             = action_digraph_helper::last_node_on_path_nc(wg, c, first, last);
-        auto def_edge = DefEdge();
-        bool result   = false;
+        bool result = false;
         for (; it < last; ++it) {
           node_type d = wg.unsafe_neighbor(c, *it);
           if (d == UNDEFINED) {

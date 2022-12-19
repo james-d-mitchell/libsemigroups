@@ -208,12 +208,11 @@ namespace libsemigroups {
       auto start_time = std::chrono::high_resolution_clock::now();
       validate();  // throws if no presentation is defined
       _word_graph.init(presentation());
-      complete_path<EdgeDefiner>(_word_graph, 0, _word.cbegin(), _word.cend());
+      complete_path(_word_graph, 0, _word.cbegin(), _word.cend());
       node_type& current     = _word_graph.cursor();
       auto const rules_begin = presentation().rules.cbegin();
       auto const rules_end   = presentation().rules.cend();
       bool       did_change  = true;
-      auto       def_edge    = EdgeDefiner();
 
       do {
         current    = 0;
@@ -233,7 +232,7 @@ namespace libsemigroups {
                 c       = current;
                 v_end   = c;
               } else {
-                std::tie(did_def, c) = complete_path<EdgeDefiner>(
+                std::tie(did_def, c) = complete_path(
                     _word_graph, current, it->cbegin(), it->cend() - 1);
                 v_end = _word_graph.unsafe_neighbor(c, it->back());
               }
@@ -259,7 +258,7 @@ namespace libsemigroups {
                   c       = current;
                   u_end   = c;
                 } else {
-                  std::tie(did_def, c) = complete_path<EdgeDefiner>(
+                  std::tie(did_def, c) = complete_path(
                       _word_graph, current, it->cbegin(), it->cend() - 1);
                   u_end = _word_graph.unsafe_neighbor(c, it->back());
                 }
