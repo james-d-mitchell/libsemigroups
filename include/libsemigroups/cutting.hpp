@@ -25,9 +25,13 @@
 
 namespace libsemigroups {
   class Cutting : public Runner {
+   public:
+    using stephen_type
+        = v3::Stephen<std::shared_ptr<InversePresentation<word_type>>>;
+
    private:
     InversePresentation<word_type> _presentation;
-    std::vector<StephenB>          _stephens;
+    std::vector<stephen_type>      _stephens;
     bool                           _finished;
     // TODO use StephenB::node_type
     ActionDigraph<size_t> _graph;
@@ -75,7 +79,7 @@ namespace libsemigroups {
         return;
       }
 
-      StephenB tmp(_presentation);
+      stephen_type tmp(_presentation);
 
       for (size_t i = 0; i < _stephens.size(); ++i) {
         auto& s    = _stephens[i];
@@ -87,8 +91,8 @@ namespace libsemigroups {
           tmp.set_word(word).run();
           bool old = false;
           for (size_t j = 0; j < _stephens.size(); ++j) {
-            if (stephen::is_left_factor(_stephens[j], word)) {
-              if (stephen::is_left_factor(tmp, _stephens[j].word())) {
+            if (v3::stephen::is_left_factor(_stephens[j], word)) {
+              if (v3::stephen::is_left_factor(tmp, _stephens[j].word())) {
                 _graph.add_edge_nc(i, j, letter);
                 old = true;
                 break;

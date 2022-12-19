@@ -588,7 +588,6 @@ libsemigroups_la_SOURCES += src/report.cpp
 libsemigroups_la_SOURCES += src/runner.cpp
 libsemigroups_la_SOURCES += src/siso.cpp
 libsemigroups_la_SOURCES += src/string.cpp
-libsemigroups_la_SOURCES += src/stephen.cpp
 libsemigroups_la_SOURCES += src/suffix-tree.cpp
 libsemigroups_la_SOURCES += src/timer.cpp
 libsemigroups_la_SOURCES += src/todd-coxeter.cpp
