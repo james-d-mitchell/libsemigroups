@@ -41,7 +41,8 @@
 // * iwyu
 // * operator* method for Stephens (i.e. identify the accept_state() of the
 // first with the initial state of the second, then determinise.
-//
+// * canonical_form (as per Howie's book)
+// * minimal rep
 namespace libsemigroups {
 
   namespace v3 {
@@ -380,8 +381,33 @@ namespace libsemigroups {
         s.run();
         return s.word_graph().number_of_paths(0, min, max);
       }
+
     }  // namespace stephen
   }    // namespace v3
+
+  template <typename PresentationType>
+  bool operator==(v3::Stephen<PresentationType> const& x,
+                  v3::Stephen<PresentationType> const& y) {
+    return v3::stephen::accepts(const_cast<v3::Stephen<PresentationType>&>(x),
+                                y.word())
+           && v3::stephen::accepts(
+               const_cast<v3::Stephen<PresentationType>&>(y), x.word());
+  }
+
+  template <typename PresentationType>
+  std::ostream& operator<<(std::ostream&                        os,
+                           v3::Stephen<PresentationType> const& x) {
+    std::string word;
+    // if (x.word().size() < 10) {
+    //   word = detail::to_string(x.word());
+    // } else {
+    word = " " + std::to_string(x.word().size()) + " letter word, ";
+    //}
+    os << std::string("<Stephen for ") << word << " with "
+       << x.word_graph().number_of_nodes() << "  nodes, "
+       << x.word_graph().number_of_edges() << " edges>";
+    return os;
+  }
 
   namespace stephen {
     //! The return type of \ref cbegin_words_accepted and \ref

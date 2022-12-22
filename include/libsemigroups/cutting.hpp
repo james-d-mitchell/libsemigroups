@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+// TODO:
 
 #ifndef LIBSEMIGROUPS_CUTTING_HPP_
 #define LIBSEMIGROUPS_CUTTING_HPP_
 
-#include "runner.hpp"  // for Runner
+#include "cong-intf.hpp"  // for CongruenceInterface
+#include "runner.hpp"     // for Runner
 #include "stephen.hpp"
 #include "types.hpp"
 

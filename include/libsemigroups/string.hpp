@@ -63,15 +63,21 @@ namespace libsemigroups {
   // A << function for vectors
   template <typename T>
   std::ostream& operator<<(std::ostream& os, std::vector<T> const& vec) {
-    if (vec.empty()) {
-      os << "{}";
-      return os;
+#ifdef LIBSEMIGROUPS_FMT_ENABLED
+    std::string lbrace = "{{";  // {{ is an escaped single { for fmt
+    std::string rbrace = "}}";
+#else
+    std::string lbrace = "{";
+    std::string rbrace = "}";
+#endif
+
+    os << lbrace;
+    auto sep = "";
+    for (auto it = vec.cbegin(); it < vec.cend(); ++it) {
+      os << sep << detail::to_string(*it);
+      sep = ", ";
     }
-    os << "{{";  // {{ is an escaped single { for fmt
-    for (auto it = vec.cbegin(); it < vec.cend() - 1; ++it) {
-      os << detail::to_string(*it) << ", ";
-    }
-    os << detail::to_string(*(vec.cend() - 1)) << "}}";
+    os << rbrace;
     return os;
   }
 

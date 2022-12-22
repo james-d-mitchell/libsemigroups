@@ -1177,6 +1177,46 @@ namespace libsemigroups {
   }  // namespace presentation
 
   template <typename W>
+  Presentation<W>& operator+(Presentation<W>& p, int x) {
+    for (auto& w : p.rules) {
+      for (auto& l : w) {
+        l += x;
+      }
+    }
+    return p;
+  }
+
+  template <typename W>
+  Presentation<W>& operator+(int x, Presentation<W>& p) {
+    for (auto& w : p.rules) {
+      for (auto& l : w) {
+        l += x;
+      }
+    }
+    return p;
+  }
+
+  template <typename W>
+  Presentation<W>&& operator+(Presentation<W>&& p, int x) {
+    for (auto& w : p.rules) {
+      for (auto& l : w) {
+        l += x;
+      }
+    }
+    return std::move(p);
+  }
+
+  template <typename W>
+  Presentation<W>&& operator+(int x, Presentation<W>&& p) {
+    for (auto& w : p.rules) {
+      for (auto& l : w) {
+        l += x;
+      }
+    }
+    return std::move(p);
+  }
+
+  template <typename W>
   class InversePresentation : public Presentation<W> {
    public:
     using word_type      = typename Presentation<W>::word_type;

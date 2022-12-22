@@ -154,4 +154,31 @@ namespace libsemigroups {
     REQUIRE(c.number_of_r_classes() == 16);
   }
 
+  LIBSEMIGROUPS_TEST_CASE("Cutting",
+                          "006",
+                          "cyclic inverse monoid",
+                          "[cutting][quick]") {
+    size_t                         n = 6;
+    detail::StringToWord           string_to_word("egGx");
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("egG"));
+    p.inverses(string_to_word("eGg"));
+    p.contains_empty_word(true);
+    presentation::add_rule_and_check(
+        p, string_to_word(std::string(n, 'g')), string_to_word(""));
+    presentation::add_rule_and_check(
+        p, string_to_word("ee"), string_to_word("e"));
+    presentation::add_rule(
+        p, string_to_word("gxxxxxx"), string_to_word("xxxxxx"));
+    presentation::replace_subword(
+        p, string_to_word("x"), string_to_word("eggggg"));
+    p.validate();
+
+    // REQUIRE(p.rules == std::vector<word_type>());
+
+    auto c = Cutting(p);
+    REQUIRE(c.size() == 0);
+    REQUIRE(c.number_of_r_classes() == 16);
+  }
+
 }  // namespace libsemigroups

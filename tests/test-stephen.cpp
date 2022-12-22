@@ -16,7 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
+#define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
 
 #include <cstddef>   // for size_t
 #include <iostream>  // for cout
@@ -45,10 +45,14 @@
 #include "libsemigroups/order.hpp"                 // for LexicographicalCom...
 #include "libsemigroups/present.hpp"               // for add_rule_and_check
 #include "libsemigroups/report.hpp"                // for ReportGuard
+#include "libsemigroups/siso.hpp"                  // for Sislo
 #include "libsemigroups/stephen.hpp"               // for Stephen, Stephen::...
 #include "libsemigroups/todd-coxeter-digraph.hpp"  // for ToddCoxeterDigraph
+#include "libsemigroups/todd-coxeter.hpp"          // for ToddCoxeter
 #include "libsemigroups/types.hpp"                 // for word_type
 #include "libsemigroups/word.hpp"                  // for StringToWord, word...
+                                                   //
+#include "libsemigroups/string.hpp"
 
 namespace libsemigroups {
   namespace {
@@ -1352,5 +1356,137 @@ namespace libsemigroups {
                  {UNDEFINED, 1, 6, 3, UNDEFINED, UNDEFINED},
                  {6, 2, UNDEFINED, UNDEFINED, UNDEFINED, 3},
                  {UNDEFINED, UNDEFINED, UNDEFINED, 5, UNDEFINED, 4}}));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Stephen",
+                          "042",
+                          "inverse presentation -- operator==",
+                          "[stephen][quick]") {
+    congruence::ToddCoxeter tc(congruence_kind::twosided);
+    {
+      auto p = fpsemigroup::make<Presentation<word_type>>(
+          fpsemigroup::symmetric_inverse_monoid(4));
+      REQUIRE(p.contains_empty_word());
+      REQUIRE(p.alphabet().size() == 4);
+      p.alphabet(5);
+      presentation::replace_word(p, {}, {4});
+      presentation::add_identity_rules(p, 4);
+      p.validate();
+
+      tc.set_number_of_generators(5);
+      for (auto it = p.rules.cbegin(); it != p.rules.cend(); it += 2) {
+        tc.add_pair(*it, *(it + 1));
+      }
+    }
+
+    {
+      InversePresentation<word_type> p
+          = fpsemigroup::make<InversePresentation<word_type>>(
+              fpsemigroup::symmetric_inverse_monoid(4));
+      p.alphabet(4);
+      p.inverses({0, 1, 2, 3});
+      p.validate();
+
+      auto      S = v3::Stephen<InversePresentation<word_type>>(p);
+      word_type w = {0, 1, 2, 0, 1, 1, 2, 0, 1, 0, 2, 2, 2, 2, 0, 1};
+      S.set_word(w);
+
+      REQUIRE(v3::stephen::number_of_words_accepted(S) == POSITIVE_INFINITY);
+
+      {
+        auto const index = tc.word_to_class_index(w);
+        auto       first = v3::stephen::cbegin_words_accepted(S);
+        auto       last  = first;
+        std::advance(last, 1024);
+        auto T = v3::Stephen<InversePresentation<word_type>>(p);
+
+        for (auto it = first; it != last; ++it) {
+          REQUIRE(tc.word_to_class_index(*it) == index);
+          REQUIRE(v3::stephen::accepts(T.set_word(*it), w));
+        }
+      }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Stephen",
+                          "044",
+                          "inverse presentation",
+                          "[stephen][quick]") {
+    detail::StringToWord           string_to_word("abcABC");
+    InversePresentation<word_type> p;
+    p.alphabet(string_to_word("abcABC"));
+    p.inverses(string_to_word("ABCabc"));
+    presentation::add_rule_and_check(
+        p, string_to_word("ac"), string_to_word("ca"));
+    presentation::add_rule_and_check(
+        p, string_to_word("ab"), string_to_word("ba"));
+    presentation::add_rule_and_check(
+        p, string_to_word("bc"), string_to_word("cb"));
+    auto S = v3::Stephen<InversePresentation<word_type>>(p);
+    auto T = v3::Stephen<InversePresentation<word_type>>(p);
+
+    Sislo sislo;
+    sislo.alphabet("abcABC").first("aaaaa").last("aaaaaaaaa");
+    auto sislo_end = sislo.cend();
+
+    for (auto w = sislo.cbegin(); w != sislo_end; ++w) {
+      S.set_word(string_to_word(*w));
+      auto first = ++v3::stephen::cbegin_words_accepted(S);
+      auto last  = first;
+      std::advance(last, 1024);
+      for (auto it = first; it != last; ++it) {
+        REQUIRE(v3::stephen::accepts(S, *it));
+        if (!v3::stephen::accepts(T.set_word(*it), S.word())) {
+          std::cout << "S.word() = " << S.word() << ", T.word() = " << T.word()
+                    << std::endl;
+        }
+        REQUIRE(S == T);
+      }
+    }
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Stephen",
+                          "043",
+                          "non-inverse presentation -- operator==",
+                          "[stephen][quick]") {
+    auto p = fpsemigroup::make<Presentation<word_type>>(
+        fpsemigroup::symmetric_inverse_monoid(4));
+    REQUIRE(p.contains_empty_word());
+    REQUIRE(p.alphabet().size() == 4);
+    p.alphabet(5);
+    presentation::replace_word(p, {}, {4});
+    presentation::add_identity_rules(p, 4);
+    p.validate();
+
+    congruence::ToddCoxeter tc(congruence_kind::twosided);
+    tc.set_number_of_generators(5);
+    for (auto it = p.rules.cbegin(); it != p.rules.cend(); it += 2) {
+      tc.add_pair(*it, *(it + 1));
+    }
+
+    auto      S = v3::Stephen<Presentation<word_type>>(p);
+    word_type w = {0, 1, 2, 0, 1, 1, 2, 0, 1, 0, 2, 2, 2, 2, 0, 1};
+    S.set_word(w);
+    REQUIRE(v3::stephen::number_of_words_accepted(S) == POSITIVE_INFINITY);
+
+    {
+      auto const index = tc.word_to_class_index(w);
+      auto       first = v3::stephen::cbegin_words_accepted(S);
+      auto       last  = first;
+      std::advance(last, 1024);
+
+      for (auto it = first; it != last; ++it) {
+        REQUIRE(tc.word_to_class_index(*it) == index);
+      }
+    }
+    {
+      auto first = tc.cbegin_class(w);
+      auto last  = first;
+      std::advance(last, 1024);
+
+      for (auto it = first; it != last; ++it) {
+        REQUIRE(stephen::accepts(S, *it));
+      }
+    }
   }
 }  // namespace libsemigroups
