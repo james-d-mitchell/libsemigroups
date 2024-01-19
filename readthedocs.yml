@@ -4,12 +4,21 @@ conda:
   environment: docs/environment.yml
 
 build:
-  image: latest
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+  commands:
+      - python -m pip install --upgrade --no-cache-dir pip
+      - python -m pip install --no-cache-dir -r docs/requirements.txt
+      - mkdir -p docs/build 
+      - cd docs && doxygen 
+      - etc/make-doc-yml.sh
+      - etc/make-doc-sphinx.sh
+      - mv docs/build/html $READTHEDOCS_OUTPUT/html
 
 sphinx:
   configuration: docs/source/conf.py
 
-formats: []
-
 python:
-  version: 3.8
+  install:
+      - requirements: docs/requirements.txt
