@@ -303,7 +303,7 @@ namespace libsemigroups {
             == std::vector<word_type>({00_w, 01_w, 10_w, 11_w}));
   }
 
-  LIBSEMIGROUPS_TEST_CASE("Paths", "004", "#3", "[quick]") {
+  LIBSEMIGROUPS_TEST_CASE("Paths", "004", "#3", "[quick][no-valgrind]") {
     using namespace rx;
     auto ad = to_word_graph<size_t>(
         6, {{1, 2}, {3, 4}, {4, 2}, {1, 5}, {5, 4}, {4, 5}});

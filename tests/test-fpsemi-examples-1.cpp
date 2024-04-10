@@ -634,7 +634,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("fpsemi-examples",
                           "049",
                           "full_transformation_monoid(5) Iwahori",
-                          "[fpsemi-examples][quick]") {
+                          "[fpsemi-examples][quick][no-valgrind]") {
     auto   rg = ReportGuard(REPORT);
     size_t n  = 5;
 
@@ -646,7 +646,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("fpsemi-examples",
                           "050",
                           "partial_transformation_monoid(5) Sutov",
-                          "[fpsemi-examples][quick]") {
+                          "[fpsemi-examples][standard]") {
     auto        rg = ReportGuard(REPORT);
     size_t      n  = 5;
     ToddCoxeter tc(congruence_kind::twosided,

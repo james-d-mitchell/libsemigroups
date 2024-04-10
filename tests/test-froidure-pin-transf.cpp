@@ -232,7 +232,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("FroidurePin<Transf<>>",
                           "071",
                           "exception suffix",
-                          "[quick][froidure-pin][transformation][transf]") {
+                          "[standard][froidure-pin][transformation][transf]") {
     auto                  rg   = ReportGuard(REPORT);
     std::vector<Transf<>> gens = {Transf<>({0, 1, 2, 3, 4, 5}),
                                   Transf<>({1, 0, 2, 3, 4, 5}),

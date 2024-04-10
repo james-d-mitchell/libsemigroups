@@ -3124,7 +3124,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims2",
                           "094",
                           "2-sided T_4 Iwahori presentation",
-                          "[quick][sims2][low-index]") {
+                          "[quick][sims2][low-index][no-valgrind]") {
     auto  rg = ReportGuard(false);
     Sims2 S(fpsemigroup::full_transformation_monoid(
         4, fpsemigroup::author::Iwahori));
@@ -3639,7 +3639,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims2",
                           "112",
                           "2-sided congruence-free monoid n=8",
-                          "[quick][sims2]") {
+                          "[quick][sims2][no-valgrind]") {
     auto rg = ReportGuard(false);
     // Presentation taken from
     // Al-Kharousi, F., Cain, A.J., Maltcev, V. et al.
@@ -3693,7 +3693,7 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEST_CASE("Sims2",
                           "114",
                           "2-sided 2-generated free commutative monoid",
-                          "[quick][sims2]") {
+                          "[quick][sims2][no-valgrind]") {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
