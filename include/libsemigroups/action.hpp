@@ -244,6 +244,9 @@ namespace libsemigroups {
     //! \sa ImageRightAction, ImageLeftAction
     using action_type = Func;
 
+    // TODO
+    side const side_type = LeftOrRight;
+
     //! \brief Insertion operator
     //!
     //! This member function allows Action objects to be inserted into an
