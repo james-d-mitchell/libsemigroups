@@ -3241,7 +3241,7 @@ namespace libsemigroups {
   class SimsRefinerIdeals {
    private:
     using node_type    = uint32_t;
-    using KnuthBendix_ = KnuthBendix<detail::RewriteFromLeft>;
+    using KnuthBendix_ = KnuthBendix<>;
     std::vector<KnuthBendix_> _knuth_bendices;
 
    public:
