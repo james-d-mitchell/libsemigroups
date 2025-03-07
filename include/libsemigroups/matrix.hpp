@@ -6591,26 +6591,22 @@ namespace libsemigroups {
       // Comparison operators
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO template
       bool operator==(ProjMaxPlusMat const& that) const {
         normalize();
         that.normalize();
         return _underlying_mat == that._underlying_mat;
       }
 
-      // TODO template
       bool operator!=(ProjMaxPlusMat const& that) const {
         return !(_underlying_mat == that._underlying_mat);
       }
 
-      // TODO template
       bool operator<(ProjMaxPlusMat const& that) const {
         normalize();
         that.normalize();
         return _underlying_mat < that._underlying_mat;
       }
 
-      // TODO template
       bool operator>(ProjMaxPlusMat const& that) const {
         return that < *this;
       }
