@@ -536,7 +536,6 @@ namespace libsemigroups {
 
     RewriteTrie& RewriteTrie::init() {
       RewriterBase::init();
-      _alphabet.clear();
       _trie.init();
       _rules.clear();
       return *this;
@@ -545,11 +544,16 @@ namespace libsemigroups {
     RewriteTrie& RewriteTrie::operator=(RewriteTrie const& that) {
       init();
       RewriterBase::operator=(that);
-      _alphabet = that._alphabet;
+      _trie = that._trie;
       for (auto* crule : *this) {
-        Rule* rule = const_cast<Rule*>(crule);
-        add_rule_to_trie(rule);
+        Rule*      rule = const_cast<Rule*>(crule);
+        index_type node
+            = _trie.traverse_trie(rule->lhs()->cbegin(), rule->lhs()->cend());
+        // TODO check that node is correct
+        // LIBSEMIGROUPS_ASSERT(_trie.is_terminal(node));
+        _rules.emplace(node, rule);
       }
+
       return *this;
     }
 
@@ -590,8 +594,8 @@ namespace libsemigroups {
                  rule2->lhs()->cend());  // rule = AQ_j -> Q_iC
         add_pending_rule(x, y);
       }
-      for (auto a : _alphabet) {
-        auto child = _trie.child_no_checks(node, static_cast<letter_type>(a));
+      for (letter_type a = 0; a != _trie.alphabet_size(); ++a) {
+        auto child = _trie.child_no_checks(node, a);
         if (child != UNDEFINED) {
           add_overlaps(rule, child, overlap_length);
         }
@@ -618,7 +622,7 @@ namespace libsemigroups {
       iterator w_end   = u.end();
 
       while (w_begin != w_end) {
-        // Read first letter of W and traverse trie
+        // Read first letter of w and traverse trie
         auto x = *w_begin;
         ++w_begin;
         current
@@ -762,9 +766,8 @@ namespace libsemigroups {
       }
 
       // Read each possible letter and traverse down the trie
-      for (auto x = _alphabet.cbegin(); x != _alphabet.cend(); ++x) {
-        auto child
-            = _trie.child_no_checks(current_node, static_cast<letter_type>(*x));
+      for (letter_type x = 0; x != _trie.alphabet_size(); ++x) {
+        auto child = _trie.child_no_checks(current_node, x);
         if (child != UNDEFINED) {
           if (!descendants_confluent(rule1, child, overlap_length)) {
             return false;

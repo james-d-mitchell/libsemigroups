@@ -29,10 +29,10 @@
 #include <unordered_map>  // for unordered map
 #include <unordered_set>  // for unordered set
 
-#include "../aho-corasick.hpp"
 #include "../debug.hpp"  // for LIBSEMIGROUPS_ASSERT
 #include "../order.hpp"  // for shortlex_compare
 
+#include "aho-corasick-impl.hpp"
 #include "multi-string-view.hpp"  // for MultiStringView
 
 // TODO(2) Add a KnuthBendixImpl pointer to the rewriter class so that overlap
@@ -476,7 +476,7 @@ namespace libsemigroups {
         return *this;
       }
 
-      RewriterBase& alphabet(std::string const&) {
+      RewriterBase& increase_alphabet_size_by(size_t) {
         return *this;
       }
 
@@ -591,11 +591,11 @@ namespace libsemigroups {
     };
 
     class RewriteTrie : public RewriterBase {
-      using index_type = AhoCorasick::index_type;
+      using index_type = AhoCorasickImpl::index_type;
 
-      std::string                 _alphabet;
+      std::string                 _alphabet;  // TODO remove
       std::map<index_type, Rule*> _rules;
-      AhoCorasick                 _trie;
+      AhoCorasickImpl             _trie;
 
      public:
       using RewriterBase::cached_confluent;
@@ -603,7 +603,7 @@ namespace libsemigroups {
       using iterator      = internal_string_type::iterator;
       using rule_iterator = std::map<index_type, Rule*>::iterator;
 
-      RewriteTrie() : RewriterBase(), _rules(), _trie() {}
+      RewriteTrie() : RewriterBase(), _rules(), _trie(0) {}
 
       RewriteTrie(RewriteTrie const& that);
 
@@ -614,8 +614,8 @@ namespace libsemigroups {
 
       RewriteTrie& init();
 
-      RewriteTrie& alphabet(std::string const& alphabet) {
-        _alphabet = alphabet;
+      RewriteTrie& increase_alphabet_size_by(size_t val) {
+        _trie.increase_alphabet_size_by(val);
         return *this;
       }
 
