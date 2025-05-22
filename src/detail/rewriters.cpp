@@ -187,9 +187,6 @@ namespace libsemigroups {
 
     RewriterBase& RewriterBase::init() {
       Rules::init();
-      if (_requires_alphabet) {
-        _alphabet.clear();
-      }
       // Put all active rules and those rules in the stack into the
       // inactive_rules list
       while (!_pending_rules.empty()) {
@@ -539,6 +536,7 @@ namespace libsemigroups {
 
     RewriteTrie& RewriteTrie::init() {
       RewriterBase::init();
+      _alphabet.clear();
       _trie.init();
       _rules.clear();
       return *this;
@@ -547,6 +545,7 @@ namespace libsemigroups {
     RewriteTrie& RewriteTrie::operator=(RewriteTrie const& that) {
       init();
       RewriterBase::operator=(that);
+      _alphabet = that._alphabet;
       for (auto* crule : *this) {
         Rule* rule = const_cast<Rule*>(crule);
         add_rule_to_trie(rule);
@@ -591,8 +590,8 @@ namespace libsemigroups {
                  rule2->lhs()->cend());  // rule = AQ_j -> Q_iC
         add_pending_rule(x, y);
       }
-      for (auto a = alphabet_cbegin(); a != alphabet_cend(); ++a) {
-        auto child = _trie.child_no_checks(node, static_cast<letter_type>(*a));
+      for (auto a : _alphabet) {
+        auto child = _trie.child_no_checks(node, static_cast<letter_type>(a));
         if (child != UNDEFINED) {
           add_overlaps(rule, child, overlap_length);
         }
@@ -763,7 +762,7 @@ namespace libsemigroups {
       }
 
       // Read each possible letter and traverse down the trie
-      for (auto x = alphabet_cbegin(); x != alphabet_cend(); ++x) {
+      for (auto x = _alphabet.cbegin(); x != _alphabet.cend(); ++x) {
         auto child
             = _trie.child_no_checks(current_node, static_cast<letter_type>(*x));
         if (child != UNDEFINED) {
