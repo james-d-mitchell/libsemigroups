@@ -491,11 +491,15 @@ namespace libsemigroups {
         return *this;
       }
 
+      RewriterBase& alphabet(std::string const&) {
+        return *this;
+      }
+
       bool requires_alphabet() const {
         return _requires_alphabet;
       }
 
-      decltype(_alphabet) alphabet() const {
+      decltype(_alphabet) const& alphabet() const {
         return _alphabet;
       }
 
@@ -643,6 +647,13 @@ namespace libsemigroups {
       ~RewriteTrie();
 
       RewriteTrie& init();
+
+      RewriteTrie& alphabet(std::string const& alphabet) {
+        for (auto a : alphabet) {
+          RewriterBase::add_to_alphabet(a);
+        }
+        return *this;
+      }
 
       rule_iterator rules_begin() {
         return _rules.begin();

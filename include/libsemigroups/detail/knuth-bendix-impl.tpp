@@ -805,13 +805,7 @@ namespace libsemigroups {
                          ReductionOrder>::init_from_internal_presentation() {
       auto const& p = _presentation;
 
-      // TODO(0) replace the following lines with:
-      // _rewriter.alphabet(p.alphabet());
-      if (_rewriter.requires_alphabet()) {
-        for (auto x = p.alphabet().begin(); x != p.alphabet().end(); ++x) {
-          _rewriter.add_to_alphabet(*x);
-        }
-      }
+      _rewriter.alphabet(p.alphabet());
 
       auto const first = p.rules.cbegin();
       auto const last  = p.rules.cend();
