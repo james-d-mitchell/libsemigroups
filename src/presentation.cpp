@@ -252,5 +252,10 @@ namespace libsemigroups {
       return to_gap_string(to<Presentation<word_type>>(p), var_name);
     }
 
+    void add_cyclic_conjugates_no_checks(Presentation<std::string>& p,
+                                         char const*                relator) {
+      add_cyclic_conjugates_no_checks(p, std::string(relator));
+    }
+
   }  // namespace presentation
 }  // namespace libsemigroups

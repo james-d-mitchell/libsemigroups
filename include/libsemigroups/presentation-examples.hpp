@@ -146,6 +146,9 @@ namespace libsemigroups {
     //! \throws LibsemigroupsException if `n < 1`.
     [[nodiscard]] Presentation<word_type> brauer_monoid_KM07(size_t n);
 
+    // TODO(0) doc
+    [[nodiscard]] Presentation<word_type> braid_group(size_t n);
+
     //! \brief A presentation for the Chinese monoid.
     //!
     //! This function returns a monoid presentation defining the Chinese

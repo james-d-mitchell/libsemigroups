@@ -2133,13 +2133,16 @@ namespace libsemigroups {
 
     // TODO(later) add balance that checks p contains empty word, no duplicate
     // letters in alphabet, and inverses are valid.
+    //
+    // TODO version of balance that only specified inverses
 
-    // // TODO(later) do a proper version of this, where the inverses are
-    // // specified, rather than being assumed to be upper/lower cases
-    // template <typename Word>
-    // void add_cyclic_conjugates(Presentation<Word>& p,
-    //                            Word const&         lhs,
-    //                            Word const&         rhs);
+    // TODO doc
+    template <typename Word>
+    void add_cyclic_conjugates_no_checks(Presentation<Word>& p,
+                                         Word const&         relator);
+
+    void add_cyclic_conjugates_no_checks(Presentation<std::string>& p,
+                                         char const*                relator);
 
     //! \brief Return the code that would create \p p in GAP.
     //!
