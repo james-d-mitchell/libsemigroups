@@ -150,7 +150,7 @@ jobs:
             ./test_all "[quick]"
   FreeBSD:
     name: FreeBSD
-    timeout-minutes: 120
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -168,7 +168,7 @@ jobs:
             ./test_all [quick]
   OpenBSD:
     name: OpenBSD
-    timeout-minutes: 120
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     env:
       AUTOCONF_VERSION: 2.72
