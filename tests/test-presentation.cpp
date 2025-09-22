@@ -3499,4 +3499,22 @@ namespace libsemigroups {
     REQUIRE(presentation::index_rule(p, {}, {1, 0}) == UNDEFINED);
   }
 
+  LIBSEMIGROUPS_TEST_CASE("Presentation",
+                          "093",
+                          "to_ace_string",
+                          "[quick][presentation]") {
+    Presentation<std::string> p;
+    p.alphabet("abcABC");
+    p.contains_empty_word(true);
+    presentation::add_inverse_rules(p, "ABCabc");
+    presentation::add_rule(p, "aBCbac", "");
+    presentation::add_rule(p, "bACbaacA", "");
+    presentation::add_rule(p, "accAABab", "");
+    REQUIRE(presentation::to_ace_string(p) == R"xxx(Group: a, b, c, A, B, C;
+wo: 4g; # workspace size, adjust as necessary
+Rel: aA, bB, cC, Aa, Bb, Cc, aBCbac, bACbaacA, accAABab;
+Mess: 100000; # message frequency, adjust as necessary
+End;)xxx");
+  }
+
 }  // namespace libsemigroups

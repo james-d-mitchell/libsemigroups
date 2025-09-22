@@ -2539,6 +2539,8 @@ namespace libsemigroups {
     std::string to_gap_string(Presentation<std::string> const& p,
                               std::string const&               var_name);
 
+    std::string to_ace_string(Presentation<std::string> const& p);
+
     //! \brief Find a rule.
     //!
     //! This function returns an iterator `it` pointing at the first
