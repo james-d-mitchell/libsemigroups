@@ -1046,6 +1046,12 @@ namespace libsemigroups {
     using congruence_common::normal_forms;
     using congruence_common::partition;
 
+    ////////////////////////////////////////////////////////////////////////
+    // ToddCoxeter specific helpers
+    ////////////////////////////////////////////////////////////////////////
+
+    [[nodiscard]] std::string to_ace_string(ToddCoxeter<std::string> const& tc);
+
   }  // namespace todd_coxeter
 }  // namespace libsemigroups
 

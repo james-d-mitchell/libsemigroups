@@ -23,9 +23,10 @@
 #include <string_view>  // for basic_st...
 #include <tuple>        // for tie
 
-#include "libsemigroups/constants.hpp"  // for operator!=
-#include "libsemigroups/obvinf.hpp"     // for is_obvio...
-#include "libsemigroups/types.hpp"      // for tril
+#include "libsemigroups/constants.hpp"     // for operator!=
+#include "libsemigroups/obvinf.hpp"        // for is_obvio...
+#include "libsemigroups/presentation.hpp"  // for to_ace_string
+#include "libsemigroups/types.hpp"         // for tril
 
 #include "libsemigroups/detail/felsch-graph.hpp"        // for Register...
 #include "libsemigroups/detail/node-managed-graph.hpp"  // for random_a...
@@ -147,6 +148,48 @@ namespace libsemigroups {
                        detail::string_time(delta(tc.start_time())));
         report_no_prefix("{:+<90}\n", "");
       }
+    }
+
+    std::string to_ace_string(ToddCoxeter<std::string> const& tc) {
+      if (tc.kind() != congruence_kind::onesided) {
+        // TODO implement
+        LIBSEMIGROUPS_EXCEPTION(
+            "the argument <tc> (ToddCoxeter) must have kind() == "
+            "congruence_kind::onesided, but found congruence_kind::twosided");
+      }
+      std::string result = presentation::to_ace_string(tc.presentation());
+      // Delete "End;" from the end of result
+      result   = std::string(result.begin(), result.end() - 4);
+      auto sep = "";
+      result += "Subgroup Generators:";
+      for (auto it_even = tc.generating_pairs().begin();
+           it_even != tc.generating_pairs().end();
+           it_even += 2) {
+        auto it_odd = it_even + 1;
+        result += sep;
+        if (!it_even->empty() && !it_odd->empty()) {
+          LIBSEMIGROUPS_EXCEPTION(
+              "expected the generating pairs of the argument <tc> "
+              "(ToddCoxeter) to have 1 item that is empty, but found {}={} "
+              "starting in position {}",
+              *it_even,
+              *it_odd,
+              std::distance(tc.generating_pairs().begin(), it_even));
+          result += fmt::format("{}={}", *it_even, *it_odd);
+        } else if (!it_even->empty()) {
+          result += fmt::format("{}", *it_even);
+        } else if (!it_odd->empty()) {
+          result += fmt::format("{}", *it_odd);
+        }
+        sep = ", ";
+      }
+      // TODO set the options according to those in tc.
+      if (tc.strategy()
+          == ToddCoxeter<std::string>::options::strategy::felsch) {
+        result += "Felsch;\n";
+      }
+      result += ";\nEnd;";
+      return result;
     }
 
   }  // namespace todd_coxeter

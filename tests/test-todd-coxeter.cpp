@@ -3230,7 +3230,7 @@ namespace libsemigroups {
 
     todd_coxeter::add_generating_pair(H, "bc", "");
     H.lookahead_next(1'000'000);
-
+    REQUIRE(todd_coxeter::to_ace_string(H) == "");
     REQUIRE(H.number_of_classes() == 16'384);
 
     REQUIRE(word_graph::is_reachable(H.word_graph(), 0, 0));
