@@ -5241,4 +5241,34 @@ namespace libsemigroups {
     REQUIRE(todd_coxeter::reduce_no_run_no_checks(tc, 0101_w) == 0101_w);
   }
 
+  LIBSEMIGROUPS_TEST_CASE("ToddCoxeter",
+                          "127",
+                          "perform_lookbehind",
+                          "[todd-coxeter][quick]") {
+    Presentation<std::string> p;
+    p.contains_empty_word(true);
+    p.alphabet("bB");
+    presentation::add_inverse_rules(p, "Bb");
+    p.alphabet("abB");
+    presentation::add_rule(p, "aaa", "");
+    presentation::add_rule(p, "baBBBaaBaa", "");
+
+    // KnuthBendix kb(congruence_kind::twosided, p);
+    // kb.process_pending_rules();
+    // kb.run_for(std::chrono::seconds(2));
+
+    ToddCoxeter tc(congruence_kind::twosided, p);
+    tc.lookahead_extent(options::lookahead_extent::full)
+        .strategy(options::strategy::felsch);
+    while (!tc.finished()) {
+      tc.run_for(std::chrono::seconds(1));
+      tc.large_collapse(
+          0.1 * tc.number_of_nodes_active());  // TODO different setting for
+                                               // lookbehind check interval
+      tc.perform_lookbehind(options::do_not_stop_early);
+      tc.perform_lookahead(options::do_not_stop_early);
+    }
+    REQUIRE(tc.number_of_classes() == 333);
+  }
+
 }  // namespace libsemigroups

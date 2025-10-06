@@ -2123,6 +2123,7 @@ namespace libsemigroups {
                           uint64_t       num_active_nodes,
                           uint64_t       num_active_edges) const;
       void add_lookahead_row(ReportCell<5>& rc) const;
+      void add_lookbehind_row(ReportCell<5>& rc) const;
 
       ////////////////////////////////////////////////////////////////////////
       // ToddCoxeterImpl - lookahead - private

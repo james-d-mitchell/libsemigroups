@@ -27,8 +27,8 @@
 #include "constants.hpp"           // for POSITIVE_INFINITY
 #include "exception.hpp"           // for LIBSEMIGROUPS_EXCEPTION
 #include "froidure-pin.hpp"        // for FroidurePin
+#include "knuth-bendix-class.hpp"  // for KnuthBendix
 #include "to-froidure-pin.hpp"     // for to<FroidurePin>
-#include "todd-coxeter-class.hpp"  // for KnuthBendix
 #include "todd-coxeter-class.hpp"  // for ToddCoxeter
 
 namespace libsemigroups {

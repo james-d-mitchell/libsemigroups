@@ -303,16 +303,17 @@ namespace libsemigroups {
                                       killed_at_prev_interval)) {
             break;
           }
-        }
-        if (current >= N && !_ticker_running && reporting_enabled()
-            && delta(start_time) >= std::chrono::milliseconds(500)) {
-          _ticker_running = true;
-          ticker([this]() { report_progress_from_thread(true); });
+          if (!_ticker_running && reporting_enabled()
+              && delta(start_time) >= std::chrono::milliseconds(500)) {
+            _ticker_running = true;
+            ticker([this]() { report_progress_from_thread(true); });
+          }
         }
         if (_word_graph.number_of_coincidences() < large_collapse()) {
           _word_graph.process_coincidences();
           break;
         }
+        _word_graph.process_coincidences();
         standardize(Order::shortlex);
         N = _word_graph.number_of_nodes_active();
         if (lookahead_stop_early(should_stop_early,

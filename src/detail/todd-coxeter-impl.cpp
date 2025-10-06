@@ -1529,6 +1529,7 @@ namespace libsemigroups {
         add_edges_rows(rc, active_nodes, active_edges);
         add_timing_row(rc);
         add_lookahead_row(rc);
+        add_lookbehind_row(rc);
 
         stats_report_stop();
       }
@@ -1717,6 +1718,22 @@ namespace libsemigroups {
            "lookahead progress",
            fmt::format("~{:.1f}%",
                        (p - static_cast<double>(p * r) / N) * 100 / (N - r)));
+      }
+    }
+
+    void ToddCoxeterImpl::add_lookbehind_row(ReportCell<5>& rc) const {
+      if (_state == state::lookbehind && _stats.report_index != 0
+          && this_threads_id() != 0) {
+        rc("{}: {} | {} \n",
+           report_prefix(),
+           "lookbehind progress",
+           fmt::format("~{:.1f}%",
+                       (100.0 * _word_graph.lookahead_cursor()
+                        / number_of_nodes_active())));
+        rc("{}: {} | {} \n",
+           report_prefix(),
+           "coincidences",
+           group_digits(_word_graph.number_of_coincidences()));
       }
     }
 
