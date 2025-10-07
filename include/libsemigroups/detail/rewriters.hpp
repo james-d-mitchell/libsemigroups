@@ -47,6 +47,7 @@ namespace libsemigroups {
     // Rule
     ////////////////////////////////////////////////////////////////////////
 
+    // template <typename ReductionOrder = ShortLexCompare>
     class Rule {
      public:
       using native_word_type = std::string;
@@ -107,6 +108,7 @@ namespace libsemigroups {
       }
 
       void reorder() {
+        // if (ReductionOrder()(_lhs, _rhs)) {
         if (shortlex_compare(_lhs, _rhs)) {
           std::swap(_lhs, _rhs);
         }
