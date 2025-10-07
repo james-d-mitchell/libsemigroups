@@ -293,9 +293,27 @@ namespace libsemigroups {
       rfl.process_pending_rules();
 
       std::string w = "bbabab";
-      rfl.rewrite2(w);
+      rfl.rewrite(w);
 
       REQUIRE(w == "aabbbb");
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("RewriteFromLeft",
+                            "013",
+                            "non-length reducing",
+                            "[no-valgrind][quick]") {
+      auto            rg = ReportGuard(false);
+      RewriteFromLeft rfl;
+
+      rfl.increase_alphabet_size_by(3);
+      rfl.add_rule("a", "bbb");
+      rfl.add_rule("b", "c");
+      rfl.process_pending_rules();
+
+      std::string w = "bbabab";
+      rfl.rewrite(w);
+
+      REQUIRE(w == "");
     }
   }  // namespace detail
 }  // namespace libsemigroups
