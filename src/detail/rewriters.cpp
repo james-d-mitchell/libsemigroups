@@ -648,12 +648,12 @@ namespace libsemigroups {
         current = _rule_trie.traverse_no_checks(current,
                                                 static_cast<letter_type>(x));
 
-        auto rule_it = _rule_map.find(current);
         if (!_rule_trie.node_no_checks(current).terminal()) {
           _rewrite_tmp_buf.push_back(current);
           *v_end = x;
           ++v_end;
         } else {
+          auto rule_it = _rule_map.find(current);
           // Find rule that corresponds to terminal node
           Rule const* rule     = rule_it->second;
           auto        lhs_size = rule->lhs().size();
