@@ -457,14 +457,14 @@ namespace libsemigroups {
       }
 
       size_t const n = stats().min_length_lhs_rule;
-      std::string  w(v.begin() + n - 1, v.end());
+      std::string  w(v.rbegin(), v.rbegin() + v.size() - n + 1);
       v.erase(v.begin() + n - 1, v.end());
 
       RuleLookup lookup;
 
       while (!w.empty()) {
-        v.push_back(w.front());
-        w.erase(w.begin());
+        v.push_back(w.back());
+        w.pop_back();
 
         auto it = _set_rules.find(lookup(v.begin(), v.end()));
         if (it != _set_rules.end()) {
@@ -473,18 +473,23 @@ namespace libsemigroups {
             LIBSEMIGROUPS_ASSERT(detail::is_suffix(
                 v.begin(), v.end(), rule->lhs().cbegin(), rule->lhs().cend()));
             v.erase(v.end() - rule->lhs().size(), v.end());
-            w = rule->rhs() + w;
+            w.append(rule->rhs().rbegin(), rule->rhs().rend());
           }
         }
 
         if (!w.empty() && n > v.size() + 1) {
           if (w.size() < n - v.size()) {
-            v.append(w.begin(), w.end() - 1);
-            w.erase(w.begin(), w.end() - 1);
+            // w = (w.begin(), w.begin() + 1, ..., w.end() - 1)
+            //   = (w.rend() - 1, w.rend() - 2, ..., w.rbegin())
+            v.append(w.rbegin(), w.rend() - 1);
+            w.erase(w.begin() + 1, w.end());
           } else {
-            auto it = w.begin() + n - v.size() - 1;
-            v.append(w.begin(), it);
-            w.erase(w.begin(), it);
+            // if k = n - v.size() - 1
+            // w = (w.rend() - 1, ..., w.rbegin() + k - 1, ..., w.rbegin())
+            //   = (w.begin(), ..., w.end() - k, ..., w.end() - 1)
+            size_t k = n - v.size() - 1;
+            v.append(w.rbegin(), w.rbegin() + k);
+            w.erase(w.end() - k, w.end());
           }
         }
       }
