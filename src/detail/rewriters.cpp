@@ -417,10 +417,10 @@ namespace libsemigroups {
         return;
       }
 
-      auto v_begin = u.begin();
+      auto v_begin = u.begin();  // 0
       auto v_end   = u.begin() + stats().min_length_lhs_rule - 1;
       auto w_begin = v_end;
-      auto w_end   = u.end();
+      auto w_end   = u.end();  // u.size()
 
       RuleLookup lookup;
 
@@ -436,6 +436,7 @@ namespace libsemigroups {
             LIBSEMIGROUPS_ASSERT(detail::is_suffix(
                 v_begin, v_end, rule->lhs().cbegin(), rule->lhs().cend()));
             v_end -= rule->lhs().size();
+            // u.resize(u.size() + rule->rhs() - rule->lhs);
             w_begin -= rule->rhs().size();
             std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
           }
