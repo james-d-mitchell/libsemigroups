@@ -341,6 +341,13 @@ namespace libsemigroups {
       template <typename StringLike>
       void add_rule(StringLike const& lhs, StringLike const& rhs);
 
+      inline void add_rule(char const* lhs, char const* rhs) {
+        if (lhs != rhs) {
+          add_pending_rule(new_rule(
+              lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs)));
+        }
+      }
+
      protected:
       ////////////////////////////////////////////////////////////////////////
       // Member functions - protected
@@ -409,6 +416,7 @@ namespace libsemigroups {
       bool process_pending_rules();
 
       void rewrite(native_word_type& u);
+      void rewrite2(native_word_type& u);
 
       void rewrite(native_word_type& u) const {
         const_cast<RewriteFromLeft*>(this)->rewrite(u);

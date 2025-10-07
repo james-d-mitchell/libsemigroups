@@ -412,7 +412,7 @@ namespace libsemigroups {
     // REWRITE_FROM_LEFT from Sims, p67
     // Caution: this uses the assumption that rules are length reducing, if they
     // are not, then u might not have sufficient space!
-    void RewriteFromLeft::rewrite(native_word_type& u) {
+    void RewriteFromLeft::rewrite2(native_word_type& u) {
       if (u.size() < stats().min_length_lhs_rule) {
         return;
       }
@@ -449,6 +449,46 @@ namespace libsemigroups {
         }
       }
       u.erase(v_end - u.cbegin());
+    }
+
+    void RewriteFromLeft::rewrite(native_word_type& u) {
+      if (u.size() < stats().min_length_lhs_rule) {
+        return;
+      }
+
+      size_t const n = stats().min_length_lhs_rule;
+      std::string  v(u.begin(), u.begin() + n - 1);
+      std::string  w(u.begin() + n - 1, u.end());
+
+      RuleLookup lookup;
+
+      while (!w.empty()) {
+        v.push_back(w.front());
+        w.erase(w.begin());
+
+        auto it = _set_rules.find(lookup(v.begin(), v.end()));
+        if (it != _set_rules.end()) {
+          Rule const* rule = (*it).rule();
+          if (rule->lhs().size() <= static_cast<size_t>(v.size())) {
+            LIBSEMIGROUPS_ASSERT(detail::is_suffix(
+                v.begin(), v.end(), rule->lhs().cbegin(), rule->lhs().cend()));
+            v.erase(v.end() - rule->lhs().size(), v.end());
+            w = rule->rhs() + w;
+          }
+        }
+
+        if (!w.empty() && n > v.size() + 1) {
+          if (w.size() < n - v.size()) {
+            v.append(w.begin(), w.end() - 1);
+            w.erase(w.begin(), w.end() - 1);
+          } else {
+            auto it = w.begin() + n - v.size() - 1;
+            v.append(w.begin(), it);
+            w.erase(w.begin(), it);
+          }
+        }
+      }
+      std::swap(u, v);
     }
 
     void RewriteFromLeft::report_checking_confluence(
@@ -490,8 +530,8 @@ namespace libsemigroups {
           Rule const* rule2 = *it2;
           for (auto it = rule1->lhs().cend() - 1; it >= rule1->lhs().cbegin();
                --it) {
-            // Find longest common prefix of suffix B of rule1.lhs() defined by
-            // it and R = rule2.lhs()
+            // Find longest common prefix of suffix B of rule1.lhs() defined
+            // by it and R = rule2.lhs()
             auto prefix = detail::maximum_common_prefix(it,
                                                         rule1->lhs().cend(),
                                                         rule2->lhs().cbegin(),
@@ -622,8 +662,8 @@ namespace libsemigroups {
       return *this;
     }
 
-    // As with RewriteFromLeft::rewrite, this assumes that all rules are length
-    // reducing.
+    // As with RewriteFromLeft::rewrite, this assumes that all rules are
+    // length reducing.
     void RewriteTrie::rewrite(native_word_type& u) {
       // Check if u is rewriteable
       if (u.size() < stats().min_length_lhs_rule) {
@@ -822,8 +862,8 @@ namespace libsemigroups {
         // the LHS of rule2 corresponds to BC, and |C|=nodes.size() - 1.
         // AB -> X, BC -> Y
         // ABC gets rewritten to XC and AY
-        // TODO(1) remove allocation, use a MultiView, and check equality, then
-        // copy inside the if-condition
+        // TODO(1) remove allocation, use a MultiView, and check equality,
+        // then copy inside the if-condition
         native_word_type word1;
         native_word_type word2;
 

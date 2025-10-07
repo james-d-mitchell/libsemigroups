@@ -266,7 +266,7 @@ namespace libsemigroups {
                             "random example",
                             "[no-valgrind][quick]") {
       auto        rg = ReportGuard(false);
-      RewriteTrie rt = RewriteTrie();
+      RewriteTrie rt;
 
       rt.increase_alphabet_size_by(3);
       rt.add_rule("aaa"_w, "c"_w);
@@ -281,24 +281,21 @@ namespace libsemigroups {
       REQUIRE(!rt.confluent());
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewriteTrie",
-                            "010",
-                            "large example",
-                            "[no-valgrind][extreme]") {
-      auto        rg = ReportGuard(false);
-      RewriteTrie rt = RewriteTrie();
+    LIBSEMIGROUPS_TEST_CASE("RewriteFromLeft",
+                            "012",
+                            "stacks",
+                            "[no-valgrind][quick]") {
+      auto            rg = ReportGuard(false);
+      RewriteFromLeft rfl;
 
-      rt.increase_alphabet_size_by(3);
-      rt.add_rule("aaa"_w, "c"_w);
-      rt.add_rule("bbb"_w, "c"_w);
-      rt.add_rule("ababab"_w, "c"_w);
-      rt.add_rule("ac"_w, "a"_w);
-      rt.add_rule("bc"_w, "b"_w);
-      rt.add_rule("bc"_w, "c"_w);
+      rfl.increase_alphabet_size_by(2);
+      rfl.add_rule("ba", "ab");
+      rfl.process_pending_rules();
 
-      REQUIRE(!rt.confluent());
-      REQUIRE(rt.process_pending_rules());
-      REQUIRE(!rt.confluent());
+      std::string w = "bbabab";
+      rfl.rewrite2(w);
+
+      REQUIRE(w == "aabbbb");
     }
   }  // namespace detail
 }  // namespace libsemigroups
