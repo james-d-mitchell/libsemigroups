@@ -451,14 +451,14 @@ namespace libsemigroups {
       u.erase(v_end - u.cbegin());
     }
 
-    void RewriteFromLeft::rewrite(native_word_type& u) {
-      if (u.size() < stats().min_length_lhs_rule) {
+    void RewriteFromLeft::rewrite(native_word_type& v) {
+      if (v.size() < stats().min_length_lhs_rule) {
         return;
       }
 
       size_t const n = stats().min_length_lhs_rule;
-      std::string  v(u.begin(), u.begin() + n - 1);
-      std::string  w(u.begin() + n - 1, u.end());
+      std::string  w(v.begin() + n - 1, v.end());
+      v.erase(v.begin() + n - 1, v.end());
 
       RuleLookup lookup;
 
@@ -488,7 +488,6 @@ namespace libsemigroups {
           }
         }
       }
-      std::swap(u, v);
     }
 
     void RewriteFromLeft::report_checking_confluence(
@@ -496,7 +495,8 @@ namespace libsemigroups {
         std::chrono::high_resolution_clock::time_point const& start_time)
         const {
       if (reporting_enabled()) {
-        auto total_pairs   = std::pow(Rules::number_of_active_rules(), 2);
+        auto total_pairs = std::pow(Rules::number_of_active_rules(), 2);
+
         auto total_pairs_s = detail::group_digits(total_pairs);
         auto now           = std::chrono::high_resolution_clock::now();
         auto time          = std::chrono::duration_cast<std::chrono::seconds>(
