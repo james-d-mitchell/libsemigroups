@@ -674,7 +674,7 @@ namespace libsemigroups {
 
     // As with RewriteFromLeft::rewrite, this assumes that all rules are
     // length reducing.
-    void RewriteTrie::rewrite(native_word_type& u) {
+    void RewriteTrie::rewrite2(native_word_type& u) {
       // Check if u is rewriteable
       if (u.size() < stats().min_length_lhs_rule) {
         return;
@@ -723,6 +723,44 @@ namespace libsemigroups {
         }
       }
       u.erase(v_end - u.cbegin());
+    }
+
+    void RewriteTrie::rewrite(native_word_type& v) {
+      // Check if v is rewriteable
+      if (v.size() < stats().min_length_lhs_rule) {
+        return;
+      }
+
+      _rewrite_tmp_buf.clear();
+      index_type current = _rule_trie.root;
+      _rewrite_tmp_buf.push_back(current);
+
+      std::string w;  // unread suffix of input word
+      std::swap(v, w);
+      std::reverse(w.begin(), w.end());
+
+      while (!w.empty()) {
+        // Read first letter of w and traverse trie
+        auto x = w.back();
+        w.pop_back();
+        current = _rule_trie.traverse_no_checks(current,
+                                                static_cast<letter_type>(x));
+
+        if (!_rule_trie.node_no_checks(current).terminal()) {
+          _rewrite_tmp_buf.push_back(current);
+          v.push_back(x);
+        } else {
+          Rule const* rule = _rule_map.find(current)->second;
+          // TODO add comment about off by one
+          LIBSEMIGROUPS_ASSERT(rule->lhs().size() <= v.size() + 1);
+          v.erase(v.end() - (rule->lhs().size() - 1), v.end());
+          w.append(rule->rhs().rbegin(), rule->rhs().rend());
+          _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - rule->lhs().size()
+                                     + 1,
+                                 _rewrite_tmp_buf.end());
+          current = _rewrite_tmp_buf.back();
+        }
+      }
     }
 
     bool RewriteTrie::process_pending_rules() {

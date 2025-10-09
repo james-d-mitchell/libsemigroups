@@ -489,6 +489,7 @@ namespace libsemigroups {
 
       // TODO(1) iterators
       void rewrite(native_word_type& u);
+      void rewrite2(native_word_type& u);
 
       void rewrite(Rule* rule) const {
         rewrite(rule->lhs());
