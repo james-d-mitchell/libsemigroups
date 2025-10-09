@@ -458,7 +458,11 @@ namespace libsemigroups {
       }
 
       size_t const n = stats().min_length_lhs_rule;
-      std::string  w(v.rbegin(), v.rbegin() + v.size() - n + 1);
+      // TODO we could try to modify rewrite2 to work with indices rather
+      // than allocating w here every time (indices not iterators because
+      // indices are independent of memory allocation)
+      // TODO we could also, make w a data member like in RewriteTrie
+      std::string w(v.rbegin(), v.rbegin() + v.size() - n + 1);
       v.erase(v.begin() + n - 1, v.end());
 
       RuleLookup lookup;
