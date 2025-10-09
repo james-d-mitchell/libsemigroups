@@ -298,22 +298,24 @@ namespace libsemigroups {
       REQUIRE(w == "aabbbb");
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewriteFromLeft",
-                            "013",
-                            "non-length reducing",
-                            "[no-valgrind][quick]") {
-      auto            rg = ReportGuard(false);
-      RewriteFromLeft rfl;
+    LIBSEMIGROUPS_TEMPLATE_TEST_CASE("Rewriters",
+                                     "013",
+                                     "non-length reducing",
+                                     "[no-valgrind][quick]",
+                                     RewriteFromLeft,
+                                     RewriteTrie) {
+      auto     rg = ReportGuard(false);
+      TestType rewriter;
 
-      rfl.increase_alphabet_size_by(3);
-      rfl.add_rule("a", "bbb");
-      rfl.add_rule("b", "c");
-      rfl.process_pending_rules();
+      rewriter.increase_alphabet_size_by(3);
+      rewriter.add_rule(std::string({0}), std::string({1, 1, 1}));
+      rewriter.add_rule(std::string({1}), std::string({2}));
+      rewriter.process_pending_rules();
 
-      std::string w = "bbabab";
-      rfl.rewrite(w);
+      std::string w = {1, 1, 0, 1, 0, 1};
+      rewriter.rewrite(w);
 
-      REQUIRE(w == "");
+      REQUIRE(w == std::string({2, 2, 2, 2, 2, 2, 2, 2, 2, 2}));
     }
   }  // namespace detail
 }  // namespace libsemigroups
