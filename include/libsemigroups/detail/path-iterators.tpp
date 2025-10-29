@@ -127,15 +127,13 @@ namespace libsemigroups {
                   "forward iterator requires destructible");
 
     template <typename Node>
-    const_pislo_iterator<Node>::~const_pislo_iterator() = default;
+    const_pislo_iterator<Node>::const_pislo_iterator()
+        : _edge(0), _max(), _min(), _queue(), _word_graph(nullptr) {}
 
     template <typename Node>
     const_pislo_iterator<Node>::const_pislo_iterator(
         const_pislo_iterator const&)
         = default;
-
-    template <typename Node>
-    const_pislo_iterator<Node>::const_pislo_iterator() = default;
 
     template <typename Node>
     const_pislo_iterator<Node>&
@@ -152,45 +150,60 @@ namespace libsemigroups {
         = default;
 
     template <typename Node>
+    const_pislo_iterator<Node>::~const_pislo_iterator() = default;
+
+    template <typename Node>
     const_pislo_iterator<Node>::const_pislo_iterator(
         WordGraph<Node> const*                         ptr,
         Node                                           source,
         typename const_pislo_iterator<Node>::size_type min,
         typename const_pislo_iterator<Node>::size_type max)
-        : _length(min >= max ? UNDEFINED : min),
-          _it(),
-          _max(max),
-          _source(source) {
-      if (_length != UNDEFINED) {
-        _it = cbegin_pilo(*ptr, source, _length, _length + 1);
-      } else {
-        _it = cend_pilo(*ptr);
+        : const_pislo_iterator() {
+      _max        = max;
+      _min        = min;
+      _word_graph = ptr;
+      if (source != UNDEFINED && _min <= _max) {
+        _queue.emplace(word_type(), source);
+        if (_min != 0) {
+          operator++();
+        }
       }
     }
 
     template <typename Node>
     const_pislo_iterator<Node> const& const_pislo_iterator<Node>::operator++() {
-      ++_it;
-      if (_it == cend_pilo(_it.word_graph())) {
-        if (_length < _max - 1) {
-          ++_length;
-          _it = cbegin_pilo(_it.word_graph(), _source, _length, _length + 1);
-          if (_it == cend_pilo(_it.word_graph())) {
-            _length = UNDEFINED;
+      if (_queue.empty()) {
+        return *this;
+      }
+      do {
+        node_type target;
+        auto& [path, source] = _queue.front();
+        std::tie(_edge, target)
+            = _word_graph->next_label_and_target_no_checks(source, _edge);
+        if (target != UNDEFINED && _max > 0 && path.size() <= _max - 1) {
+          word_type copy = path;
+          copy.push_back(_edge);
+          _queue.emplace(copy, target);
+          _edge++;
+          if (_queue.back().first.size() >= _min) {
+            break;
           }
         } else {
-          _length = UNDEFINED;
+          _queue.pop();
+          _edge = 0;
         }
-      }
+      } while (!_queue.empty());
+
       return *this;
     }
 
     template <typename Node>
     void const_pislo_iterator<Node>::swap(const_pislo_iterator& that) noexcept {
-      std::swap(_length, that._length);
-      std::swap(_it, that._it);
+      std::swap(_edge, that._edge);
       std::swap(_max, that._max);
-      std::swap(_source, that._source);
+      std::swap(_min, that._min);
+      std::swap(_queue, that._queue);
+      std::swap(_word_graph, that._word_graph);
     }
 
     static_assert(

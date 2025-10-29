@@ -132,8 +132,11 @@ namespace libsemigroups {
 
     REQUIRE(p.min() == 0);
     REQUIRE(p.max() == 0);
-    // REQUIRE(p.order() == Order::shortlex);
     REQUIRE(!p.at_end());
+    REQUIRE(p.order() == Order::shortlex);
+    // REQUIRE(p.at_end());
+    REQUIRE(p.size_hint() == 0);
+    REQUIRE((p | count()) == 1);
 
     expected = {""_w};
     REQUIRE(p.size_hint() == 1);
@@ -1097,5 +1100,71 @@ namespace libsemigroups {
     p.source(0).max(10);
     REQUIRE(p.count() == 1023);
     REQUIRE_NOTHROW((p | Random()).get());
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Paths", "022", "pislo", "[quick]") {
+    auto wg = make<WordGraph<size_t>>(6,
+                                      {{1, 2, UNDEFINED},
+                                       {2, 0, 3},
+                                       {UNDEFINED, UNDEFINED, 3},
+                                       {4},
+                                       {UNDEFINED, 5},
+                                       {3}});
+
+    auto it = cbegin_pislo(wg, 0);
+    REQUIRE(*it == ""_w);
+    ++it;
+    REQUIRE(*it == 0_w);
+    ++it;
+    REQUIRE(*it == 1_w);
+    ++it;
+    REQUIRE(*it == 00_w);
+
+    auto last = it;
+    std::advance(last, 10);
+
+    REQUIRE(std::vector(it, last)
+            == std::vector<word_type>({00_w,
+                                       01_w,
+                                       02_w,
+                                       12_w,
+                                       002_w,
+                                       010_w,
+                                       011_w,
+                                       020_w,
+                                       120_w,
+                                       0020_w}));
+    it = cbegin_pislo(wg, 0, 2, 5);
+    REQUIRE(std::vector(cbegin_pislo(wg, 0, 2, 4), cend_pislo(wg))
+            == std::vector<word_type>({00_w,
+                                       01_w,
+                                       02_w,
+                                       12_w,
+                                       002_w,
+                                       010_w,
+                                       011_w,
+                                       020_w,
+                                       120_w,
+                                       0020_w,
+                                       0100_w,
+                                       0101_w,
+                                       0102_w,
+                                       0112_w,
+                                       0201_w,
+                                       1201_w}));
+  }
+
+  LIBSEMIGROUPS_TEST_CASE("Paths", "023", "pislo", "[quick]") {
+    auto wg = make<WordGraph<size_t>>(6,
+                                      {{1, 2, UNDEFINED},
+                                       {2, 0, 3},
+                                       {UNDEFINED, UNDEFINED, 3},
+                                       {4},
+                                       {UNDEFINED, 5},
+                                       {3}});
+    auto it = cbegin_pislo(wg, 0, 0, 0);
+    REQUIRE(*it == word_type());
+    ++it;
+    REQUIRE(it == cend_pislo(wg));
   }
 }  // namespace libsemigroups

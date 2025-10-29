@@ -26,10 +26,11 @@
 #include <vector>       // for vector, vector<>::const...
 
 #include "libsemigroups/constants.hpp"           // for UNDEFINED, Undefined
-#include "libsemigroups/detail/iterator.hpp"     // for default_postfix_incre...
 #include "libsemigroups/types.hpp"               // for word_type
 #include "libsemigroups/word-graph-helpers.hpp"  // for word_graph
-#include "libsemigroups/word-graph.hpp"
+#include "libsemigroups/word-graph.hpp"          // for WordGraph
+
+#include "libsemigroups/detail/iterator.hpp"  // for default_postfix_incre...
 
 #ifndef LIBSEMIGROUPS_DETAIL_PATH_ITERATORS_HPP_
 #define LIBSEMIGROUPS_DETAIL_PATH_ITERATORS_HPP_
@@ -55,6 +56,7 @@ namespace libsemigroups {
       using iterator_category = std::forward_iterator_tag;
 
      private:
+      // TODO reorder
       value_type             _edges;
       WordGraph<Node> const* _word_graph;
       label_type             _edge;
@@ -129,6 +131,7 @@ namespace libsemigroups {
     class const_pislo_iterator {
      public:
       using node_type       = Node;
+      using label_type      = typename WordGraph<Node>::label_type;
       using value_type      = word_type;
       using size_type       = typename std::vector<value_type>::size_type;
       using difference_type = typename std::vector<value_type>::difference_type;
@@ -139,10 +142,13 @@ namespace libsemigroups {
       using iterator_category = std::forward_iterator_tag;
 
      private:
-      size_type                         _length;
-      detail::const_pilo_iterator<Node> _it;
-      size_type                         _max;
-      node_type                         _source;
+      using queue_value_type = std::pair<word_type, node_type>;
+
+      label_type                   _edge;
+      size_type                    _max;
+      size_type                    _min;
+      std::queue<queue_value_type> _queue;
+      WordGraph<node_type> const*  _word_graph;
 
      public:
       // None of the constructors are noexcept because the corresponding
@@ -157,6 +163,7 @@ namespace libsemigroups {
       const_pislo_iterator& operator=(const_pislo_iterator const&);
 
       const_pislo_iterator& operator=(const_pislo_iterator&&);
+
       ~const_pislo_iterator();
 
       const_pislo_iterator(WordGraph<node_type> const* ptr,
@@ -165,9 +172,17 @@ namespace libsemigroups {
                            size_type                   max);
 
       // noexcept because comparison of detail::const_pilo_iterator is noexcept
+      // TODO to tpp
       [[nodiscard]] bool
       operator==(const_pislo_iterator const& that) const noexcept {
-        return _length == that._length && _it == that._it;
+        if (_word_graph != that._word_graph) {
+          return false;
+        } else if (_queue.empty() && that._queue.empty()) {
+          return true;
+        } else if (!_queue.empty() && !that._queue.empty()) {
+          return _queue.back() == that._queue.back();
+        }
+        return false;
       }
 
       // noexcept because operator== is noexcept
@@ -177,18 +192,15 @@ namespace libsemigroups {
       }
 
       [[nodiscard]] const_reference operator*() const noexcept {
-        return *_it;
+        return _queue.back().first;
       }
 
       [[nodiscard]] const_pointer operator->() const noexcept {
-        return &(*_it);
+        return &_queue.back().first;
       }
 
       [[nodiscard]] node_type target() const noexcept {
-        if (_it == cend_pilo(_it.word_graph()) && _length == UNDEFINED) {
-          return UNDEFINED;
-        }
-        return _it.target();
+        return _queue.back().second;
       }
 
       // prefix - not noexcept because cbegin_pilo isn't
@@ -200,7 +212,7 @@ namespace libsemigroups {
       }
 
       void swap(const_pislo_iterator& that) noexcept;
-    };
+    };  // class const_pislo_iterator
 
     template <typename Node>
     inline void swap(const_pislo_iterator<Node>& x,
@@ -288,7 +300,7 @@ namespace libsemigroups {
 
      private:
       void init_can_reach_target();
-    };
+    };  // class const_pstilo_iterator
 
     template <typename Node>
     inline void swap(const_pstilo_iterator<Node>& x,

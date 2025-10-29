@@ -136,7 +136,7 @@ namespace libsemigroups {
   //!
   //! The iterator returned by this function may still dereferenceable and
   //! incrementable, but may not point to a path in the correct range.
-  //!
+  //
   //! \sa cbegin_pilo
   // not noexcept because constructors of const_pilo_iterator aren't
   template <typename Node>

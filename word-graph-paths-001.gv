@@ -1,0 +1,20 @@
+digraph WordGraph {
+
+  0  [shape="box"]
+    1  [shape="box"]
+    2  [shape="box"]
+    3  [shape="box"]
+    4  [shape="box"]
+    5  [shape="box"]
+    6  [shape="box"]
+    7  [shape="box"]
+    8  [shape="box"]
+    0 -> 1  [color="#00ff00"]
+    0 -> 2  [color="#ff00ff"]
+    2 -> 3  [color="#00ff00"]
+    2 -> 4  [color="#ff00ff"]
+    2 -> 6  [color="#007fff"]
+    4 -> 5  [color="#ff00ff"]
+    6 -> 7  [color="#ff00ff"]
+    7 -> 8  [color="#00ff00"]
+  }
