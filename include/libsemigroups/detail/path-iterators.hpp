@@ -144,6 +144,7 @@ namespace libsemigroups {
      private:
       using queue_value_type = std::pair<word_type, node_type>;
 
+      word_type                    _copy;
       label_type                   _edge;
       size_type                    _max;
       size_type                    _min;
@@ -175,9 +176,7 @@ namespace libsemigroups {
       // TODO to tpp
       [[nodiscard]] bool
       operator==(const_pislo_iterator const& that) const noexcept {
-        if (_word_graph != that._word_graph) {
-          return false;
-        } else if (_queue.empty() && that._queue.empty()) {
+        if (_queue.empty() && that._queue.empty()) {
           return true;
         } else if (!_queue.empty() && !that._queue.empty()) {
           return _queue.back() == that._queue.back();

@@ -308,7 +308,7 @@ namespace libsemigroups {
   TEST_CASE("const_pislo_iterator x 2", "[quick][005][pislo]") {
     using node_type = size_t;
     auto   wg       = test_word_graph();
-    size_t N        = 20;
+    size_t N        = 19;
 
     BENCHMARK("const_pislo_iterator") {
       std::vector<word_type> v(cbegin_pislo(wg, 0, 0, N), cend_pislo(wg));

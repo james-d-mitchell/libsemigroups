@@ -181,9 +181,9 @@ namespace libsemigroups {
         std::tie(_edge, target)
             = _word_graph->next_label_and_target_no_checks(source, _edge);
         if (target != UNDEFINED && _max > 0 && path.size() <= _max - 1) {
-          word_type copy = path;
-          copy.push_back(_edge);
-          _queue.emplace(copy, target);
+          _copy.assign(path.begin(), path.end());
+          _copy.push_back(_edge);
+          _queue.emplace(_copy, target);
           _edge++;
           if (_queue.back().first.size() >= _min) {
             break;
