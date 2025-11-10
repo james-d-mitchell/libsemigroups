@@ -360,7 +360,7 @@ namespace libsemigroups {
     WordRange w;
 
     auto expected2
-        = (w.alphabet_size(2).min(0).max(N) | filter([&wg](auto const& ww) {
+        = (w.alphabet_size(2).min(0).max(N + 1) | filter([&wg](auto const& ww) {
              return v4::word_graph::follow_path(wg, 0, ww) == 4;
            }));
     REQUIRE((expected2 | count()) == 131'062);
@@ -1103,13 +1103,13 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Paths", "022", "pislo", "[quick]") {
-    auto wg = make<WordGraph<size_t>>(6,
-                                      {{1, 2, UNDEFINED},
-                                       {2, 0, 3},
-                                       {UNDEFINED, UNDEFINED, 3},
-                                       {4},
-                                       {UNDEFINED, 5},
-                                       {3}});
+    auto wg = v4::make<WordGraph<size_t>>(6,
+                                          {{1, 2, UNDEFINED},
+                                           {2, 0, 3},
+                                           {UNDEFINED, UNDEFINED, 3},
+                                           {4},
+                                           {UNDEFINED, 5},
+                                           {3}});
 
     auto it = cbegin_pislo(wg, 0);
     REQUIRE(*it == ""_w);
@@ -1155,16 +1155,43 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEST_CASE("Paths", "023", "pislo", "[quick]") {
-    auto wg = make<WordGraph<size_t>>(6,
-                                      {{1, 2, UNDEFINED},
-                                       {2, 0, 3},
-                                       {UNDEFINED, UNDEFINED, 3},
-                                       {4},
-                                       {UNDEFINED, 5},
-                                       {3}});
+    auto wg = v4::make<WordGraph<size_t>>(6,
+                                          {{1, 2, UNDEFINED},
+                                           {2, 0, 3},
+                                           {UNDEFINED, UNDEFINED, 3},
+                                           {4},
+                                           {UNDEFINED, 5},
+                                           {3}});
     auto it = cbegin_pislo(wg, 0, 0, 0);
     REQUIRE(*it == word_type());
     ++it;
     REQUIRE(it == cend_pislo(wg));
   }
+
+  LIBSEMIGROUPS_TEST_CASE("Paths", "024", "number_of_paths", "[quick]") {
+    using namespace rx;
+    auto wg = v4::make<WordGraph<size_t>>(
+        6, {{1, 2}, {3, 4}, {4, 2}, {1, 5}, {5, 4}, {4, 5}});
+    size_t const N = 18;
+
+    REQUIRE(number_of_paths(wg, 0, 4, 0, N, paths::algorithm::dfs) == 131'062);
+    REQUIRE(number_of_paths(wg, 0, 4, 0, N, paths::algorithm::matrix)
+            == 131'062);
+    REQUIRE_THROWS_AS(
+        number_of_paths(wg, 0, 4, 0, N, paths::algorithm::acyclic),
+        LibsemigroupsException);
+    REQUIRE_THROWS_AS(
+        number_of_paths(wg, 0, 4, 0, N, paths::algorithm::trivial),
+        LibsemigroupsException);
+
+    // REQUIRE(number_of_paths(wg, 0, 4, 0, N + 1) == 131'062);
+    // REQUIRE(number_of_paths(wg, 0, 4, 10, N) == 130'556);
+    // REQUIRE(number_of_paths(wg, 0, 4, 10, N + 1) == 130'556);
+    // REQUIRE(number_of_paths(wg, 4, 1, 0, N) == 0);
+    // REQUIRE(number_of_paths(wg, 4, 1, 0, N + 1) == 0);
+    // REQUIRE(number_of_paths(wg, 0, 0, POSITIVE_INFINITY) ==
+    // POSITIVE_INFINITY); REQUIRE(number_of_paths(wg, 0, 0, 10) == 1'023);
+    // REQUIRE(number_of_paths(wg, 0, 0, 11) == 1'023);
+  }
+
 }  // namespace libsemigroups
