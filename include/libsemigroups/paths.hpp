@@ -281,8 +281,9 @@ namespace libsemigroups {
   //! \sa cbegin_pstilo
   // not noexcept because detail::const_pstilo_iterator constructors aren't
   template <typename Node>
-  [[nodiscard]] auto cend_pstilo(WordGraph<Node> const& wg) {
-    return detail::const_pstilo_iterator<Node>(&wg, 0, 0, 0, 0);
+  [[nodiscard]] auto cend_pstilo(WordGraph<Node> const&) {
+    // TODO deprecate the one arg version and implement the 0-arg version
+    return detail::const_pstilo_iterator<Node>();
   }
 
   //! \relates Paths

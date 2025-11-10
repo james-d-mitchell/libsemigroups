@@ -257,8 +257,8 @@ namespace libsemigroups {
           _max(max),
           _nodes(),
           _target(target) {
-      if (_min < _max) {
-        _nodes.push_back(source);
+      _nodes.push_back(source);
+      if (_min != 0 || source != _target) {
         ++(*this);
       }
     }
@@ -272,18 +272,13 @@ namespace libsemigroups {
         // first call
         _edge = 0;
         init_can_reach_target();
-        if (_min == 0 && _nodes.front() == _target) {
-          // special case if the source == target, and we allow words of
-          // length 0, then we return the empty word here.
-          return *this;
-        }
       }
 
       do {
         node_type next;
         std::tie(_edge, next) = _word_graph->next_label_and_target_no_checks(
             _nodes.back(), _edge);
-        if (next != UNDEFINED && _edges.size() < _max - 1) {
+        if (next != UNDEFINED && _edges.size() < _max) {
           // Avoid infinite loops when we can never reach _target
           if (_can_reach_target[next]) {
             _nodes.push_back(next);

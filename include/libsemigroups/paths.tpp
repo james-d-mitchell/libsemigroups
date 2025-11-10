@@ -42,7 +42,7 @@ namespace libsemigroups {
         } else {
           // TODO(2) it's easy for number_of_words to exceed 2 ^ 64, so
           // better do something more intelligent here to avoid this case.
-          return number_of_words(wg.out_degree(), min, max);
+          return number_of_words(wg.out_degree(), min, max + 1);
         }
       }
       // Some edges are not defined ...
@@ -164,7 +164,7 @@ namespace libsemigroups {
 #pragma GCC diagnostic pop
 #endif
       uint64_t total = 0;
-      for (size_t i = min; i < max; ++i) {
+      for (size_t i = min; i <= max; ++i) {
         uint64_t add = acc(source, target);
         if (add == 0 && acc.row(source).isZero()) {
           break;
@@ -177,7 +177,7 @@ namespace libsemigroups {
       auto         tmp   = am;
       auto         acc   = matrix::pow(am, min);
       size_t       total = 0;
-      for (size_t i = min; i < max; ++i) {
+      for (size_t i = min; i <= max; ++i) {
         uint64_t add = acc(source, target);
 
         if (add == 0
@@ -281,7 +281,7 @@ namespace libsemigroups {
       // Columns correspond to path lengths, rows to nodes in the graph
       // TODO(2) replace with DynamicTriangularArray2
       auto number_paths = detail::DynamicArray2<uint64_t>(
-          std::min(topo.size(), max),
+          std::min(max + 1, topo.size()),
           *std::max_element(topo.cbegin(), topo.cend()) + 1,
           0);
 
@@ -305,7 +305,7 @@ namespace libsemigroups {
       }
       return std::accumulate(number_paths.cbegin_row(source) + min,
                              number_paths.cbegin_row(source)
-                                 + std::min(topo.size(), max),
+                                 + std::min(topo.size(), max + 1),
                              static_cast<uint64_t>(0));
     }
 
