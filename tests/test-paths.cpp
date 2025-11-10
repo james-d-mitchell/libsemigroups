@@ -81,7 +81,7 @@ namespace libsemigroups {
     p.source(0);
     REQUIRE(begin(p) != end(p));
 
-    // p.order(Order::shortlex); TODO uncomment
+    p.order(Order::shortlex);
 
     REQUIRE((p | count()) == 100);
     REQUIRE((p | skip_n(3)).get() == 010_w);
@@ -193,9 +193,8 @@ namespace libsemigroups {
     REQUIRE(p.get() == ""_w);
     REQUIRE((p | count()) == 201);
 
-    // TODO uncomment
-    // p.order(Order::shortlex);
-    // REQUIRE((p | count()) == 200);
+    p.order(Order::shortlex);
+    REQUIRE((p | count()) == 201);
   }
 
   LIBSEMIGROUPS_TEST_CASE("Paths", "003", "#2", "[quick]") {
@@ -214,16 +213,16 @@ namespace libsemigroups {
     REQUIRE((p | to_vector())
             == std::vector({{}, 0_w, 00_w, 01_w, 1_w, 10_w, 11_w}));
 
-    // p.order(Order::shortlex).source(0).min(0).max(3);
-    // REQUIRE((p | count()) == 7);
-    // REQUIRE((p | to_vector())
-    //         == std::vector({{}, 0_w, 1_w, 00_w, 01_w, 10_w, 11_w}));
-    // REQUIRE((p | count()) == 7);
+    p.order(Order::shortlex).source(0).min(0).max(2);
+    REQUIRE((p | count()) == 7);
+    REQUIRE((p | to_vector())
+            == std::vector({{}, 0_w, 1_w, 00_w, 01_w, 10_w, 11_w}));
+    REQUIRE((p | count()) == 7);
 
-    // p.order(Order::shortlex);
-    // REQUIRE((p | count()) == 7);
-    // REQUIRE((p | to_vector())
-    //         == std::vector({{}, 0_w, 1_w, 00_w, 01_w, 10_w, 11_w}));
+    p.order(Order::shortlex);
+    REQUIRE((p | count()) == 7);
+    REQUIRE((p | to_vector())
+            == std::vector({{}, 0_w, 1_w, 00_w, 01_w, 10_w, 11_w}));
 
     p.init(wg).order(Order::lex).source(0);
     REQUIRE(p.min() == 0);
@@ -246,24 +245,23 @@ namespace libsemigroups {
                             110_w,
                             111_w}));
 
-    // TODO uncomment
-    // p.order(Order::shortlex);
-    // REQUIRE((p | to_vector())
-    //         == std::vector({{},
-    //                         0_w,
-    //                         1_w,
-    //                         00_w,
-    //                         01_w,
-    //                         10_w,
-    //                         11_w,
-    //                         000_w,
-    //                         001_w,
-    //                         010_w,
-    //                         011_w,
-    //                         100_w,
-    //                         101_w,
-    //                         110_w,
-    //                         111_w}));
+    p.order(Order::shortlex);
+    REQUIRE((p | to_vector())
+            == std::vector({{},
+                            0_w,
+                            1_w,
+                            00_w,
+                            01_w,
+                            10_w,
+                            11_w,
+                            000_w,
+                            001_w,
+                            010_w,
+                            011_w,
+                            100_w,
+                            101_w,
+                            110_w,
+                            111_w}));
 
     p.order(Order::lex).min(1);
     REQUIRE((p | to_vector())
@@ -282,38 +280,35 @@ namespace libsemigroups {
                             110_w,
                             111_w}));
 
-    // TODO uncomment
-    // p.order(Order::shortlex);
-    // REQUIRE((p | to_vector())
-    //         == std::vector({0_w,
-    //                         1_w,
-    //                         00_w,
-    //                         01_w,
-    //                         10_w,
-    //                         11_w,
-    //                         000_w,
-    //                         001_w,
-    //                         010_w,
-    //                         011_w,
-    //                         100_w,
-    //                         101_w,
-    //                         110_w,
-    //                         111_w}));
+    p.order(Order::shortlex);
+    REQUIRE((p | to_vector())
+            == std::vector({0_w,
+                            1_w,
+                            00_w,
+                            01_w,
+                            10_w,
+                            11_w,
+                            000_w,
+                            001_w,
+                            010_w,
+                            011_w,
+                            100_w,
+                            101_w,
+                            110_w,
+                            111_w}));
     p.order(Order::lex).source(2).min(1);
     REQUIRE((p | to_vector())
             == std::vector({0_w, 00_w, 01_w, 1_w, 10_w, 11_w}));
 
-    // TODO uncomment
-    // p.order(Order::shortlex);
-    // REQUIRE((p | to_vector())
-    //         == std::vector({0_w, 1_w, 00_w, 01_w, 10_w, 11_w}));
+    p.order(Order::shortlex);
+    REQUIRE((p | to_vector())
+            == std::vector({0_w, 1_w, 00_w, 01_w, 10_w, 11_w}));
 
     p.order(Order::lex).source(2).min(2).max(3);
     REQUIRE((p | to_vector()) == std::vector({00_w, 01_w, 10_w, 11_w}));
 
-    // TODO uncomment
-    // p.order(Order::shortlex);
-    // REQUIRE((p | to_vector()) == std::vector({00_w, 01_w, 10_w, 11_w}));
+    p.order(Order::shortlex);
+    REQUIRE((p | to_vector()) == std::vector({00_w, 01_w, 10_w, 11_w}));
   }
 
   LIBSEMIGROUPS_TEST_CASE("Paths", "004", "#3", "[quick][no-valgrind]") {
@@ -596,21 +591,21 @@ namespace libsemigroups {
     REQUIRE_THROWS_AS(cbegin_pilo(wg, 6), LibsemigroupsException);
     REQUIRE(cbegin_pilo(wg, 0, 1, 0) == cend_pilo(wg));
 
-    // REQUIRE_THROWS_AS(cbegin_pislo(wg, 6), LibsemigroupsException);
-    // REQUIRE(cbegin_pislo(wg, 0, 1, 1) == cend_pislo(wg));
+    REQUIRE_THROWS_AS(cbegin_pislo(wg, 6), LibsemigroupsException);
+    REQUIRE(cbegin_pislo(wg, 0, 1, 0) == cend_pislo(wg));
 
     REQUIRE_THROWS_AS(cbegin_pilo(wg, 6), LibsemigroupsException);
     REQUIRE(cbegin_pilo(wg, 0, 1, 0) == cend_pilo(wg));
 
-    // REQUIRE_THROWS_AS(cbegin_pislo(wg, 6), LibsemigroupsException);
-    // REQUIRE(cbegin_pislo(wg, 0, 1, 1) == cend_pislo(wg));
+    REQUIRE_THROWS_AS(cbegin_pislo(wg, 6), LibsemigroupsException);
+    REQUIRE(cbegin_pislo(wg, 0, 1, 0) == cend_pislo(wg));
 
     verify_forward_iterator_requirements(cbegin_pilo(wg, 0));
     verify_forward_iterator_requirements(cbegin_pilo(wg, 0));
     verify_forward_iterator_requirements(cbegin_pstilo(wg, 0, 1));
 
-    // verify_forward_iterator_requirements(cbegin_pislo(wg, 0));
-    // verify_forward_iterator_requirements(cbegin_pislo(wg, 0));
+    verify_forward_iterator_requirements(cbegin_pislo(wg, 0));
+    verify_forward_iterator_requirements(cbegin_pislo(wg, 0));
     // verify_forward_iterator_requirements(cbegin_pstislo(wg, 0, 1));
   }
 

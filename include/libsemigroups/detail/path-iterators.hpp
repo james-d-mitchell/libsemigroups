@@ -387,7 +387,7 @@ namespace libsemigroups {
         std::swap(_target, that._target);
         std::swap(_end, that._end);
       }
-    };
+    };  // class const_pstislo_iterator
 
     template <typename Node>
     inline void swap(const_pstislo_iterator<Node>& x,
