@@ -57,11 +57,9 @@ namespace libsemigroups {
           _min(min),
           _max(max),
           _nodes() {
-      if (_min < _max) {
-        _nodes.push_back(source);
-        if (_min != 0) {
-          ++(*this);
-        }
+      _nodes.push_back(source);
+      if (_min != 0) {
+        ++(*this);
       }
     }
 
@@ -78,7 +76,7 @@ namespace libsemigroups {
         node_type next;
         std::tie(_edge, next) = _word_graph->next_label_and_target_no_checks(
             _nodes.back(), _edge);
-        if (next != UNDEFINED && _edges.size() < _max - 1) {
+        if (next != UNDEFINED && _edges.size() < _max) {
           _nodes.push_back(next);
           _edges.push_back(_edge);
           _edge = 0;

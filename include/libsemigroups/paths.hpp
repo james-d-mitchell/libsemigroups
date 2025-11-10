@@ -140,8 +140,8 @@ namespace libsemigroups {
   //! \sa cbegin_pilo
   // not noexcept because constructors of const_pilo_iterator aren't
   template <typename Node>
-  [[nodiscard]] auto cend_pilo(WordGraph<Node> const& wg) {
-    return detail::const_pilo_iterator<Node>(&wg, 0, 0, 0);
+  [[nodiscard]] auto cend_pilo(WordGraph<Node> const&) {
+    return detail::const_pilo_iterator<Node>();
   }
 
   //! \relates Paths
@@ -753,8 +753,7 @@ namespace libsemigroups {
     //! `source() != UNDEFINED` before calling this function.
     output_type get() const {
       set_iterator_no_checks();
-      return std::visit(
-          [](auto& it) -> auto const& { return *it; }, _current);
+      return std::visit([](auto& it) -> auto const& { return *it; }, _current);
     }
 
     //! \brief Advance to the next path in the range.

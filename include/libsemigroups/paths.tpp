@@ -32,7 +32,7 @@ namespace libsemigroups {
                                      Node2                   source,
                                      size_t                  min,
                                      size_t                  max) {
-      if (min >= max) {
+      if (min > max) {
         return 0;
       } else if (v4::word_graph::is_complete(wg)) {
         // every edge is defined, and so the graph is not acyclic, and so the
@@ -59,7 +59,7 @@ namespace libsemigroups {
                                      Node2                   target,
                                      size_t                  min,
                                      size_t                  max) {
-      if (min >= max || !v4::word_graph::is_reachable(wg, source, target)) {
+      if (min > max || !v4::word_graph::is_reachable(wg, source, target)) {
         return 0;
       } else if (!v4::word_graph::is_acyclic(wg, source, target)
                  && max == POSITIVE_INFINITY) {
@@ -85,7 +85,7 @@ namespace libsemigroups {
 #pragma GCC diagnostic pop
 #endif
       uint64_t total = 0;
-      for (size_t i = min; i < max; ++i) {
+      for (size_t i = min; i <= max; ++i) {
         uint64_t add = acc.row(source).sum();
         if (add == 0) {
           break;
@@ -216,7 +216,7 @@ namespace libsemigroups {
       // Columns correspond to path lengths, rows to nodes in the graph
       // TODO(2) replace with DynamicTriangularArray2
       auto number_paths = detail::DynamicArray2<uint64_t>(
-          std::min(max, topo.size()),
+          std::min(max + 1, topo.size()),
           *std::max_element(topo.cbegin(), topo.cend()) + 1,
           0);
       number_paths.set(topo[0], 0, 1);
@@ -227,7 +227,7 @@ namespace libsemigroups {
           if (*n != UNDEFINED) {
             // there are no paths longer than m + 1 from the m-th entry in
             // the topological sort.
-            for (size_t i = 1; i < std::min(max, m + 1); ++i) {
+            for (size_t i = 1; i <= std::min(max, m); ++i) {
               number_paths.set(topo[m],
                                i,
                                number_paths.get(*n, i - 1)
@@ -238,7 +238,7 @@ namespace libsemigroups {
       }
       return std::accumulate(number_paths.cbegin_row(source) + min,
                              number_paths.cbegin_row(source)
-                                 + std::min(topo.size(), max),
+                                 + std::min(topo.size(), max + 1),
                              static_cast<uint64_t>(0));
     }
 
@@ -254,7 +254,7 @@ namespace libsemigroups {
         LIBSEMIGROUPS_EXCEPTION("the subdigraph induced by the nodes reachable "
                                 "from {} is not acyclic",
                                 source);
-      } else if ((max == 1 && source != target)
+      } else if ((max == 0 && source != target)
                  || (min != 0 && source == target)) {
         return 0;
       } else if (source == target) {
@@ -294,7 +294,7 @@ namespace libsemigroups {
           if (*n != UNDEFINED && lookup[*n]) {
             // there are no paths longer than m + 1 from the m-th entry in
             // the topological sort.
-            for (size_t i = 1; i < std::min(max, m + 1); ++i) {
+            for (size_t i = 1; i <= std::min(max, m); ++i) {
               number_paths.set(topo[m],
                                i,
                                number_paths.get(*n, i - 1)
@@ -349,7 +349,7 @@ namespace libsemigroups {
                                              Node2                   source,
                                              size_t                  min,
                                              size_t                  max) {
-    if (min >= max || v4::word_graph::is_complete(wg)) {
+    if (min > max || v4::word_graph::is_complete(wg)) {
       return paths::algorithm::trivial;
     }
 
@@ -407,7 +407,7 @@ namespace libsemigroups {
                                              size_t                  min,
                                              size_t                  max) {
     bool acyclic = v4::word_graph::is_acyclic(wg, source, target);
-    if (min >= max || !v4::word_graph::is_reachable(wg, source, target)
+    if (min > max || !v4::word_graph::is_reachable(wg, source, target)
         || (!acyclic && max == POSITIVE_INFINITY)) {
       return paths::algorithm::trivial;
     } else if (acyclic && v4::word_graph::is_acyclic(wg, source)) {
@@ -455,6 +455,10 @@ namespace libsemigroups {
             number_of_paths_algorithm(wg, source, target, min, max));
     }
   }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Paths class
+  ////////////////////////////////////////////////////////////////////////
 
   template <typename Node>
   Paths<Node>::Paths(Paths const&) = default;
