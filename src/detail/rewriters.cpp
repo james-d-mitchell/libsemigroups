@@ -54,22 +54,6 @@ namespace libsemigroups {
     }
 
     ////////////////////////////////////////////////////////////////////////
-    // RuleLookup
-    ////////////////////////////////////////////////////////////////////////
-
-    // Reverse lex order
-    bool RuleLookup::operator<(RuleLookup const& that) const {
-      auto it_this = _last - 1;
-      auto it_that = that._last - 1;
-      while (it_this > _first && it_that > that._first
-             && *it_this == *it_that) {
-        --it_that;
-        --it_this;
-      }
-      return *it_this < *it_that;
-    }
-
-    ////////////////////////////////////////////////////////////////////////
     // Rules
     ////////////////////////////////////////////////////////////////////////
 
