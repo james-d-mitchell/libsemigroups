@@ -29,12 +29,15 @@
 #include <string>         // for basic_string, operator==
 #include <unordered_map>  // for unordered_map
 
-#include "libsemigroups/debug.hpp"  // for LIBSEMIGROUPS_ASSERT
-#include "libsemigroups/order.hpp"  // for shortlex_compare
-#include "libsemigroups/types.hpp"  // for u8string
+#include "libsemigroups/debug.hpp"   // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups/order.hpp"   // for shortlex_compare
+#include "libsemigroups/runner.hpp"  // for Ticker
+#include "libsemigroups/types.hpp"   // for u8string
 
 #include "aho-corasick-impl.hpp"  // for AhoCorasickImpl
+#include "guard.hpp"              // for Guard
 #include "multi-view.hpp"         // for MultiView
+#include "report.hpp"             // for reporting_enabled
 
 // TODO(2) Add a KnuthBendixImpl pointer to the rewriter class so that overlap
 // detection can be handled by the rewriter (and therefore depend on the
@@ -277,7 +280,8 @@ namespace libsemigroups {
     // RewriteBase
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteBase : public Rules<> {
+    template <typename ReductionOrder = ShortLexCompare>
+    class RewriteBase : public Rules<ReductionOrder> {
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
       size_t                    _max_pending_rules;
@@ -290,12 +294,12 @@ namespace libsemigroups {
         checking_confluence
       };
 
-      std::vector<Rule<>*> _pending_rules;
-      State                _state;
-      bool                 _ticker_running;
+      std::vector<Rule<ReductionOrder>*> _pending_rules;
+      State                              _state;
+      bool                               _ticker_running;
 
      public:
-      using native_word_type = Rule<>::native_word_type;
+      using native_word_type = typename Rule<ReductionOrder>::native_word_type;
 
       ////////////////////////////////////////////////////////////////////////
       // Constructors + inits
@@ -311,6 +315,11 @@ namespace libsemigroups {
       RewriteBase& operator=(RewriteBase&& that);
 
       virtual ~RewriteBase();
+
+      using Rules<ReductionOrder>::copy_rule;
+      using Rules<ReductionOrder>::number_of_active_rules;
+      using Rules<ReductionOrder>::number_of_inactive_rules;
+      using Rules<ReductionOrder>::stats;
 
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
@@ -343,14 +352,14 @@ namespace libsemigroups {
         return _pending_rules.size();
       }
 
-      Rule<>* next_pending_rule();
+      Rule<ReductionOrder>* next_pending_rule();
 
       template <typename StringLike>
       void add_rule(StringLike const& lhs, StringLike const& rhs);
 
       inline void add_rule(char const* lhs, char const* rhs) {
         if (lhs != rhs) {
-          add_pending_rule(new_rule(
+          add_pending_rule(Rules<ReductionOrder>::new_rule(
               lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs)));
         }
       }
@@ -369,7 +378,7 @@ namespace libsemigroups {
         report_progress_from_thread(0, start_time);
       }
 
-      bool add_pending_rule(Rule<>* rule);
+      bool add_pending_rule(Rule<ReductionOrder>* rule);
 
      private:
       virtual bool confluent_impl(std::atomic_uint64_t& seen) = 0;
@@ -386,11 +395,13 @@ namespace libsemigroups {
     };  // class RewriteBase
 
     // RewriteBase out-of-lined mem fn template
+    template <typename ReductionOrder>
     template <typename StringLike>
-    void RewriteBase::add_rule(StringLike const& lhs, StringLike const& rhs) {
+    void RewriteBase<ReductionOrder>::add_rule(StringLike const& lhs,
+                                               StringLike const& rhs) {
       if (lhs != rhs) {
-        add_pending_rule(
-            new_rule(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()));
+        add_pending_rule(Rules<ReductionOrder>::new_rule(
+            lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()));
       }
     }
 
@@ -398,13 +409,13 @@ namespace libsemigroups {
     // RewriteFromLeft
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteFromLeft : public RewriteBase {
+    class RewriteFromLeft : public RewriteBase<> {
       std::set<RuleLookup<>> _set_rules;
 
      public:
       using native_word_type = Rule<>::native_word_type;
 
-      using RewriteBase::add_rule;
+      using RewriteBase<>::add_rule;
 
       RewriteFromLeft() = default;
 
@@ -451,7 +462,7 @@ namespace libsemigroups {
     // RewriteTrie
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteTrie : public RewriteBase {
+    class RewriteTrie : public RewriteBase<> {
      public:
       using index_type    = AhoCorasickImpl::index_type;
       using iterator      = native_word_type::iterator;
@@ -469,8 +480,8 @@ namespace libsemigroups {
      public:
       using Rules<>::stats;
 
-      using RewriteBase::add_rule;
-      using RewriteBase::cached_confluent;
+      using RewriteBase<>::add_rule;
+      using RewriteBase<>::cached_confluent;
 
       RewriteTrie();
 
