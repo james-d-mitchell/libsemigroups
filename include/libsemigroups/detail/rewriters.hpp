@@ -158,11 +158,14 @@ namespace libsemigroups {
     // Rules
     ////////////////////////////////////////////////////////////////////////
 
+    template <typename ReductionOrder = ShortLexCompare>
     class Rules {
+      using list_type = std::list<Rule<ReductionOrder>*>;
+
      public:
-      using iterator               = std::list<Rule<>*>::iterator;
-      using const_iterator         = std::list<Rule<>*>::const_iterator;
-      using const_reverse_iterator = std::list<Rule<>*>::const_reverse_iterator;
+      using iterator               = typename list_type::iterator;
+      using const_iterator         = typename list_type::const_iterator;
+      using const_reverse_iterator = typename list_type::const_reverse_iterator;
 
      private:
       struct Stats {
@@ -181,10 +184,10 @@ namespace libsemigroups {
         uint64_t total_rules;
       };
 
-      std::list<Rule<>*>      _active_rules;
-      std::array<iterator, 2> _cursors;
-      std::list<Rule<>*>      _inactive_rules;
-      mutable Stats           _stats;
+      std::list<Rule<ReductionOrder>*> _active_rules;
+      std::array<iterator, 2>          _cursors;
+      std::list<Rule<ReductionOrder>*> _inactive_rules;
+      mutable Stats                    _stats;
 
      public:
       Rules() = default;
@@ -244,36 +247,37 @@ namespace libsemigroups {
         return _stats;
       }
 
-      void add_rule(Rule<>* rule);
+      void add_rule(Rule<ReductionOrder>* rule);
 
      protected:
       template <typename Iterator>
-      [[nodiscard]] Rule<>* new_rule(Iterator begin_lhs,
-                                     Iterator end_lhs,
-                                     Iterator begin_rhs,
-                                     Iterator end_rhs) {
-        Rule<>* rule = new_rule();
+      [[nodiscard]] Rule<ReductionOrder>* new_rule(Iterator begin_lhs,
+                                                   Iterator end_lhs,
+                                                   Iterator begin_rhs,
+                                                   Iterator end_rhs) {
+        Rule<ReductionOrder>* rule = new_rule();
         rule->lhs().assign(begin_lhs, end_lhs);
         rule->rhs().assign(begin_rhs, end_rhs);
         rule->reorder();
         return rule;
       }
 
-      [[nodiscard]] Rule<>*  copy_rule(Rule<> const* rule);
+      [[nodiscard]] Rule<ReductionOrder>*
+                             copy_rule(Rule<ReductionOrder> const* rule);
       [[nodiscard]] iterator erase_from_active_rules(iterator it);
-      void                   add_inactive_rule(Rule<>* rule) {
+      void                   add_inactive_rule(Rule<ReductionOrder>* rule) {
         _inactive_rules.push_back(rule);
       }
 
      private:
-      [[nodiscard]] Rule<>* new_rule();
+      [[nodiscard]] Rule<ReductionOrder>* new_rule();
     };  // class Rules
 
     ////////////////////////////////////////////////////////////////////////
     // RewriteBase
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteBase : public Rules {
+    class RewriteBase : public Rules<> {
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
       size_t                    _max_pending_rules;
@@ -463,7 +467,7 @@ namespace libsemigroups {
       bool                                    _ticker_running;
 
      public:
-      using Rules::stats;
+      using Rules<>::stats;
 
       using RewriteBase::add_rule;
       using RewriteBase::cached_confluent;
@@ -504,7 +508,7 @@ namespace libsemigroups {
 
      private:
       void add_rule(Rule<>* rule) {
-        Rules::add_rule(rule);
+        Rules<>::add_rule(rule);
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
                                                         rule->lhs().cend());
         _rule_map.emplace(node, rule);
@@ -515,7 +519,7 @@ namespace libsemigroups {
                                                index_type    current_node,
                                                size_t backtrack_depth) const;
 
-      Rules::iterator make_active_rule_pending(Rules::iterator it);
+      Rules<>::iterator make_active_rule_pending(Rules<>::iterator it);
 
       bool confluent_impl(std::atomic_uint64_t&) override;
 
