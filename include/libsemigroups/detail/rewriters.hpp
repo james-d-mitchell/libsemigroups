@@ -119,25 +119,26 @@ namespace libsemigroups {
     // RuleLookup
     ////////////////////////////////////////////////////////////////////////
 
+    template <typename ReductionOrder = ShortLexCompare>
     class RuleLookup {
      public:
-      using native_word_type = Rule<>::native_word_type;
+      using native_word_type = typename Rule<ReductionOrder>::native_word_type;
 
       RuleLookup() : _rule(nullptr) {}
 
-      explicit RuleLookup(Rule<>* rule)
+      explicit RuleLookup(Rule<ReductionOrder>* rule)
           : _first(rule->lhs().cbegin()),
             _last(rule->lhs().cend()),
             _rule(rule) {}
 
-      RuleLookup& operator()(native_word_type::iterator first,
-                             native_word_type::iterator last) {
+      RuleLookup& operator()(typename native_word_type::iterator first,
+                             typename native_word_type::iterator last) {
         _first = first;
         _last  = last;
         return *this;
       }
 
-      Rule<> const* rule() const {
+      Rule<ReductionOrder> const* rule() const {
         return _rule;
       }
 
@@ -148,9 +149,9 @@ namespace libsemigroups {
       bool operator<(RuleLookup const& that) const;
 
      private:
-      native_word_type::const_iterator _first;
-      native_word_type::const_iterator _last;
-      Rule<> const*                    _rule;
+      typename native_word_type::const_iterator _first;
+      typename native_word_type::const_iterator _last;
+      Rule<ReductionOrder> const*               _rule;
     };  // class RuleLookup
 
     ////////////////////////////////////////////////////////////////////////
@@ -394,7 +395,7 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
 
     class RewriteFromLeft : public RewriteBase {
-      std::set<RuleLookup> _set_rules;
+      std::set<RuleLookup<>> _set_rules;
 
      public:
       using native_word_type = Rule<>::native_word_type;
@@ -528,4 +529,6 @@ namespace libsemigroups {
     };
   }  // namespace detail
 }  // namespace libsemigroups
+
+#include "rewriters.tpp"
 #endif  // LIBSEMIGROUPS_DETAIL_REWRITERS_HPP_
