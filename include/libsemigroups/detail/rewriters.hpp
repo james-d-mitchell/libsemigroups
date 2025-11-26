@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file contains the implementation of a Rule object containers for Rule
-// objects. It also includes rewriter classes that can be used to rewrite
+// This file contains the implementation of a Rule<> object containers for
+// Rule<> objects. It also includes rewriter classes that can be used to rewrite
 // strings relative to a collection of rules.
 
 #ifndef LIBSEMIGROUPS_DETAIL_REWRITERS_HPP_
@@ -44,10 +44,10 @@ namespace libsemigroups {
   namespace detail {
 
     ////////////////////////////////////////////////////////////////////////
-    // Rule
+    // Rule<>
     ////////////////////////////////////////////////////////////////////////
 
-    // template <typename ReductionOrder = ShortLexCompare>
+    template <typename ReductionOrder = ShortLexCompare>
     class Rule {
      public:
       using native_word_type = std::string;
@@ -108,8 +108,8 @@ namespace libsemigroups {
       }
 
       void reorder() {
-        // if (ReductionOrder()(_lhs, _rhs)) {
-        if (shortlex_compare(_lhs, _rhs)) {
+        if (ReductionOrder()(_lhs, _rhs)) {
+          // if (shortlex_compare(_lhs, _rhs)) {
           std::swap(_lhs, _rhs);
         }
       }
@@ -121,11 +121,11 @@ namespace libsemigroups {
 
     class RuleLookup {
      public:
-      using native_word_type = Rule::native_word_type;
+      using native_word_type = Rule<>::native_word_type;
 
       RuleLookup() : _rule(nullptr) {}
 
-      explicit RuleLookup(Rule* rule)
+      explicit RuleLookup(Rule<>* rule)
           : _first(rule->lhs().cbegin()),
             _last(rule->lhs().cend()),
             _rule(rule) {}
@@ -137,7 +137,7 @@ namespace libsemigroups {
         return *this;
       }
 
-      Rule const* rule() const {
+      Rule<> const* rule() const {
         return _rule;
       }
 
@@ -150,7 +150,7 @@ namespace libsemigroups {
      private:
       native_word_type::const_iterator _first;
       native_word_type::const_iterator _last;
-      Rule const*                      _rule;
+      Rule<> const*                    _rule;
     };  // class RuleLookup
 
     ////////////////////////////////////////////////////////////////////////
@@ -159,9 +159,9 @@ namespace libsemigroups {
 
     class Rules {
      public:
-      using iterator               = std::list<Rule*>::iterator;
-      using const_iterator         = std::list<Rule*>::const_iterator;
-      using const_reverse_iterator = std::list<Rule*>::const_reverse_iterator;
+      using iterator               = std::list<Rule<>*>::iterator;
+      using const_iterator         = std::list<Rule<>*>::const_iterator;
+      using const_reverse_iterator = std::list<Rule<>*>::const_reverse_iterator;
 
      private:
       struct Stats {
@@ -180,9 +180,9 @@ namespace libsemigroups {
         uint64_t total_rules;
       };
 
-      std::list<Rule*>        _active_rules;
+      std::list<Rule<>*>      _active_rules;
       std::array<iterator, 2> _cursors;
-      std::list<Rule*>        _inactive_rules;
+      std::list<Rule<>*>      _inactive_rules;
       mutable Stats           _stats;
 
      public:
@@ -243,29 +243,29 @@ namespace libsemigroups {
         return _stats;
       }
 
-      void add_rule(Rule* rule);
+      void add_rule(Rule<>* rule);
 
      protected:
       template <typename Iterator>
-      [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
-                                   Iterator end_lhs,
-                                   Iterator begin_rhs,
-                                   Iterator end_rhs) {
-        Rule* rule = new_rule();
+      [[nodiscard]] Rule<>* new_rule(Iterator begin_lhs,
+                                     Iterator end_lhs,
+                                     Iterator begin_rhs,
+                                     Iterator end_rhs) {
+        Rule<>* rule = new_rule();
         rule->lhs().assign(begin_lhs, end_lhs);
         rule->rhs().assign(begin_rhs, end_rhs);
         rule->reorder();
         return rule;
       }
 
-      [[nodiscard]] Rule*    copy_rule(Rule const* rule);
+      [[nodiscard]] Rule<>*  copy_rule(Rule<> const* rule);
       [[nodiscard]] iterator erase_from_active_rules(iterator it);
-      void                   add_inactive_rule(Rule* rule) {
+      void                   add_inactive_rule(Rule<>* rule) {
         _inactive_rules.push_back(rule);
       }
 
      private:
-      [[nodiscard]] Rule* new_rule();
+      [[nodiscard]] Rule<>* new_rule();
     };  // class Rules
 
     ////////////////////////////////////////////////////////////////////////
@@ -285,12 +285,12 @@ namespace libsemigroups {
         checking_confluence
       };
 
-      std::vector<Rule*> _pending_rules;
-      State              _state;
-      bool               _ticker_running;
+      std::vector<Rule<>*> _pending_rules;
+      State                _state;
+      bool                 _ticker_running;
 
      public:
-      using native_word_type = Rule::native_word_type;
+      using native_word_type = Rule<>::native_word_type;
 
       ////////////////////////////////////////////////////////////////////////
       // Constructors + inits
@@ -338,7 +338,7 @@ namespace libsemigroups {
         return _pending_rules.size();
       }
 
-      Rule* next_pending_rule();
+      Rule<>* next_pending_rule();
 
       template <typename StringLike>
       void add_rule(StringLike const& lhs, StringLike const& rhs);
@@ -364,7 +364,7 @@ namespace libsemigroups {
         report_progress_from_thread(0, start_time);
       }
 
-      bool add_pending_rule(Rule* rule);
+      bool add_pending_rule(Rule<>* rule);
 
      private:
       virtual bool confluent_impl(std::atomic_uint64_t& seen) = 0;
@@ -397,7 +397,7 @@ namespace libsemigroups {
       std::set<RuleLookup> _set_rules;
 
      public:
-      using native_word_type = Rule::native_word_type;
+      using native_word_type = Rule<>::native_word_type;
 
       using RewriteBase::add_rule;
 
@@ -425,13 +425,13 @@ namespace libsemigroups {
       }
 
      private:
-      void rewrite(Rule* rule) const {
+      void rewrite(Rule<>* rule) const {
         rewrite(rule->lhs());
         rewrite(rule->rhs());
         rule->reorder();
       }
 
-      void add_rule(Rule* rule);
+      void add_rule(Rule<>* rule);
 
       iterator make_active_rule_pending(iterator);
 
@@ -448,18 +448,18 @@ namespace libsemigroups {
 
     class RewriteTrie : public RewriteBase {
      public:
-      using index_type       = AhoCorasickImpl::index_type;
-      using iterator         = native_word_type::iterator;
-      using rule_iterator    = std::unordered_map<index_type, Rule*>::iterator;
-      using native_word_type = Rule::native_word_type;
+      using index_type    = AhoCorasickImpl::index_type;
+      using iterator      = native_word_type::iterator;
+      using rule_iterator = std::unordered_map<index_type, Rule<>*>::iterator;
+      using native_word_type = Rule<>::native_word_type;
 
      private:
-      std::unordered_map<index_type, Rule*> _new_rule_map;
-      AhoCorasickImpl                       _new_rule_trie;
-      std::vector<index_type>               _rewrite_tmp_buf;
-      std::unordered_map<index_type, Rule*> _rule_map;
-      AhoCorasickImpl                       _rule_trie;
-      bool                                  _ticker_running;
+      std::unordered_map<index_type, Rule<>*> _new_rule_map;
+      AhoCorasickImpl                         _new_rule_trie;
+      std::vector<index_type>                 _rewrite_tmp_buf;
+      std::unordered_map<index_type, Rule<>*> _rule_map;
+      AhoCorasickImpl                         _rule_trie;
+      bool                                    _ticker_running;
 
      public:
       using Rules::stats;
@@ -491,7 +491,7 @@ namespace libsemigroups {
       void rewrite(native_word_type& u);
       void rewrite2(native_word_type& u);
 
-      void rewrite(Rule* rule) const {
+      void rewrite(Rule<>* rule) const {
         rewrite(rule->lhs());
         rewrite(rule->rhs());
         rule->reorder();
@@ -502,7 +502,7 @@ namespace libsemigroups {
       }
 
      private:
-      void add_rule(Rule* rule) {
+      void add_rule(Rule<>* rule) {
         Rules::add_rule(rule);
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
                                                         rule->lhs().cend());
@@ -510,8 +510,8 @@ namespace libsemigroups {
         set_cached_confluent(tril::unknown);
       }
 
-      [[nodiscard]] bool descendants_confluent(Rule const* rule1,
-                                               index_type  current_node,
+      [[nodiscard]] bool descendants_confluent(Rule<> const* rule1,
+                                               index_type    current_node,
                                                size_t backtrack_depth) const;
 
       Rules::iterator make_active_rule_pending(Rules::iterator it);
