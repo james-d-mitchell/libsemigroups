@@ -67,7 +67,7 @@ namespace libsemigroups {
   using namespace rx;
 
   using RewriteTrie     = detail::RewriteTrie;
-  using RewriteFromLeft = detail::RewriteFromLeft;
+  using RewriteFromLeft = detail::RewriteFromLeft<>;
 
 #define KNUTH_BENDIX_TYPES RewriteTrie, RewriteFromLeft
 

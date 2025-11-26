@@ -91,7 +91,7 @@ namespace libsemigroups {
   }  // namespace
 
   using RewriteTrie     = detail::RewriteTrie;
-  using RewriteFromLeft = detail::RewriteFromLeft;
+  using RewriteFromLeft = detail::RewriteFromLeft<>;
 
 #define REWRITER_TYPES RewriteTrie, RewriteFromLeft
 
