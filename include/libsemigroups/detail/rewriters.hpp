@@ -409,13 +409,15 @@ namespace libsemigroups {
     // RewriteFromLeft
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteFromLeft : public RewriteBase<> {
-      std::set<RuleLookup<>> _set_rules;
+    template <typename ReductionOrder = ShortLexCompare>
+    class RewriteFromLeft : public RewriteBase<ReductionOrder> {
+      std::set<RuleLookup<ReductionOrder>> _set_rules;
 
      public:
-      using native_word_type = Rule<>::native_word_type;
+      using native_word_type = typename Rule<ReductionOrder>::native_word_type;
+      using iterator         = typename Rules<ReductionOrder>::iterator;
 
-      using RewriteBase<>::add_rule;
+      using RewriteBase<ReductionOrder>::add_rule;
 
       RewriteFromLeft() = default;
 
@@ -431,6 +433,19 @@ namespace libsemigroups {
 
       RewriteFromLeft& init();
 
+      using RewriteBase<ReductionOrder>::add_inactive_rule;
+      using RewriteBase<ReductionOrder>::add_pending_rule;
+      using RewriteBase<ReductionOrder>::begin;
+      using RewriteBase<ReductionOrder>::cached_confluent;
+      using RewriteBase<ReductionOrder>::end;
+      using RewriteBase<ReductionOrder>::next_pending_rule;
+      using RewriteBase<ReductionOrder>::number_of_pending_rules;
+      using RewriteBase<ReductionOrder>::rbegin;
+      using RewriteBase<ReductionOrder>::rend;
+      using RewriteBase<ReductionOrder>::report_progress_from_thread;
+      using RewriteBase<ReductionOrder>::set_cached_confluent;
+      using RewriteBase<ReductionOrder>::stats;
+
       bool process_pending_rules();
 
       void rewrite(native_word_type& u);
@@ -441,13 +456,13 @@ namespace libsemigroups {
       }
 
      private:
-      void rewrite(Rule<>* rule) const {
+      void rewrite(Rule<ReductionOrder>* rule) const {
         rewrite(rule->lhs());
         rewrite(rule->rhs());
         rule->reorder();
       }
 
-      void add_rule(Rule<>* rule);
+      void add_rule(Rule<ReductionOrder>* rule);
 
       iterator make_active_rule_pending(iterator);
 
