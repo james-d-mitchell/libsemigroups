@@ -31,20 +31,23 @@ namespace libsemigroups {
   namespace detail {
 
     ////////////////////////////////////////////////////////////////////////
-    // Rule
+    // Rule<>
     ////////////////////////////////////////////////////////////////////////
 
-    Rule::Rule(int64_t id) : _lhs(), _rhs(), _id(-1 * id) {
+    template <typename ReductionOrder>
+    Rule<ReductionOrder>::Rule(int64_t id) : _lhs(), _rhs(), _id(-1 * id) {
       LIBSEMIGROUPS_ASSERT(_id < 0);
     }
 
-    void Rule::activate_no_checks() noexcept {
+    template <typename ReductionOrder>
+    void Rule<ReductionOrder>::activate_no_checks() noexcept {
       LIBSEMIGROUPS_ASSERT(_id != 0);
       LIBSEMIGROUPS_ASSERT(!active());
       _id *= -1;
     }
 
-    void Rule::deactivate_no_checks() noexcept {
+    template <typename ReductionOrder>
+    void Rule<ReductionOrder>::deactivate_no_checks() noexcept {
       LIBSEMIGROUPS_ASSERT(_id != 0);
       LIBSEMIGROUPS_ASSERT(active());
       _id *= -1;
@@ -86,7 +89,7 @@ namespace libsemigroups {
     Rules& Rules::init() {
       // Put all active rules and those rules in the stack into the
       // inactive_rules list
-      for (Rule* ptr : _active_rules) {
+      for (Rule<>* ptr : _active_rules) {
         ptr->deactivate_no_checks();
         _inactive_rules.insert(_inactive_rules.end(), ptr);
       }
@@ -99,7 +102,7 @@ namespace libsemigroups {
 
     Rules& Rules::operator=(Rules const& that) {
       init();
-      for (Rule const* rule : that) {
+      for (Rule<> const* rule : that) {
         add_rule(copy_rule(rule));
       }
       for (size_t i = 0; i < _cursors.size(); ++i) {
@@ -122,29 +125,29 @@ namespace libsemigroups {
     }
 
     Rules::~Rules() {
-      for (Rule* rule : _active_rules) {
+      for (Rule<>* rule : _active_rules) {
         delete rule;
       }
-      for (Rule* rule : _inactive_rules) {
+      for (Rule<>* rule : _inactive_rules) {
         delete rule;
       }
     }
 
-    Rule* Rules::new_rule() {
+    Rule<>* Rules::new_rule() {
       ++_stats.total_rules;
-      Rule* rule;
+      Rule<>* rule;
       if (!_inactive_rules.empty()) {
         rule = _inactive_rules.front();
         rule->set_id_no_checks(_stats.total_rules);
         _inactive_rules.erase(_inactive_rules.begin());
       } else {
-        rule = new Rule(_stats.total_rules);
+        rule = new Rule<>(_stats.total_rules);
       }
       LIBSEMIGROUPS_ASSERT(!rule->active());
       return rule;
     }
 
-    Rule* Rules::copy_rule(Rule const* rule) {
+    Rule<>* Rules::copy_rule(Rule<> const* rule) {
       return new_rule(rule->lhs().cbegin(),
                       rule->lhs().cend(),
                       rule->rhs().cbegin(),
@@ -159,7 +162,7 @@ namespace libsemigroups {
       // this happens (tests pass, though some assertions fail in debug mode)
       // and test 139 is twice as fast for some reason!
 
-      // Rule* rule = *it;
+      // Rule<>* rule = *it;
       // rule->deactivate_no_checks();
 
       if (it != _cursors[0] && it != _cursors[1]) {
@@ -178,7 +181,7 @@ namespace libsemigroups {
       return it;
     }
 
-    void Rules::add_rule(Rule* rule) {
+    void Rules::add_rule(Rule<>* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
       _stats.max_word_length
           = std::max(_stats.max_word_length, rule->lhs().size());
@@ -200,7 +203,7 @@ namespace libsemigroups {
     }
 
     size_t Rules::max_active_word_length() const {
-      auto comp = [](Rule const* p, Rule const* q) -> bool {
+      auto comp = [](Rule<> const* p, Rule<> const* q) -> bool {
         return p->lhs().size() < q->lhs().size();
       };
       auto max = std::max_element(begin(), end(), comp);
@@ -226,7 +229,7 @@ namespace libsemigroups {
       Rules::init();
       // Put all active rules and those rules in the stack into the
       // inactive_rules list
-      for (Rule* rule : _pending_rules) {
+      for (Rule<>* rule : _pending_rules) {
         Rules::add_inactive_rule(rule);
       }
       _pending_rules.clear();
@@ -268,7 +271,7 @@ namespace libsemigroups {
     }
 
     RewriteBase::~RewriteBase() {
-      for (Rule* rule : _pending_rules) {
+      for (Rule<>* rule : _pending_rules) {
         delete rule;
       }
       _pending_rules.clear();
@@ -286,7 +289,7 @@ namespace libsemigroups {
       }
     }
 
-    bool RewriteBase::add_pending_rule(Rule* rule) {
+    bool RewriteBase::add_pending_rule(Rule<>* rule) {
       LIBSEMIGROUPS_ASSERT(!rule->active());
       if (rule->lhs() != rule->rhs()) {
         rule->reorder();
@@ -351,9 +354,9 @@ namespace libsemigroups {
       }
     }
 
-    Rule* RewriteBase::next_pending_rule() {
+    Rule<>* RewriteBase::next_pending_rule() {
       LIBSEMIGROUPS_ASSERT(_pending_rules.size() != 0);
-      Rule* rule = _pending_rules.back();
+      Rule<>* rule = _pending_rules.back();
       _pending_rules.pop_back();
       return rule;
     }
@@ -385,7 +388,7 @@ namespace libsemigroups {
 
     RewriteFromLeft::iterator
     RewriteFromLeft::make_active_rule_pending(iterator it) {
-      Rule* rule = *it;
+      Rule<>* rule = *it;
       rule->deactivate_no_checks();
       add_pending_rule(rule);
 #ifdef LIBSEMIGROUPS_DEBUG
@@ -397,7 +400,7 @@ namespace libsemigroups {
       return Rules::erase_from_active_rules(it);
     }
 
-    void RewriteFromLeft::add_rule(Rule* rule) {
+    void RewriteFromLeft::add_rule(Rule<>* rule) {
       Rules::add_rule(rule);
       // _stats.unique_lhs_rules.insert(*rule->lhs());
 #ifdef LIBSEMIGROUPS_DEBUG
@@ -431,7 +434,7 @@ namespace libsemigroups {
 
         auto it = _set_rules.find(lookup(v_begin, v_end));
         if (it != _set_rules.end()) {
-          Rule const* rule = (*it).rule();
+          Rule<> const* rule = (*it).rule();
           if (rule->lhs().size() <= static_cast<size_t>(v_end - v_begin)) {
             LIBSEMIGROUPS_ASSERT(detail::is_suffix(
                 v_begin, v_end, rule->lhs().cbegin(), rule->lhs().cend()));
@@ -473,7 +476,7 @@ namespace libsemigroups {
 
         auto it = _set_rules.find(lookup(v.begin(), v.end()));
         if (it != _set_rules.end()) {
-          Rule const* rule = (*it).rule();
+          Rule<> const* rule = (*it).rule();
           if (rule->lhs().size() <= static_cast<size_t>(v.size())) {
             LIBSEMIGROUPS_ASSERT(detail::is_suffix(
                 v.begin(), v.end(), rule->lhs().cbegin(), rule->lhs().cend()));
@@ -533,11 +536,11 @@ namespace libsemigroups {
       native_word_type word2;
 
       for (auto it1 = begin(); it1 != end(); ++it1) {
-        Rule const* rule1 = *it1;
+        Rule<> const* rule1 = *it1;
         // Seems to be much faster to do this in reverse.
         for (auto it2 = rbegin(); it2 != rend(); ++it2) {
           seen++;
-          Rule const* rule2 = *it2;
+          Rule<> const* rule2 = *it2;
           for (auto it = rule1->lhs().cend() - 1; it >= rule1->lhs().cbegin();
                --it) {
             // Find longest common prefix of suffix B of rule1.lhs() defined
@@ -586,7 +589,7 @@ namespace libsemigroups {
       std::sort(
           _pending_rules.begin(),
           _pending_rules.end(),
-          [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
+          [](Rule<> const* x, Rule<> const* y) { return x->lhs() > y->lhs(); });
 
       auto           start_time = std::chrono::high_resolution_clock::now();
       detail::Ticker ticker;
@@ -595,7 +598,7 @@ namespace libsemigroups {
       bool rules_added = false;
 
       while (number_of_pending_rules() != 0) {
-        Rule* rule1 = next_pending_rule();
+        Rule<>* rule1 = next_pending_rule();
         LIBSEMIGROUPS_ASSERT(!rule1->active());
         LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
         // Rewrite both sides and reorder if necessary . . .
@@ -606,7 +609,7 @@ namespace libsemigroups {
           native_word_type& lhs = rule1->lhs();
 
           for (auto it = begin(); it != end();) {
-            Rule* rule2 = *it;
+            Rule<>* rule2 = *it;
 
             // Check if lhs is contained within either the lhs or rhs of rule2
             // TODO(1) investigate whether or not this can be improved?
@@ -662,7 +665,7 @@ namespace libsemigroups {
       init();
       RewriteBase::operator=(that);
       _rule_trie = that._rule_trie;
-      for (Rule* rule : *this) {
+      for (Rule<>* rule : *this) {
         index_type node = _rule_trie.traverse_trie_no_checks(
             rule->lhs().cbegin(), rule->lhs().cend());
         LIBSEMIGROUPS_ASSERT(_rule_trie.terminal(node));
@@ -705,8 +708,8 @@ namespace libsemigroups {
         } else {
           auto rule_it = _rule_map.find(current);
           // Find rule that corresponds to terminal node
-          Rule const* rule     = rule_it->second;
-          auto        lhs_size = rule->lhs().size();
+          Rule<> const* rule     = rule_it->second;
+          auto          lhs_size = rule->lhs().size();
           LIBSEMIGROUPS_ASSERT(lhs_size != 0);
 
           // Check the lhs is smaller than the portion of the word that has
@@ -750,7 +753,7 @@ namespace libsemigroups {
           _rewrite_tmp_buf.push_back(current);
           v.push_back(x);
         } else {
-          Rule const* rule = _rule_map.find(current)->second;
+          Rule<> const* rule = _rule_map.find(current)->second;
           // TODO add comment about off by one
           LIBSEMIGROUPS_ASSERT(rule->lhs().size() <= v.size() + 1);
           v.erase(v.end() - (rule->lhs().size() - 1), v.end());
@@ -776,7 +779,7 @@ namespace libsemigroups {
       std::sort(
           _pending_rules.begin(),
           _pending_rules.end(),
-          [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
+          [](Rule<> const* x, Rule<> const* y) { return x->lhs() > y->lhs(); });
 
       bool rules_added = false;
       // TODO(1) could make this a setting, or use a different condition (such
@@ -791,7 +794,7 @@ namespace libsemigroups {
         }
         bool rules_added_this_pass = false;
         while (number_of_pending_rules() != 0) {
-          Rule* rule = next_pending_rule();
+          Rule<>* rule = next_pending_rule();
           LIBSEMIGROUPS_ASSERT(!rule->active());
           LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
           // Rewrite both sides and reorder if necessary . . .
@@ -836,7 +839,7 @@ namespace libsemigroups {
 
           for (auto it = begin(); it != end();) {
             ++seen;
-            Rule* rule = *it;
+            Rule<>* rule = *it;
             // Check whether any rule contains the left-hand-side of the "new"
             // rule
             bool increment = true;
@@ -899,12 +902,12 @@ namespace libsemigroups {
     }
 
     [[nodiscard]] bool
-    RewriteTrie::descendants_confluent(Rule const* rule1,
-                                       index_type  current_node,
-                                       size_t      overlap_length) const {
+    RewriteTrie::descendants_confluent(Rule<> const* rule1,
+                                       index_type    current_node,
+                                       size_t        overlap_length) const {
       LIBSEMIGROUPS_ASSERT(rule1->active());
       if (_rule_trie.node_no_checks(current_node).terminal()) {
-        Rule const* rule2 = _rule_map.find(current_node)->second;
+        Rule<> const* rule2 = _rule_map.find(current_node)->second;
         // Process overlap
         // Word looks like ABC where the LHS of rule1 corresponds to AB,
         // the LHS of rule2 corresponds to BC, and |C|=nodes.size() - 1.
@@ -947,7 +950,7 @@ namespace libsemigroups {
     }
 
     Rules::iterator RewriteTrie::make_active_rule_pending(Rules::iterator it) {
-      Rule* rule = *it;
+      Rule<>* rule = *it;
       rule->deactivate_no_checks();
       add_pending_rule(rule);
       index_type node = _rule_trie.rm_word_no_checks(rule->lhs().cbegin(),
