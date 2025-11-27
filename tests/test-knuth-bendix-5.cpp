@@ -50,6 +50,7 @@
 #include "libsemigroups/knuth-bendix.hpp"        // for KnuthBendix
 #include "libsemigroups/presentation.hpp"        // for Presentation
 #include "libsemigroups/to-froidure-pin.hpp"     // for to<FroidurePin>
+#include "libsemigroups/to-knuth-bendix.hpp"     // for to<KnuthBendix>
 #include "libsemigroups/to-presentation.hpp"     // for to<Presentation>
 #include "libsemigroups/transf.hpp"              // for Transf
 #include "libsemigroups/types.hpp"               // for word_type, letter_type
@@ -601,5 +602,45 @@ namespace libsemigroups {
     REQUIRE(reduce_no_run(kb, 101001_w) == 100_w);
     REQUIRE(reduce_no_run(kb, 1000100_w) == 100_w);
     REQUIRE(contains(kb, 101001_w, 1000100_w));
+  }
+
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
+      "KnuthBendix",
+      "995",
+      "(cong) finite transformation semigroup congruence (21 classes)",
+      "[quick][congruence][knuth-bendix]",
+      detail::RewriteFromLeft<RecursivePathCompare>) {
+    auto rg      = ReportGuard(false);
+    using Transf = LeastTransf<5>;
+    FroidurePin<Transf> S;
+    S.add_generator(make<Transf>({1, 3, 4, 2, 3}));
+    S.add_generator(make<Transf>({3, 2, 1, 3, 3}));
+
+    REQUIRE(S.size() == 88);
+    REQUIRE(S.number_of_rules() == 18);
+
+    auto kb1
+        = to<KnuthBendix<word_type, TestType>>(congruence_kind::twosided, S);
+    auto kb2 = kb1;
+    knuth_bendix::add_generating_pair(
+        kb1,
+        froidure_pin::factorisation(S, Transf({3, 4, 4, 4, 4})),
+        froidure_pin::factorisation(S, Transf({3, 1, 3, 3, 3})));
+
+    REQUIRE(kb1.number_of_classes() == 21);
+
+    auto P = to<FroidurePin>(kb1);
+    REQUIRE(P.size() == 21);
+    REQUIRE(P.number_of_idempotents() == 3);
+
+    REQUIRE((knuth_bendix::normal_forms(kb1) | rx::to_vector())
+            == std::vector<word_type>(
+                {0_w,    1_w,    00_w,   01_w,    10_w,    11_w,    000_w,
+                 001_w,  010_w,  011_w,  100_w,   110_w,   0000_w,  0100_w,
+                 0110_w, 1000_w, 1100_w, 01000_w, 01100_w, 11000_w, 011000_w}));
+
+    auto ntc = knuth_bendix::non_trivial_classes(kb2, kb1);
+    REQUIRE(ntc.size() == 1);
+    REQUIRE(ntc[0].size() == 68);
   }
 }  // namespace libsemigroups

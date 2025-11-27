@@ -495,7 +495,7 @@ namespace libsemigroups::detail {
     std::string w(v.rbegin(), v.rbegin() + v.size() - n + 1);
     v.erase(v.begin() + n - 1, v.end());
 
-    RuleLookup lookup;
+    RuleLookup<ReductionOrder> lookup;
 
     while (!w.empty()) {
       v.push_back(w.back());

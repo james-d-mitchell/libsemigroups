@@ -21,10 +21,9 @@
 namespace libsemigroups {
   namespace detail {
 
-    void
-    prefixes_string(std::unordered_map<Rule<>::native_word_type, size_t>& st,
-                    Rule<>::native_word_type const&                       x,
-                    size_t&                                               n) {
+    void prefixes_string(std::unordered_map<std::string, size_t>& st,
+                         std::string const&                       x,
+                         size_t&                                  n) {
       for (auto it = x.cbegin() + 1; it < x.cend(); ++it) {
         auto w   = Rule<>::native_word_type(x.cbegin(), it);
         auto wit = st.find(w);

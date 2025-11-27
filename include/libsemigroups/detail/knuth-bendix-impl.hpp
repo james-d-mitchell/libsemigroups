@@ -133,7 +133,8 @@ namespace libsemigroups {
     //! Those functions with the prefix `current_` do not perform any
     //! further enumeration.
 
-    template <typename Rewriter       = detail::RewriteTrie,
+    template <typename Rewriter = detail::RewriteTrie,
+              // TODO remove 2nd template param here
               typename ReductionOrder = ShortLexCompare>
     class KnuthBendixImpl : public CongruenceCommon {
      public:
@@ -144,6 +145,7 @@ namespace libsemigroups {
       using native_word_type = typename Rewriter::native_word_type;
       using rule_type        = std::pair<native_word_type, native_word_type>;
       using rewriter_type    = Rewriter;
+      using order_type       = typename Rewriter::order_type;
 
       //////////////////////////////////////////////////////////////////////////
       // Nested classes - public
@@ -161,8 +163,8 @@ namespace libsemigroups {
       // Overlap measures
       struct OverlapMeasure {
         virtual size_t
-        operator()(detail::Rule<> const*,
-                   detail::Rule<> const* examples,
+        operator()(detail::Rule<order_type> const*,
+                   detail::Rule<order_type> const* examples,
                    typename native_word_type::const_iterator const&)
             = 0;
         virtual ~OverlapMeasure() {}
@@ -766,11 +768,11 @@ namespace libsemigroups {
       //!
       //! \brief Return the number of rules that \ref_knuth_bendix has created.
       //!
-      //! This function returns the total number of Rule<> instances that have
-      //! been created whilst whilst the Knuth-Bendix algorithm has been
-      //! running. Note that this is not the sum of \ref number_of_active_rules
-      //! and \ref number_of_inactive_rules, due to the re-initialisation of
-      //! rules where possible.
+      //! This function returns the total number of Rule<order_type> instances
+      //! that have been created whilst whilst the Knuth-Bendix algorithm has
+      //! been running. Note that this is not the sum of \ref
+      //! number_of_active_rules and \ref number_of_inactive_rules, due to the
+      //! re-initialisation of rules where possible.
       //!
       //! \returns
       //! The total number of rules, a value of type \c size_t.
@@ -907,7 +909,8 @@ namespace libsemigroups {
 
       void add_rule_impl(native_word_type const& p, native_word_type const& q);
 
-      void overlap(detail::Rule<> const* u, detail::Rule<> const* v);
+      void overlap(detail::Rule<order_type> const* u,
+                   detail::Rule<order_type> const* v);
 
       [[nodiscard]] size_t max_active_word_length() const {
         return _rewriter.max_active_word_length();

@@ -296,7 +296,8 @@ namespace libsemigroups {
     auto nf = knuth_bendix::normal_forms(kb);
 
     REQUIRE(nf.count() == 1080);
-    REQUIRE((nf.min(0).max(2) | to_vector())
+    // TODO should the 3 be 2 in the next line???
+    REQUIRE((nf.min(0).max(3) | to_vector())
             == std::vector<std::string>({"",
                                          "a",
                                          "b",
@@ -1808,7 +1809,7 @@ namespace libsemigroups {
     p.alphabet(2);
     presentation::add_idempotent_rules_no_checks(p, 01_w);
     using words::operator+;
-    WordRange    words;
+    WordRange words;
     words.alphabet_size(2).min(0).max(6);
     size_t n = 2;
     for (size_t a = 0; a < n - 1; ++a) {

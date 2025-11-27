@@ -1276,258 +1276,187 @@ namespace libsemigroups {
   // maximal nilpotent quotient, and then introducing new generators for
   // the PCP generators. It is essential for success that reasonably low
   // values of the maxstoredlen parameter are given.
-  // LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-  //           //     "027",
-  //     "(from kbmag/standalone/kb_data/verifynilp)",
-  //     "000","[quick][knuth-bendix]"[kbmag][recursive],
-  //  REWRITER_TYPES){}
-  //   KnuthBendix<std::string, TestType> kb(new RECURSIVE(),
-  //   "hHgGfFyYdDcCbBaA"); presentation::add_rule_no_checks(p, "BAba", "c");
-  //   presentation::add_rule_no_checks(p, "CAca", "d");
-  //   presentation::add_rule_no_checks(p, "DAda", "y");
-  //   presentation::add_rule_no_checks(p, "YByb", "f");
-  //   presentation::add_rule_no_checks(p, "FAfa", "g");
-  //   presentation::add_rule_no_checks(p, "ga", "ag");
-  //   presentation::add_rule_no_checks(p, "GBgb", "h");
-  //   presentation::add_rule_no_checks(p, "cb", "bc");
-  //   presentation::add_rule_no_checks(p, "ya", "ay");
-  //   auto rg = ReportGuard(false);
-  //
-  //   REQUIRE(kb.confluent());
-  //
-  //   kb.run();
-  //   REQUIRE(kb.confluent());
-  //   REQUIRE(kb.number_of_active_rules() == 9);
-  //
-  //   REQUIRE(knuth_bendix::contains(kb, "BAba", "c"));
-  //   REQUIRE(knuth_bendix::contains(kb, "CAca", "d"));
-  //   REQUIRE(knuth_bendix::contains(kb, "DAda", "y"));
-  //   REQUIRE(knuth_bendix::contains(kb, "YByb", "f"));
-  //   REQUIRE(knuth_bendix::contains(kb, "FAfa", "g"));
-  //   REQUIRE(knuth_bendix::contains(kb, "ga", "ag"));
-  //   REQUIRE(knuth_bendix::contains(kb, "GBgb", "h"));
-  //   REQUIRE(knuth_bendix::contains(kb, "cb", "bc"));
-  //   REQUIRE(knuth_bendix::contains(kb, "ya", "ay"));
-  // REQUIRE(kb.active_rules() == std::vector<std::pair<std::string,
-  // std::string>>({}));
-  // }
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
+      "KnuthBendix",
+      "994",
+      "(from kbmag/standalone/kb_data/verifynilp)",
+      "[quick][knuth-bendix][kbmag][recursive]",
+      detail::RewriteFromLeft<RecursivePathCompare>) {
+    auto rg = ReportGuard(true);
 
-  // TODO(later): temporarily commented out to because of change to
-  // FpSemigroupInterface that forbids adding rules after started(), and
-  // because the copy constructors for KnuthBendix<std::string, TestType> et al.
-  // don't currently work LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-  //                         "(cong) finite transformation semigroup "
-  //                         "congruence (21 classes)",
-  // "000","[quick][congruence][knuth-bendix]"[cong],
-  // REWRITER_TYPES){
-  //   auto rg      = ReportGuard(false);
-  //   using Transf = LeastTransf<5>;
-  //   FroidurePin<Transf> S({Transf({1, 3, 4, 2, 3}), Transf({3, 2, 1, 3,
-  //   3})});
+    Presentation<std::string> p;
+    p.alphabet("hHgGfFyYdDcCbBaA").contains_empty_word(true);
 
-  //   REQUIRE(S.size() == 88);
-  //   REQUIRE(S.number_of_rules() == 18);
+    // presentation::add_inverse_rules(p, "HhGgFfYyDdCcBbAa");
+    presentation::add_rule(p, "BAba", "c");
+    presentation::add_rule(p, "CAca", "d");
+    presentation::add_rule(p, "DAda", "y");
+    presentation::add_rule(p, "YByb", "f");
+    presentation::add_rule(p, "FAfa", "g");
+    presentation::add_rule(p, "ga", "ag");
+    presentation::add_rule(p, "GBgb", "h");
+    presentation::add_rule(p, "cb", "bc");
+    presentation::add_rule(p, "ya", "ay");
 
-  //   KnuthBendix<std::string, TestType> kb(twosided, S);
-  //   auto&       P = kb.quotient_froidure_pin();
-  //   REQUIRE(P.size() == 88);
-  //   kb.add_generating_pair(S.factorisation(Transf({3, 4, 4, 4, 4})),
-  //               S.factorisation(Transf({3, 1, 3, 3, 3})));
-  //   // P is now invalid, it's a reference to something that was deleted
-  //   in
-  //   // kb.
+    KnuthBendix<std::string, TestType> kb(congruence_kind::twosided, p);
 
-  //   REQUIRE(kb.number_of_classes() == 21);
-  //   REQUIRE(kb.number_of_classes() == 21);
-  //   auto& Q = kb.quotient_froidure_pin();  // quotient
+    kb.run();
+    REQUIRE(kb.confluent());
+    REQUIRE(kb.number_of_active_rules() == 9);
 
-  //   REQUIRE(Q.size() == 21);
-  //   REQUIRE(Q.number_of_idempotents() == 3);
-
-  //   std::vector<word_type>
-  //   v(static_cast<FroidurePin<detail::KBE>&>(Q).cbegin(),
-  // static_cast<FroidurePin<detail::KBE>&>(Q).cend());
-  //   REQUIRE(v
-  //           == std::vector<word_type>({{0},
-  //                                      {1},
-  //                                      {0, 0},
-  //                                      {0, 1},
-  //                                      {1, 0},
-  //                                      {1, 1},
-  //                                      {0, 0, 0},
-  //                                      {0, 0, 1},
-  //                                      {0, 1, 0},
-  //                                      {0, 1, 1},
-  //                                      {1, 0, 0},
-  //                                      {1, 1, 0},
-  //                                      {0, 0, 0, 0},
-  //                                      {0, 1, 0, 0},
-  //                                      {0, 1, 1, 0},
-  //                                      {1, 0, 0, 0},
-  //                                      {1, 1, 0, 0},
-  //                                      {0, 1, 0, 0, 0},
-  //                                      {0, 1, 1, 0, 0},
-  //                                      {1, 1, 0, 0, 0},
-  //                                      {0, 1, 1, 0, 0, 0}}));
-
-  //   REQUIRE(
-  //       kb.word_to_class_index(S.factorisation(Transf({1, 3, 1, 3,
-  //       3})))
-  //       == kb.word_to_class_index(S.factorisation(Transf({4, 2, 4, 4,
-  //       2}))));
-
-  //   REQUIRE(kb.number_of_non_trivial_classes() == 1);
-  //   REQUIRE(kb.number_of_generators() == 2);
-  //   REQUIRE(kb.cbegin_ntc()->size() == 68);
-  // }
+    REQUIRE(knuth_bendix::contains(kb, "BAba", "c"));
+    REQUIRE(knuth_bendix::contains(kb, "CAca", "d"));
+    REQUIRE(knuth_bendix::contains(kb, "DAda", "y"));
+    REQUIRE(knuth_bendix::contains(kb, "YByb", "f"));
+    REQUIRE(knuth_bendix::contains(kb, "FAfa", "g"));
+    REQUIRE(knuth_bendix::contains(kb, "ga", "ag"));
+    REQUIRE(knuth_bendix::contains(kb, "GBgb", "h"));
+    REQUIRE(knuth_bendix::contains(kb, "cb", "bc"));
+    REQUIRE(knuth_bendix::contains(kb, "ya", "ay"));
+    REQUIRE(
+        (kb.active_rules() | rx::to_vector())
+        == std::vector<std::pair<std::string, std::string>>({{"ga", "ag"},
+                                                             {"GBgb", "h"},
+                                                             {"FAfa", "g"},
+                                                             {"ya", "ay"},
+                                                             {"YByb", "f"},
+                                                             {"DAda", "y"},
+                                                             {"cb", "bc"},
+                                                             {"CAca", "d"},
+                                                             {"BAba", "c"}}));
+  }
 
   //  A nonhopfian group
-  // LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-  //                         "(from kbmag/standalone/kb_data/nonhopf)",
-  // "028","[quick][knuth-bendix]"[kbmag][recursive],
-  // REWRITER_TYPES){
-  //   KnuthBendix<std::string, TestType> kb(new RECURSIVE(), "aAbB");
-  //   presentation::add_rule_no_checks(p, "Baab", "aaa");
-  //   auto rg = ReportGuard(false);
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
+      "KnuthBendix",
+      "996",
+      "(from kbmag/standalone/kb_data/nonhopf)",
+      "[quick][knuth-bendix][kbmag][recursive]",
+      detail::RewriteFromLeft<RecursivePathCompare>) {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
 
-  //   REQUIRE(kb.confluent());
+    p.contains_empty_word(true).alphabet("aAbB");
+    presentation::add_inverse_rules(p, "AaBb");
+    presentation::add_rule(p, "Baab", "aaa");
 
-  //   kb.run();
-  //   REQUIRE(kb.confluent());
-  //   REQUIRE(kb.number_of_active_rules() == 1);
+    KnuthBendix<std::string, TestType> kb(twosided, p);
 
-  //   REQUIRE(knuth_bendix::contains(kb, "Baab", "aaa"));
-  //   REQUIRE(kb.active_rules()
-  //           == std::vector<rule_type>({}));
-  // }
+    kb.run();
+    REQUIRE(kb.confluent());
+    REQUIRE(kb.number_of_active_rules() == 8);
 
-  // LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-  //                         "(from kbmag/standalone/kb_data/freenilpc3)",
-  // "029","[quick][knuth-bendix]"[kbmag][recursive],
-  // REWRITER_TYPES){
-  //   KnuthBendix<std::string, TestType> kb(new RECURSIVE(), "yYdDcCbBaA");
-  //   presentation::add_rule_no_checks(p, "BAba", "c");
-  //   presentation::add_rule_no_checks(p, "CAca", "d");
-  //   presentation::add_rule_no_checks(p, "CBcb", "y");
-  //   presentation::add_rule_no_checks(p, "da", "wg");
-  //   presentation::add_rule_no_checks(p, "ya", "ay");
-  //   presentation::add_rule_no_checks(p, "db", "bd");
-  //   presentation::add_rule_no_checks(p, "yb", "by");
-  //   auto rg = ReportGuard(false);
+    REQUIRE(knuth_bendix::contains(kb, "Baab", "aaa"));
+    REQUIRE(
+        (kb.active_rules() | rx::to_vector())
+        == std::vector<std::pair<std::string, std::string>>({{"aA", ""},
+                                                             {"Aa", ""},
+                                                             {"bB", ""},
+                                                             {"Bb", ""},
+                                                             {"aaaB", "Baa"},
+                                                             {"aab", "baaa"},
+                                                             {"AB", "aaBAA"},
+                                                             {"Ab", "abAAA"}}));
+  }
 
-  //   REQUIRE(kb.confluent());
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
+      "KnuthBendix",
+      "997",
+      "(from kbmag/standalone/kb_data/freenilpc3)",
+      "[quick][knuth-bendix][kbmag][recursive]",
+      detail::RewriteFromLeft<RecursivePathCompare>) {
+    auto rg = ReportGuard(false);
 
-  //   kb.run();
-  //   REQUIRE(kb.confluent());
-  //   REQUIRE(kb.number_of_active_rules() == 7);
+    Presentation<std::string> p;
+    p.alphabet("yYdDcCbBaA");
+    // TODO add inverse rules
+    presentation::add_rule(p, "BAba", "c");
+    presentation::add_rule(p, "CAca", "d");
+    presentation::add_rule(p, "CBcb", "y");
+    presentation::add_rule(p, "da", "ad");
+    presentation::add_rule(p, "ya", "ay");
+    presentation::add_rule(p, "db", "bd");
+    presentation::add_rule(p, "yb", "by");
 
-  //   REQUIRE(knuth_bendix::contains(kb, "BAba", "c"));
-  //   REQUIRE(knuth_bendix::contains(kb, "CAca", "d"));
-  //   REQUIRE(knuth_bendix::contains(kb, "CBcb", "y"));
-  //   REQUIRE(knuth_bendix::contains(kb, "da", "wg"));
-  //   REQUIRE(knuth_bendix::contains(kb, "ya", "ay"));
-  //   REQUIRE(knuth_bendix::contains(kb, "db", "bd"));
-  //   REQUIRE(knuth_bendix::contains(kb, "yb", "by"));
-  //   REQUIRE(kb.active_rules()
-  //           == std::vector<rule_type>({}));
-  // }
+    KnuthBendix<std::string, TestType> kb(twosided, p);
 
-  // TODO(later): temporarily commented out to because of change to
-  // FpSemigroupInterface that forbids adding rules after started(), and
-  // because the copy constructors for KnuthBendix<std::string, TestType> et al.
-  // don't currently work LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-  //                         "add_rule after knuth_bendix",
-  //                         "030","[quick][knuth-bendix]",
-  //  REWRITER_TYPES){
-  //   auto        rg = ReportGuard(false);
-  //   KnuthBendix<std::string, TestType> kb;
-  //   Presentation<std::string> p;
-  // //p.alphabet("Bab");
-  //   presentation::add_rule_no_checks(p, "aa", "");
-  //   presentation::add_rule_no_checks(p, "bB", "");
-  //   presentation::add_rule_no_checks(p, "bbb", "");
-  //   presentation::add_rule_no_checks(p, "ababab", "");
+    REQUIRE(kb.confluent());
+    kb.run();
+    REQUIRE(kb.confluent());
+    REQUIRE(kb.number_of_active_rules() == 7);
 
-  //   REQUIRE(!kb.confluent());
-  //   kb.run_for(FOREVER);
-  //   REQUIRE(kb.finished());
-  //   // The next line tests what happens when run_for is called when
-  //   finished. kb.run_for(FOREVER); REQUIRE(kb.number_of_active_rules()
-  //   == 11); REQUIRE(kb.confluent()); REQUIRE(kb.size() == 12);
-
-  //   REQUIRE(knuth_bendix::contains(kb, "aa", ""));
-  //   REQUIRE(!knuth_bendix::contains(kb, "a", "b"));
-
-  //   KnuthBendix<std::string, TestType> kb2(&kb);
-  //   REQUIRE(kb2.number_of_active_rules() == 11);
-  //   kb2.add_rule("a", "b");
-  //   REQUIRE(kb2.number_of_rules() == 5);
-  //   // Adding a rule does not change the number of active rules until
-  //   *after*
-  //   // kb.run() is called again.
-  //   REQUIRE(kb2.number_of_active_rules() == 11);
-
-  //   using rules_type = std::vector<rule_type>;
-
-  //   REQUIRE(rules_type(kb2.cbegin_rules(), kb2.cend_rules())
-  //           == rules_type({{"aa", ""},
-  //                          {"bB", ""},
-  //                          {"bbb", ""},
-  //                          {"ababab", ""},
-  //                          {"a", "b"}}));
-
-  //   REQUIRE(!kb2.confluent());
-  //   REQUIRE(kb2.size() == 1);
-  //   REQUIRE(kb2.confluent());
-  //   REQUIRE(kb2.number_of_active_rules() == 3);
-  //   REQUIRE(kb2.active_rules() == rules_type({{"B", ""}, {"a", ""},
-  //   {"b", "a"}}));
-  // }
+    REQUIRE(knuth_bendix::contains(kb, "BAba", "c"));
+    REQUIRE(knuth_bendix::contains(kb, "CAca", "d"));
+    REQUIRE(knuth_bendix::contains(kb, "CBcb", "y"));
+    REQUIRE(knuth_bendix::contains(kb, "da", "ad"));
+    REQUIRE(knuth_bendix::contains(kb, "ya", "ay"));
+    REQUIRE(knuth_bendix::contains(kb, "db", "bd"));
+    REQUIRE(knuth_bendix::contains(kb, "yb", "by"));
+    REQUIRE(
+        (kb.active_rules() | rx::to_vector())
+        == std::vector<std::pair<std::string, std::string>>({{"yb", "by"},
+                                                             {"ya", "ay"},
+                                                             {"db", "bd"},
+                                                             {"da", "ad"},
+                                                             {"CBcb", "y"},
+                                                             {"CAca", "d"},
+                                                             {"BAba", "c"}}));
+  }
 
   // Free nilpotent group of rank 2 and class 2
-  // LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-  //                         "(from kbmag/standalone/kb_data/nilp2)",
-  // "031","[quick][knuth-bendix]"[kbmag][recursive],
-  // REWRITER_TYPES){
-  //   KnuthBendix<std::string, TestType> kb(new RECURSIVE(), "cCbBaA");
-  //   presentation::add_rule_no_checks(p, "ba", "abc");
-  //   presentation::add_rule_no_checks(p, "ca", "ac");
-  //   presentation::add_rule_no_checks(p, "cb", "bc");
-  //   auto rg = ReportGuard(false);
-  //
-  //   REQUIRE(kb.confluent());
-  //
-  //   kb.run();
-  //   REQUIRE(kb.confluent());
-  //
-  //   REQUIRE(kb.number_of_active_rules() == 3);
-  // }
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
+      "KnuthBendix",
+      "998",
+      "(from kbmag/standalone/kb_data/nilp2)",
+      "[quick][knuth-bendix][kbmag][recursive]",
+      detail::RewriteFromLeft<RecursivePathCompare>) {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.alphabet("cCbBaA").contains_empty_word(true);
+    presentation::add_inverse_rules(p, "CcBbAa");
+    presentation::add_rule_no_checks(p, "ba", "abc");
+    presentation::add_rule_no_checks(p, "ca", "ac");
+    presentation::add_rule_no_checks(p, "cb", "bc");
+
+    KnuthBendix<std::string, TestType> kb(twosided, p);
+    // REQUIRE(kb.confluent());
+
+    kb.run();
+    REQUIRE(kb.confluent());
+
+    REQUIRE(kb.number_of_active_rules() == 18);
+    REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);
+  }
 
   // monoid presentation of F(2,7) - should produce a monoid of length 30
   // which is the same as the group, together with the empty word. This
   // is a very difficult calculation indeed, however.
   //
   // KBMAG does not terminate when SHORTLEX order is used.
-  // LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-  //                         "(from kbmag/standalone/kb_data/f27monoid)",
-  //                         "[fail][knuth-bendix]"[kbmag][recursive],
-  //  REWRITER_TYPES){
-  //   KnuthBendix<std::string, TestType> kb(new RECURSIVE(), "abcdefg");
-  //   presentation::add_rule_no_checks(p, "ab", "c");
-  //   presentation::add_rule_no_checks(p, "bc", "d");
-  //   presentation::add_rule_no_checks(p, "cd", "e");
-  //   presentation::add_rule_no_checks(p, "de", "f");
-  //   presentation::add_rule_no_checks(p, "ef", "g");
-  //   presentation::add_rule_no_checks(p, "fg", "a");
-  //   presentation::add_rule_no_checks(p, "ga", "b");
-  //   auto rg = ReportGuard(false);
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
+      "KnuthBendix",
+      "999",
+      "(from kbmag/standalone/kb_data/f27monoid)",
+      "[fail][knuth-bendix][kbmag][recursive]",
+      detail::RewriteFromLeft<RecursivePathCompare>) {
+    auto                      rg = ReportGuard(true);
+    Presentation<std::string> p;
+    p.alphabet("abcdefg");
+    presentation::add_rule_no_checks(p, "ab", "c");
+    presentation::add_rule_no_checks(p, "bc", "d");
+    presentation::add_rule_no_checks(p, "cd", "e");
+    presentation::add_rule_no_checks(p, "de", "f");
+    presentation::add_rule_no_checks(p, "ef", "g");
+    presentation::add_rule_no_checks(p, "fg", "a");
+    presentation::add_rule_no_checks(p, "ga", "b");
 
-  //   REQUIRE(!kb.confluent());
+    KnuthBendix<std::string, TestType> kb(twosided, p);
+    REQUIRE(!kb.confluent());
 
-  //   kb.run();
-  //   REQUIRE(kb.confluent());
-  //   REQUIRE(kb.number_of_active_rules() == 32767);
-  // }
+    kb.run();
+    REQUIRE(kb.confluent());
+    REQUIRE(kb.number_of_active_rules() == 32767);
+  }
 
   // This example verifies the nilpotence of the group using the Sims
   // algorithm. The original presentation was <a,b| [b,a,a,a],
@@ -1535,27 +1464,47 @@ namespace libsemigroups {
   // [a^-1,a*b,a*b,a*b] >. (where [] mean left-normed commutators. The
   // presentation here was derived by first applying the NQA to find the
   // maximal nilpotent quotient, and then introducing new generators for
-  // the PCP generators. LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-  //           //     "032",
-  //     "(from kbmag/standalone/kb_data/heinnilp)",
-  //     "[fail][knuth-bendix]"[kbmag][recursive], REWRITER_TYPES){
-  //   // TODO(later) fails because internal_rewrite expect rules to be
-  //   length reducing KnuthBendix<std::string, TestType> kb(new RECURSIVE(),
-  //   "fFyYdDcCbBaA"); presentation::add_rule_no_checks(p, "BAba", "c");
-  //   presentation::add_rule_no_checks(p, "CAca", "d");
-  //   presentation::add_rule_no_checks(p, "CBcb", "y");
-  //   presentation::add_rule_no_checks(p, "DBdb", "f");
-  //   presentation::add_rule_no_checks(p, "cBCb", "bcBC");
-  //   presentation::add_rule_no_checks(p, "babABaBA", "abABaBAb");
-  //   presentation::add_rule_no_checks(p, "cBACab", "abcBAC");
-  //   presentation::add_rule_no_checks(p, "BabABBAbab", "aabABBAb");
-  //   auto rg = ReportGuard(false);
+  // the PCP generators.
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
+      "KnuthBendix",
+      "932",
+      "(from kbmag/standalone/kb_data/heinnilp)",
+      "[fail][knuth-bendix][kbmag][recursive]",
+      detail::RewriteFromLeft<RecursivePathCompare>) {
+    auto rg = ReportGuard(true);
 
-  //   REQUIRE(!kb.confluent());
+    Presentation<std::string> p;
+    p.alphabet("fFyYdDcCbBaA");
+    p.contains_empty_word(true);
+    presentation::add_inverse_rules(p, "FfYyDdCcBbAa");
+    presentation::add_rule(p, "BAba", "c");
+    presentation::add_rule(p, "CAca", "d");
+    presentation::add_rule(p, "CBcb", "y");
+    presentation::add_rule(p, "DBdb", "f");
+    presentation::add_rule(p, "cBCb", "bcBC");
+    presentation::add_rule(p, "babABaBA", "abABaBAb");
+    presentation::add_rule(p, "cBACab", "abcBAC");
+    presentation::add_rule(p, "BabABBAbab", "aabABBAb");
+    // p.alphabet("01");
+    // presentation::add_rule_no_checks(p, "000", "");
+    // presentation::add_rule_no_checks(p, "111", "");
+    // presentation::add_rule_no_checks(p, "010101", "");
 
-  //   kb.run();
-  //   REQUIRE(kb.confluent());
-  //   REQUIRE(kb.number_of_active_rules() == 32767);
-  //  }
+    KnuthBendix<std::string, TestType, RecursivePathCompare> kb(twosided, p);
+    REQUIRE(!kb.confluent());
+    knuth_bendix::by_overlap_length(kb);
+    kb.run();
+    REQUIRE(kb.confluent());
+    REQUIRE(kb.number_of_active_rules() == 4);
+    REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);
+    REQUIRE(
+        (kb.active_rules() | rx::to_vector())
+        == std::vector<std::pair<std::string, std::string>>(
+            {{"000", ""}, {"111", ""}, {"0011", "1010"}, {"0101", "1100"}}));
+
+    REQUIRE((kb.active_rules() | rx::all_of([](auto const& rule) {
+               return recursive_path_compare(rule.second, rule.first);
+             })));
+  }
 
 }  // namespace libsemigroups
