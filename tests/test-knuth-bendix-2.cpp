@@ -68,7 +68,7 @@ namespace libsemigroups {
 
   struct LibsemigroupsException;
 
-  using RewriteTrie     = detail::RewriteTrie;
+  using RewriteTrie     = detail::RewriteTrie<>;
   using RewriteFromLeft = detail::RewriteFromLeft<>;
 
 #define REWRITER_TYPES RewriteTrie, RewriteFromLeft

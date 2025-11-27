@@ -75,7 +75,7 @@ namespace libsemigroups {
   using knuth_bendix::reduce;
   using knuth_bendix::reduce_no_run;
 
-  using RewriteTrie     = detail::RewriteTrie;
+  using RewriteTrie     = detail::RewriteTrie<>;
   using RewriteFromLeft = detail::RewriteFromLeft<>;
 
 #define KNUTH_BENDIX_TYPES RewriteTrie, RewriteFromLeft

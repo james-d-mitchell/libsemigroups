@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file contains the implementation of a Rule<> object containers for
-// Rule<> objects. It also includes rewriter classes that can be used to rewrite
-// strings relative to a collection of rules.
+// This file contains the implementation of a Rule<ReductionOrder> object
+// containers for Rule<ReductionOrder> objects. It also includes rewriter
+// classes that can be used to rewrite strings relative to a collection of
+// rules.
 
 #ifndef LIBSEMIGROUPS_DETAIL_REWRITERS_HPP_
 #define LIBSEMIGROUPS_DETAIL_REWRITERS_HPP_
@@ -47,7 +48,7 @@ namespace libsemigroups {
   namespace detail {
 
     ////////////////////////////////////////////////////////////////////////
-    // Rule<>
+    // Rule<ReductionOrder>
     ////////////////////////////////////////////////////////////////////////
 
     template <typename ReductionOrder = ShortLexCompare>
@@ -478,27 +479,45 @@ namespace libsemigroups {
     // RewriteTrie
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteTrie : public RewriteBase<> {
+    template <typename ReductionOrder = ShortLexCompare>
+    class RewriteTrie : public RewriteBase<ReductionOrder> {
      public:
-      using index_type    = AhoCorasickImpl::index_type;
-      using iterator      = native_word_type::iterator;
-      using rule_iterator = std::unordered_map<index_type, Rule<>*>::iterator;
-      using native_word_type = Rule<>::native_word_type;
-      using order_type       = ShortLexCompare;
+      using index_type       = AhoCorasickImpl::index_type;
+      using native_word_type = typename Rule<ReductionOrder>::native_word_type;
+      using iterator         = typename native_word_type::iterator;
+      using rule_iterator =
+          typename std::unordered_map<index_type,
+                                      Rule<ReductionOrder>*>::iterator;
+      using order_type = ReductionOrder;
+
+      // TODO Remove State from RewriteBase
+      using State = typename RewriteBase<ReductionOrder>::State;
 
      private:
-      std::unordered_map<index_type, Rule<>*> _new_rule_map;
-      AhoCorasickImpl                         _new_rule_trie;
-      std::vector<index_type>                 _rewrite_tmp_buf;
-      std::unordered_map<index_type, Rule<>*> _rule_map;
-      AhoCorasickImpl                         _rule_trie;
-      bool                                    _ticker_running;
+      std::unordered_map<index_type, Rule<ReductionOrder>*> _new_rule_map;
+      AhoCorasickImpl                                       _new_rule_trie;
+      std::vector<index_type>                               _rewrite_tmp_buf;
+      std::unordered_map<index_type, Rule<ReductionOrder>*> _rule_map;
+      AhoCorasickImpl                                       _rule_trie;
+      bool                                                  _ticker_running;
 
      public:
-      using Rules<>::stats;
+      using Rules<ReductionOrder>::stats;
 
-      using RewriteBase<>::add_rule;
-      using RewriteBase<>::cached_confluent;
+      using RewriteBase<ReductionOrder>::add_inactive_rule;
+      using RewriteBase<ReductionOrder>::add_pending_rule;
+      using RewriteBase<ReductionOrder>::add_rule;
+      using RewriteBase<ReductionOrder>::begin;
+      using RewriteBase<ReductionOrder>::cached_confluent;
+      using RewriteBase<ReductionOrder>::end;
+      using RewriteBase<ReductionOrder>::next_pending_rule;
+      using RewriteBase<ReductionOrder>::number_of_pending_rules;
+      using RewriteBase<ReductionOrder>::number_of_active_rules;
+      using RewriteBase<ReductionOrder>::rbegin;
+      using RewriteBase<ReductionOrder>::rend;
+      using RewriteBase<ReductionOrder>::report_progress_from_thread;
+      using RewriteBase<ReductionOrder>::set_cached_confluent;
+      using RewriteBase<ReductionOrder>::stats;
 
       RewriteTrie();
 
@@ -524,7 +543,7 @@ namespace libsemigroups {
       void rewrite(native_word_type& u);
       void rewrite2(native_word_type& u);
 
-      void rewrite(Rule<>* rule) const {
+      void rewrite(Rule<ReductionOrder>* rule) const {
         rewrite(rule->lhs());
         rewrite(rule->rhs());
         rule->reorder();
@@ -535,19 +554,21 @@ namespace libsemigroups {
       }
 
      private:
-      void add_rule(Rule<>* rule) {
-        Rules<>::add_rule(rule);
+      void add_rule(Rule<ReductionOrder>* rule) {
+        Rules<ReductionOrder>::add_rule(rule);
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
                                                         rule->lhs().cend());
         _rule_map.emplace(node, rule);
         set_cached_confluent(tril::unknown);
       }
 
-      [[nodiscard]] bool descendants_confluent(Rule<> const* rule1,
-                                               index_type    current_node,
-                                               size_t backtrack_depth) const;
+      [[nodiscard]] bool
+      descendants_confluent(Rule<ReductionOrder> const* rule1,
+                            index_type                  current_node,
+                            size_t                      backtrack_depth) const;
 
-      Rules<>::iterator make_active_rule_pending(Rules<>::iterator it);
+      typename Rules<ReductionOrder>::iterator
+      make_active_rule_pending(typename Rules<ReductionOrder>::iterator it);
 
       bool confluent_impl(std::atomic_uint64_t&) override;
 

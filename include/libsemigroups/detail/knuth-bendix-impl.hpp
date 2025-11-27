@@ -133,7 +133,7 @@ namespace libsemigroups {
     //! Those functions with the prefix `current_` do not perform any
     //! further enumeration.
 
-    template <typename Rewriter = detail::RewriteTrie,
+    template <typename Rewriter = detail::RewriteTrie<ShortLexCompare>,
               // TODO remove 2nd template param here
               typename ReductionOrder = ShortLexCompare>
     class KnuthBendixImpl : public CongruenceCommon {
