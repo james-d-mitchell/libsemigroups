@@ -416,6 +416,7 @@ namespace libsemigroups {
      public:
       using native_word_type = typename Rule<ReductionOrder>::native_word_type;
       using iterator         = typename Rules<ReductionOrder>::iterator;
+      using order_type       = ReductionOrder;
 
       using RewriteBase<ReductionOrder>::add_rule;
 
@@ -483,6 +484,7 @@ namespace libsemigroups {
       using iterator      = native_word_type::iterator;
       using rule_iterator = std::unordered_map<index_type, Rule<>*>::iterator;
       using native_word_type = Rule<>::native_word_type;
+      using order_type       = ShortLexCompare;
 
      private:
       std::unordered_map<index_type, Rule<>*> _new_rule_map;
