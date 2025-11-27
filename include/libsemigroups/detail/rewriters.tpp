@@ -333,7 +333,7 @@ namespace libsemigroups::detail {
 
     std::atomic_uint64_t seen = 0;
     if (reporting_enabled() && !_ticker_running) {
-      detail::Guard  state(_state, State::checking_confluence);
+      detail::Guard  state(this->_state, State::checking_confluence);
       detail::Guard  ticker(_ticker_running, true);
       time_point     start_time = high_resolution_clock::now();
       detail::Ticker t(
@@ -348,7 +348,7 @@ namespace libsemigroups::detail {
   void RewriteBase<ReductionOrder>::report_progress_from_thread(
       std::atomic_uint64_t const&                           seen,
       std::chrono::high_resolution_clock::time_point const& start_time) {
-    if (_state == State::none) {
+    if (this->_state == State::none) {
       using detail::string_time;
       auto gd       = detail::group_digits;
       auto active   = gd(number_of_active_rules());
@@ -364,10 +364,10 @@ namespace libsemigroups::detail {
                      pending,
                      defined,
                      string_time(delta(start_time)));
-    } else if (_state == State::checking_confluence) {
+    } else if (this->_state == State::checking_confluence) {
       report_checking_confluence(seen, start_time);
     } else {
-      LIBSEMIGROUPS_ASSERT(_state == State::reducing_pending_rules);
+      LIBSEMIGROUPS_ASSERT(this->_state == State::reducing_pending_rules);
       report_reducing_rules(seen, start_time);
     }
   }
@@ -491,7 +491,8 @@ namespace libsemigroups::detail {
     // TODO we could try to modify rewrite2 to work with indices rather
     // than allocating w here every time (indices not iterators because
     // indices are independent of memory allocation)
-    // TODO we could also, make w a data member like in RewriteTrie
+    // TODO we could also, make w a data member like in
+    // RewriteTrie<ReductionOrder>
     std::string w(v.rbegin(), v.rbegin() + v.size() - n + 1);
     v.erase(v.begin() + n - 1, v.end());
 
@@ -667,5 +668,384 @@ namespace libsemigroups::detail {
     }
     this->_ticker_running = old_ticker_running;
     return rules_added;
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // RewriteTrie<ReductionOrder>
+  ////////////////////////////////////////////////////////////////////////
+
+  template <typename ReductionOrder>
+  RewriteTrie<ReductionOrder>::RewriteTrie()
+      : RewriteBase<ReductionOrder>(),
+        _new_rule_map(),
+        _new_rule_trie(),
+        _rewrite_tmp_buf(),
+        _rule_map(),
+        _rule_trie(0),
+        _ticker_running(false) {}
+
+  template <typename ReductionOrder>
+  RewriteTrie<ReductionOrder>::~RewriteTrie() = default;
+
+  template <typename ReductionOrder>
+  RewriteTrie<ReductionOrder>& RewriteTrie<ReductionOrder>::init() {
+    RewriteBase<ReductionOrder>::init();
+    _rule_map.clear();
+    _rule_trie.init();
+    // Do nothing to _rewrite_tmp_buf, _new_rule_map, or _new_rule_trie
+    return *this;
+  }
+
+  template <typename ReductionOrder>
+  RewriteTrie<ReductionOrder>& RewriteTrie<ReductionOrder>::operator=(
+      RewriteTrie<ReductionOrder> const& that) {
+    init();
+    RewriteBase<ReductionOrder>::operator=(that);
+    _rule_trie = that._rule_trie;
+    for (Rule<ReductionOrder>* rule : *this) {
+      index_type node = _rule_trie.traverse_trie_no_checks(rule->lhs().cbegin(),
+                                                           rule->lhs().cend());
+      LIBSEMIGROUPS_ASSERT(_rule_trie.terminal(node));
+      _rule_map.emplace(node, rule);
+    }
+
+    return *this;
+  }
+
+  // As with RewriteFromLeft::rewrite, this assumes that all rules are
+  // length reducing.
+  template <typename ReductionOrder>
+  void RewriteTrie<ReductionOrder>::rewrite2(native_word_type& u) {
+    // Check if u is rewriteable
+    if (u.size() < stats().min_length_lhs_rule) {
+      return;
+    }
+
+    _rewrite_tmp_buf.clear();
+    index_type current = _rule_trie.root;
+    _rewrite_tmp_buf.push_back(current);
+
+#ifdef LIBSEMIGROUPS_DEBUG
+    iterator v_begin = u.begin();
+#endif
+    iterator v_end   = u.begin();
+    iterator w_begin = v_end;
+    iterator w_end   = u.end();
+
+    while (w_begin != w_end) {
+      // Read first letter of w and traverse trie
+      auto x = *w_begin;
+      ++w_begin;
+      current
+          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
+
+      if (!_rule_trie.node_no_checks(current).terminal()) {
+        _rewrite_tmp_buf.push_back(current);
+        *v_end = x;
+        ++v_end;
+      } else {
+        auto rule_it = _rule_map.find(current);
+        // Find rule that corresponds to terminal node
+        Rule<ReductionOrder> const* rule     = rule_it->second;
+        auto                        lhs_size = rule->lhs().size();
+        LIBSEMIGROUPS_ASSERT(lhs_size != 0);
+
+        // Check the lhs is smaller than the portion of the word that has
+        // been read
+        LIBSEMIGROUPS_ASSERT(lhs_size
+                             <= static_cast<size_t>(v_end - v_begin) + 1);
+        v_end -= lhs_size - 1;
+        w_begin -= rule->rhs().size();
+        // Replace lhs with rhs in-place
+        std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
+        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - lhs_size + 1,
+                               _rewrite_tmp_buf.end());
+        current = _rewrite_tmp_buf.back();
+      }
+    }
+    u.erase(v_end - u.cbegin());
+  }
+
+  template <typename ReductionOrder>
+  void RewriteTrie<ReductionOrder>::rewrite(native_word_type& v) {
+    // Check if v is rewriteable
+    if (v.size() < stats().min_length_lhs_rule) {
+      return;
+    }
+
+    _rewrite_tmp_buf.clear();
+    index_type current = _rule_trie.root;
+    _rewrite_tmp_buf.push_back(current);
+
+    std::string w;  // unread suffix of input word
+    std::swap(v, w);
+    std::reverse(w.begin(), w.end());
+
+    while (!w.empty()) {
+      // Read first letter of w and traverse trie
+      auto x = w.back();
+      w.pop_back();
+      current
+          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
+
+      if (!_rule_trie.node_no_checks(current).terminal()) {
+        _rewrite_tmp_buf.push_back(current);
+        v.push_back(x);
+      } else {
+        Rule<ReductionOrder> const* rule = _rule_map.find(current)->second;
+        // TODO add comment about off by one
+        LIBSEMIGROUPS_ASSERT(rule->lhs().size() <= v.size() + 1);
+        v.erase(v.end() - (rule->lhs().size() - 1), v.end());
+        w.append(rule->rhs().rbegin(), rule->rhs().rend());
+        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - rule->lhs().size() + 1,
+                               _rewrite_tmp_buf.end());
+        current = _rewrite_tmp_buf.back();
+      }
+    }
+  }
+
+  template <typename ReductionOrder>
+  bool RewriteTrie<ReductionOrder>::process_pending_rules() {
+    using detail::aho_corasick_impl::begin_search_no_checks;
+    using detail::aho_corasick_impl::end_search_no_checks;
+
+    auto                 start_time = std::chrono::high_resolution_clock::now();
+    detail::Ticker       ticker;
+    detail::Guard        guard(_ticker_running);
+    std::atomic_uint64_t seen = 0;
+
+    // TODO(1) use a heap for these maybe?
+    std::sort(this->_pending_rules.begin(),
+              this->_pending_rules.end(),
+              [](Rule<ReductionOrder> const* x, Rule<ReductionOrder> const* y) {
+                return x->lhs() > y->lhs();
+              });
+
+    bool rules_added = false;
+    // TODO(1) could make this a setting, or use a different condition (such
+    // as number_of_active_rules / 2 or something)
+    bool use_separate_trie
+        = number_of_pending_rules() < number_of_active_rules();
+
+    while (number_of_pending_rules() != 0) {
+      if (use_separate_trie) {
+        _new_rule_trie.init(_rule_trie.alphabet_size());
+        _new_rule_map.clear();
+      }
+      bool rules_added_this_pass = false;
+      while (number_of_pending_rules() != 0) {
+        Rule<ReductionOrder>* rule = next_pending_rule();
+        LIBSEMIGROUPS_ASSERT(!rule->active());
+        LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
+        // Rewrite both sides and reorder if necessary . . .
+        rewrite(rule);
+
+        if (rule->lhs() != rule->rhs()) {
+          add_rule(rule);
+          if (use_separate_trie) {
+            index_type node = _new_rule_trie.add_word_no_checks(
+                rule->lhs().cbegin(), rule->lhs().cend());
+#ifdef LIBSEMIGROUPS_DEBUG
+            auto [it, inserted] =
+#endif
+                _new_rule_map.emplace(node, rule);
+            // Shouldn't be possible for 2 rules with equal left-hand
+            // sides to exist, since the later added one will be rewritten
+            // using the first.
+            LIBSEMIGROUPS_ASSERT(inserted);
+          }
+          rules_added           = true;
+          rules_added_this_pass = true;
+        } else {
+          add_inactive_rule(rule);
+        }
+        if (!_ticker_running && reporting_enabled()
+            && delta(start_time) >= std::chrono::seconds(1)) {
+          _ticker_running = true;
+          ticker([this, &start_time, &seen]() {
+            report_progress_from_thread(seen, start_time);
+          });
+        }
+      }
+
+      if (rules_added_this_pass) {
+        Guard sg(this->_state);
+        this->_state = State::reducing_pending_rules;
+
+        AhoCorasickImpl* new_rule_trie
+            = use_separate_trie ? &_new_rule_trie : &_rule_trie;
+        decltype(_rule_map)* rule_map
+            = use_separate_trie ? &_new_rule_map : &_rule_map;
+
+        for (auto it = begin(); it != end();) {
+          ++seen;
+          Rule<ReductionOrder>* rule = *it;
+          // Check whether any rule contains the left-hand-side of the "new"
+          // rule
+          bool increment = true;
+          for (auto const& word : {rule->lhs(), rule->rhs()}) {
+            auto first = begin_search_no_checks(*new_rule_trie, word);
+            auto last  = end_search_no_checks(*new_rule_trie, word);
+
+            if (std::any_of(first, last, [rule, rule_map](auto node_index) {
+                  return (*rule_map)[node_index] != rule;
+                })) {
+              it        = make_active_rule_pending(it);
+              increment = false;
+              break;
+            }
+          }
+          if (increment) {
+            ++it;
+          }
+          if (!_ticker_running && reporting_enabled()
+              && delta(start_time) >= std::chrono::seconds(1)) {
+            _ticker_running = true;
+            ticker([this, &start_time, &seen]() {
+              report_progress_from_thread(seen, start_time);
+            });
+          }
+        }
+      }
+    }
+
+    return rules_added;
+  }
+
+  template <typename ReductionOrder>
+  bool RewriteTrie<ReductionOrder>::confluent_impl(std::atomic_uint64_t& seen) {
+    using std::chrono::time_point;
+    time_point start_time = std::chrono::high_resolution_clock::now();
+
+    index_type link;
+    set_cached_confluent(tril::TRUE);
+
+    // For each rule, check if any descendent of any suffix breaks
+    // confluence
+    for (auto node_it = _rule_map.begin(); node_it != _rule_map.end();
+         ++node_it) {
+      seen++;
+      link = _rule_trie.suffix_link_no_checks(node_it->first);
+      LIBSEMIGROUPS_ASSERT(node_it->first != _rule_trie.root);
+      while (link != _rule_trie.root) {
+        if (!descendants_confluent(
+                node_it->second, link, _rule_trie.height_no_checks(link))) {
+          set_cached_confluent(tril::FALSE);
+          report_checking_confluence(seen, start_time);
+          return false;
+        }
+        link = _rule_trie.suffix_link_no_checks(link);
+      }
+    }
+
+    report_checking_confluence(seen, start_time);
+    return true;
+  }
+
+  template <typename ReductionOrder>
+  [[nodiscard]] bool RewriteTrie<ReductionOrder>::descendants_confluent(
+      Rule<ReductionOrder> const* rule1,
+      index_type                  current_node,
+      size_t                      overlap_length) const {
+    LIBSEMIGROUPS_ASSERT(rule1->active());
+    if (_rule_trie.node_no_checks(current_node).terminal()) {
+      Rule<ReductionOrder> const* rule2 = _rule_map.find(current_node)->second;
+      // Process overlap
+      // Word looks like ABC where the LHS of rule1 corresponds to AB,
+      // the LHS of rule2 corresponds to BC, and |C|=nodes.size() - 1.
+      // AB -> X, BC -> Y
+      // ABC gets rewritten to XC and AY
+      // TODO(1) remove allocation, use a MultiView, and check equality,
+      // then copy inside the if-condition
+      native_word_type word1;
+      native_word_type word2;
+
+      word1.assign(rule1->rhs());  // X
+      word1.append(rule2->lhs().cbegin() + overlap_length,
+                   rule2->lhs().cend());  // C
+
+      word2.assign(rule1->lhs().cbegin(),
+                   rule1->lhs().cend() - overlap_length);  // A
+      word2.append(rule2->rhs());                          // Y
+
+      if (word1 != word2) {
+        rewrite(word1);
+        rewrite(word2);
+        if (word1 != word2) {
+          set_cached_confluent(tril::FALSE);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Read each possible letter and traverse down the trie
+    for (letter_type x = 0; x != _rule_trie.alphabet_size(); ++x) {
+      auto child = _rule_trie.child_no_checks(current_node, x);
+      if (child != UNDEFINED) {
+        if (!descendants_confluent(rule1, child, overlap_length)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  template <typename ReductionOrder>
+  typename Rules<ReductionOrder>::iterator
+  RewriteTrie<ReductionOrder>::make_active_rule_pending(
+      typename Rules<ReductionOrder>::iterator it) {
+    Rule<ReductionOrder>* rule = *it;
+    rule->deactivate_no_checks();
+    add_pending_rule(rule);
+    index_type node = _rule_trie.rm_word_no_checks(rule->lhs().cbegin(),
+                                                   rule->lhs().cend());
+    _rule_map.erase(node);
+    return Rules<ReductionOrder>::erase_from_active_rules(it);
+  }
+
+  template <typename ReductionOrder>
+  void RewriteTrie<ReductionOrder>::report_checking_confluence(
+      std::atomic_uint64_t const&                           seen,
+      std::chrono::high_resolution_clock::time_point const& start_time) const {
+    if (reporting_enabled()) {
+      auto total_rules   = Rules<ReductionOrder>::number_of_active_rules();
+      auto total_rules_s = detail::group_digits(total_rules);
+      auto now           = std::chrono::high_resolution_clock::now();
+      auto time
+          = std::chrono::duration_cast<std::chrono::seconds>(now - start_time);
+      report_no_prefix("{:-<95}\n", "");
+      report_default("KnuthBendix: locally confluent for: {0:>{width}} / "
+                     "{1:>{width}} ({2:>4.1f}%) rules ({3}s)\n",
+                     detail::group_digits(seen),
+                     total_rules_s,
+                     (total_rules != 0)
+                         ? 100 * static_cast<double>(seen) / total_rules
+                         : 100,
+                     time.count(),
+                     fmt::arg("width", total_rules_s.size()));
+    }
+  }
+
+  template <typename ReductionOrder>
+  void RewriteTrie<ReductionOrder>::report_reducing_rules(
+      std::atomic_uint64_t const&                           seen,
+      std::chrono::high_resolution_clock::time_point const& start_time) const {
+    auto gd = detail::group_digits;
+    using detail::string_time;
+    if (reporting_enabled()) {
+      // TODO(1) This could maybe be better, more like the formatting in
+      // "report_progress_from_thread"
+      auto total_rules = Rules<ReductionOrder>::number_of_active_rules();
+      report_default("KnuthBendix: reducing rules: {0:>{width}} / "
+                     "{1:>{width}} ({2:>4.1f}%) ({3})\n",
+                     gd(seen),
+                     gd(total_rules),
+                     (total_rules != 0)
+                         ? 100 * static_cast<double>(seen) / total_rules
+                         : 100,
+                     string_time(delta(start_time)),
+                     fmt::arg("width", gd(total_rules).size()));
+    }
   }
 }  // namespace libsemigroups::detail
