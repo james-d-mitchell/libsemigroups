@@ -78,6 +78,9 @@ namespace libsemigroups {
   using RewriteTrie     = detail::RewriteTrie<>;
   using RewriteFromLeft = detail::RewriteFromLeft<>;
 
+  using RewriteTrieRPC     = detail::RewriteTrie<RecursivePathCompare>;
+  using RewriteFromLeftRPC = detail::RewriteFromLeft<RecursivePathCompare>;
+
 #define KNUTH_BENDIX_TYPES RewriteTrie, RewriteFromLeft
 
   namespace {
@@ -604,12 +607,12 @@ namespace libsemigroups {
     REQUIRE(contains(kb, 101001_w, 1000100_w));
   }
 
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "995",
-      "(cong) finite transformation semigroup congruence (21 classes)",
-      "[quick][congruence][knuth-bendix]",
-      detail::RewriteFromLeft<RecursivePathCompare>) {
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "995",  // TODO renumber tests
+                                   "finite semigroup congruence",
+                                   "[quick][congruence][knuth-bendix]",
+                                   RewriteTrieRPC,
+                                   RewriteFromLeftRPC) {
     auto rg      = ReportGuard(false);
     using Transf = LeastTransf<5>;
     FroidurePin<Transf> S;

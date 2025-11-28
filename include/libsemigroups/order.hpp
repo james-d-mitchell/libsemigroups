@@ -430,8 +430,9 @@ namespace libsemigroups {
   //! \warning
   //! This function has significantly worse performance than all
   //! the variants of \ref shortlex_compare and std::lexicographical_compare.
-  // TODO: T -> Iterator
-  // TODO: remove const&
+  // TODO to tpp
+  // TODO T -> Iterator
+  // TODO remove const& from parameters
   template <typename T, typename = std::enable_if_t<!rx::is_input_or_sink_v<T>>>
   bool recursive_path_compare(T const& first1,
                               T        last1,
@@ -446,6 +447,7 @@ namespace libsemigroups {
     }
 
     bool lastmoved = false;
+
     --last1;
     --last2;
     while (true) {

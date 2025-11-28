@@ -93,6 +93,9 @@ namespace libsemigroups {
   using RewriteTrie     = detail::RewriteTrie<>;
   using RewriteFromLeft = detail::RewriteFromLeft<>;
 
+  using RewriteTrieRPC     = detail::RewriteTrie<RecursivePathCompare>;
+  using RewriteFromLeftRPC = detail::RewriteFromLeft<RecursivePathCompare>;
+
 #define REWRITER_TYPES RewriteTrie, RewriteFromLeft
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
@@ -1276,13 +1279,13 @@ namespace libsemigroups {
   // maximal nilpotent quotient, and then introducing new generators for
   // the PCP generators. It is essential for success that reasonably low
   // values of the maxstoredlen parameter are given.
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "994",
-      "(from kbmag/standalone/kb_data/verifynilp)",
-      "[quick][knuth-bendix][kbmag][recursive]",
-      detail::RewriteFromLeft<RecursivePathCompare>) {
-    auto rg = ReportGuard(true);
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "994",
+                                   "kbmag/verifynilp",
+                                   "[quick][knuth-bendix][kbmag][recursive]",
+                                   RewriteTrieRPC,
+                                   RewriteFromLeftRPC) {
+    auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
     p.alphabet("hHgGfFyYdDcCbBaA").contains_empty_word(true);
@@ -1327,12 +1330,12 @@ namespace libsemigroups {
   }
 
   //  A nonhopfian group
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "996",
-      "(from kbmag/standalone/kb_data/nonhopf)",
-      "[quick][knuth-bendix][kbmag][recursive]",
-      detail::RewriteFromLeft<RecursivePathCompare>) {
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "996",
+                                   "kbmag/nonhopf",
+                                   "[quick][knuth-bendix][kbmag][recursive]",
+                                   RewriteTrieRPC,
+                                   RewriteFromLeftRPC) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
 
@@ -1359,12 +1362,12 @@ namespace libsemigroups {
                                                              {"Ab", "abAAA"}}));
   }
 
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "997",
-      "(from kbmag/standalone/kb_data/freenilpc3)",
-      "[quick][knuth-bendix][kbmag][recursive]",
-      detail::RewriteFromLeft<RecursivePathCompare>) {
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "997",
+                                   "kbmag/freenilpc3",
+                                   "[quick][knuth-bendix][kbmag][recursive]",
+                                   RewriteTrieRPC,
+                                   RewriteFromLeftRPC) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -1404,12 +1407,12 @@ namespace libsemigroups {
   }
 
   // Free nilpotent group of rank 2 and class 2
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "998",
-      "(from kbmag/standalone/kb_data/nilp2)",
-      "[quick][knuth-bendix][kbmag][recursive]",
-      detail::RewriteFromLeft<RecursivePathCompare>) {
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "998",
+                                   "kbmag/nilp2",
+                                   "[quick][knuth-bendix][kbmag][recursive]",
+                                   RewriteTrieRPC,
+                                   RewriteFromLeftRPC) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("cCbBaA").contains_empty_word(true);
@@ -1433,12 +1436,12 @@ namespace libsemigroups {
   // is a very difficult calculation indeed, however.
   //
   // KBMAG does not terminate when SHORTLEX order is used.
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "999",
-      "(from kbmag/standalone/kb_data/f27monoid)",
-      "[fail][knuth-bendix][kbmag][recursive]",
-      detail::RewriteFromLeft<RecursivePathCompare>) {
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "999",
+                                   "kbmag/f27monoid",
+                                   "[fail][knuth-bendix][kbmag][recursive]",
+                                   RewriteTrieRPC,
+                                   RewriteFromLeftRPC) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.alphabet("abcdefg");
@@ -1465,12 +1468,11 @@ namespace libsemigroups {
   // presentation here was derived by first applying the NQA to find the
   // maximal nilpotent quotient, and then introducing new generators for
   // the PCP generators.
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "932",
-      "(from kbmag/standalone/kb_data/heinnilp)",
-      "[fail][knuth-bendix][kbmag][recursive]",
-      detail::RewriteFromLeft<RecursivePathCompare>) {
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "932",
+                                   "kbmag/heinnilp",
+                                   "[fail][knuth-bendix][kbmag][recursive]",
+                                   RewriteTrieRPC) {
     auto rg = ReportGuard(true);
 
     Presentation<std::string> p;
@@ -1485,26 +1487,134 @@ namespace libsemigroups {
     presentation::add_rule(p, "babABaBA", "abABaBAb");
     presentation::add_rule(p, "cBACab", "abcBAC");
     presentation::add_rule(p, "BabABBAbab", "aabABBAb");
-    // p.alphabet("01");
-    // presentation::add_rule_no_checks(p, "000", "");
-    // presentation::add_rule_no_checks(p, "111", "");
-    // presentation::add_rule_no_checks(p, "010101", "");
 
     KnuthBendix<std::string, TestType, RecursivePathCompare> kb(twosided, p);
     REQUIRE(!kb.confluent());
     knuth_bendix::by_overlap_length(kb);
     kb.run();
     REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 4);
+    REQUIRE(kb.number_of_active_rules() == 72);
     REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);
-    REQUIRE(
-        (kb.active_rules() | rx::to_vector())
-        == std::vector<std::pair<std::string, std::string>>(
-            {{"000", ""}, {"111", ""}, {"0011", "1010"}, {"0101", "1100"}}));
+    auto rules1 = (kb.active_rules() | rx::to_vector());
+    REQUIRE(rules1
+            == std::vector<std::pair<std::string, std::string>>(
+                {{"fF", ""},     {"Ff", ""},      {"yY", ""},
+                 {"Yy", ""},     {"dD", ""},      {"Dd", ""},
+                 {"cC", ""},     {"Cc", ""},      {"bB", ""},
+                 {"Bb", ""},     {"aA", ""},      {"Aa", ""},
+                 {"db", "bdf"},  {"cb", "bcy"},   {"ca", "acd"},
+                 {"ba", "abc"},  {"YB", "BY"},    {"cB", "BcY"},
+                 {"Yb", "bY"},   {"yb", "by"},    {"yB", "By"},
+                 {"yc", "cy"},   {"Yc", "cY"},    {"yC", "Cy"},
+                 {"CB", "BCy"},  {"Ba", "aBCy"},  {"Cb", "bCY"},
+                 {"YC", "CY"},   {"fy", "yf"},    {"YA", "AYf"},
+                 {"DB", "BDf"},  {"Ca", "aCD"},   {"DC", "CD"},
+                 {"fa", "af"},   {"fC", "Cf"},    {"yD", "Dy"},
+                 {"fB", "Bf"},   {"fc", "cf"},    {"fd", "df"},
+                 {"dC", "Cd"},   {"ya", "ayf"},   {"yd", "dy"},
+                 {"Dc", "cD"},   {"YD", "DY"},    {"dB", "BdF"},
+                 {"fD", "Df"},   {"fA", "Af"},    {"fb", "bf"},
+                 {"FB", "BF"},   {"CA", "ACdff"}, {"bA", "AbCdff"},
+                 {"Da", "aDff"}, {"FC", "CF"},    {"FY", "YF"},
+                 {"dA", "Adff"}, {"dc", "cd"},    {"Ya", "aYF"},
+                 {"Fc", "cF"},   {"yA", "AyF"},   {"Yd", "dY"},
+                 {"FD", "DF"},   {"cA", "AcDFF"}, {"Fa", "aF"},
+                 {"FA", "AF"},   {"Fb", "bF"},    {"BA", "ABcDYF"},
+                 {"Db", "bDF"},  {"fY", "Yf"},    {"Fy", "yF"},
+                 {"DA", "ADFF"}, {"Fd", "dF"},    {"da", "adFF"}}));
 
-    REQUIRE((kb.active_rules() | rx::all_of([](auto const& rule) {
-               return recursive_path_compare(rule.second, rule.first);
-             })));
+    // NOTE: recursive_path_compare (and all the other orders) use the numerical
+    // value of the letters in the alphabet as the order on the alphabet, in
+    // this example, the order on the alphabet is "fFyYdDcCbBaA" which is not
+    // numerical order, hence the contorsions below.
+    // TODO: make it so that we don't have the contorsions below, using the yet
+    // to be implemented Alphabet objects
+
+    v4::ToWord to_word(p.alphabet());
+    auto       rules2
+        = (rx::iterator_range(rules1.begin(), rules1.end())
+           | rx::transform([&to_word](auto const& rule) {
+               return std::pair(to_word(rule.first), to_word(rule.second));
+             })
+           | rx::to_vector());
+
+    REQUIRE(rules2
+            == std::vector<std::pair<word_type, word_type>>(
+                {{{0, 1}, {}},
+                 {{1, 0}, {}},
+                 {{2, 3}, {}},
+                 {{3, 2}, {}},
+                 {{4, 5}, {}},
+                 {{5, 4}, {}},
+                 {{6, 7}, {}},
+                 {{7, 6}, {}},
+                 {{8, 9}, {}},
+                 {{9, 8}, {}},
+                 {{10, 11}, {}},
+                 {{11, 10}, {}},
+                 {{4, 8}, {8, 4, 0}},
+                 {{6, 8}, {8, 6, 2}},
+                 {{6, 10}, {10, 6, 4}},
+                 {{8, 10}, {10, 8, 6}},
+                 {{3, 9}, {9, 3}},
+                 {{6, 9}, {9, 6, 3}},
+                 {{3, 8}, {8, 3}},
+                 {{2, 8}, {8, 2}},
+                 {{2, 9}, {9, 2}},
+                 {{2, 6}, {6, 2}},
+                 {{3, 6}, {6, 3}},
+                 {{2, 7}, {7, 2}},
+                 {{7, 9}, {9, 7, 2}},
+                 {{9, 10}, {10, 9, 7, 2}},
+                 {{7, 8}, {8, 7, 3}},
+                 {{3, 7}, {7, 3}},
+                 {{0, 2}, {2, 0}},
+                 {{3, 11}, {11, 3, 0}},
+                 {{5, 9}, {9, 5, 0}},
+                 {{7, 10}, {10, 7, 5}},
+                 {{5, 7}, {7, 5}},
+                 {{0, 10}, {10, 0}},
+                 {{0, 7}, {7, 0}},
+                 {{2, 5}, {5, 2}},
+                 {{0, 9}, {9, 0}},
+                 {{0, 6}, {6, 0}},
+                 {{0, 4}, {4, 0}},
+                 {{4, 7}, {7, 4}},
+                 {{2, 10}, {10, 2, 0}},
+                 {{2, 4}, {4, 2}},
+                 {{5, 6}, {6, 5}},
+                 {{3, 5}, {5, 3}},
+                 {{4, 9}, {9, 4, 1}},
+                 {{0, 5}, {5, 0}},
+                 {{0, 11}, {11, 0}},
+                 {{0, 8}, {8, 0}},
+                 {{1, 9}, {9, 1}},
+                 {{7, 11}, {11, 7, 4, 0, 0}},
+                 {{8, 11}, {11, 8, 7, 4, 0, 0}},
+                 {{5, 10}, {10, 5, 0, 0}},
+                 {{1, 7}, {7, 1}},
+                 {{1, 3}, {3, 1}},
+                 {{4, 11}, {11, 4, 0, 0}},
+                 {{4, 6}, {6, 4}},
+                 {{3, 10}, {10, 3, 1}},
+                 {{1, 6}, {6, 1}},
+                 {{2, 11}, {11, 2, 1}},
+                 {{3, 4}, {4, 3}},
+                 {{1, 5}, {5, 1}},
+                 {{6, 11}, {11, 6, 5, 1, 1}},
+                 {{1, 10}, {10, 1}},
+                 {{1, 11}, {11, 1}},
+                 {{1, 8}, {8, 1}},
+                 {{9, 11}, {11, 9, 6, 5, 3, 1}},
+                 {{5, 8}, {8, 5, 1}},
+                 {{0, 3}, {3, 0}},
+                 {{1, 2}, {2, 1}},
+                 {{5, 11}, {11, 5, 1, 1}},
+                 {{1, 4}, {4, 1}},
+                 {{4, 10}, {10, 4, 1, 1}}}));
+    REQUIRE(std::all_of(rules2.begin(), rules2.end(), [](auto const& rule) {
+      return recursive_path_compare(rule.second, rule.first);
+    }));
   }
 
 }  // namespace libsemigroups
