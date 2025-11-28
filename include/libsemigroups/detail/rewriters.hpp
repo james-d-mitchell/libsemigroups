@@ -441,6 +441,7 @@ namespace libsemigroups {
       using RewriteBase<ReductionOrder>::cached_confluent;
       using RewriteBase<ReductionOrder>::end;
       using RewriteBase<ReductionOrder>::next_pending_rule;
+      using RewriteBase<ReductionOrder>::number_of_active_rules;
       using RewriteBase<ReductionOrder>::number_of_pending_rules;
       using RewriteBase<ReductionOrder>::rbegin;
       using RewriteBase<ReductionOrder>::rend;
