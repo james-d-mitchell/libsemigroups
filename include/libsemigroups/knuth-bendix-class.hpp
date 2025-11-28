@@ -93,9 +93,8 @@ namespace libsemigroups {
   //! * 128 letters if `char` a signed integer;
   //! * 256 letters if `char` is an unsigned integer.
   template <typename Word,
-            typename Rewriter       = detail::RewriteTrie<ShortLexCompare>,
-            typename ReductionOrder = ShortLexCompare>  // TODO remove
-  // ReductionOrder template param
+            typename Rewriter       = detail::RewriteTrie,
+            typename ReductionOrder = ShortLexCompare>
   class KnuthBendix : public detail::KnuthBendixImpl<Rewriter, ReductionOrder> {
    private:
     using KnuthBendixImpl_ = detail::KnuthBendixImpl<Rewriter, ReductionOrder>;
