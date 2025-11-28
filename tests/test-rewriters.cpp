@@ -28,7 +28,7 @@ namespace libsemigroups {
   using literals::operator""_w;
 
   namespace detail {
-    using string_type = RewriteTrie<>::native_word_type;
+    using string_type = RewriteTrie::native_word_type;
     using namespace std::literals;
 
     LIBSEMIGROUPS_TEST_CASE("RewriteTrie", "000", "initial test", "[quick]") {
@@ -304,8 +304,8 @@ namespace libsemigroups {
     //                                  "013",
     //                                  "non-length reducing",
     //                                  "[no-valgrind][quick]",
-    //                                  RewriteFromLeft<>,
-    //                                  RewriteTrie<>) {
+    //                                  RewriteFromLeft,
+    //                                  RewriteTrie) {
     //   auto     rg = ReportGuard(false);
     //   TestType rewriter;
 

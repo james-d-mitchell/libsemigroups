@@ -40,8 +40,8 @@ namespace libsemigroups {
 
   congruence_kind constexpr twosided = congruence_kind::twosided;
   congruence_kind constexpr onesided = congruence_kind::onesided;
-  using RewriteFromLeft              = detail::RewriteFromLeft<>;
-  using RewriteTrie                  = detail::RewriteTrie<>;
+  using RewriteFromLeft              = detail::RewriteFromLeft;
+  using RewriteTrie                  = detail::RewriteTrie;
 
   using RewriteFromLeft_string = std::pair<RewriteFromLeft, std::string>;
   using RewriteFromLeft_word   = std::pair<RewriteFromLeft, word_type>;
