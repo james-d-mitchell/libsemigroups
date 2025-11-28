@@ -19,15 +19,15 @@
 namespace libsemigroups {
   namespace detail {
 
-    void prefixes_string(std::unordered_map<std::string, size_t>& st,
-                         std::string const&                       x,
-                         size_t&                                  n);
+    void prefixes_string(std::unordered_map<Rule::native_word_type, size_t>& st,
+                         Rule::native_word_type const&                       x,
+                         size_t&                                             n);
 
     template <typename Rewriter, typename ReductionOrder>
     struct KnuthBendixImpl<Rewriter, ReductionOrder>::ABC
         : KnuthBendixImpl<Rewriter, ReductionOrder>::OverlapMeasure {
-      size_t operator()(detail::Rule<order_type> const*                  AB,
-                        detail::Rule<order_type> const*                  BC,
+      size_t operator()(detail::Rule const*                              AB,
+                        detail::Rule const*                              BC,
                         typename native_word_type::const_iterator const& it) {
         LIBSEMIGROUPS_ASSERT(AB->active() && BC->active());
         LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
@@ -40,8 +40,8 @@ namespace libsemigroups {
     template <typename Rewriter, typename ReductionOrder>
     struct KnuthBendixImpl<Rewriter, ReductionOrder>::AB_BC
         : KnuthBendixImpl<Rewriter, ReductionOrder>::OverlapMeasure {
-      size_t operator()(detail::Rule<order_type> const*                  AB,
-                        detail::Rule<order_type> const*                  BC,
+      size_t operator()(detail::Rule const*                              AB,
+                        detail::Rule const*                              BC,
                         typename native_word_type::const_iterator const& it) {
         LIBSEMIGROUPS_ASSERT(AB->active() && BC->active());
         LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
@@ -55,8 +55,8 @@ namespace libsemigroups {
     template <typename Rewriter, typename ReductionOrder>
     struct KnuthBendixImpl<Rewriter, ReductionOrder>::MAX_AB_BC
         : KnuthBendixImpl<Rewriter, ReductionOrder>::OverlapMeasure {
-      size_t operator()(detail::Rule<order_type> const*                  AB,
-                        detail::Rule<order_type> const*                  BC,
+      size_t operator()(detail::Rule const*                              AB,
+                        detail::Rule const*                              BC,
                         typename native_word_type::const_iterator const& it) {
         LIBSEMIGROUPS_ASSERT(AB->active() && BC->active());
         LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
@@ -572,9 +572,7 @@ namespace libsemigroups {
       // non-trivial overlaps are added and there are a no pending rules.
       while (add_overlaps) {
         while (first != _rewriter.end() && !stop_running()) {
-          // TODO get the reduction order from Rewriter not as separate template
-          // param
-          detail::Rule<order_type> const* rule1 = *first;
+          detail::Rule const* rule1 = *first;
           // It is tempting to remove rule1 and rule2 here and use *first and
           // *second instead but this leads to some badness (which we didn't
           // understand, but it also didn't seem super important).
@@ -582,7 +580,7 @@ namespace libsemigroups {
           overlap(rule1, rule1);
           while (second != _rewriter.begin() && rule1->active()) {
             --second;
-            detail::Rule<order_type> const* rule2 = *second;
+            detail::Rule const* rule2 = *second;
             overlap(rule1, rule2);
             ++nr;
             if (rule1->active() && rule2->active()) {
@@ -685,14 +683,15 @@ namespace libsemigroups {
         run();
         LIBSEMIGROUPS_ASSERT(finished());
         LIBSEMIGROUPS_ASSERT(confluent());
-        std::unordered_map<native_word_type, size_t> prefixes;
-        prefixes.emplace(native_word_type(), 0);
+        std::unordered_map<Rule::native_word_type, size_t> prefixes;
+        prefixes.emplace(Rule::native_word_type(), 0);
         size_t n = 1;
         for (auto const* rule : _rewriter) {
           detail::prefixes_string(prefixes, rule->lhs(), n);
         }
 
-        _gilman_graph_node_labels.resize(prefixes.size(), std::string());
+        _gilman_graph_node_labels.resize(prefixes.size(),
+                                         Rule::native_word_type());
         for (auto const& p : prefixes) {
           _gilman_graph_node_labels[p.second] = p.first;
         }
@@ -812,9 +811,9 @@ namespace libsemigroups {
 
     // OVERLAP_2 from Sims, p77
     template <typename Rewriter, typename ReductionOrder>
-    void KnuthBendixImpl<Rewriter, ReductionOrder>::overlap(
-        detail::Rule<order_type> const* u,
-        detail::Rule<order_type> const* v) {
+    void
+    KnuthBendixImpl<Rewriter, ReductionOrder>::overlap(detail::Rule const* u,
+                                                       detail::Rule const* v) {
       LIBSEMIGROUPS_ASSERT(u->active() && v->active());
       auto const &ulhs = u->lhs(), vlhs = v->lhs();
       auto const &urhs = u->rhs(), vrhs = v->rhs();
