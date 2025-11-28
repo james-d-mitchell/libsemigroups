@@ -39,8 +39,8 @@
 
 namespace libsemigroups {
 
-  using RewriteTrie     = detail::RewriteTrie<>;
-  using RewriteFromLeft = detail::RewriteFromLeft<>;
+  using RewriteTrie     = detail::RewriteTrie;
+  using RewriteFromLeft = detail::RewriteFromLeft;
 
   congruence_kind constexpr twosided = congruence_kind::twosided;
 
