@@ -59,7 +59,7 @@ namespace libsemigroups {
      private:
       native_word_type _lhs;
       native_word_type _rhs;
-      int64_t          _id;
+      int64_t          _id;  // TODO remove?
 
      public:
       explicit Rule(int64_t id);
@@ -113,7 +113,6 @@ namespace libsemigroups {
 
       void reorder() {
         if (ReductionOrder()(_lhs, _rhs)) {
-          // if (shortlex_compare(_lhs, _rhs)) {
           std::swap(_lhs, _rhs);
         }
       }
@@ -172,6 +171,8 @@ namespace libsemigroups {
       using const_reverse_iterator = typename list_type::const_reverse_iterator;
 
      private:
+      // TODO this doesn't depend on the template parameter at all, so should
+      // probably not be in this class, but in a base class
       struct Stats {
         Stats() noexcept;
         Stats& init() noexcept;
@@ -281,6 +282,7 @@ namespace libsemigroups {
     // RewriteBase
     ////////////////////////////////////////////////////////////////////////
 
+    // TODO factor out base class not depending on ReductionOrder template param
     template <typename ReductionOrder = ShortLexCompare>
     class RewriteBase : public Rules<ReductionOrder> {
       mutable std::atomic<bool> _cached_confluent;
@@ -294,7 +296,6 @@ namespace libsemigroups {
         reducing_pending_rules,
         checking_confluence
       };
-
       std::vector<Rule<ReductionOrder>*> _pending_rules;
       State                              _state;
       bool                               _ticker_running;
@@ -355,9 +356,11 @@ namespace libsemigroups {
 
       Rule<ReductionOrder>* next_pending_rule();
 
+      // TODO -> helper
       template <typename StringLike>
       void add_rule(StringLike const& lhs, StringLike const& rhs);
 
+      // TODO -> helper
       inline void add_rule(char const* lhs, char const* rhs) {
         if (lhs != rhs) {
           add_pending_rule(Rules<ReductionOrder>::new_rule(
