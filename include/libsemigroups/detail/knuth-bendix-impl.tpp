@@ -338,7 +338,8 @@ namespace libsemigroups {
           && _rewriter.number_of_pending_rules() != 0) {
         _rewriter.process_pending_rules();
       }
-      return iterator_range(_rewriter.begin(), _rewriter.end());
+      return iterator_range(_rewriter.active_rules().begin(),
+                            _rewriter.active_rules().end());
     }
 
     // TODO(1) export a version of this for use elsewhere
@@ -347,7 +348,9 @@ namespace libsemigroups {
     KnuthBendixImpl<Rewriter, ReductionOrder>::report_presentation() const {
       using detail::group_digits;
       size_t min = POSITIVE_INFINITY, max = 0, len = 0;
-      for (auto it = _rewriter.begin(); it != _rewriter.end(); ++it) {
+      for (auto it = _rewriter.active_rules().begin();
+           it != _rewriter.active_rules().end();
+           ++it) {
         auto rule_len = (**it).lhs().size() + (**it).rhs().size();
         len += rule_len;
         min = (rule_len < min ? rule_len : min);
@@ -565,20 +568,21 @@ namespace libsemigroups {
 
       auto& first  = _rewriter.cursor(0);
       auto& second = _rewriter.cursor(1);
-      first        = _rewriter.begin();
+      first        = _rewriter.active_rules().begin();
 
       size_t nr = 0;
       // Add overlaps that occur between rules. Repeat this process until no
       // non-trivial overlaps are added and there are a no pending rules.
       while (add_overlaps) {
-        while (first != _rewriter.end() && !stop_running()) {
+        while (first != _rewriter.active_rules().end() && !stop_running()) {
           detail::Rule const* rule1 = *first;
           // It is tempting to remove rule1 and rule2 here and use *first and
           // *second instead but this leads to some badness (which we didn't
           // understand, but it also didn't seem super important).
           second = first++;
           overlap(rule1, rule1);
-          while (second != _rewriter.begin() && rule1->active()) {
+          while (second != _rewriter.active_rules().begin()
+                 && rule1->active()) {
             --second;
             detail::Rule const* rule2 = *second;
             overlap(rule1, rule2);
@@ -686,7 +690,7 @@ namespace libsemigroups {
         std::unordered_map<Rule::native_word_type, size_t> prefixes;
         prefixes.emplace(Rule::native_word_type(), 0);
         size_t n = 1;
-        for (auto const* rule : _rewriter) {
+        for (auto const* rule : _rewriter.active_rules()) {
           detail::prefixes_string(prefixes, rule->lhs(), n);
         }
 

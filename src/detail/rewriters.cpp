@@ -99,14 +99,14 @@ namespace libsemigroups {
 
     Rules& Rules::operator=(Rules const& that) {
       init();
-      for (Rule const* rule : that) {
+      for (Rule const* rule : that.active_rules()) {
         add_active_rule(copy_rule(rule));
       }
       for (size_t i = 0; i < _cursors.size(); ++i) {
         _cursors[i] = _active_rules.begin();
         std::advance(
             _cursors[i],
-            std::distance(that.begin(),
+            std::distance(that.active_rules().begin(),
                           static_cast<const_iterator>(that._cursors[i])));
       }
       return *this;
@@ -189,7 +189,7 @@ namespace libsemigroups {
       rule->activate_no_checks();
       _active_rules.push_back(rule);
       for (auto& it : _cursors) {
-        if (it == end()) {
+        if (it == _active_rules.end()) {
           --it;
         }
       }
@@ -204,8 +204,9 @@ namespace libsemigroups {
       auto comp = [](Rule const* p, Rule const* q) -> bool {
         return p->lhs().size() < q->lhs().size();
       };
-      auto max = std::max_element(begin(), end(), comp);
-      if (max != end()) {
+      auto max
+          = std::max_element(_active_rules.begin(), _active_rules.end(), comp);
+      if (max != _active_rules.end()) {
         _stats.max_active_word_length
             = std::max(_stats.max_active_word_length, (*max)->lhs().size());
       }
@@ -374,7 +375,7 @@ namespace libsemigroups {
     RewriteFromLeft& RewriteFromLeft::operator=(RewriteFromLeft const& that) {
       init();
       RewriteBase::operator=(that);
-      for (auto* rule : *this) {
+      for (auto* rule : active_rules()) {
 #ifdef LIBSEMIGROUPS_DEBUG
         LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
 #else
@@ -533,10 +534,12 @@ namespace libsemigroups {
       native_word_type word1;
       native_word_type word2;
 
-      for (auto it1 = begin(); it1 != end(); ++it1) {
+      for (auto it1 = active_rules().begin(); it1 != active_rules().end();
+           ++it1) {
         Rule const* rule1 = *it1;
         // Seems to be much faster to do this in reverse.
-        for (auto it2 = rbegin(); it2 != rend(); ++it2) {
+        for (auto it2 = active_rules().rbegin(); it2 != active_rules().rend();
+             ++it2) {
           seen++;
           Rule const* rule2 = *it2;
           for (auto it = rule1->lhs().cend() - 1; it >= rule1->lhs().cbegin();
@@ -606,7 +609,7 @@ namespace libsemigroups {
         if (rule1->lhs() != rule1->rhs()) {
           native_word_type& lhs = rule1->lhs();
 
-          for (auto it = begin(); it != end();) {
+          for (auto it = active_rules().begin(); it != active_rules().end();) {
             Rule* rule2 = *it;
 
             // Check if lhs is contained within either the lhs or rhs of rule2
@@ -663,7 +666,7 @@ namespace libsemigroups {
       init();
       RewriteBase::operator=(that);
       _rule_trie = that._rule_trie;
-      for (Rule* rule : *this) {
+      for (Rule* rule : active_rules()) {
         index_type node = _rule_trie.traverse_trie_no_checks(
             rule->lhs().cbegin(), rule->lhs().cend());
         LIBSEMIGROUPS_ASSERT(_rule_trie.terminal(node));
@@ -835,7 +838,7 @@ namespace libsemigroups {
           decltype(_rule_map)* rule_map
               = use_separate_trie ? &_new_rule_map : &_rule_map;
 
-          for (auto it = begin(); it != end();) {
+          for (auto it = active_rules().begin(); it != active_rules().end();) {
             ++seen;
             Rule* rule = *it;
             // Check whether any rule contains the left-hand-side of the "new"
