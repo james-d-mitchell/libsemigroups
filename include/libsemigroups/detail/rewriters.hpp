@@ -154,6 +154,7 @@ namespace libsemigroups {
 
     class Rules {
      public:
+      // TODO rm?
       using iterator               = std::list<Rule*>::iterator;
       using const_iterator         = std::list<Rule*>::const_iterator;
       using const_reverse_iterator = std::list<Rule*>::const_reverse_iterator;
@@ -168,9 +169,10 @@ namespace libsemigroups {
         Stats& operator=(Stats const&) noexcept = default;
         Stats& operator=(Stats&&) noexcept      = default;
 
-        size_t   max_word_length;
-        size_t   max_active_word_length;
+        size_t   max_active_word_length;  // TODO rename
         size_t   max_active_rules;
+        size_t   max_pending_rules;
+        size_t   max_word_length;
         size_t   min_length_lhs_rule;
         uint64_t total_rules;
       };
@@ -178,6 +180,7 @@ namespace libsemigroups {
       std::list<Rule*>        _active_rules;
       std::array<iterator, 2> _cursors;
       std::list<Rule*>        _inactive_rules;
+      std::vector<Rule*>      _pending_rules;
       mutable Stats           _stats;
 
      public:
@@ -192,6 +195,10 @@ namespace libsemigroups {
       }
 
       Rules(Rules&& that) = default;
+      // TODO replace with the following
+      // : Rules() {
+      //       *this = std::move(that);
+      //     }
 
       Rules& operator=(Rules const&);
       Rules& operator=(Rules&& that);
@@ -201,6 +208,7 @@ namespace libsemigroups {
       Rules& init();
 
       void add_active_rule(Rule* rule);
+      void add_pending_rule(Rule* rule);
 
       [[nodiscard]] std::list<Rule*> const& active_rules() const noexcept {
         return _active_rules;
@@ -218,6 +226,12 @@ namespace libsemigroups {
         return _inactive_rules.size();
       }
 
+      [[nodiscard]] size_t number_of_pending_rules() const noexcept {
+        return _pending_rules.size();
+      }
+
+      Rule* next_pending_rule();
+
       iterator& cursor(size_t index) {
         LIBSEMIGROUPS_ASSERT(index < _cursors.size());
         return _cursors[index];
@@ -227,10 +241,19 @@ namespace libsemigroups {
         return _stats;
       }
 
-      // TODO rm this, update and use the value in Stats
+      void sort_pending_rules() {
+        std::sort(
+            _pending_rules.begin(),
+            _pending_rules.end(),
+            [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
+      }
+
+      // TODO rm? at least rename to max_lhs_length()
+      // TODO add max_current_active_lhs_length
       [[nodiscard]] size_t max_active_word_length() const;
 
-     protected:
+     protected:  // TODO protected -> private when Rewriters do not inherit from
+                 // Rules
       template <typename Iterator>
       [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
                                    Iterator end_lhs,
@@ -248,6 +271,7 @@ namespace libsemigroups {
       [[nodiscard]] iterator erase_from_active_rules(iterator it);
 
       void add_inactive_rule(Rule* rule) {
+        rule->deactivate_no_checks();
         _inactive_rules.push_back(rule);
       }
 
@@ -262,7 +286,6 @@ namespace libsemigroups {
     class RewriteBase : public Rules {
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
-      size_t                    _max_pending_rules;
 
      protected:
       enum class State : uint8_t {
@@ -272,9 +295,8 @@ namespace libsemigroups {
         checking_confluence
       };
 
-      std::vector<Rule*> _pending_rules;
-      State              _state;
-      bool               _ticker_running;
+      State _state;
+      bool  _ticker_running;
 
      public:
       using native_word_type = Rule::native_word_type;
@@ -317,16 +339,6 @@ namespace libsemigroups {
         return _confluence_known;
       }
 
-      [[nodiscard]] size_t max_pending_rules() const {
-        return _max_pending_rules;
-      }
-
-      size_t number_of_pending_rules() const noexcept {
-        return _pending_rules.size();
-      }
-
-      Rule* next_pending_rule();
-
       // TODO -> helper
       template <typename StringLike>
       void add_rule(StringLike const& lhs, StringLike const& rhs);
@@ -352,8 +364,6 @@ namespace libsemigroups {
           std::chrono::high_resolution_clock::time_point const& start_time) {
         report_progress_from_thread(0, start_time);
       }
-
-      bool add_pending_rule(Rule* rule);
 
      private:
       virtual bool confluent_impl(std::atomic_uint64_t& seen) = 0;

@@ -67,7 +67,7 @@ namespace libsemigroups {
     }
 
     ////////////////////////////////////////////////////////////////////////
-    // Rules
+    // Rules::Stats
     ////////////////////////////////////////////////////////////////////////
 
     Rules::Stats::Stats() noexcept {
@@ -75,22 +75,32 @@ namespace libsemigroups {
     }
 
     Rules::Stats& Rules::Stats::init() noexcept {
-      max_word_length        = 0;
       max_active_word_length = 0;
       max_active_rules       = 0;
+      max_pending_rules      = 0;
+      max_word_length        = 0;
       min_length_lhs_rule    = std::numeric_limits<size_t>::max();
       total_rules            = 0;
       return *this;
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    // Rules - constructors + initializers
+    ////////////////////////////////////////////////////////////////////////
+
     Rules& Rules::init() {
-      // Put all active rules and those rules in the stack into the
-      // inactive_rules list
-      for (Rule* ptr : _active_rules) {
-        ptr->deactivate_no_checks();
-        _inactive_rules.insert(_inactive_rules.end(), ptr);
+      _stats.init();
+
+      for (Rule* rule : _active_rules) {
+        add_inactive_rule(rule);
       }
       _active_rules.clear();
+
+      for (Rule* rule : _pending_rules) {
+        add_inactive_rule(rule);
+      }
+      _pending_rules.clear();
+
       for (auto& it : _cursors) {
         it = _active_rules.end();
       }
@@ -99,8 +109,12 @@ namespace libsemigroups {
 
     Rules& Rules::operator=(Rules const& that) {
       init();
-      for (Rule const* rule : that.active_rules()) {
+      for (Rule const* rule : that._active_rules) {
         add_active_rule(copy_rule(rule));
+      }
+      for (auto const* rule : that._pending_rules) {
+        // TODO add_pending_rule
+        _pending_rules.emplace_back(copy_rule(rule));
       }
       for (size_t i = 0; i < _cursors.size(); ++i) {
         _cursors[i] = _active_rules.begin();
@@ -116,6 +130,7 @@ namespace libsemigroups {
       // We swap to ensure that all rules are properly deleted
       std::swap(_active_rules, that._active_rules);
       std::swap(_inactive_rules, that._inactive_rules);
+      std::swap(_pending_rules, that._pending_rules);
       _cursors = std::move(that._cursors);
       _stats   = std::move(that._stats);
       return *this;
@@ -128,7 +143,14 @@ namespace libsemigroups {
       for (Rule* rule : _inactive_rules) {
         delete rule;
       }
+      for (Rule* rule : _pending_rules) {
+        delete rule;
+      }
     }
+
+    ////////////////////////////////////////////////////////////////////////
+    // Rules - get/set rules
+    ////////////////////////////////////////////////////////////////////////
 
     Rule* Rules::new_rule() {
       ++_stats.total_rules;
@@ -150,6 +172,39 @@ namespace libsemigroups {
                       rule->lhs().cend(),
                       rule->rhs().cbegin(),
                       rule->rhs().cend());
+    }
+
+    void Rules::add_active_rule(Rule* rule) {
+      LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
+      _stats.max_word_length
+          = std::max(_stats.max_word_length, rule->lhs().size());
+      _stats.max_active_rules
+          = std::max(_stats.max_active_rules, number_of_active_rules());
+      rule->activate_no_checks();
+      _active_rules.push_back(rule);
+      for (auto& it : _cursors) {
+        if (it == _active_rules.end()) {
+          --it;
+        }
+      }
+      if (rule->lhs().size() < _stats.min_length_lhs_rule) {
+        // TODO(later) this is not valid when using non-length reducing
+        // orderings (such as RECURSIVE)
+        _stats.min_length_lhs_rule = rule->lhs().size();
+      }
+    }
+
+    void Rules::add_pending_rule(Rule* rule) {
+      LIBSEMIGROUPS_ASSERT(!rule->active());
+      if (rule->lhs() != rule->rhs()) {
+        rule->reorder();
+        _pending_rules.push_back(rule);
+        _stats.max_pending_rules
+            = std::max(_stats.max_pending_rules, _pending_rules.size());
+      } else {
+        // TODO remove this clause and the return value?
+        Rules::add_inactive_rule(rule);
+      }
     }
 
     Rules::iterator Rules::erase_from_active_rules(iterator it) {
@@ -179,38 +234,24 @@ namespace libsemigroups {
       return it;
     }
 
-    void Rules::add_active_rule(Rule* rule) {
-      LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
-      _stats.max_word_length
-          = std::max(_stats.max_word_length, rule->lhs().size());
-      _stats.max_active_rules
-          = std::max(_stats.max_active_rules, number_of_active_rules());
-      // _stats.unique_lhs_rules.insert(*rule->lhs());
-      rule->activate_no_checks();
-      _active_rules.push_back(rule);
-      for (auto& it : _cursors) {
-        if (it == _active_rules.end()) {
-          --it;
-        }
-      }
-      if (rule->lhs().size() < _stats.min_length_lhs_rule) {
-        // TODO(later) this is not valid when using non-length reducing
-        // orderings (such as RECURSIVE)
-        _stats.min_length_lhs_rule = rule->lhs().size();
-      }
-    }
-
     size_t Rules::max_active_word_length() const {
       auto comp = [](Rule const* p, Rule const* q) -> bool {
         return p->lhs().size() < q->lhs().size();
       };
-      auto max
+      auto it
           = std::max_element(_active_rules.begin(), _active_rules.end(), comp);
-      if (max != _active_rules.end()) {
+      if (it != _active_rules.end()) {
         _stats.max_active_word_length
-            = std::max(_stats.max_active_word_length, (*max)->lhs().size());
+            = std::max(_stats.max_active_word_length, (*it)->lhs().size());
       }
       return _stats.max_active_word_length;
+    }
+
+    Rule* Rules::next_pending_rule() {
+      LIBSEMIGROUPS_ASSERT(_pending_rules.size() != 0);
+      Rule* rule = _pending_rules.back();
+      _pending_rules.pop_back();
+      return rule;
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -220,42 +261,27 @@ namespace libsemigroups {
     RewriteBase::RewriteBase()
         : _cached_confluent(false),
           _confluence_known(false),
-          _max_pending_rules(0),
-          _pending_rules(),
           _ticker_running(false) {}
 
     RewriteBase& RewriteBase::init() {
       Rules::init();
-      // Put all active rules and those rules in the stack into the
-      // inactive_rules list
-      for (Rule* rule : _pending_rules) {
-        Rules::add_inactive_rule(rule);
-      }
-      _pending_rules.clear();
-      _max_pending_rules = 0;
-      _cached_confluent  = false;
-      _confluence_known  = false;
-      _ticker_running    = false;
+      _cached_confluent = false;
+      _confluence_known = false;
+      _ticker_running   = false;
       return *this;
     }
 
     RewriteBase::RewriteBase(RewriteBase&& that)
         : _cached_confluent(that._cached_confluent.load()),
           _confluence_known(that._confluence_known.load()),
-          _max_pending_rules(std::move(that._max_pending_rules)),
-          _pending_rules(std::move(that._pending_rules)),
           _ticker_running(std::move(that._ticker_running)) {}
 
     RewriteBase& RewriteBase::operator=(RewriteBase const& that) {
       Rules::operator=(that);
       _cached_confluent = that._cached_confluent.load();
       _confluence_known = that._confluence_known.load();
-      _pending_rules.clear();
-      _ticker_running = that._ticker_running;
+      _ticker_running   = that._ticker_running;
 
-      for (auto const* rule : that._pending_rules) {
-        _pending_rules.emplace_back(copy_rule(rule));
-      }
       return *this;
     }
 
@@ -263,18 +289,11 @@ namespace libsemigroups {
       Rules::operator=(std::move(that));
       _cached_confluent = that._cached_confluent.load();
       _confluence_known = that._confluence_known.load();
-      // Again we swap so that all rules are properly deleted
-      std::swap(_pending_rules, that._pending_rules);
-      _ticker_running = std::move(that._ticker_running);
+      _ticker_running   = std::move(that._ticker_running);
       return *this;
     }
 
-    RewriteBase::~RewriteBase() {
-      for (Rule* rule : _pending_rules) {
-        delete rule;
-      }
-      _pending_rules.clear();
-    }
+    RewriteBase::~RewriteBase() = default;
 
     void RewriteBase::set_cached_confluent(tril val) const {
       if (val == tril::TRUE) {
@@ -285,20 +304,6 @@ namespace libsemigroups {
         _cached_confluent = false;
       } else {
         _confluence_known = false;
-      }
-    }
-
-    bool RewriteBase::add_pending_rule(Rule* rule) {
-      LIBSEMIGROUPS_ASSERT(!rule->active());
-      if (rule->lhs() != rule->rhs()) {
-        rule->reorder();
-        _pending_rules.push_back(rule);
-        _max_pending_rules
-            = std::max(_max_pending_rules, _pending_rules.size());
-        return true;
-      } else {
-        Rules::add_inactive_rule(rule);
-        return false;
       }
     }
 
@@ -351,13 +356,6 @@ namespace libsemigroups {
         LIBSEMIGROUPS_ASSERT(_state == State::reducing_pending_rules);
         report_reducing_rules(seen, start_time);
       }
-    }
-
-    Rule* RewriteBase::next_pending_rule() {
-      LIBSEMIGROUPS_ASSERT(_pending_rules.size() != 0);
-      Rule* rule = _pending_rules.back();
-      _pending_rules.pop_back();
-      return rule;
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -587,10 +585,7 @@ namespace libsemigroups {
 
     bool RewriteFromLeft::process_pending_rules() {
       // TODO(1) try maintaining pending_rules as a heap
-      std::sort(
-          _pending_rules.begin(),
-          _pending_rules.end(),
-          [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
+      sort_pending_rules();
 
       auto           start_time = std::chrono::high_resolution_clock::now();
       detail::Ticker ticker;
@@ -777,10 +772,7 @@ namespace libsemigroups {
       std::atomic_uint64_t seen = 0;
 
       // TODO(1) use a heap for these maybe?
-      std::sort(
-          _pending_rules.begin(),
-          _pending_rules.end(),
-          [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
+      sort_pending_rules();
 
       bool rules_added = false;
       // TODO(1) could make this a setting, or use a different condition (such

@@ -437,7 +437,7 @@ namespace libsemigroups {
           rc("KnuthBendix: RUN STATISTICS\n");
           // rc.divider();
           rc("KnuthBendix: max stack depth        {}\n",
-             group_digits(_rewriter.max_pending_rules()));
+             group_digits(_rewriter.stats().max_pending_rules));
           rc("KnuthBendix: max rule length        {}\n",
              group_digits(_rewriter.stats().max_word_length));
           rc("KnuthBendix: max active rule length {}\n",
