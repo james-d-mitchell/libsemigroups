@@ -100,7 +100,7 @@ namespace libsemigroups {
     Rules& Rules::operator=(Rules const& that) {
       init();
       for (Rule const* rule : that) {
-        add_rule(copy_rule(rule));
+        add_active_rule(copy_rule(rule));
       }
       for (size_t i = 0; i < _cursors.size(); ++i) {
         _cursors[i] = _active_rules.begin();
@@ -138,6 +138,7 @@ namespace libsemigroups {
         rule->set_id_no_checks(_stats.total_rules);
         _inactive_rules.erase(_inactive_rules.begin());
       } else {
+        // TODO could add x2 new Rules
         rule = new Rule(_stats.total_rules);
       }
       LIBSEMIGROUPS_ASSERT(!rule->active());
@@ -178,7 +179,7 @@ namespace libsemigroups {
       return it;
     }
 
-    void Rules::add_rule(Rule* rule) {
+    void Rules::add_active_rule(Rule* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
       _stats.max_word_length
           = std::max(_stats.max_word_length, rule->lhs().size());
@@ -398,7 +399,7 @@ namespace libsemigroups {
     }
 
     void RewriteFromLeft::add_rule(Rule* rule) {
-      Rules::add_rule(rule);
+      Rules::add_active_rule(rule);
       // _stats.unique_lhs_rules.insert(*rule->lhs());
 #ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
