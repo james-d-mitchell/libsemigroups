@@ -186,11 +186,16 @@ namespace libsemigroups {
       mutable Stats           _stats;
 
      public:
+      ////////////////////////////////////////////////////////////////////////
+      // Constructors and initializers
+      ////////////////////////////////////////////////////////////////////////
+
       Rules() = default;
 
       Rules(Rules const& that) : Rules() {
         *this = that;
       }
+
       Rules(Rules&& that) = default;
 
       Rules& operator=(Rules const&);
@@ -232,6 +237,7 @@ namespace libsemigroups {
         return _inactive_rules.size();
       }
 
+      // TODO rm this, update and use the value in Stats
       [[nodiscard]] size_t max_active_word_length() const;
 
       iterator& cursor(size_t index) {
@@ -243,7 +249,7 @@ namespace libsemigroups {
         return _stats;
       }
 
-      void add_rule(Rule* rule);
+      void add_active_rule(Rule* rule);
 
      protected:
       template <typename Iterator>
@@ -258,9 +264,11 @@ namespace libsemigroups {
         return rule;
       }
 
-      [[nodiscard]] Rule*    copy_rule(Rule const* rule);
+      [[nodiscard]] Rule* copy_rule(Rule const* rule);
+
       [[nodiscard]] iterator erase_from_active_rules(iterator it);
-      void                   add_inactive_rule(Rule* rule) {
+
+      void add_inactive_rule(Rule* rule) {
         _inactive_rules.push_back(rule);
       }
 
@@ -505,7 +513,7 @@ namespace libsemigroups {
 
      private:
       void add_rule(Rule* rule) {
-        Rules::add_rule(rule);
+        Rules::add_active_rule(rule);
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
                                                         rule->lhs().cend());
         _rule_map.emplace(node, rule);
