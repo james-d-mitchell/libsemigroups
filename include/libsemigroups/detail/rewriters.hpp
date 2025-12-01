@@ -36,10 +36,6 @@
 #include "aho-corasick-impl.hpp"  // for AhoCorasickImpl
 #include "multi-view.hpp"         // for MultiView
 
-// TODO(2) Add a KnuthBendixImpl pointer to the rewriter class so that overlap
-// detection can be handled by the rewriter (and therefore depend on the
-// implementation) rather than on the KB object.
-
 namespace libsemigroups {
   namespace detail {
 
@@ -47,7 +43,6 @@ namespace libsemigroups {
     // Rule
     ////////////////////////////////////////////////////////////////////////
 
-    // template <typename ReductionOrder = ShortLexCompare>
     class Rule {
      public:
       using native_word_type = std::string;
@@ -205,28 +200,14 @@ namespace libsemigroups {
 
       Rules& init();
 
-      const_iterator begin() const noexcept {
-        return _active_rules.cbegin();
+      void add_active_rule(Rule* rule);
+
+      [[nodiscard]] std::list<Rule*> const& active_rules() const noexcept {
+        return _active_rules;
       }
 
-      const_iterator end() const noexcept {
-        return _active_rules.cend();
-      }
-
-      iterator begin() noexcept {
-        return _active_rules.begin();
-      }
-
-      iterator end() noexcept {
-        return _active_rules.end();
-      }
-
-      const_reverse_iterator rbegin() const noexcept {
-        return _active_rules.crbegin();
-      }
-
-      const_reverse_iterator rend() const noexcept {
-        return _active_rules.crend();
+      [[nodiscard]] std::list<Rule*>& active_rules() noexcept {
+        return _active_rules;
       }
 
       [[nodiscard]] size_t number_of_active_rules() const noexcept {
@@ -237,9 +218,6 @@ namespace libsemigroups {
         return _inactive_rules.size();
       }
 
-      // TODO rm this, update and use the value in Stats
-      [[nodiscard]] size_t max_active_word_length() const;
-
       iterator& cursor(size_t index) {
         LIBSEMIGROUPS_ASSERT(index < _cursors.size());
         return _cursors[index];
@@ -249,7 +227,8 @@ namespace libsemigroups {
         return _stats;
       }
 
-      void add_active_rule(Rule* rule);
+      // TODO rm this, update and use the value in Stats
+      [[nodiscard]] size_t max_active_word_length() const;
 
      protected:
       template <typename Iterator>
