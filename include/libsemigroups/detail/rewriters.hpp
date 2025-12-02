@@ -479,16 +479,18 @@ namespace libsemigroups {
         const_cast<RewriteFromLeft*>(this)->rewrite(u);
       }
 
+      // TODO add_rule(Iterators) when Rule* not in data structure here any
+      // TODO rm_rule(Iterators) when Rule* not in data structure here any
+
      private:
       void add_rule(Rule* rule);
+      void rm_rule(Rule* rule);
 
       void rewrite(Rule* rule) const {
         rewrite(rule->lhs());
         rewrite(rule->rhs());
         rule->reorder();
       }
-
-      iterator make_active_rule_pending(iterator);
 
       void report_checking_confluence(
           std::atomic_uint64_t const&,
@@ -574,15 +576,13 @@ namespace libsemigroups {
       // TODO out of line
       // TODO rename to add_rule, and remove the notions of active and pending
       // rules from Rewrite objects
-      void add_active_rule(Rule* rule) {
-        _rules->add_active_rule(rule);  // TODO move to KnuthBendix?
+      void add_rule(Rule* rule) {
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
                                                         rule->lhs().cend());
         _rule_map.emplace(node, rule);
         set_cached_confluent(tril::unknown);
       }
-
-      Rules::iterator make_active_rule_pending(Rules::iterator it);
+      void rm_rule(Rule* rule);
 
       [[nodiscard]] bool descendants_confluent(Rule const* rule1,
                                                index_type  current_node,
