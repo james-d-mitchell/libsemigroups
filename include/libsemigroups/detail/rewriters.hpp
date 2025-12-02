@@ -315,29 +315,23 @@ namespace libsemigroups {
 
     namespace rules {
 
-      // TODO should be add_pending_rule_no_checks, and remove checks that lhs
-      // != rhs, assert instead.
       // TODO to tpp
       template <typename StringLike>
-      void add_pending_rule(Rules&            rules,
-                            StringLike const& lhs,
-                            StringLike const& rhs) {
-        if (lhs != rhs) {
-          rules.add_pending_rule(
-              lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
-        }
+      void add_pending_rule_no_checks(Rules&            rules,
+                                      StringLike const& lhs,
+                                      StringLike const& rhs) {
+        LIBSEMIGROUPS_ASSERT(lhs != rhs);
+        rules.add_pending_rule(
+            lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
       }
 
-      // TODO should be add_pending_rule_no_checks, and remove checks that lhs
-      // != rhs, assert instead.
       // TODO to cpp
-      inline void add_pending_rule(Rules&      rules,
-                                   char const* lhs,
-                                   char const* rhs) {
-        if (lhs != rhs) {
-          rules.add_pending_rule(
-              lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs));
-        }
+      inline void add_pending_rule_no_check(Rules&      rules,
+                                            char const* lhs,
+                                            char const* rhs) {
+        LIBSEMIGROUPS_ASSERT(lhs != rhs);
+        rules.add_pending_rule(
+            lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs));
       }
     }  // namespace rules
 
