@@ -182,6 +182,8 @@ namespace libsemigroups {
       std::vector<Rule*>      _pending_rules;
       mutable Stats           _stats;
 
+      // TODO(1) try maintaining pending_rules as a heap
+
      public:
       ////////////////////////////////////////////////////////////////////////
       // Constructors and initializers
@@ -248,8 +250,10 @@ namespace libsemigroups {
       // TODO helper
       [[nodiscard]] size_t max_length_lhs_active_rule() const;
 
-     protected:  // TODO protected -> private when Rewriters do not inherit from
-                 // Rules
+      // TODO protected -> private when Rewriters do not inherit from
+      // Rules
+     protected:
+      // TODO to tpp
       template <typename Iterator>
       [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
                                    Iterator end_lhs,
@@ -303,6 +307,7 @@ namespace libsemigroups {
 
       RewriteBase();
       RewriteBase& init();
+
       RewriteBase(RewriteBase const& that) : RewriteBase() {
         *this = that;
       }
@@ -499,7 +504,7 @@ namespace libsemigroups {
       }
 
      private:
-      // TODO rename add_pending_rule
+      // TODO rename add_active_rule
       void add_rule(Rule* rule) {
         Rules::add_active_rule(rule);
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
