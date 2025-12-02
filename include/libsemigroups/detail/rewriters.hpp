@@ -254,9 +254,6 @@ namespace libsemigroups {
       // TODO helper
       [[nodiscard]] size_t max_length_lhs_active_rule() const;
 
-      // TODO protected -> private when Rewriters do not inherit from
-      // Rules
-     protected:
       // TODO to tpp
       template <typename Iterator>
       [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
@@ -270,6 +267,9 @@ namespace libsemigroups {
         return rule;
       }
 
+      // TODO protected -> private when Rewriters do not inherit from
+      // Rules
+     protected:
       [[nodiscard]] Rule* copy_rule(Rule const* rule);
 
       [[nodiscard]] iterator erase_from_active_rules(iterator it);
@@ -282,6 +282,34 @@ namespace libsemigroups {
      private:
       [[nodiscard]] Rule* new_rule();
     };  // class Rules
+
+    namespace rules {
+
+      // TODO should be add_pending_rule_no_checks, and remove checks that lhs
+      // != rhs, assert instead.
+      // TODO to tpp
+      template <typename StringLike>
+      void add_pending_rule(Rules&            rules,
+                            StringLike const& lhs,
+                            StringLike const& rhs) {
+        if (lhs != rhs) {
+          rules.add_pending_rule(rules.new_rule(
+              lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()));
+        }
+      }
+
+      // TODO should be add_pending_rule_no_checks, and remove checks that lhs
+      // != rhs, assert instead.
+      // TODO to cpp
+      inline void add_pending_rule(Rules&      rules,
+                                   char const* lhs,
+                                   char const* rhs) {
+        if (lhs != rhs) {
+          rules.add_pending_rule(rules.new_rule(
+              lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs)));
+        }
+      }
+    }  // namespace rules
 
     ////////////////////////////////////////////////////////////////////////
     // RewriteBase
@@ -345,14 +373,17 @@ namespace libsemigroups {
       }
 
       // TODO -> helper
+      // TODO should be add_pending_rule_no_checks, and remove checks that lhs
+      // != rhs, assert instead.
       template <typename StringLike>
-      void add_rule(StringLike const& lhs, StringLike const& rhs);
+      void add_pending_rule(StringLike const& lhs, StringLike const& rhs);
 
       // TODO -> helper
-      // TODO rename add_pending_rule
-      inline void add_rule(char const* lhs, char const* rhs) {
+      // TODO should be add_pending_rule_no_checks, and remove checks that lhs
+      // != rhs, assert instead.
+      inline void add_pending_rule(char const* lhs, char const* rhs) {
         if (lhs != rhs) {
-          add_pending_rule(new_rule(
+          Rules::add_pending_rule(new_rule(
               lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs)));
         }
       }
@@ -386,11 +417,11 @@ namespace libsemigroups {
     };  // class RewriteBase
 
     // RewriteBase out-of-lined mem fn template
-    // TODO rename add_pending_rule
     template <typename StringLike>
-    void RewriteBase::add_rule(StringLike const& lhs, StringLike const& rhs) {
+    void RewriteBase::add_pending_rule(StringLike const& lhs,
+                                       StringLike const& rhs) {
       if (lhs != rhs) {
-        add_pending_rule(
+        Rules::add_pending_rule(
             new_rule(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()));
       }
     }
@@ -402,10 +433,12 @@ namespace libsemigroups {
     class RewriteFromLeft : public RewriteBase {
       std::set<RuleLookup> _set_rules;
 
+      // TODO(1) use a heap for these maybe?
      public:
       using native_word_type = Rule::native_word_type;
 
-      using RewriteBase::add_rule;
+      using RewriteBase::add_active_rule;
+      using RewriteBase::add_pending_rule;
 
       RewriteFromLeft() = default;
 
@@ -437,7 +470,7 @@ namespace libsemigroups {
         rule->reorder();
       }
 
-      void add_rule(Rule* rule);
+      void add_active_rule(Rule* rule);
 
       iterator make_active_rule_pending(iterator);
 
@@ -470,7 +503,7 @@ namespace libsemigroups {
      public:
       using Rules::stats;
 
-      using RewriteBase::add_rule;
+      using RewriteBase::add_active_rule;
       using RewriteBase::cached_confluent;
 
       RewriteTrie();
@@ -497,6 +530,7 @@ namespace libsemigroups {
       void rewrite(native_word_type& u);
       void rewrite2(native_word_type& u);
 
+      // TODO privatize
       void rewrite(Rule* rule) const {
         rewrite(rule->lhs());
         rewrite(rule->rhs());
@@ -508,8 +542,7 @@ namespace libsemigroups {
       }
 
      private:
-      // TODO rename add_active_rule
-      void add_rule(Rule* rule) {
+      void add_active_rule(Rule* rule) {
         Rules::add_active_rule(rule);
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
                                                         rule->lhs().cend());

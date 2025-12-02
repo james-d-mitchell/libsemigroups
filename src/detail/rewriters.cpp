@@ -382,7 +382,7 @@ namespace libsemigroups {
       // TODO next 3 lines into Rules
       Rule* rule = *it;
       rule->deactivate_no_checks();
-      add_pending_rule(rule);
+      Rules::add_pending_rule(rule);
 #ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(_set_rules.erase(RuleLookup(rule)));
 #else
@@ -392,7 +392,7 @@ namespace libsemigroups {
       return Rules::erase_from_active_rules(it);
     }
 
-    void RewriteFromLeft::add_rule(Rule* rule) {
+    void RewriteFromLeft::add_active_rule(Rule* rule) {
       Rules::add_active_rule(rule);
       // _stats.unique_lhs_rules.insert(*rule->lhs());
 #ifdef LIBSEMIGROUPS_DEBUG
@@ -611,7 +611,7 @@ namespace libsemigroups {
               ++it;
             }
           }
-          add_rule(rule1);
+          add_active_rule(rule1);
           rules_added = true;
         } else {
           add_inactive_rule(rule1);
@@ -765,7 +765,6 @@ namespace libsemigroups {
       detail::Guard  guard(_ticker_running);
       std::atomic_uint64_t seen = 0;
 
-      // TODO(1) use a heap for these maybe?
       sort_pending_rules();
 
       bool rules_added = false;
@@ -788,7 +787,7 @@ namespace libsemigroups {
           rewrite(rule);
 
           if (rule->lhs() != rule->rhs()) {
-            add_rule(rule);
+            add_active_rule(rule);
             if (use_separate_trie) {
               index_type node = _new_rule_trie.add_word_no_checks(
                   rule->lhs().cbegin(), rule->lhs().cend());
@@ -940,7 +939,7 @@ namespace libsemigroups {
       // TODO next 3 lines -> Rules
       Rule* rule = *it;
       rule->deactivate_no_checks();
-      add_pending_rule(rule);
+      Rules::add_pending_rule(rule);
       index_type node = _rule_trie.rm_word_no_checks(rule->lhs().cbegin(),
                                                      rule->lhs().cend());
       _rule_map.erase(node);
