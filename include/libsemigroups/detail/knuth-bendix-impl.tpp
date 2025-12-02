@@ -18,10 +18,14 @@
 
 namespace libsemigroups {
   namespace detail {
-
+    // Implemented in cpp file
     void prefixes_string(std::unordered_map<Rule::native_word_type, size_t>& st,
                          Rule::native_word_type const&                       x,
                          size_t&                                             n);
+
+    ////////////////////////////////////////////////////////////////////////
+    // Overlap measures --- KnuthBendixImpl nested classes
+    ////////////////////////////////////////////////////////////////////////
 
     template <typename Rewriter, typename ReductionOrder>
     struct KnuthBendixImpl<Rewriter, ReductionOrder>::ABC
@@ -143,6 +147,7 @@ namespace libsemigroups {
           _overlap_measure(nullptr),
           _presentation(),
           _rewriter(),
+          _rules(),
           _settings(),
           _stats(),
           _tmp_element1() {
@@ -161,6 +166,7 @@ namespace libsemigroups {
       _overlap_measure = nullptr;
       _presentation.init();
       _rewriter.init();
+      _rules.init();
       _settings.init();
       _stats.init();
 
@@ -180,6 +186,7 @@ namespace libsemigroups {
       _overlap_measure          = std::move(that._overlap_measure);
       _presentation             = std::move(that._presentation);
       _rewriter                 = std::move(that._rewriter);
+      _rules                    = std::move(that._rules);
       _settings                 = std::move(that._settings);
       _stats                    = std::move(that._stats);
       return *this;
@@ -196,6 +203,7 @@ namespace libsemigroups {
       _overlap_measure          = nullptr;
       _presentation             = that._presentation;
       _rewriter                 = that._rewriter;
+      _rules                    = that._rules;
       _settings                 = that._settings;
       _stats                    = that._stats;
 
