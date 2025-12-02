@@ -392,16 +392,14 @@ namespace libsemigroups {
       return *this;
     }
 
-    RewriteFromLeft::iterator
-    RewriteFromLeft::make_active_rule_pending(iterator it) {
+    void RewriteFromLeft::rm_rule(Rule* rule) {
 #ifdef LIBSEMIGROUPS_DEBUG
-      LIBSEMIGROUPS_ASSERT(_set_rules.erase(RuleLookup(*it)));
+      LIBSEMIGROUPS_ASSERT(_set_rules.erase(RuleLookup(rule)));
 #else
-      _set_rules.erase(RuleLookup(*it));
+      _set_rules.erase(RuleLookup(rule));
 #endif
       LIBSEMIGROUPS_ASSERT(_set_rules.size()
                            == _rules->number_of_active_rules() - 1);
-      return _rules->make_active_rule_pending(it);
     }
 
     void RewriteFromLeft::add_rule(Rule* rule) {
@@ -622,7 +620,8 @@ namespace libsemigroups {
             if (rule2->lhs().find(lhs) != native_word_type::npos
                 || rule2->rhs().find(lhs) != native_word_type::npos) {
               // If it is, rule2 must be deactivated and re-processed
-              it = make_active_rule_pending(it);
+              rm_rule(*it);
+              it = _rules->make_active_rule_pending(it);
             } else {
               ++it;
             }
@@ -804,7 +803,8 @@ namespace libsemigroups {
           rewrite(rule);
 
           if (rule->lhs() != rule->rhs()) {
-            add_active_rule(rule);
+            _rules->add_active_rule(rule);
+            add_rule(rule);
             if (use_separate_trie) {
               index_type node = _new_rule_trie.add_word_no_checks(
                   rule->lhs().cbegin(), rule->lhs().cend());
@@ -855,7 +855,8 @@ namespace libsemigroups {
               if (std::any_of(first, last, [rule, rule_map](auto node_index) {
                     return (*rule_map)[node_index] != rule;
                   })) {
-                it        = make_active_rule_pending(it);
+                rm_rule(*it);
+                it        = _rules->make_active_rule_pending(it);
                 increment = false;
                 break;
               }
@@ -954,12 +955,10 @@ namespace libsemigroups {
       return true;
     }
 
-    Rules::iterator RewriteTrie::make_active_rule_pending(Rules::iterator it) {
-      Rule const* rule = *it;
-      index_type  node = _rule_trie.rm_word_no_checks(rule->lhs().cbegin(),
+    void RewriteTrie::rm_rule(Rule* rule) {
+      index_type node = _rule_trie.rm_word_no_checks(rule->lhs().cbegin(),
                                                      rule->lhs().cend());
       _rule_map.erase(node);
-      return _rules->make_active_rule_pending(it);
     }
 
     void RewriteTrie::report_checking_confluence(
