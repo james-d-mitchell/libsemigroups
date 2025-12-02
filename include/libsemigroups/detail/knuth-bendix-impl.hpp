@@ -819,7 +819,39 @@ namespace libsemigroups {
       //! \exceptions
       //! \no_libsemigroups_except
       KnuthBendixImpl& process_pending_rules() {
-        _rewriter.process_pending_rules();
+        _rules.sort_pending_rules();
+
+        // auto           start_time =
+        // std::chrono::high_resolution_clock::now();
+        detail::Ticker ticker;
+        // TODO bool           old_ticker_running = _ticker_running;
+
+        while (_rules.number_of_pending_rules() != 0) {
+          while (_rules.number_of_pending_rules() != 0) {
+            Rule* new_rule = _rules.pop_pending_rule();
+            LIBSEMIGROUPS_ASSERT(new_rule->state() == Rule::State::pending);
+            LIBSEMIGROUPS_ASSERT(new_rule->lhs() != new_rule->rhs());
+            _rewriter.rewrite(new_rule);
+
+            // Check rule is non-trivial
+            if (new_rule->lhs() != new_rule->rhs()) {
+              _rules.add_active_rule(new_rule);
+              _rewriter.add_rule(new_rule);
+            } else {
+              _rules.add_inactive_rule(new_rule);
+            }
+            // if (!_ticker_running &&
+            // reporting_enabled()
+            //     && delta(start_time) >= std::chrono::seconds(1)) {
+            //   // TODO _ticker_running = true;
+            //   ticker([this, start_time]() {
+            //     report_progress_from_thread(start_time);
+            //   });
+            // }
+          }
+          reduce_active_rules();
+        }
+        //_ticker_running = old_ticker_running;
         return *this;
       }
 
@@ -831,6 +863,26 @@ namespace libsemigroups {
       [[nodiscard]] native_word_type rewrite(native_word_type w) {
         rewrite_inplace(w);
         return w;
+      }
+
+      // Reduce existing active rules wrt new_rule
+      void reduce_active_rules() {
+        auto const first = _rules.active_rules().begin();
+        auto const last  = _rules.active_rules().end();
+
+        for (auto it = first; it != last; ++it) {
+          Rule* rule = *it;
+          for (auto const& word : {rule->lhs(), rule->rhs()}) {
+            auto range = _rewriter.lhs_search_no_checks(word);
+
+            if (range
+                | rx::any_of([rule](Rule* match) { return match != rule; })) {
+              _rewriter.rm_rule(*it);
+              it = --_rules.make_active_rule_pending(it);
+              break;
+            }
+          }
+        }
       }
 
      public:
@@ -932,27 +984,27 @@ namespace libsemigroups {
     };  // class KnuthBendixImpl
   }  // namespace detail
 
-  ////////////////////////////////////////////////////////////////////////
-  // global functions - to_human_readable_repr
-  ////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+// global functions - to_human_readable_repr
+////////////////////////////////////////////////////////////////////////
 
-  // TODO(1) for consistency (with ToddCoxeter), the next two functions should
-  // really be in knuth-bendix.hpp.
+// TODO(1) for consistency (with ToddCoxeter), the next two functions should
+// really be in knuth-bendix.hpp.
 
-  //! \ingroup knuth_bendix_group
-  //!
-  //! \brief Insert into std::ostream.
-  //!
-  //! Defined in \c knuth-bendix.hpp.
-  //!
-  //! This function allows a \ref_knuth_bendix object to be left shifted into a
-  //! std::ostream, such as std::cout. The currently active rules of the
-  //! system are represented in the output.
-  //!
-  //! \param os the output stream to insert into.
-  //! \param kb the \ref_knuth_bendix object.
-  //!
-  //! \returns A reference to the first argument.
+//! \ingroup knuth_bendix_group
+//!
+//! \brief Insert into std::ostream.
+//!
+//! Defined in \c knuth-bendix.hpp.
+//!
+//! This function allows a \ref_knuth_bendix object to be left shifted into a
+//! std::ostream, such as std::cout. The currently active rules of the
+//! system are represented in the output.
+//!
+//! \param os the output stream to insert into.
+//! \param kb the \ref_knuth_bendix object.
+//!
+//! \returns A reference to the first argument.
 #ifdef LIBSEMIGROUPS_PARSED_BY_DOXYGEN
   template <typename Word, typename Rewriter, typename ReductionOrder>
   std::ostream&
@@ -965,24 +1017,24 @@ namespace libsemigroups {
              detail::KnuthBendixImpl<Rewriter, ReductionOrder> const& kb);
 #endif
 
-  //! \ingroup knuth_bendix_group
-  //!
-  //! \brief Return a string representation of a \ref_knuth_bendix instance.
-  //!
-  //! Defined in \c knuth-bendix.hpp.
-  //!
-  //! This function returns a string representation of a \ref_knuth_bendix
-  //! instance, specifying the size of the underlying alphabet and the number
-  //! of active rules.
-  //!
-  //! \tparam Rewriter the first template parameter for \ref_knuth_bendix.
-  //! \tparam ReductionOrder the second template parameter for
-  //! \ref_knuth_bendix.
-  //!
-  //! \param kb the \ref_knuth_bendix instance.
-  //!
-  //! \returns The representation, a value of type \c std::string.
-  // TODO(1) preferably kb would be a const&
+//! \ingroup knuth_bendix_group
+//!
+//! \brief Return a string representation of a \ref_knuth_bendix instance.
+//!
+//! Defined in \c knuth-bendix.hpp.
+//!
+//! This function returns a string representation of a \ref_knuth_bendix
+//! instance, specifying the size of the underlying alphabet and the number
+//! of active rules.
+//!
+//! \tparam Rewriter the first template parameter for \ref_knuth_bendix.
+//! \tparam ReductionOrder the second template parameter for
+//! \ref_knuth_bendix.
+//!
+//! \param kb the \ref_knuth_bendix instance.
+//!
+//! \returns The representation, a value of type \c std::string.
+// TODO(1) preferably kb would be a const&
 #ifdef LIBSEMIGROUPS_PARSED_BY_DOXYGEN
   template <typename Word, typename Rewriter, typename ReductionOrder>
   std::string
