@@ -207,7 +207,7 @@ namespace libsemigroups {
             = std::max(_stats.max_pending_rules, _pending_rules.size());
       } else {
         // TODO remove this clause and the return value?
-        Rules::add_inactive_rule(rule);
+        add_inactive_rule(rule);
       }
     }
 
@@ -252,29 +252,30 @@ namespace libsemigroups {
     // RewriteBase
     ////////////////////////////////////////////////////////////////////////
 
-    RewriteBase::RewriteBase()
-        : _cached_confluent(false),
-          _confluence_known(false),
-          _rules(nullptr),
-          _ticker_running(false) {}
+    // TODO this leaks
+    RewriteBase::RewriteBase() : RewriteBase(new Rules()) {}
 
     RewriteBase& RewriteBase::init() {
-      _cached_confluent = false;
-      _confluence_known = false;
-      _rules            = nullptr;
-      _ticker_running   = false;
-      return *this;
+      // TODO this leaks
+      return init(new Rules());
     }
 
-    RewriteBase::RewriteBase(Rules* rules) : RewriteBase() {
-      LIBSEMIGROUPS_ASSERT(rules != nullptr);
-      _rules = rules;
+    // TODO should be Rules&
+    RewriteBase::RewriteBase(Rules* rules)
+        : _cached_confluent(false),
+          _confluence_known(false),
+          _rules(rules),
+          _ticker_running(false) {
+      LIBSEMIGROUPS_ASSERT(_rules != nullptr);
     }
 
+    // TODO should be Rules&
     RewriteBase& RewriteBase::init(Rules* rules) {
       LIBSEMIGROUPS_ASSERT(rules != nullptr);
-      init();
-      _rules = rules;
+      _cached_confluent = false;
+      _confluence_known = false;
+      _rules            = rules;
+      _ticker_running   = false;
       return *this;
     }
 
