@@ -172,6 +172,8 @@ namespace libsemigroups {
             return *this;
           }
         }
+        // TODO Can this be improved so that we don't revisit suffixes that we
+        // have already checked?
         while (_first != _last && _prefix != UNDEFINED) {
           auto x = *_first;
           ++_first;

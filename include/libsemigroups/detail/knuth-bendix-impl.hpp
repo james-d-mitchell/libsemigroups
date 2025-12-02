@@ -826,6 +826,8 @@ namespace libsemigroups {
         detail::Ticker ticker;
         // TODO bool           old_ticker_running = _ticker_running;
 
+        // TODO add some way of accumulating the newly added rules, so we can
+        // reintroduce the stuff with the new rule trie.
         while (_rules.number_of_pending_rules() != 0) {
           while (_rules.number_of_pending_rules() != 0) {
             Rule* new_rule = _rules.pop_pending_rule();
@@ -873,6 +875,10 @@ namespace libsemigroups {
           auto const first = _rules.active_rules().begin();
           auto const last  = _rules.active_rules().end();
 
+          // For every lhs and rhs (<word>) of every active rule (<rule>), find
+          // every rule (<match>) whose lhs is a subword of <word>. If such a
+          // <match> exists, and it is not equal to <rule>, then the system is
+          // not reduced, so we make <rule> pending.
           for (auto it = first; it != last; ++it) {
             Rule* rule = *it;
             for (auto const& word : {rule->lhs(), rule->rhs()}) {

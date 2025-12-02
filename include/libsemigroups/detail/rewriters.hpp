@@ -82,11 +82,6 @@ namespace libsemigroups {
       }
 
       // TODO rm
-      [[nodiscard]] bool empty() const noexcept {
-        return _lhs.empty() && _rhs.empty();
-      }
-
-      // TODO rm
       void reorder() {
         // if (ReductionOrder()(_lhs, _rhs)) {
         if (shortlex_compare(_lhs, _rhs)) {
