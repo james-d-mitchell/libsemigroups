@@ -404,8 +404,7 @@ namespace libsemigroups {
       return _rules->make_active_rule_pending(it);
     }
 
-    void RewriteFromLeft::add_active_rule(Rule* rule) {
-      _rules->add_active_rule(rule);  // TODO Move to KnuthBendix?
+    void RewriteFromLeft::add_rule(Rule* rule) {
 #ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
 #else
@@ -628,7 +627,8 @@ namespace libsemigroups {
               ++it;
             }
           }
-          add_active_rule(rule1);
+          _rules->add_active_rule(rule1);
+          add_rule(rule1);
           rules_added = true;
         } else {
           _rules->add_inactive_rule(rule1);
