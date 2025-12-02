@@ -21,7 +21,6 @@
 
 // TODO(1)
 // * noexcept
-// * separate rule container from Rules
 // * nodiscard
 
 #ifndef LIBSEMIGROUPS_DETAIL_KNUTH_BENDIX_IMPL_HPP_
@@ -162,7 +161,7 @@ namespace libsemigroups {
       struct OverlapMeasure {
         virtual size_t
         operator()(detail::Rule const*,
-                   detail::Rule const* examples,
+                   detail::Rule const*,
                    typename native_word_type::const_iterator const&)
             = 0;
         virtual ~OverlapMeasure() {}
@@ -212,6 +211,7 @@ namespace libsemigroups {
       std::unique_ptr<OverlapMeasure> _overlap_measure;
       Presentation<native_word_type>  _presentation;
       mutable Rewriter                _rewriter;
+      mutable Rules                   _rules;
       Settings                        _settings;
       mutable Stats                   _stats;
       mutable native_word_type        _tmp_element1;

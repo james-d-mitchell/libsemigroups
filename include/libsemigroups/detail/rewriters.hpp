@@ -210,8 +210,27 @@ namespace libsemigroups {
       // Public mem fns
       ////////////////////////////////////////////////////////////////////////
 
+      // TODO to tpp
+      template <typename Iterator>
+      [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
+                                   Iterator end_lhs,
+                                   Iterator begin_rhs,
+                                   Iterator end_rhs) {
+        Rule* rule = new_rule();
+        rule->lhs().assign(begin_lhs, end_lhs);
+        rule->rhs().assign(begin_rhs, end_rhs);
+        rule->reorder();
+        return rule;
+      }
+
       void add_active_rule(Rule* rule);
       void add_pending_rule(Rule* rule);
+
+      // TODO out of line
+      void add_inactive_rule(Rule* rule) {
+        rule->deactivate_no_checks();
+        _inactive_rules.push_back(rule);
+      }
 
       [[nodiscard]] std::list<Rule*> const& active_rules() const noexcept {
         return _active_rules;
@@ -254,30 +273,12 @@ namespace libsemigroups {
       // TODO helper
       [[nodiscard]] size_t max_length_lhs_active_rule() const;
 
-      // TODO to tpp
-      template <typename Iterator>
-      [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
-                                   Iterator end_lhs,
-                                   Iterator begin_rhs,
-                                   Iterator end_rhs) {
-        Rule* rule = new_rule();
-        rule->lhs().assign(begin_lhs, end_lhs);
-        rule->rhs().assign(begin_rhs, end_rhs);
-        rule->reorder();
-        return rule;
-      }
-
       // TODO protected -> private when Rewriters do not inherit from
       // Rules
      protected:
       [[nodiscard]] Rule* copy_rule(Rule const* rule);
 
       [[nodiscard]] iterator erase_from_active_rules(iterator it);
-
-      void add_inactive_rule(Rule* rule) {
-        rule->deactivate_no_checks();
-        _inactive_rules.push_back(rule);
-      }
 
      private:
       [[nodiscard]] Rule* new_rule();
@@ -542,6 +543,7 @@ namespace libsemigroups {
       }
 
      private:
+      // TODO out of line
       void add_active_rule(Rule* rule) {
         Rules::add_active_rule(rule);
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),

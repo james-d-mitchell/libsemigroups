@@ -175,21 +175,20 @@ namespace libsemigroups {
 
     void Rules::add_active_rule(Rule* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
+      // TODO next 6 lines -> Stats
       _stats.max_length_lhs_rule
           = std::max(_stats.max_length_lhs_rule, rule->lhs().size());
       _stats.max_active_rules
           = std::max(_stats.max_active_rules, number_of_active_rules());
+      _stats.min_length_lhs_rule
+          = std::min(_stats.min_length_lhs_rule, rule->lhs().size());
+
       rule->activate_no_checks();
       _active_rules.push_back(rule);
       for (auto& it : _cursors) {
         if (it == _active_rules.end()) {
           --it;
         }
-      }
-      if (rule->lhs().size() < _stats.min_length_lhs_rule) {
-        // TODO(later) this is not valid when using non-length reducing
-        // orderings (such as RECURSIVE)
-        _stats.min_length_lhs_rule = rule->lhs().size();
       }
     }
 
@@ -201,7 +200,7 @@ namespace libsemigroups {
         _stats.max_pending_rules
             = std::max(_stats.max_pending_rules, _pending_rules.size());
       } else {
-        // TODO remove this clause and the return value?
+        // TODO remove this clause?
         Rules::add_inactive_rule(rule);
       }
     }
