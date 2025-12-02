@@ -206,6 +206,10 @@ namespace libsemigroups {
 
       Rules& init();
 
+      ////////////////////////////////////////////////////////////////////////
+      // Public mem fns
+      ////////////////////////////////////////////////////////////////////////
+
       void add_active_rule(Rule* rule);
       void add_pending_rule(Rule* rule);
 
@@ -229,14 +233,14 @@ namespace libsemigroups {
         return _pending_rules.size();
       }
 
-      Rule* next_pending_rule();
+      [[nodiscard]] Rule* next_pending_rule();
 
-      iterator& cursor(size_t index) {
+      [[nodiscard]] iterator& cursor(size_t index) {
         LIBSEMIGROUPS_ASSERT(index < _cursors.size());
         return _cursors[index];
       }
 
-      Stats const& stats() const {
+      [[nodiscard]] Stats const& stats() const {
         return _stats;
       }
 
