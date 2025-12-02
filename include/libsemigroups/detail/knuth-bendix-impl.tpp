@@ -147,7 +147,7 @@ namespace libsemigroups {
           _overlap_measure(nullptr),
           _presentation(),
           _rules(),
-          _rewriter(&_rules),
+          _rewriter(_rules),
           _settings(),
           _stats(),
           _tmp_element1() {
@@ -166,7 +166,7 @@ namespace libsemigroups {
       _overlap_measure = nullptr;
       _presentation.init();
       _rules.init();
-      _rewriter.init(&_rules);
+      _rewriter.init(_rules);
       _settings.init();
       _stats.init();
 
@@ -187,7 +187,7 @@ namespace libsemigroups {
       _presentation             = std::move(that._presentation);
       _rules                    = std::move(that._rules);
       _rewriter                 = std::move(that._rewriter);
-      _rewriter.rules(&_rules);
+      _rewriter.rules(_rules);
       _settings = std::move(that._settings);
       _stats    = std::move(that._stats);
       return *this;
@@ -205,7 +205,7 @@ namespace libsemigroups {
       _presentation             = that._presentation;
       _rules                    = that._rules;
       _rewriter                 = that._rewriter;
-      _rewriter.rules(&_rules);
+      _rewriter.rules(_rules);
       _settings = that._settings;
       _stats    = that._stats;
 

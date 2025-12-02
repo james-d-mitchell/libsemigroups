@@ -45,6 +45,7 @@ namespace libsemigroups {
 
     class Rule {
      public:
+      // TODO only when DEBUG is enabled
       enum class State : uint8_t { active = 0, inactive = 1, pending = 2 };
 
       using native_word_type = std::string;
@@ -173,7 +174,6 @@ namespace libsemigroups {
 
     class Rules {
      public:
-      // TODO rm? or rename to include active_rules?
       using iterator               = std::list<Rule*>::iterator;
       using const_iterator         = std::list<Rule*>::const_iterator;
       using const_reverse_iterator = std::list<Rule*>::const_reverse_iterator;
@@ -209,11 +209,11 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
 
       Rules() = default;
+      Rules& init();
 
       Rules(Rules const& that) : Rules() {
         *this = that;
       }
-
       Rules(Rules&& that) : Rules() {
         *this = std::move(that);
       }
@@ -223,14 +223,9 @@ namespace libsemigroups {
 
       ~Rules();
 
-      Rules& init();
-
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
       ////////////////////////////////////////////////////////////////////////
-
-      void add_active_rule(Rule* rule);
-      void add_pending_rule(Rule* rule);
 
       template <typename Iterator>
       void add_pending_rule(Iterator first1,
@@ -239,6 +234,8 @@ namespace libsemigroups {
                             Iterator last2) {
         add_pending_rule(new_rule(first1, last1, first2, last2));
       }
+
+      void add_active_rule(Rule* rule);
 
       // TODO out of line
       void add_inactive_rule(Rule* rule) {
@@ -291,6 +288,8 @@ namespace libsemigroups {
       [[nodiscard]] size_t max_length_lhs_active_rule() const;
 
      private:
+      void add_pending_rule(Rule* rule);
+
       [[nodiscard]] Rule* copy_rule(Rule const* rule);
       [[nodiscard]] Rule* new_rule();
       // TODO to tpp
@@ -355,15 +354,15 @@ namespace libsemigroups {
       State  _state;
       bool   _ticker_running;
 
-      RewriteBase();
-      RewriteBase& init();
-
      public:
       using native_word_type = Rule::native_word_type;
 
       ////////////////////////////////////////////////////////////////////////
       // Constructors + inits
       ////////////////////////////////////////////////////////////////////////
+
+      RewriteBase();
+      RewriteBase& init();
 
       RewriteBase(Rules*);
       RewriteBase& init(Rules*);
@@ -377,10 +376,13 @@ namespace libsemigroups {
 
       virtual ~RewriteBase();
 
-      // TODO getter
-      RewriteBase& rules(Rules* rules) {
-        _rules = rules;
+      RewriteBase& rules(Rules& rules) {
+        _rules = &rules;
         return *this;
+      }
+
+      Rules const& rules() const noexcept {
+        return *_rules;
       }
 
       ////////////////////////////////////////////////////////////////////////
@@ -441,18 +443,18 @@ namespace libsemigroups {
     class RewriteFromLeft : public RewriteBase {
       std::set<RuleLookup> _set_rules;
 
-      RewriteFromLeft() = default;
-      RewriteFromLeft& init();
-
      public:
       using native_word_type = Rule::native_word_type;
       using iterator         = Rules::iterator;
 
-      RewriteFromLeft(Rules* rules) : RewriteBase(rules), _set_rules() {}
+      RewriteFromLeft() = default;
+      RewriteFromLeft& init();
 
-      RewriteFromLeft& init(Rules* rules) {
+      RewriteFromLeft(Rules& rules) : RewriteBase(&rules), _set_rules() {}
+
+      RewriteFromLeft& init(Rules& rules) {
         init();
-        RewriteBase::init(rules);
+        RewriteBase::init(&rules);
         return *this;
       }
 
@@ -514,15 +516,13 @@ namespace libsemigroups {
       AhoCorasickImpl                       _rule_trie;
       bool                                  _ticker_running;
 
+     public:
       RewriteTrie();
       RewriteTrie& init();
 
-     public:
-      using RewriteBase::cached_confluent;
-
       // TODO to cpp
-      RewriteTrie(Rules* rules)
-          : RewriteBase(rules),
+      RewriteTrie(Rules& rules)
+          : RewriteBase(&rules),
             _new_rule_map(),
             _new_rule_trie(),
             _rewrite_tmp_buf(),
@@ -531,9 +531,9 @@ namespace libsemigroups {
             _ticker_running(false) {}
 
       // TODO to cpp
-      RewriteTrie& init(Rules* rules) {
+      RewriteTrie& init(Rules& rules) {
         init();
-        RewriteBase::init(rules);
+        RewriteBase::init(&rules);
         return *this;
       }
 
@@ -546,6 +546,7 @@ namespace libsemigroups {
 
       ~RewriteTrie();
 
+      using RewriteBase::cached_confluent;
       RewriteTrie& increase_alphabet_size_by(size_t val) {
         _rule_trie.increase_alphabet_size_by(val);
         return *this;
@@ -570,6 +571,8 @@ namespace libsemigroups {
 
      private:
       // TODO out of line
+      // TODO rename to add_rule, and remove the notions of active and pending
+      // rules from Rewrite objects
       void add_active_rule(Rule* rule) {
         _rules->add_active_rule(rule);  // TODO move to KnuthBendix?
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
@@ -578,11 +581,11 @@ namespace libsemigroups {
         set_cached_confluent(tril::unknown);
       }
 
+      Rules::iterator make_active_rule_pending(Rules::iterator it);
+
       [[nodiscard]] bool descendants_confluent(Rule const* rule1,
                                                index_type  current_node,
                                                size_t backtrack_depth) const;
-
-      Rules::iterator make_active_rule_pending(Rules::iterator it);
 
       bool confluent_impl(std::atomic_uint64_t&) override;
 
