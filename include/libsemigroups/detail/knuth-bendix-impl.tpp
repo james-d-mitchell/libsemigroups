@@ -831,10 +831,14 @@ namespace libsemigroups {
       auto const &urhs = u->rhs(), vrhs = v->rhs();
       auto const lower_limit = ulhs.cend() - std::min(ulhs.size(), vlhs.size());
 
-      int64_t const u_id = u->id(), v_id = v->id();
+      // TODO rm
+      // int64_t const u_id = u->id(), v_id = v->id();
+
       for (auto it = ulhs.cend() - 1;
-           it > lower_limit && u_id == u->id() && v_id == v->id()
-           && it < ulhs.cend() && !stop_running()
+           it > lower_limit &&
+           // TODO rm
+           //  u_id == u->id() && v_id == v->id() &&
+           it < ulhs.cend() && !stop_running()
            && (_settings.max_overlap == POSITIVE_INFINITY
                || (*_overlap_measure)(u, v, it) <= _settings.max_overlap);
            --it) {
@@ -849,9 +853,11 @@ namespace libsemigroups {
                    vlhs.cend());  // rule = AQ_j -> Q_iC
           add_pending_rule(x, y);
 
-          if (_rules.number_of_pending_rules() >= _settings.max_pending_rules) {
-            process_pending_rules();
-          }
+          // TODO rm
+          // if (_rules.number_of_pending_rules() >=
+          // _settings.max_pending_rules) { process_pending_rules();
+          // }
+
           // It can be that the iterator `it` is invalidated by the call to
           // proccess_pending_rule (i.e. if `u` is deactivated, then
           // rewritten, actually changed, and reactivated) and that is the
