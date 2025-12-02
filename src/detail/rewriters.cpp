@@ -241,7 +241,7 @@ namespace libsemigroups {
       return result;
     }
 
-    Rule* Rules::next_pending_rule() {
+    Rule* Rules::pop_pending_rule() {
       LIBSEMIGROUPS_ASSERT(_pending_rules.size() != 0);
       Rule* rule = _pending_rules.back();
       _pending_rules.pop_back();
@@ -601,7 +601,7 @@ namespace libsemigroups {
       bool rules_added = false;
 
       while (_rules->number_of_pending_rules() != 0) {
-        Rule* rule1 = _rules->next_pending_rule();
+        Rule* rule1 = _rules->pop_pending_rule();
         LIBSEMIGROUPS_ASSERT(!rule1->active());
         LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
         // Rewrite both sides and reorder if necessary . . .
@@ -796,7 +796,7 @@ namespace libsemigroups {
         }
         bool rules_added_this_pass = false;
         while (_rules->number_of_pending_rules() != 0) {
-          Rule* rule = _rules->next_pending_rule();
+          Rule* rule = _rules->pop_pending_rule();
           LIBSEMIGROUPS_ASSERT(!rule->active());
           LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
           // Rewrite both sides and reorder if necessary . . .
