@@ -152,6 +152,13 @@ namespace libsemigroups {
         return *this;
       }
 
+      RuleLookup& operator()(native_word_type::const_iterator first,
+                             native_word_type::const_iterator last) {
+        _first = first;
+        _last  = last;
+        return *this;
+      }
+
       Rule const* rule() const {
         return _rule;
       }
@@ -481,17 +488,47 @@ namespace libsemigroups {
 
       // TODO add_rule(Iterators) when Rule* not in data structure here any
       // TODO rm_rule(Iterators) when Rule* not in data structure here any
-
-     private:
       void add_rule(Rule* rule);
       void rm_rule(Rule* rule);
 
+      // TODO rm
       void rewrite(Rule* rule) const {
         rewrite(rule->lhs());
         rewrite(rule->rhs());
         rule->reorder();
       }
 
+      // Returns a range object iterating through Rule* whose lhs is contained
+      // in word
+      auto lhs_search_no_checks(native_word_type const& word) {
+        return rx::iterator_range(_rules->active_rules().begin(),
+                                  _rules->active_rules().end())
+               | rx::filter([&word](Rule* rule) {
+                   return word.find(rule->lhs()) != native_word_type::npos;
+                 });
+      }
+
+      // Returns <true> if any lhs of a rule is contained in [first, last)
+      // [[nodiscard]] bool search_lhs(Rule const* ignore,
+      //                               Iterator    first,
+      //                               Iterator    last) {
+      //   RuleLookup lookup;
+
+      //   for (auto it = first; it != last; ++it) {
+      //     auto match = _set_rules.find(lookup(it, last));
+      //     if (match != _set_rules.end()) {
+      //       Rule const* rule = match->rule();
+      //       if (rule != ignore
+      //           && rule->lhs().size()
+      //                  <= static_cast<size_t>(std::distance(it, last))) {
+      //         return true;
+      //       }
+      //     }
+      //   }
+      //   return false;
+      // }
+
+     private:
       void report_checking_confluence(
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const override;
@@ -557,6 +594,17 @@ namespace libsemigroups {
 
       bool process_pending_rules();
 
+      // TODO out of line
+      // TODO rename to add_rule, and remove the notions of active and pending
+      // rules from Rewrite objects
+      void add_rule(Rule* rule) {
+        index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
+                                                        rule->lhs().cend());
+        _rule_map.emplace(node, rule);
+        set_cached_confluent(tril::unknown);
+      }
+      void rm_rule(Rule* rule);
+
       // TODO(1) iterators
       void rewrite(native_word_type& u);
       void rewrite2(native_word_type& u);
@@ -572,18 +620,19 @@ namespace libsemigroups {
         const_cast<RewriteTrie*>(this)->rewrite(u);
       }
 
-     private:
-      // TODO out of line
-      // TODO rename to add_rule, and remove the notions of active and pending
-      // rules from Rewrite objects
-      void add_rule(Rule* rule) {
-        index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
-                                                        rule->lhs().cend());
-        _rule_map.emplace(node, rule);
-        set_cached_confluent(tril::unknown);
-      }
-      void rm_rule(Rule* rule);
+      // Returns a range object iterating through Rule* whose lhs is contained
+      // in word
+      auto lhs_search_no_checks(native_word_type const& word) {
+        auto first
+            = aho_corasick_impl::begin_search_no_checks(_rule_trie, word);
+        auto last = aho_corasick_impl::end_search_no_checks(_rule_trie, word);
 
+        return rx::iterator_range(first, last)
+               | rx::transform(
+                   [this](auto node_index) { return _rule_map[node_index]; });
+      }
+
+     private:
       [[nodiscard]] bool descendants_confluent(Rule const* rule1,
                                                index_type  current_node,
                                                size_t backtrack_depth) const;
