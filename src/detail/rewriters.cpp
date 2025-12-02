@@ -199,16 +199,12 @@ namespace libsemigroups {
     }
 
     void Rules::add_pending_rule(Rule* rule) {
-      if (rule->lhs() != rule->rhs()) {
-        rule->state(Rule::State::pending);
-        rule->reorder();
-        _pending_rules.push_back(rule);
-        _stats.max_pending_rules
-            = std::max(_stats.max_pending_rules, _pending_rules.size());
-      } else {
-        // TODO remove this clause and the return value?
-        add_inactive_rule(rule);
-      }
+      LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
+      rule->state(Rule::State::pending);
+      rule->reorder();
+      _pending_rules.push_back(rule);
+      _stats.max_pending_rules
+          = std::max(_stats.max_pending_rules, _pending_rules.size());
     }
 
     Rules::iterator Rules::make_active_rule_pending(iterator it) {

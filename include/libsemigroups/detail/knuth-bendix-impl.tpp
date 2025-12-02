@@ -774,7 +774,7 @@ namespace libsemigroups {
       if (p == q) {
         return;
       }
-      rules::add_pending_rule(_rules, p, q);
+      rules::add_pending_rule_no_checks(_rules, p, q);
     }
 
     //////////////////////////////////////////////////////////////////////////
