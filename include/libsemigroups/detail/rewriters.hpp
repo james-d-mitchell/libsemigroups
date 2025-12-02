@@ -290,12 +290,8 @@ namespace libsemigroups {
       // TODO helper
       [[nodiscard]] size_t max_length_lhs_active_rule() const;
 
-      // TODO protected -> private when Rewriters do not inherit from
-      // Rules
-     protected:
-      [[nodiscard]] Rule* copy_rule(Rule const* rule);
-
      private:
+      [[nodiscard]] Rule* copy_rule(Rule const* rule);
       [[nodiscard]] Rule* new_rule();
       // TODO to tpp
       template <typename Iterator>
