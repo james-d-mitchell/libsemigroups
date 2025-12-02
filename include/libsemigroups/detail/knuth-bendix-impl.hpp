@@ -909,9 +909,10 @@ namespace libsemigroups {
 
       void overlap(detail::Rule const* u, detail::Rule const* v);
 
-      [[nodiscard]] size_t max_active_word_length() const {
-        return _rewriter.max_active_word_length();
-      }
+      // TODO rm
+      // [[nodiscard]] size_t max_active_word_length() const {
+      //   return _rewriter.max_active_word_length();
+      // }
 
       void               run_real(std::atomic_bool&);
       [[nodiscard]] bool stop_running() const;
@@ -922,7 +923,7 @@ namespace libsemigroups {
 
       bool finished_impl() const override;
     };  // class KnuthBendixImpl
-  }     // namespace detail
+  }  // namespace detail
 
   ////////////////////////////////////////////////////////////////////////
   // global functions - to_human_readable_repr
