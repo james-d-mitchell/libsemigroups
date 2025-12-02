@@ -836,8 +836,8 @@ namespace libsemigroups {
 
             // Check rule is non-trivial
             if (new_rule->lhs() != new_rule->rhs()) {
-              _rules.add_active_rule(new_rule);
               _rewriter.add_rule(new_rule);
+              _rules.add_active_rule(new_rule);
             } else {
               _rules.add_inactive_rule(new_rule);
             }
@@ -868,19 +868,24 @@ namespace libsemigroups {
 
       // Reduce existing active rules wrt new_rule
       void reduce_active_rules() {
-        auto const first = _rules.active_rules().begin();
-        auto const last  = _rules.active_rules().end();
+        // TODO remove RewriteFromLeft explicitly here
+        if constexpr (std::is_same_v<Rewriter, detail::RewriteFromLeft>) {
+          return;
+        } else {
+          auto const first = _rules.active_rules().begin();
+          auto const last  = _rules.active_rules().end();
 
-        for (auto it = first; it != last; ++it) {
-          Rule* rule = *it;
-          for (auto const& word : {rule->lhs(), rule->rhs()}) {
-            auto range = _rewriter.lhs_search_no_checks(word);
+          for (auto it = first; it != last; ++it) {
+            Rule* rule = *it;
+            for (auto const& word : {rule->lhs(), rule->rhs()}) {
+              auto range = _rewriter.lhs_search_no_checks(word);
 
-            if (range
-                | rx::any_of([rule](Rule* match) { return match != rule; })) {
-              _rewriter.rm_rule(*it);
-              it = --_rules.make_active_rule_pending(it);
-              break;
+              if (range
+                  | rx::any_of([rule](Rule* match) { return match != rule; })) {
+                _rewriter.rm_rule(*it);
+                it = --_rules.make_active_rule_pending(it);
+                break;
+              }
             }
           }
         }

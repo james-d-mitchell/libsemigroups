@@ -402,14 +402,32 @@ namespace libsemigroups {
                            == _rules->number_of_active_rules() - 1);
     }
 
-    void RewriteFromLeft::add_rule(Rule* rule) {
+    void RewriteFromLeft::add_rule(Rule* new_rule) {
+      // It's a requirement of this data structure requires that the rules are
+      // reduced, so we ensure this here, before adding the new rule.
+      auto const  first = _rules->active_rules().begin();
+      auto const  last  = _rules->active_rules().end();
+      auto const& lhs   = new_rule->lhs();
+
+      for (auto it = first; it != last;) {
+        Rule* old_rule = *it;
+
+        // TODO(1) investigate whether or not this can be improved?
+        if (old_rule->lhs().find(lhs) != native_word_type::npos
+            || old_rule->rhs().find(lhs) != native_word_type::npos) {
+          rm_rule(*it);
+          it = _rules->make_active_rule_pending(it);
+        } else {
+          ++it;
+        }
+      }
 #ifdef LIBSEMIGROUPS_DEBUG
-      LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
+      LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(new_rule)).second);
 #else
-      _set_rules.emplace(RuleLookup(rule));
+      _set_rules.emplace(RuleLookup(new_rule));
 #endif
       LIBSEMIGROUPS_ASSERT(_set_rules.size()
-                           == _rules->number_of_active_rules());
+                           == _rules->number_of_active_rules() + 1);
       set_cached_confluent(tril::unknown);
     }
 
@@ -626,8 +644,8 @@ namespace libsemigroups {
               ++it;
             }
           }
-          _rules->add_active_rule(rule1);
           add_rule(rule1);
+          _rules->add_active_rule(rule1);
           rules_added = true;
         } else {
           _rules->add_inactive_rule(rule1);

@@ -178,24 +178,6 @@ namespace libsemigroups {
     template <typename Rewriter, typename ReductionOrder>
     KnuthBendixImpl<Rewriter, ReductionOrder>&
     KnuthBendixImpl<Rewriter, ReductionOrder>::operator=(
-        KnuthBendixImpl&& that) {
-      CongruenceCommon::operator=(std::move(that));
-      _gen_pairs_initted        = std::move(that._gen_pairs_initted);
-      _gilman_graph             = std::move(that._gilman_graph);
-      _gilman_graph_node_labels = std::move(that._gilman_graph_node_labels);
-      _overlap_measure          = std::move(that._overlap_measure);
-      _presentation             = std::move(that._presentation);
-      _rules                    = std::move(that._rules);
-      _rewriter                 = std::move(that._rewriter);
-      _rewriter.rules(_rules);
-      _settings = std::move(that._settings);
-      _stats    = std::move(that._stats);
-      return *this;
-    }
-
-    template <typename Rewriter, typename ReductionOrder>
-    KnuthBendixImpl<Rewriter, ReductionOrder>&
-    KnuthBendixImpl<Rewriter, ReductionOrder>::operator=(
         KnuthBendixImpl const& that) {
       CongruenceCommon::operator=(that);
       _gen_pairs_initted        = that._gen_pairs_initted;
@@ -212,6 +194,24 @@ namespace libsemigroups {
       // The next line sets _overlap_measure to be something sensible.
       overlap_policy(_settings.overlap_policy);
 
+      return *this;
+    }
+
+    template <typename Rewriter, typename ReductionOrder>
+    KnuthBendixImpl<Rewriter, ReductionOrder>&
+    KnuthBendixImpl<Rewriter, ReductionOrder>::operator=(
+        KnuthBendixImpl&& that) {
+      CongruenceCommon::operator=(std::move(that));
+      _gen_pairs_initted        = std::move(that._gen_pairs_initted);
+      _gilman_graph             = std::move(that._gilman_graph);
+      _gilman_graph_node_labels = std::move(that._gilman_graph_node_labels);
+      _overlap_measure          = std::move(that._overlap_measure);
+      _presentation             = std::move(that._presentation);
+      _rules                    = std::move(that._rules);
+      _rewriter                 = std::move(that._rewriter);
+      _rewriter.rules(_rules);
+      _settings = std::move(that._settings);
+      _stats    = std::move(that._stats);
       return *this;
     }
 
@@ -346,7 +346,7 @@ namespace libsemigroups {
       using rx::transform;
       if (_rules.number_of_active_rules() == 0
           && _rules.number_of_pending_rules() != 0) {
-        _rewriter.process_pending_rules();
+        process_pending_rules();
       }
       return iterator_range(_rules.active_rules().begin(),
                             _rules.active_rules().end());
@@ -486,7 +486,7 @@ namespace libsemigroups {
         native_word_type& w) {
       if (_rules.number_of_active_rules() == 0
           && _rules.number_of_pending_rules() != 0) {
-        _rewriter.process_pending_rules();
+        process_pending_rules();
       }
       add_octo(w);
       _rewriter.rewrite(w);
@@ -519,7 +519,7 @@ namespace libsemigroups {
       if (_rules.number_of_active_rules() == 0
           && _rules.number_of_pending_rules() != 0) {
         const_cast<KnuthBendixImpl<Rewriter, ReductionOrder>*>(this)
-            ->_rewriter.process_pending_rules();
+            ->process_pending_rules();
       }
       return _rewriter.confluent();
     }
@@ -622,7 +622,7 @@ namespace libsemigroups {
         }
 
         if (_rules.number_of_pending_rules() != 0) {
-          _rewriter.process_pending_rules();
+          process_pending_rules();
           // is_reduced is in the helper file now so can't check this here
           // anymore LIBSEMIGROUPS_ASSERT(knuth_bendix::is_reduced(*this));
         } else {
@@ -645,7 +645,7 @@ namespace libsemigroups {
       reset_start_time();
 
       init_from_generating_pairs();
-      _rewriter.process_pending_rules();
+      process_pending_rules();
       if (_rules.number_of_pending_rules() == 0 && confluent()
           && !stop_running()) {
         // _rewriter._pending_rules can be non-empty if non-reduced rules were
@@ -850,7 +850,7 @@ namespace libsemigroups {
           add_pending_rule(x, y);
 
           if (_rules.number_of_pending_rules() >= _settings.max_pending_rules) {
-            _rewriter.process_pending_rules();
+            process_pending_rules();
           }
           // It can be that the iterator `it` is invalidated by the call to
           // proccess_pending_rule (i.e. if `u` is deactivated, then
