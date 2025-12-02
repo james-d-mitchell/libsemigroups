@@ -480,13 +480,13 @@ namespace libsemigroups {
       }
 
      private:
+      void add_rule(Rule* rule);
+
       void rewrite(Rule* rule) const {
         rewrite(rule->lhs());
         rewrite(rule->rhs());
         rule->reorder();
       }
-
-      void add_active_rule(Rule* rule);
 
       iterator make_active_rule_pending(iterator);
 
@@ -547,6 +547,7 @@ namespace libsemigroups {
       ~RewriteTrie();
 
       using RewriteBase::cached_confluent;
+
       RewriteTrie& increase_alphabet_size_by(size_t val) {
         _rule_trie.increase_alphabet_size_by(val);
         return *this;
