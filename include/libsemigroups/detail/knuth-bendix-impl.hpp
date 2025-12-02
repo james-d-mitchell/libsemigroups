@@ -904,7 +904,9 @@ namespace libsemigroups {
       void add_octo(native_word_type& w) const;
       void rm_octo(native_word_type& w) const;
 
-      void add_rule_impl(native_word_type const& p, native_word_type const& q);
+      // TODO no_checks? or is this the unique one that should check
+      void add_pending_rule(native_word_type const& p,
+                            native_word_type const& q);
 
       void overlap(detail::Rule const* u, detail::Rule const* v);
 

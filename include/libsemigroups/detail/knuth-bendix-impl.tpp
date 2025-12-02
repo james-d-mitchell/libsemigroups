@@ -555,7 +555,7 @@ namespace libsemigroups {
         ++it;
         p.rules.emplace_back(it->cbegin(), it->cend());
         add_octo(p.rules.back());
-        add_rule_impl(p.rules.cend()[-2], p.rules.cend()[-1]);
+        add_pending_rule(p.rules.cend()[-2], p.rules.cend()[-1]);
       }
     }
 
@@ -756,17 +756,18 @@ namespace libsemigroups {
     }
 
     //////////////////////////////////////////////////////////////////////////
-    // FpSemigroupInterface - pure virtual methods - private
+    // private
     //////////////////////////////////////////////////////////////////////////
 
     template <typename Rewriter, typename ReductionOrder>
-    void KnuthBendixImpl<Rewriter, ReductionOrder>::add_rule_impl(
+    void KnuthBendixImpl<Rewriter, ReductionOrder>::add_pending_rule(
         native_word_type const& p,
         native_word_type const& q) {
       if (p == q) {
         return;
       }
-      _rewriter.add_rule(p, q);
+      _rewriter.add_pending_rule(p, q);
+      rules::add_pending_rule(_rules, p, q);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -809,7 +810,7 @@ namespace libsemigroups {
       auto const last  = p.rules.cend();
       for (auto it = first; it != last; it += 2) {
         auto lhs = *it, rhs = *(it + 1);
-        add_rule_impl(lhs, rhs);
+        add_pending_rule(lhs, rhs);
       }
     }
 
@@ -839,7 +840,7 @@ namespace libsemigroups {
           detail::MultiView<native_word_type> y(urhs.cbegin(), urhs.cend());
           y.append(vlhs.cbegin() + (ulhs.cend() - it),
                    vlhs.cend());  // rule = AQ_j -> Q_iC
-          _rewriter.add_rule(x, y);
+          add_pending_rule(x, y);
 
           if (_rewriter.number_of_pending_rules()
               >= _settings.max_pending_rules) {
