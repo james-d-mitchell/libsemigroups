@@ -46,8 +46,10 @@ namespace libsemigroups {
 
     void Rule::deactivate_no_checks() noexcept {
       LIBSEMIGROUPS_ASSERT(_id != 0);
-      LIBSEMIGROUPS_ASSERT(active());
-      _id *= -1;
+      //  LIBSEMIGROUPS_ASSERT(active());
+      if (_id > 0) {
+        _id *= -1;
+      }
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -112,7 +114,7 @@ namespace libsemigroups {
         add_active_rule(copy_rule(rule));
       }
       for (auto const* rule : that._pending_rules) {
-        // TODO add_pending_rule
+        // TODO use add_pending_rule
         _pending_rules.emplace_back(copy_rule(rule));
       }
       for (size_t i = 0; i < _cursors.size(); ++i) {
@@ -175,6 +177,9 @@ namespace libsemigroups {
 
     void Rules::add_active_rule(Rule* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
+      // Don't assert that rule isn't active, because it could be if we are
+      // calling this in one of the copy constructors.
+
       // TODO next 6 lines -> Stats
       _stats.max_length_lhs_rule
           = std::max(_stats.max_length_lhs_rule, rule->lhs().size());
@@ -183,7 +188,8 @@ namespace libsemigroups {
       _stats.min_length_lhs_rule
           = std::min(_stats.min_length_lhs_rule, rule->lhs().size());
 
-      rule->activate_no_checks();
+      rule->state(Rule::State::active);
+      rule->activate_no_checks();  // TODO rm
       _active_rules.push_back(rule);
       for (auto& it : _cursors) {
         if (it == _active_rules.end()) {
@@ -193,8 +199,8 @@ namespace libsemigroups {
     }
 
     void Rules::add_pending_rule(Rule* rule) {
-      LIBSEMIGROUPS_ASSERT(!rule->active());
       if (rule->lhs() != rule->rhs()) {
+        rule->state(Rule::State::pending);
         rule->reorder();
         _pending_rules.push_back(rule);
         _stats.max_pending_rules
@@ -206,8 +212,8 @@ namespace libsemigroups {
     }
 
     Rules::iterator Rules::make_active_rule_pending(iterator it) {
-      LIBSEMIGROUPS_ASSERT(!(*it)->active());
       Rule* rule = *it;
+      LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::active);
       rule->deactivate_no_checks();
       add_pending_rule(rule);
 
@@ -398,8 +404,7 @@ namespace libsemigroups {
     }
 
     void RewriteFromLeft::add_active_rule(Rule* rule) {
-      _rules->add_active_rule(rule);  // TODO move this into KnuthBendix
-      // _stats.unique_lhs_rules.insert(*rule->lhs());
+      _rules->add_active_rule(rule);  // TODO Move to KnuthBendix?
 #ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
 #else

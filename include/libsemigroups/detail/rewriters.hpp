@@ -45,12 +45,15 @@ namespace libsemigroups {
 
     class Rule {
      public:
+      enum class State : uint8_t { active = 0, inactive = 1, pending = 2 };
+
       using native_word_type = std::string;
 
      private:
       native_word_type _lhs;
       native_word_type _rhs;
       int64_t          _id;  // TODO remove?
+      State            _state;
 
      public:
       explicit Rule(int64_t id);
@@ -107,6 +110,15 @@ namespace libsemigroups {
         if (shortlex_compare(_lhs, _rhs)) {
           std::swap(_lhs, _rhs);
         }
+      }
+
+      [[nodiscard]] State state() const noexcept {
+        return _state;
+      }
+
+      Rule& state(State val) {
+        _state = val;
+        return *this;
       }
     };  // class Rule
 
@@ -223,7 +235,8 @@ namespace libsemigroups {
 
       // TODO out of line
       void add_inactive_rule(Rule* rule) {
-        rule->deactivate_no_checks();
+        rule->state(Rule::State::inactive);
+        rule->deactivate_no_checks();  // TODO rm
         _inactive_rules.push_back(rule);
       }
 
@@ -361,6 +374,12 @@ namespace libsemigroups {
 
       virtual ~RewriteBase();
 
+      // TODO getter
+      RewriteBase& rules(Rules* rules) {
+        _rules = rules;
+        return *this;
+      }
+
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
       ////////////////////////////////////////////////////////////////////////
@@ -382,24 +401,6 @@ namespace libsemigroups {
 
       [[nodiscard]] bool confluence_known() const {
         return _confluence_known;
-      }
-
-      // TODO -> helper
-      // TODO should be add_pending_rule_no_checks, and remove checks that lhs
-      // != rhs, assert instead.
-      // TODO does this even need to exist?
-      template <typename StringLike>
-      void add_pending_rule(StringLike const& lhs, StringLike const& rhs);
-
-      // TODO -> helper
-      // TODO should be add_pending_rule_no_checks, and remove checks that lhs
-      // != rhs, assert instead.
-      // TODO does this even need to exist?
-      inline void add_pending_rule(char const* lhs, char const* rhs) {
-        if (lhs != rhs) {
-          _rules->add_pending_rule(
-              lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs));
-        }
       }
 
      protected:
@@ -430,16 +431,6 @@ namespace libsemigroups {
           std::chrono::high_resolution_clock::time_point const&) const {}
     };  // class RewriteBase
 
-    // RewriteBase out-of-lined mem fn template
-    template <typename StringLike>
-    void RewriteBase::add_pending_rule(StringLike const& lhs,
-                                       StringLike const& rhs) {
-      if (lhs != rhs) {
-        _rules->add_pending_rule(
-            lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
-      }
-    }
-
     ////////////////////////////////////////////////////////////////////////
     // RewriteFromLeft
     ////////////////////////////////////////////////////////////////////////
@@ -454,8 +445,6 @@ namespace libsemigroups {
      public:
       using native_word_type = Rule::native_word_type;
       using iterator         = Rules::iterator;
-
-      using RewriteBase::add_pending_rule;
 
       RewriteFromLeft(Rules* rules) : RewriteBase(rules), _set_rules() {}
 
@@ -580,6 +569,7 @@ namespace libsemigroups {
      private:
       // TODO out of line
       void add_active_rule(Rule* rule) {
+        _rules->add_active_rule(rule);  // TODO move to KnuthBendix?
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
                                                         rule->lhs().cend());
         _rule_map.emplace(node, rule);
