@@ -200,21 +200,16 @@ namespace libsemigroups {
         _stats.max_pending_rules
             = std::max(_stats.max_pending_rules, _pending_rules.size());
       } else {
-        // TODO remove this clause?
+        // TODO remove this clause and the return value?
         Rules::add_inactive_rule(rule);
       }
     }
 
-    Rules::iterator Rules::erase_from_active_rules(iterator it) {
-      // _stats.unique_lhs_rules.erase(*((*it)->lhs()));
+    Rules::iterator Rules::make_active_rule_pending(iterator it) {
       LIBSEMIGROUPS_ASSERT(!(*it)->active());
-      // TODO(1) calling the next two lines double deactivates some rules (those
-      // coming from make_active_rule_pending), weirdly everything works when
-      // this happens (tests pass, though some assertions fail in debug mode)
-      // and test 139 is twice as fast for some reason!
-
-      // Rule* rule = *it;
-      // rule->deactivate_no_checks();
+      Rule* rule = *it;
+      rule->deactivate_no_checks();
+      add_pending_rule(rule);
 
       if (it != _cursors[0] && it != _cursors[1]) {
         it = _active_rules.erase(it);
@@ -254,34 +249,48 @@ namespace libsemigroups {
     RewriteBase::RewriteBase()
         : _cached_confluent(false),
           _confluence_known(false),
+          _rules(nullptr),
           _ticker_running(false) {}
 
     RewriteBase& RewriteBase::init() {
-      Rules::init();
       _cached_confluent = false;
       _confluence_known = false;
+      _rules            = nullptr;
       _ticker_running   = false;
+      return *this;
+    }
+
+    RewriteBase::RewriteBase(Rules* rules) : RewriteBase() {
+      LIBSEMIGROUPS_ASSERT(rules != nullptr);
+      _rules = rules;
+    }
+
+    RewriteBase& RewriteBase::init(Rules* rules) {
+      LIBSEMIGROUPS_ASSERT(rules != nullptr);
+      init();
+      _rules = rules;
       return *this;
     }
 
     RewriteBase::RewriteBase(RewriteBase&& that)
         : _cached_confluent(that._cached_confluent.load()),
           _confluence_known(that._confluence_known.load()),
+          _rules(std::move(that._rules)),
           _ticker_running(std::move(that._ticker_running)) {}
 
     RewriteBase& RewriteBase::operator=(RewriteBase const& that) {
-      Rules::operator=(that);
       _cached_confluent = that._cached_confluent.load();
       _confluence_known = that._confluence_known.load();
+      _rules            = that._rules;
       _ticker_running   = that._ticker_running;
 
       return *this;
     }
 
     RewriteBase& RewriteBase::operator=(RewriteBase&& that) {
-      Rules::operator=(std::move(that));
       _cached_confluent = that._cached_confluent.load();
       _confluence_known = that._confluence_known.load();
+      _rules            = std::move(that._rules);
       _ticker_running   = std::move(that._ticker_running);
       return *this;
     }
@@ -304,7 +313,7 @@ namespace libsemigroups {
       using std::chrono::high_resolution_clock;
       using std::chrono::time_point;
 
-      if (number_of_pending_rules() != 0) {
+      if (_rules->number_of_pending_rules() != 0) {
         set_cached_confluent(tril::unknown);
         return false;
       } else if (confluence_known()) {
@@ -330,10 +339,10 @@ namespace libsemigroups {
       if (_state == State::none) {
         using detail::string_time;
         auto gd       = detail::group_digits;
-        auto active   = gd(number_of_active_rules());
-        auto inactive = gd(number_of_inactive_rules());
-        auto pending  = gd(number_of_pending_rules());
-        auto defined  = gd(stats().total_rules);
+        auto active   = gd(_rules->number_of_active_rules());
+        auto inactive = gd(_rules->number_of_inactive_rules());
+        auto pending  = gd(_rules->number_of_pending_rules());
+        auto defined  = gd(_rules->stats().total_rules);
 
         report_default("KnuthBendix: rules {} (active) | {} (inactive) | {} "
                        "(pending) | {} "
@@ -366,7 +375,7 @@ namespace libsemigroups {
     RewriteFromLeft& RewriteFromLeft::operator=(RewriteFromLeft const& that) {
       init();
       RewriteBase::operator=(that);
-      for (auto* rule : active_rules()) {
+      for (auto* rule : _rules->active_rules()) {
 #ifdef LIBSEMIGROUPS_DEBUG
         LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
 #else
@@ -378,28 +387,26 @@ namespace libsemigroups {
 
     RewriteFromLeft::iterator
     RewriteFromLeft::make_active_rule_pending(iterator it) {
-      // TODO next 3 lines into Rules
-      Rule* rule = *it;
-      rule->deactivate_no_checks();
-      Rules::add_pending_rule(rule);
 #ifdef LIBSEMIGROUPS_DEBUG
-      LIBSEMIGROUPS_ASSERT(_set_rules.erase(RuleLookup(rule)));
+      LIBSEMIGROUPS_ASSERT(_set_rules.erase(RuleLookup(*it)));
 #else
-      _set_rules.erase(RuleLookup(rule));
+      _set_rules.erase(RuleLookup(*it));
 #endif
-      LIBSEMIGROUPS_ASSERT(_set_rules.size() == number_of_active_rules() - 1);
-      return Rules::erase_from_active_rules(it);
+      LIBSEMIGROUPS_ASSERT(_set_rules.size()
+                           == _rules->number_of_active_rules() - 1);
+      return _rules->make_active_rule_pending(it);
     }
 
     void RewriteFromLeft::add_active_rule(Rule* rule) {
-      Rules::add_active_rule(rule);
+      _rules->add_active_rule(rule);  // TODO move this into KnuthBendix
       // _stats.unique_lhs_rules.insert(*rule->lhs());
 #ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
 #else
       _set_rules.emplace(RuleLookup(rule));
 #endif
-      LIBSEMIGROUPS_ASSERT(_set_rules.size() == number_of_active_rules());
+      LIBSEMIGROUPS_ASSERT(_set_rules.size()
+                           == _rules->number_of_active_rules());
       set_cached_confluent(tril::unknown);
     }
 
@@ -407,12 +414,12 @@ namespace libsemigroups {
     // Caution: this uses the assumption that rules are length reducing, if they
     // are not, then u might not have sufficient space!
     void RewriteFromLeft::rewrite2(native_word_type& u) {
-      if (u.size() < stats().min_length_lhs_rule) {
+      if (u.size() < _rules->stats().min_length_lhs_rule) {
         return;
       }
 
       auto v_begin = u.begin();  // 0
-      auto v_end   = u.begin() + stats().min_length_lhs_rule - 1;
+      auto v_end   = u.begin() + _rules->stats().min_length_lhs_rule - 1;
       auto w_begin = v_end;
       auto w_end   = u.end();  // u.size()
 
@@ -436,7 +443,7 @@ namespace libsemigroups {
           }
         }
         while (w_begin != w_end
-               && stats().min_length_lhs_rule - 1
+               && _rules->stats().min_length_lhs_rule - 1
                       > static_cast<size_t>((v_end - v_begin))) {
           *v_end = *w_begin;
           ++v_end;
@@ -447,11 +454,11 @@ namespace libsemigroups {
     }
 
     void RewriteFromLeft::rewrite(native_word_type& v) {
-      if (v.size() < stats().min_length_lhs_rule) {
+      if (v.size() < _rules->stats().min_length_lhs_rule) {
         return;
       }
 
-      size_t const n = stats().min_length_lhs_rule;
+      size_t const n = _rules->stats().min_length_lhs_rule;
       // TODO we could try to modify rewrite2 to work with indices rather
       // than allocating w here every time (indices not iterators because
       // indices are independent of memory allocation)
@@ -499,7 +506,7 @@ namespace libsemigroups {
         std::chrono::high_resolution_clock::time_point const& start_time)
         const {
       if (reporting_enabled()) {
-        auto total_pairs = std::pow(Rules::number_of_active_rules(), 2);
+        auto total_pairs = std::pow(_rules->number_of_active_rules(), 2);
 
         auto total_pairs_s = detail::group_digits(total_pairs);
         auto now           = std::chrono::high_resolution_clock::now();
@@ -526,11 +533,13 @@ namespace libsemigroups {
       native_word_type word1;
       native_word_type word2;
 
-      for (auto it1 = active_rules().begin(); it1 != active_rules().end();
+      for (auto it1 = _rules->active_rules().begin();
+           it1 != _rules->active_rules().end();
            ++it1) {
         Rule const* rule1 = *it1;
         // Seems to be much faster to do this in reverse.
-        for (auto it2 = active_rules().rbegin(); it2 != active_rules().rend();
+        for (auto it2 = _rules->active_rules().rbegin();
+             it2 != _rules->active_rules().rend();
              ++it2) {
           seen++;
           Rule const* rule2 = *it2;
@@ -578,7 +587,7 @@ namespace libsemigroups {
     }
 
     bool RewriteFromLeft::process_pending_rules() {
-      sort_pending_rules();
+      _rules->sort_pending_rules();
 
       auto           start_time = std::chrono::high_resolution_clock::now();
       detail::Ticker ticker;
@@ -586,8 +595,8 @@ namespace libsemigroups {
 
       bool rules_added = false;
 
-      while (number_of_pending_rules() != 0) {
-        Rule* rule1 = next_pending_rule();
+      while (_rules->number_of_pending_rules() != 0) {
+        Rule* rule1 = _rules->next_pending_rule();
         LIBSEMIGROUPS_ASSERT(!rule1->active());
         LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
         // Rewrite both sides and reorder if necessary . . .
@@ -597,7 +606,10 @@ namespace libsemigroups {
         if (rule1->lhs() != rule1->rhs()) {
           native_word_type& lhs = rule1->lhs();
 
-          for (auto it = active_rules().begin(); it != active_rules().end();) {
+          auto const first = _rules->active_rules().begin();
+          auto const last  = _rules->active_rules().end();
+
+          for (auto it = first; it != last;) {
             Rule* rule2 = *it;
 
             // Check if lhs is contained within either the lhs or rhs of rule2
@@ -613,7 +625,7 @@ namespace libsemigroups {
           add_active_rule(rule1);
           rules_added = true;
         } else {
-          add_inactive_rule(rule1);
+          _rules->add_inactive_rule(rule1);
         }
         if (!_ticker_running && reporting_enabled()
             && delta(start_time) >= std::chrono::seconds(1)) {
@@ -654,7 +666,7 @@ namespace libsemigroups {
       init();
       RewriteBase::operator=(that);
       _rule_trie = that._rule_trie;
-      for (Rule* rule : active_rules()) {
+      for (Rule* rule : _rules->active_rules()) {
         index_type node = _rule_trie.traverse_trie_no_checks(
             rule->lhs().cbegin(), rule->lhs().cend());
         LIBSEMIGROUPS_ASSERT(_rule_trie.terminal(node));
@@ -668,7 +680,7 @@ namespace libsemigroups {
     // length reducing.
     void RewriteTrie::rewrite2(native_word_type& u) {
       // Check if u is rewriteable
-      if (u.size() < stats().min_length_lhs_rule) {
+      if (u.size() < _rules->stats().min_length_lhs_rule) {
         return;
       }
 
@@ -719,7 +731,7 @@ namespace libsemigroups {
 
     void RewriteTrie::rewrite(native_word_type& v) {
       // Check if v is rewriteable
-      if (v.size() < stats().min_length_lhs_rule) {
+      if (v.size() < _rules->stats().min_length_lhs_rule) {
         return;
       }
 
@@ -764,22 +776,22 @@ namespace libsemigroups {
       detail::Guard  guard(_ticker_running);
       std::atomic_uint64_t seen = 0;
 
-      sort_pending_rules();
+      _rules->sort_pending_rules();
 
       bool rules_added = false;
       // TODO(1) could make this a setting, or use a different condition (such
-      // as number_of_active_rules / 2 or something)
-      bool use_separate_trie
-          = number_of_pending_rules() < number_of_active_rules();
+      // as _rules->number_of_active_rules / 2 or something)
+      bool use_separate_trie = _rules->number_of_pending_rules()
+                               < _rules->number_of_active_rules();
 
-      while (number_of_pending_rules() != 0) {
+      while (_rules->number_of_pending_rules() != 0) {
         if (use_separate_trie) {
           _new_rule_trie.init(_rule_trie.alphabet_size());
           _new_rule_map.clear();
         }
         bool rules_added_this_pass = false;
-        while (number_of_pending_rules() != 0) {
-          Rule* rule = next_pending_rule();
+        while (_rules->number_of_pending_rules() != 0) {
+          Rule* rule = _rules->next_pending_rule();
           LIBSEMIGROUPS_ASSERT(!rule->active());
           LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
           // Rewrite both sides and reorder if necessary . . .
@@ -802,7 +814,7 @@ namespace libsemigroups {
             rules_added           = true;
             rules_added_this_pass = true;
           } else {
-            add_inactive_rule(rule);
+            _rules->add_inactive_rule(rule);
           }
           if (!_ticker_running && reporting_enabled()
               && delta(start_time) >= std::chrono::seconds(1)) {
@@ -822,7 +834,9 @@ namespace libsemigroups {
           decltype(_rule_map)* rule_map
               = use_separate_trie ? &_new_rule_map : &_rule_map;
 
-          for (auto it = active_rules().begin(); it != active_rules().end();) {
+          auto const first = _rules->active_rules().begin();
+          auto const last  = _rules->active_rules().end();
+          for (auto it = first; it != last;) {
             ++seen;
             Rule* rule = *it;
             // Check whether any rule contains the left-hand-side of the "new"
@@ -935,14 +949,11 @@ namespace libsemigroups {
     }
 
     Rules::iterator RewriteTrie::make_active_rule_pending(Rules::iterator it) {
-      // TODO next 3 lines -> Rules
-      Rule* rule = *it;
-      rule->deactivate_no_checks();
-      Rules::add_pending_rule(rule);
-      index_type node = _rule_trie.rm_word_no_checks(rule->lhs().cbegin(),
+      Rule const* rule = *it;
+      index_type  node = _rule_trie.rm_word_no_checks(rule->lhs().cbegin(),
                                                      rule->lhs().cend());
       _rule_map.erase(node);
-      return Rules::erase_from_active_rules(it);
+      return _rules->make_active_rule_pending(it);
     }
 
     void RewriteTrie::report_checking_confluence(
@@ -950,7 +961,7 @@ namespace libsemigroups {
         std::chrono::high_resolution_clock::time_point const& start_time)
         const {
       if (reporting_enabled()) {
-        auto total_rules   = Rules::number_of_active_rules();
+        auto total_rules   = _rules->number_of_active_rules();
         auto total_rules_s = detail::group_digits(total_rules);
         auto now           = std::chrono::high_resolution_clock::now();
         auto time          = std::chrono::duration_cast<std::chrono::seconds>(
@@ -977,7 +988,7 @@ namespace libsemigroups {
       if (reporting_enabled()) {
         // TODO(1) This could maybe be better, more like the formatting in
         // "report_progress_from_thread"
-        auto total_rules = Rules::number_of_active_rules();
+        auto total_rules = _rules->number_of_active_rules();
         report_default("KnuthBendix: reducing rules: {0:>{width}} / "
                        "{1:>{width}} ({2:>4.1f}%) ({3})\n",
                        gd(seen),

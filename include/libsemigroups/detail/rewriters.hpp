@@ -210,21 +210,16 @@ namespace libsemigroups {
       // Public mem fns
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO to tpp
-      template <typename Iterator>
-      [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
-                                   Iterator end_lhs,
-                                   Iterator begin_rhs,
-                                   Iterator end_rhs) {
-        Rule* rule = new_rule();
-        rule->lhs().assign(begin_lhs, end_lhs);
-        rule->rhs().assign(begin_rhs, end_rhs);
-        rule->reorder();
-        return rule;
-      }
-
       void add_active_rule(Rule* rule);
       void add_pending_rule(Rule* rule);
+
+      template <typename Iterator>
+      void add_pending_rule(Iterator first1,
+                            Iterator last1,
+                            Iterator first2,
+                            Iterator last2) {
+        add_pending_rule(new_rule(first1, last1, first2, last2));
+      }
 
       // TODO out of line
       void add_inactive_rule(Rule* rule) {
@@ -270,6 +265,8 @@ namespace libsemigroups {
             [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
       }
 
+      [[nodiscard]] iterator make_active_rule_pending(iterator it);
+
       // TODO helper
       [[nodiscard]] size_t max_length_lhs_active_rule() const;
 
@@ -278,10 +275,20 @@ namespace libsemigroups {
      protected:
       [[nodiscard]] Rule* copy_rule(Rule const* rule);
 
-      [[nodiscard]] iterator erase_from_active_rules(iterator it);
-
      private:
       [[nodiscard]] Rule* new_rule();
+      // TODO to tpp
+      template <typename Iterator>
+      [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
+                                   Iterator end_lhs,
+                                   Iterator begin_rhs,
+                                   Iterator end_rhs) {
+        Rule* rule = new_rule();
+        rule->lhs().assign(begin_lhs, end_lhs);
+        rule->rhs().assign(begin_rhs, end_rhs);
+        rule->reorder();
+        return rule;
+      }
     };  // class Rules
 
     namespace rules {
@@ -294,8 +301,8 @@ namespace libsemigroups {
                             StringLike const& lhs,
                             StringLike const& rhs) {
         if (lhs != rhs) {
-          rules.add_pending_rule(rules.new_rule(
-              lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()));
+          rules.add_pending_rule(
+              lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
         }
       }
 
@@ -306,8 +313,8 @@ namespace libsemigroups {
                                    char const* lhs,
                                    char const* rhs) {
         if (lhs != rhs) {
-          rules.add_pending_rule(rules.new_rule(
-              lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs)));
+          rules.add_pending_rule(
+              lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs));
         }
       }
     }  // namespace rules
@@ -316,7 +323,7 @@ namespace libsemigroups {
     // RewriteBase
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteBase : public Rules {
+    class RewriteBase {
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
 
@@ -328,8 +335,12 @@ namespace libsemigroups {
         checking_confluence
       };
 
-      State _state;
-      bool  _ticker_running;
+      Rules* _rules;
+      State  _state;
+      bool   _ticker_running;
+
+      RewriteBase();
+      RewriteBase& init();
 
      public:
       using native_word_type = Rule::native_word_type;
@@ -338,8 +349,8 @@ namespace libsemigroups {
       // Constructors + inits
       ////////////////////////////////////////////////////////////////////////
 
-      RewriteBase();
-      RewriteBase& init();
+      RewriteBase(Rules*);
+      RewriteBase& init(Rules*);
 
       RewriteBase(RewriteBase const& that) : RewriteBase() {
         *this = that;
@@ -354,9 +365,9 @@ namespace libsemigroups {
       // Public mem fns
       ////////////////////////////////////////////////////////////////////////
 
-      // Some rewriters require knowledge of the alphabet size, and some do not.
-      // For those that do not we provide a default implementation that does
-      // nothing.
+      // Some rewriters require knowledge of the alphabet size, and some do
+      // not. For those that do not we provide a default implementation that
+      // does nothing.
       RewriteBase& increase_alphabet_size_by(size_t) {
         return *this;
       }
@@ -376,16 +387,18 @@ namespace libsemigroups {
       // TODO -> helper
       // TODO should be add_pending_rule_no_checks, and remove checks that lhs
       // != rhs, assert instead.
+      // TODO does this even need to exist?
       template <typename StringLike>
       void add_pending_rule(StringLike const& lhs, StringLike const& rhs);
 
       // TODO -> helper
       // TODO should be add_pending_rule_no_checks, and remove checks that lhs
       // != rhs, assert instead.
+      // TODO does this even need to exist?
       inline void add_pending_rule(char const* lhs, char const* rhs) {
         if (lhs != rhs) {
-          Rules::add_pending_rule(new_rule(
-              lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs)));
+          _rules->add_pending_rule(
+              lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs));
         }
       }
 
@@ -422,8 +435,8 @@ namespace libsemigroups {
     void RewriteBase::add_pending_rule(StringLike const& lhs,
                                        StringLike const& rhs) {
       if (lhs != rhs) {
-        Rules::add_pending_rule(
-            new_rule(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()));
+        _rules->add_pending_rule(
+            lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
       }
     }
 
@@ -435,25 +448,34 @@ namespace libsemigroups {
       std::set<RuleLookup> _set_rules;
 
       // TODO(1) use a heap for these maybe?
+      RewriteFromLeft() = default;
+      RewriteFromLeft& init();
+
      public:
       using native_word_type = Rule::native_word_type;
+      using iterator         = Rules::iterator;
 
-      using RewriteBase::add_active_rule;
       using RewriteBase::add_pending_rule;
 
-      RewriteFromLeft() = default;
+      RewriteFromLeft(Rules* rules) : RewriteBase(rules), _set_rules() {}
+
+      RewriteFromLeft& init(Rules* rules) {
+        init();
+        RewriteBase::init(rules);
+        return *this;
+      }
 
       RewriteFromLeft(RewriteFromLeft const& that) : RewriteFromLeft() {
         *this = that;
       }
+
+      // TODO should be the same as the previous one?
       RewriteFromLeft(RewriteFromLeft&&) = default;
 
       RewriteFromLeft& operator=(RewriteFromLeft const&);
       RewriteFromLeft& operator=(RewriteFromLeft&&) = default;
 
       ~RewriteFromLeft();
-
-      RewriteFromLeft& init();
 
       bool process_pending_rules();
 
@@ -501,15 +523,28 @@ namespace libsemigroups {
       AhoCorasickImpl                       _rule_trie;
       bool                                  _ticker_running;
 
-     public:
-      using Rules::stats;
+      RewriteTrie();
+      RewriteTrie& init();
 
-      using RewriteBase::add_active_rule;
+     public:
       using RewriteBase::cached_confluent;
 
-      RewriteTrie();
+      // TODO to cpp
+      RewriteTrie(Rules* rules)
+          : RewriteBase(rules),
+            _new_rule_map(),
+            _new_rule_trie(),
+            _rewrite_tmp_buf(),
+            _rule_map(),
+            _rule_trie(0),
+            _ticker_running(false) {}
 
-      RewriteTrie& init();
+      // TODO to cpp
+      RewriteTrie& init(Rules* rules) {
+        init();
+        RewriteBase::init(rules);
+        return *this;
+      }
 
       RewriteTrie(RewriteTrie const& that) : RewriteTrie() {
         *this = that;
@@ -545,7 +580,6 @@ namespace libsemigroups {
      private:
       // TODO out of line
       void add_active_rule(Rule* rule) {
-        Rules::add_active_rule(rule);
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
                                                         rule->lhs().cend());
         _rule_map.emplace(node, rule);
