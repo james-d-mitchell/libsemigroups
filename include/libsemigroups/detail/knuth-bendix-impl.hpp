@@ -867,8 +867,7 @@ namespace libsemigroups {
 
       // Reduce existing active rules wrt new_rule
       void reduce_active_rules() {
-        // TODO remove RewriteFromLeft explicitly here
-        if constexpr (std::is_same_v<Rewriter, detail::RewriteFromLeft>) {
+        if constexpr (Rewriter::always_reduced) {
           return;
         } else {
           auto const first = _rules.active_rules().begin();
@@ -987,7 +986,7 @@ namespace libsemigroups {
 
       bool finished_impl() const override;
     };  // class KnuthBendixImpl
-  }  // namespace detail
+  }     // namespace detail
 
 ////////////////////////////////////////////////////////////////////////
 // global functions - to_human_readable_repr

@@ -358,6 +358,8 @@ namespace libsemigroups {
      public:
       using native_word_type = Rule::native_word_type;
 
+      static const bool always_reduced = false;
+
       ////////////////////////////////////////////////////////////////////////
       // Constructors + inits
       ////////////////////////////////////////////////////////////////////////
@@ -447,6 +449,8 @@ namespace libsemigroups {
      public:
       using native_word_type = Rule::native_word_type;
       using iterator         = Rules::iterator;
+
+      static const bool always_reduced = true;
 
       RewriteFromLeft() = default;
       RewriteFromLeft& init();
