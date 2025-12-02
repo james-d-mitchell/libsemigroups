@@ -75,12 +75,11 @@ namespace libsemigroups {
     }
 
     Rules::Stats& Rules::Stats::init() noexcept {
-      max_active_word_length = 0;
-      max_active_rules       = 0;
-      max_pending_rules      = 0;
-      max_word_length        = 0;
-      min_length_lhs_rule    = std::numeric_limits<size_t>::max();
-      total_rules            = 0;
+      max_active_rules    = 0;
+      max_length_lhs_rule = 0;
+      max_pending_rules   = 0;
+      min_length_lhs_rule = std::numeric_limits<size_t>::max();
+      total_rules         = 0;
       return *this;
     }
 
@@ -176,8 +175,8 @@ namespace libsemigroups {
 
     void Rules::add_active_rule(Rule* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
-      _stats.max_word_length
-          = std::max(_stats.max_word_length, rule->lhs().size());
+      _stats.max_length_lhs_rule
+          = std::max(_stats.max_length_lhs_rule, rule->lhs().size());
       _stats.max_active_rules
           = std::max(_stats.max_active_rules, number_of_active_rules());
       rule->activate_no_checks();
@@ -234,17 +233,12 @@ namespace libsemigroups {
       return it;
     }
 
-    size_t Rules::max_active_word_length() const {
-      auto comp = [](Rule const* p, Rule const* q) -> bool {
-        return p->lhs().size() < q->lhs().size();
-      };
-      auto it
-          = std::max_element(_active_rules.begin(), _active_rules.end(), comp);
-      if (it != _active_rules.end()) {
-        _stats.max_active_word_length
-            = std::max(_stats.max_active_word_length, (*it)->lhs().size());
+    size_t Rules::max_length_lhs_active_rule() const {
+      size_t result = 0;
+      for (Rule const* rule : _active_rules) {
+        result = std::max(rule->lhs().size(), result);
       }
-      return _stats.max_active_word_length;
+      return result;
     }
 
     Rule* Rules::next_pending_rule() {
