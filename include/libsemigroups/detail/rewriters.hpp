@@ -154,7 +154,7 @@ namespace libsemigroups {
 
     class Rules {
      public:
-      // TODO rm?
+      // TODO rm? or rename to include active_rules?
       using iterator               = std::list<Rule*>::iterator;
       using const_iterator         = std::list<Rule*>::const_iterator;
       using const_reverse_iterator = std::list<Rule*>::const_reverse_iterator;
@@ -193,11 +193,9 @@ namespace libsemigroups {
         *this = that;
       }
 
-      Rules(Rules&& that) = default;
-      // TODO replace with the following
-      // : Rules() {
-      //       *this = std::move(that);
-      //     }
+      Rules(Rules&& that) : Rules() {
+        *this = std::move(that);
+      }
 
       Rules& operator=(Rules const&);
       Rules& operator=(Rules&& that);
