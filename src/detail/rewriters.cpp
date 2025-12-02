@@ -379,6 +379,7 @@ namespace libsemigroups {
 
     RewriteFromLeft::iterator
     RewriteFromLeft::make_active_rule_pending(iterator it) {
+      // TODO next 3 lines into Rules
       Rule* rule = *it;
       rule->deactivate_no_checks();
       add_pending_rule(rule);
@@ -578,7 +579,6 @@ namespace libsemigroups {
     }
 
     bool RewriteFromLeft::process_pending_rules() {
-      // TODO(1) try maintaining pending_rules as a heap
       sort_pending_rules();
 
       auto           start_time = std::chrono::high_resolution_clock::now();
@@ -937,6 +937,7 @@ namespace libsemigroups {
     }
 
     Rules::iterator RewriteTrie::make_active_rule_pending(Rules::iterator it) {
+      // TODO next 3 lines -> Rules
       Rule* rule = *it;
       rule->deactivate_no_checks();
       add_pending_rule(rule);
