@@ -224,12 +224,11 @@ namespace libsemigroups {
 
       KnuthBendixImpl();
       KnuthBendixImpl& init();
-      KnuthBendixImpl(KnuthBendixImpl const& that);
 
+      KnuthBendixImpl(KnuthBendixImpl const& that);
       KnuthBendixImpl(KnuthBendixImpl&&);
 
       KnuthBendixImpl& operator=(KnuthBendixImpl const&);
-
       KnuthBendixImpl& operator=(KnuthBendixImpl&&);
 
       ~KnuthBendixImpl();

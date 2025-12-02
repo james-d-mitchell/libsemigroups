@@ -82,29 +82,36 @@ namespace libsemigroups {
         return _rhs;
       }
 
+      // TODO rm
       [[nodiscard]] bool empty() const noexcept {
         return _lhs.empty() && _rhs.empty();
       }
 
+      // TODO rm
       [[nodiscard]] inline bool active() const noexcept {
         LIBSEMIGROUPS_ASSERT(_id != 0);
         return _id > 0;
       }
 
+      // TODO rm
       void activate_no_checks() noexcept;
+      // TODO rm
       void deactivate_no_checks() noexcept;
 
+      // TODO rm
       void set_id_no_checks(int64_t id) noexcept {
         LIBSEMIGROUPS_ASSERT(id > 0);
         LIBSEMIGROUPS_ASSERT(!active());
         _id = -1 * id;
       }
 
+      // TODO rm
       [[nodiscard]] int64_t id() const noexcept {
         LIBSEMIGROUPS_ASSERT(_id != 0);
         return _id;
       }
 
+      // TODO rm
       void reorder() {
         // if (ReductionOrder()(_lhs, _rhs)) {
         if (shortlex_compare(_lhs, _rhs)) {
@@ -194,7 +201,7 @@ namespace libsemigroups {
       std::vector<Rule*>      _pending_rules;
       mutable Stats           _stats;
 
-      // TODO(1) try maintaining pending_rules as a heap
+      // TODO(1) try maintaining pending_rules as a heap?
 
      public:
       ////////////////////////////////////////////////////////////////////////
@@ -260,7 +267,7 @@ namespace libsemigroups {
         return _pending_rules.size();
       }
 
-      [[nodiscard]] Rule* next_pending_rule();
+      [[nodiscard]] Rule* pop_pending_rule();
 
       [[nodiscard]] iterator& cursor(size_t index) {
         LIBSEMIGROUPS_ASSERT(index < _cursors.size());
@@ -438,7 +445,6 @@ namespace libsemigroups {
     class RewriteFromLeft : public RewriteBase {
       std::set<RuleLookup> _set_rules;
 
-      // TODO(1) use a heap for these maybe?
       RewriteFromLeft() = default;
       RewriteFromLeft& init();
 
