@@ -185,10 +185,11 @@ namespace libsemigroups {
       _gilman_graph_node_labels = std::move(that._gilman_graph_node_labels);
       _overlap_measure          = std::move(that._overlap_measure);
       _presentation             = std::move(that._presentation);
-      _rewriter                 = std::move(that._rewriter);
       _rules                    = std::move(that._rules);
-      _settings                 = std::move(that._settings);
-      _stats                    = std::move(that._stats);
+      _rewriter                 = std::move(that._rewriter);
+      _rewriter.rules(&_rules);
+      _settings = std::move(that._settings);
+      _stats    = std::move(that._stats);
       return *this;
     }
 
@@ -202,10 +203,11 @@ namespace libsemigroups {
       _gilman_graph_node_labels = that._gilman_graph_node_labels;
       _overlap_measure          = nullptr;
       _presentation             = that._presentation;
-      _rewriter                 = that._rewriter;
       _rules                    = that._rules;
-      _settings                 = that._settings;
-      _stats                    = that._stats;
+      _rewriter                 = that._rewriter;
+      _rewriter.rules(&_rules);
+      _settings = that._settings;
+      _stats    = that._stats;
 
       // The next line sets _overlap_measure to be something sensible.
       overlap_policy(_settings.overlap_policy);
@@ -772,7 +774,6 @@ namespace libsemigroups {
       if (p == q) {
         return;
       }
-      _rewriter.add_pending_rule(p, q);
       rules::add_pending_rule(_rules, p, q);
     }
 
