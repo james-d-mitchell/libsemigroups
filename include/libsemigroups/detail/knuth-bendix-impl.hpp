@@ -210,11 +210,12 @@ namespace libsemigroups {
       std::vector<native_word_type>   _gilman_graph_node_labels;
       std::unique_ptr<OverlapMeasure> _overlap_measure;
       Presentation<native_word_type>  _presentation;
-      mutable Rewriter                _rewriter;
-      mutable Rules                   _rules;
-      Settings                        _settings;
-      mutable Stats                   _stats;
-      mutable native_word_type        _tmp_element1;
+      // _rules before _rewriter because we require _rules to init _rewriter
+      mutable Rules            _rules;
+      mutable Rewriter         _rewriter;
+      Settings                 _settings;
+      mutable Stats            _stats;
+      mutable native_word_type _tmp_element1;
 
      public:
       //////////////////////////////////////////////////////////////////////////
@@ -735,7 +736,7 @@ namespace libsemigroups {
       //! \complexity
       //! Constant.
       [[nodiscard]] size_t number_of_inactive_rules() const noexcept {
-        return _rewriter.number_of_inactive_rules();
+        return _rules.number_of_inactive_rules();
       }
 
       //! \ingroup knuth_bendix_class_accessors_group
@@ -759,7 +760,7 @@ namespace libsemigroups {
       //! \complexity
       //! Constant.
       [[nodiscard]] size_t number_of_pending_rules() const noexcept {
-        return _rewriter.number_of_pending_rules();
+        return _rules.number_of_pending_rules();
       }
 
       //! \ingroup knuth_bendix_class_accessors_group
@@ -781,11 +782,17 @@ namespace libsemigroups {
       //! \complexity
       //! Constant.
       [[nodiscard]] size_t total_rules() const noexcept {
-        return _rewriter.stats().total_rules;
+        return _rules.stats().total_rules;
       }
 
+      // TODO doc
       Rewriter& rewriter() noexcept {
         return _rewriter;
+      }
+
+      // TODO doc
+      Rules& rules() noexcept {
+        return _rules;
       }
 
       // Documented in KnuthBendix
