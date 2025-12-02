@@ -33,7 +33,8 @@ namespace libsemigroups {
       size_t operator()(detail::Rule const*                              AB,
                         detail::Rule const*                              BC,
                         typename native_word_type::const_iterator const& it) {
-        LIBSEMIGROUPS_ASSERT(AB->active() && BC->active());
+        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
+                             && BC->state() == Rule::State::active);
         LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
         LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
         // |A| + |BC|
@@ -47,7 +48,8 @@ namespace libsemigroups {
       size_t operator()(detail::Rule const*                              AB,
                         detail::Rule const*                              BC,
                         typename native_word_type::const_iterator const& it) {
-        LIBSEMIGROUPS_ASSERT(AB->active() && BC->active());
+        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
+                             && BC->state() == Rule::State::active);
         LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
         LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
         (void) it;
@@ -62,7 +64,8 @@ namespace libsemigroups {
       size_t operator()(detail::Rule const*                              AB,
                         detail::Rule const*                              BC,
                         typename native_word_type::const_iterator const& it) {
-        LIBSEMIGROUPS_ASSERT(AB->active() && BC->active());
+        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
+                             && BC->state() == Rule::State::active);
         LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
         LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
         (void) it;
@@ -590,12 +593,14 @@ namespace libsemigroups {
           // understand, but it also didn't seem super important).
           second = first++;
           overlap(rule1, rule1);
-          while (second != _rules.active_rules().begin() && rule1->active()) {
+          while (second != _rules.active_rules().begin()
+                 && rule1->state() == Rule::State::active) {
             --second;
             detail::Rule const* rule2 = *second;
             overlap(rule1, rule2);
             ++nr;
-            if (rule1->active() && rule2->active()) {
+            if (rule1->state() == Rule::State::active
+                && rule2->state() == Rule::State::active) {
               overlap(rule2, rule1);
               ++nr;
             }
@@ -826,7 +831,8 @@ namespace libsemigroups {
     void
     KnuthBendixImpl<Rewriter, ReductionOrder>::overlap(detail::Rule const* u,
                                                        detail::Rule const* v) {
-      LIBSEMIGROUPS_ASSERT(u->active() && v->active());
+      LIBSEMIGROUPS_ASSERT(u->state() == Rule::State::active
+                           && v->state() == Rule::State::active);
       auto const &ulhs = u->lhs(), vlhs = v->lhs();
       auto const &urhs = u->rhs(), vrhs = v->rhs();
       auto const lower_limit = ulhs.cend() - std::min(ulhs.size(), vlhs.size());

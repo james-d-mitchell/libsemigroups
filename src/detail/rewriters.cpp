@@ -34,24 +34,6 @@ namespace libsemigroups {
     // Rule
     ////////////////////////////////////////////////////////////////////////
 
-    Rule::Rule(int64_t id) : _lhs(), _rhs(), _id(-1 * id) {
-      LIBSEMIGROUPS_ASSERT(_id < 0);
-    }
-
-    void Rule::activate_no_checks() noexcept {
-      LIBSEMIGROUPS_ASSERT(_id != 0);
-      LIBSEMIGROUPS_ASSERT(!active());
-      _id *= -1;
-    }
-
-    void Rule::deactivate_no_checks() noexcept {
-      LIBSEMIGROUPS_ASSERT(_id != 0);
-      //  LIBSEMIGROUPS_ASSERT(active());
-      if (_id > 0) {
-        _id *= -1;
-      }
-    }
-
     ////////////////////////////////////////////////////////////////////////
     // RuleLookup
     ////////////////////////////////////////////////////////////////////////
@@ -158,13 +140,12 @@ namespace libsemigroups {
       Rule* rule;
       if (!_inactive_rules.empty()) {
         rule = _inactive_rules.front();
-        rule->set_id_no_checks(_stats.total_rules);
         _inactive_rules.erase(_inactive_rules.begin());
       } else {
         // TODO could add x2 new Rules
-        rule = new Rule(_stats.total_rules);
+        rule = new Rule();
       }
-      LIBSEMIGROUPS_ASSERT(!rule->active());
+      LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::inactive);
       return rule;
     }
 
@@ -189,7 +170,6 @@ namespace libsemigroups {
           = std::min(_stats.min_length_lhs_rule, rule->lhs().size());
 
       rule->state(Rule::State::active);
-      rule->activate_no_checks();  // TODO rm
       _active_rules.push_back(rule);
       for (auto& it : _cursors) {
         if (it == _active_rules.end()) {
@@ -210,7 +190,6 @@ namespace libsemigroups {
     Rules::iterator Rules::make_active_rule_pending(iterator it) {
       Rule* rule = *it;
       LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::active);
-      rule->deactivate_no_checks();
       add_pending_rule(rule);
 
       if (it != _cursors[0] && it != _cursors[1]) {
@@ -614,7 +593,7 @@ namespace libsemigroups {
 
       while (_rules->number_of_pending_rules() != 0) {
         Rule* rule1 = _rules->pop_pending_rule();
-        LIBSEMIGROUPS_ASSERT(!rule1->active());
+        LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::pending);
         LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
         // Rewrite both sides and reorder if necessary . . .
         rewrite(rule1);
@@ -811,7 +790,7 @@ namespace libsemigroups {
         bool rules_added_this_pass = false;
         while (_rules->number_of_pending_rules() != 0) {
           Rule* rule = _rules->pop_pending_rule();
-          LIBSEMIGROUPS_ASSERT(!rule->active());
+          LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::pending);
           LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
           // Rewrite both sides and reorder if necessary . . .
           rewrite(rule);
@@ -925,7 +904,7 @@ namespace libsemigroups {
     RewriteTrie::descendants_confluent(Rule const* rule1,
                                        index_type  current_node,
                                        size_t      overlap_length) const {
-      LIBSEMIGROUPS_ASSERT(rule1->active());
+      LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::active);
       if (_rule_trie.node_no_checks(current_node).terminal()) {
         Rule const* rule2 = _rule_map.find(current_node)->second;
         // Process overlap

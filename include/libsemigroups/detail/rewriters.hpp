@@ -53,13 +53,11 @@ namespace libsemigroups {
      private:
       native_word_type _lhs;
       native_word_type _rhs;
-      int64_t          _id;  // TODO remove?
       State            _state;
 
      public:
-      explicit Rule(int64_t id);
+      Rule() : _lhs(), _rhs(), _state(Rule::State::inactive) {}
 
-      Rule()                            = delete;
       Rule& operator=(Rule const& copy) = delete;
       Rule(Rule const& copy)            = delete;
       Rule(Rule&& copy)                 = delete;
@@ -86,30 +84,6 @@ namespace libsemigroups {
       // TODO rm
       [[nodiscard]] bool empty() const noexcept {
         return _lhs.empty() && _rhs.empty();
-      }
-
-      // TODO rm
-      [[nodiscard]] inline bool active() const noexcept {
-        LIBSEMIGROUPS_ASSERT(_id != 0);
-        return _id > 0;
-      }
-
-      // TODO rm
-      void activate_no_checks() noexcept;
-      // TODO rm
-      void deactivate_no_checks() noexcept;
-
-      // TODO rm
-      void set_id_no_checks(int64_t id) noexcept {
-        LIBSEMIGROUPS_ASSERT(id > 0);
-        LIBSEMIGROUPS_ASSERT(!active());
-        _id = -1 * id;
-      }
-
-      // TODO rm
-      [[nodiscard]] int64_t id() const noexcept {
-        LIBSEMIGROUPS_ASSERT(_id != 0);
-        return _id;
       }
 
       // TODO rm
@@ -247,7 +221,6 @@ namespace libsemigroups {
       // TODO out of line
       void add_inactive_rule(Rule* rule) {
         rule->state(Rule::State::inactive);
-        rule->deactivate_no_checks();  // TODO rm
         _inactive_rules.push_back(rule);
       }
 
