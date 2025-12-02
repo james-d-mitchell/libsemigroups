@@ -169,10 +169,9 @@ namespace libsemigroups {
         Stats& operator=(Stats const&) noexcept = default;
         Stats& operator=(Stats&&) noexcept      = default;
 
-        size_t   max_active_word_length;  // TODO rename
         size_t   max_active_rules;
+        size_t   max_length_lhs_rule;
         size_t   max_pending_rules;
-        size_t   max_word_length;
         size_t   min_length_lhs_rule;
         uint64_t total_rules;
       };
@@ -248,9 +247,8 @@ namespace libsemigroups {
             [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
       }
 
-      // TODO rm? at least rename to max_lhs_length()
-      // TODO add max_current_active_lhs_length
-      [[nodiscard]] size_t max_active_word_length() const;
+      // TODO helper
+      [[nodiscard]] size_t max_length_lhs_active_rule() const;
 
      protected:  // TODO protected -> private when Rewriters do not inherit from
                  // Rules
@@ -344,6 +342,7 @@ namespace libsemigroups {
       void add_rule(StringLike const& lhs, StringLike const& rhs);
 
       // TODO -> helper
+      // TODO rename add_pending_rule
       inline void add_rule(char const* lhs, char const* rhs) {
         if (lhs != rhs) {
           add_pending_rule(new_rule(
@@ -380,6 +379,7 @@ namespace libsemigroups {
     };  // class RewriteBase
 
     // RewriteBase out-of-lined mem fn template
+    // TODO rename add_pending_rule
     template <typename StringLike>
     void RewriteBase::add_rule(StringLike const& lhs, StringLike const& rhs) {
       if (lhs != rhs) {
@@ -501,6 +501,7 @@ namespace libsemigroups {
       }
 
      private:
+      // TODO rename add_pending_rule
       void add_rule(Rule* rule) {
         Rules::add_active_rule(rule);
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),

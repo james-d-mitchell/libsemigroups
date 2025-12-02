@@ -436,12 +436,12 @@ namespace libsemigroups {
           rc.min_width(12);  // .divider("{:-<95}\n");
           rc("KnuthBendix: RUN STATISTICS\n");
           // rc.divider();
-          rc("KnuthBendix: max stack depth        {}\n",
+          rc("KnuthBendix: max number of pending rules {}\n",
              group_digits(_rewriter.stats().max_pending_rules));
-          rc("KnuthBendix: max rule length        {}\n",
-             group_digits(_rewriter.stats().max_word_length));
-          rc("KnuthBendix: max active rule length {}\n",
-             group_digits(max_active_word_length()));
+          rc("KnuthBendix: max length lhs rule         {}\n",
+             group_digits(_rewriter.stats().max_length_lhs_rule));
+          rc("KnuthBendix: max length lhs active rule  {}\n",
+             group_digits(_rewriter.max_length_lhs_active_rule()));
           // rc("KnuthBendix: number of unique lhs   {}\n",
           //    group_digits(_stats.unique_lhs_rules.size()));
         }
