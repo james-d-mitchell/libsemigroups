@@ -563,6 +563,7 @@ namespace libsemigroups {
       for (auto it = pairs.cbegin(); it != pairs.cend(); ++it) {
         // it points at a word_type
         p.rules.emplace_back(it->cbegin(), it->cend());
+
         add_octo(p.rules.back());
         ++it;
         p.rules.emplace_back(it->cbegin(), it->cend());
@@ -603,6 +604,10 @@ namespace libsemigroups {
                 && rule2->state() == Rule::State::active) {
               overlap(rule2, rule1);
               ++nr;
+            }
+            if (_rules.number_of_pending_rules()
+                >= _settings.max_pending_rules) {
+              process_pending_rules();
             }
           }
 
@@ -858,11 +863,6 @@ namespace libsemigroups {
           y.append(vlhs.cbegin() + (ulhs.cend() - it),
                    vlhs.cend());  // rule = AQ_j -> Q_iC
           add_pending_rule(x, y);
-
-          // TODO rm
-          // if (_rules.number_of_pending_rules() >=
-          // _settings.max_pending_rules) { process_pending_rules();
-          // }
 
           // It can be that the iterator `it` is invalidated by the call to
           // proccess_pending_rule (i.e. if `u` is deactivated, then
