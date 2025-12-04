@@ -323,6 +323,9 @@ namespace libsemigroups {
       State  _state;
       bool   _ticker_running;
 
+      RewriteBase();
+      RewriteBase& init();
+
      public:
       using native_word_type = Rule::native_word_type;
 
@@ -331,9 +334,6 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
       // Constructors + inits
       ////////////////////////////////////////////////////////////////////////
-
-      RewriteBase();
-      RewriteBase& init();
 
       RewriteBase(Rules*);
       RewriteBase& init(Rules*);
@@ -414,14 +414,14 @@ namespace libsemigroups {
     class RewriteFromLeft : public RewriteBase {
       std::set<RuleLookup> _set_rules;
 
+      RewriteFromLeft() = default;
+      RewriteFromLeft& init();
+
      public:
       using native_word_type = Rule::native_word_type;
       using iterator         = Rules::iterator;
 
       static const bool always_reduced = true;
-
-      RewriteFromLeft() = default;
-      RewriteFromLeft& init();
 
       RewriteFromLeft(Rules& rules) : RewriteBase(&rules), _set_rules() {}
 
@@ -521,10 +521,10 @@ namespace libsemigroups {
       AhoCorasickImpl                       _rule_trie;
       bool                                  _ticker_running;
 
-     public:
       RewriteTrie();
       RewriteTrie& init();
 
+     public:
       // TODO to cpp
       RewriteTrie(Rules& rules)
           : RewriteBase(&rules),

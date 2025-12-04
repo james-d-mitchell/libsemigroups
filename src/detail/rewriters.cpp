@@ -227,30 +227,33 @@ namespace libsemigroups {
     // RewriteBase
     ////////////////////////////////////////////////////////////////////////
 
-    // TODO this leaks
-    RewriteBase::RewriteBase() : RewriteBase(new Rules()) {}
+    RewriteBase::RewriteBase()
+        : _cached_confluent(),
+          _confluence_known(),
+          _rules(),
+          _ticker_running() {
+      init();
+    }
 
     RewriteBase& RewriteBase::init() {
-      // TODO this leaks
-      return init(new Rules());
+      _cached_confluent = false;
+      _confluence_known = false;
+      _rules            = nullptr;
+      _ticker_running   = false;
+      return *this;
     }
 
     // TODO should be Rules&
-    RewriteBase::RewriteBase(Rules* rules)
-        : _cached_confluent(false),
-          _confluence_known(false),
-          _rules(rules),
-          _ticker_running(false) {
-      LIBSEMIGROUPS_ASSERT(_rules != nullptr);
+    RewriteBase::RewriteBase(Rules* rules) : RewriteBase() {
+      LIBSEMIGROUPS_ASSERT(rules != nullptr);
+      _rules = rules;
     }
 
     // TODO should be Rules&
     RewriteBase& RewriteBase::init(Rules* rules) {
       LIBSEMIGROUPS_ASSERT(rules != nullptr);
-      _cached_confluent = false;
-      _confluence_known = false;
-      _rules            = rules;
-      _ticker_running   = false;
+      init();
+      _rules = rules;
       return *this;
     }
 

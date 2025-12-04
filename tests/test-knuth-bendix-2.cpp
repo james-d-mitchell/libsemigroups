@@ -296,8 +296,7 @@ namespace libsemigroups {
     auto nf = knuth_bendix::normal_forms(kb);
 
     REQUIRE(nf.count() == 1080);
-    // TODO should the 3 be 2 in the next line???
-    REQUIRE((nf.min(0).max(3) | to_vector())
+    REQUIRE((nf.min(0).max(2) | to_vector())
             == std::vector<std::string>({"",
                                          "a",
                                          "b",
