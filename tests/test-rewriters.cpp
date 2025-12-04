@@ -90,12 +90,12 @@ namespace libsemigroups {
        string_type({0}));
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewritingSystemFromLeft",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemSet",
                                 "010",
                                 "simple test",
                                 "[quick]") {
           auto            rg = ReportGuard(false);
-          RewritingSystemFromLeft rfl;
+          RewritingSystemSet rfl;
 
           rfl.increase_alphabet_size_by(3);
           rfl.add_rule("ac"_w, "ca"_w);
@@ -286,12 +286,12 @@ namespace libsemigroups {
           REQUIRE(!rt.confluent());
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewritingSystemFromLeft",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemSet",
                                 "012",
                                 "stacks",
                                 "[no-valgrind][quick]") {
           auto            rg = ReportGuard(false);
-          RewritingSystemFromLeft rfl;
+          RewritingSystemSet rfl;
 
           rfl.increase_alphabet_size_by(2);
           rfl.add_rule("ba", "ab");
@@ -310,7 +310,7 @@ namespace libsemigroups {
     //                                  "013",
     //                                  "non-length reducing",
     //                                  "[no-valgrind][quick]",
-    //                                  RewritingSystemFromLeft,
+    //                                  RewritingSystemSet,
     //                                  RewritingSystemTrie) {
     //   auto     rg = ReportGuard(false);
     //   TestType rewriter;

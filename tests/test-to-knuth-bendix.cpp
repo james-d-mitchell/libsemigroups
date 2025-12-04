@@ -32,7 +32,7 @@
 #include "libsemigroups/types.hpp"               // for word_type
 
 #include "libsemigroups/detail/report.hpp"     // for ReportGuard
-#include "libsemigroups/detail/rewriters.hpp"  // for RewritingSystemFromLeft, Rewri...
+#include "libsemigroups/detail/rewriters.hpp"  // for RewritingSystemSet, Rewri...
 
 namespace libsemigroups {
 
@@ -40,11 +40,11 @@ namespace libsemigroups {
 
   congruence_kind constexpr twosided = congruence_kind::twosided;
   congruence_kind constexpr onesided = congruence_kind::onesided;
-  using RewritingSystemFromLeft              = detail::RewritingSystemFromLeft;
+  using RewritingSystemSet              = detail::RewritingSystemSet;
   using RewritingSystemTrie                  = detail::RewritingSystemTrie;
 
-  using RewritingSystemFromLeft_string = std::pair<RewritingSystemFromLeft, std::string>;
-  using RewritingSystemFromLeft_word   = std::pair<RewritingSystemFromLeft, word_type>;
+  using RewritingSystemSet_string = std::pair<RewritingSystemSet, std::string>;
+  using RewritingSystemSet_word   = std::pair<RewritingSystemSet, word_type>;
   using RewritingSystemTrie_string     = std::pair<RewritingSystemTrie, std::string>;
   using RewritingSystemTrie_word       = std::pair<RewritingSystemTrie, word_type>;
 
@@ -52,8 +52,8 @@ namespace libsemigroups {
                                    "010",
                                    "from FroidurePin",
                                    "[quick][to_knuth_bendix]",
-                                   RewritingSystemFromLeft_string,
-                                   RewritingSystemFromLeft_word,
+                                   RewritingSystemSet_string,
+                                   RewritingSystemSet_word,
                                    RewritingSystemTrie_string,
                                    RewritingSystemTrie_word) {
     auto rg        = ReportGuard(false);
@@ -115,8 +115,8 @@ namespace libsemigroups {
                                    "012",
                                    "from ToddCoxeter",
                                    "[quick][to_knuth_bendix]",
-                                   RewritingSystemFromLeft_string,
-                                   RewritingSystemFromLeft_word,
+                                   RewritingSystemSet_string,
+                                   RewritingSystemSet_word,
                                    RewritingSystemTrie_string,
                                    RewritingSystemTrie_word) {
     auto rg        = ReportGuard(false);

@@ -307,11 +307,13 @@ namespace libsemigroups {
     // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
-    class RewritingSystemBase {
+    // TODO change public -> protected
+    class RewritingSystemBase : public Rules {
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
 
      protected:
+      // TODO update this
       enum class State : uint8_t {
         none,
         adding_pending_rules,
@@ -323,9 +325,6 @@ namespace libsemigroups {
       State  _state;
       bool   _ticker_running;
 
-      RewritingSystemBase();
-      RewritingSystemBase& init();
-
      public:
       using native_word_type = Rule::native_word_type;
 
@@ -335,10 +334,11 @@ namespace libsemigroups {
       // Constructors + inits
       ////////////////////////////////////////////////////////////////////////
 
-      RewritingSystemBase(Rules*);
-      RewritingSystemBase& init(Rules*);
+      RewritingSystemBase();
+      RewritingSystemBase& init();
 
-      RewritingSystemBase(RewritingSystemBase const& that) : RewritingSystemBase() {
+      RewritingSystemBase(RewritingSystemBase const& that)
+          : RewritingSystemBase() {
         *this = that;
       }
       RewritingSystemBase(RewritingSystemBase&& that);
@@ -347,14 +347,7 @@ namespace libsemigroups {
 
       virtual ~RewritingSystemBase();
 
-      RewritingSystemBase& rules(Rules& rules) {
-        _rules = &rules;
-        return *this;
-      }
-
-      Rules const& rules() const noexcept {
-        return *_rules;
-      }
+      // TODO iterator to active rules
 
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
@@ -408,14 +401,11 @@ namespace libsemigroups {
     };  // class RewritingSystemBase
 
     ////////////////////////////////////////////////////////////////////////
-    // RewritingSystemFromLeft
+    // RewritingSystemSet
     ////////////////////////////////////////////////////////////////////////
 
-    class RewritingSystemFromLeft : public RewritingSystemBase {
+    class RewritingSystemSet : public RewritingSystemBase {
       std::set<RuleLookup> _set_rules;
-
-      RewritingSystemFromLeft() = default;
-      RewritingSystemFromLeft& init();
 
      public:
       using native_word_type = Rule::native_word_type;
@@ -423,33 +413,28 @@ namespace libsemigroups {
 
       static const bool always_reduced = true;
 
-      RewritingSystemFromLeft(Rules& rules) : RewritingSystemBase(&rules), _set_rules() {}
+      RewritingSystemSet() = default;
+      RewritingSystemSet& init();
 
-      RewritingSystemFromLeft& init(Rules& rules) {
-        init();
-        RewritingSystemBase::init(&rules);
-        return *this;
-      }
-
-      RewritingSystemFromLeft(RewritingSystemFromLeft const& that) : RewritingSystemFromLeft() {
+      RewritingSystemSet(RewritingSystemSet const& that)
+          : RewritingSystemSet() {
         *this = that;
       }
-
       // TODO should be the same as the previous one?
-      RewritingSystemFromLeft(RewritingSystemFromLeft&&) = default;
+      RewritingSystemSet(RewritingSystemSet&&) = default;
 
-      RewritingSystemFromLeft& operator=(RewritingSystemFromLeft const&);
-      RewritingSystemFromLeft& operator=(RewritingSystemFromLeft&&) = default;
+      RewritingSystemSet& operator=(RewritingSystemSet const&);
+      RewritingSystemSet& operator=(RewritingSystemSet&&) = default;
 
-      ~RewritingSystemFromLeft();
-
+      ~RewritingSystemSet();
+      // TODO private
       bool process_pending_rules();
 
       void rewrite(native_word_type& u);
       void rewrite2(native_word_type& u);
 
       void rewrite(native_word_type& u) const {
-        const_cast<RewritingSystemFromLeft*>(this)->rewrite(u);
+        const_cast<RewritingSystemSet*>(this)->rewrite(u);
       }
 
       // TODO add_rule(Iterators) when Rule* not in data structure here any
@@ -464,6 +449,7 @@ namespace libsemigroups {
         rule->reorder();
       }
 
+      // TODO rm
       // Returns a range object iterating through Rule* whose lhs is contained
       // in word
       auto lhs_search_no_checks(native_word_type const& word) {
@@ -473,26 +459,6 @@ namespace libsemigroups {
                    return word.find(rule->lhs()) != native_word_type::npos;
                  });
       }
-
-      // Returns <true> if any lhs of a rule is contained in [first, last)
-      // [[nodiscard]] bool search_lhs(Rule const* ignore,
-      //                               Iterator    first,
-      //                               Iterator    last) {
-      //   RuleLookup lookup;
-
-      //   for (auto it = first; it != last; ++it) {
-      //     auto match = _set_rules.find(lookup(it, last));
-      //     if (match != _set_rules.end()) {
-      //       Rule const* rule = match->rule();
-      //       if (rule != ignore
-      //           && rule->lhs().size()
-      //                  <= static_cast<size_t>(std::distance(it, last))) {
-      //         return true;
-      //       }
-      //     }
-      //   }
-      //   return false;
-      // }
 
      private:
       void report_checking_confluence(
@@ -521,28 +487,11 @@ namespace libsemigroups {
       AhoCorasickImpl                       _rule_trie;
       bool                                  _ticker_running;
 
+     public:
       RewritingSystemTrie();
       RewritingSystemTrie& init();
-
-     public:
-      // TODO to cpp
-      RewritingSystemTrie(Rules& rules)
-          : RewritingSystemBase(&rules),
-            _new_rule_map(),
-            _new_rule_trie(),
-            _rewrite_tmp_buf(),
-            _rule_map(),
-            _rule_trie(0),
-            _ticker_running(false) {}
-
-      // TODO to cpp
-      RewritingSystemTrie& init(Rules& rules) {
-        init();
-        RewritingSystemBase::init(&rules);
-        return *this;
-      }
-
-      RewritingSystemTrie(RewritingSystemTrie const& that) : RewritingSystemTrie() {
+      RewritingSystemTrie(RewritingSystemTrie const& that)
+          : RewritingSystemTrie() {
         *this = that;
       }
       RewritingSystemTrie(RewritingSystemTrie&& that) = default;

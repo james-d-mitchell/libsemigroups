@@ -67,9 +67,9 @@ namespace libsemigroups {
   using namespace rx;
 
   using RewritingSystemTrie     = detail::RewritingSystemTrie;
-  using RewritingSystemFromLeft = detail::RewritingSystemFromLeft;
+  using RewritingSystemSet = detail::RewritingSystemSet;
 
-#define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemFromLeft
+#define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemSet
 
   ////////////////////////////////////////////////////////////////////////
   // Standard tests

@@ -79,13 +79,15 @@ namespace libsemigroups {
     //////////////////////////////////////////////////////////////////////////
 
     template <typename RewritingSystem, typename ReductionOrder>
-    KnuthBendixImpl<RewritingSystem, ReductionOrder>::Settings::Settings() noexcept {
+    KnuthBendixImpl<RewritingSystem,
+                    ReductionOrder>::Settings::Settings() noexcept {
       init();
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
     typename KnuthBendixImpl<RewritingSystem, ReductionOrder>::Settings&
-    KnuthBendixImpl<RewritingSystem, ReductionOrder>::Settings::init() noexcept {
+    KnuthBendixImpl<RewritingSystem,
+                    ReductionOrder>::Settings::init() noexcept {
       // TODO(1) experiment with starting size to optimise speed.
       max_pending_rules         = 128;
       check_confluence_interval = 4'096;
@@ -149,8 +151,7 @@ namespace libsemigroups {
           _gilman_graph_node_labels(),
           _overlap_measure(nullptr),
           _presentation(),
-          _rules(),
-          _rewriter(_rules),
+          _rewriter(),
           _settings(),
           _stats(),
           _tmp_element1() {
@@ -168,8 +169,7 @@ namespace libsemigroups {
       _gilman_graph_node_labels.clear();
       _overlap_measure = nullptr;
       _presentation.init();
-      _rules.init();
-      _rewriter.init(_rules);
+      _rewriter.init();
       _settings.init();
       _stats.init();
 
@@ -188,11 +188,9 @@ namespace libsemigroups {
       _gilman_graph_node_labels = that._gilman_graph_node_labels;
       _overlap_measure          = nullptr;
       _presentation             = that._presentation;
-      _rules                    = that._rules;
       _rewriter                 = that._rewriter;
-      _rewriter.rules(_rules);
-      _settings = that._settings;
-      _stats    = that._stats;
+      _settings                 = that._settings;
+      _stats                    = that._stats;
 
       // The next line sets _overlap_measure to be something sensible.
       overlap_policy(_settings.overlap_policy);
@@ -210,11 +208,9 @@ namespace libsemigroups {
       _gilman_graph_node_labels = std::move(that._gilman_graph_node_labels);
       _overlap_measure          = std::move(that._overlap_measure);
       _presentation             = std::move(that._presentation);
-      _rules                    = std::move(that._rules);
       _rewriter                 = std::move(that._rewriter);
-      _rewriter.rules(_rules);
-      _settings = std::move(that._settings);
-      _stats    = std::move(that._stats);
+      _settings                 = std::move(that._settings);
+      _stats                    = std::move(that._stats);
       return *this;
     }
 
@@ -233,7 +229,8 @@ namespace libsemigroups {
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
-    KnuthBendixImpl<RewritingSystem, ReductionOrder>::~KnuthBendixImpl() = default;
+    KnuthBendixImpl<RewritingSystem, ReductionOrder>::~KnuthBendixImpl()
+        = default;
 
     template <typename RewritingSystem, typename ReductionOrder>
     KnuthBendixImpl<RewritingSystem, ReductionOrder>::KnuthBendixImpl(
@@ -280,7 +277,8 @@ namespace libsemigroups {
     //////////////////////////////////////////////////////////////////////////
 
     template <typename RewritingSystem, typename ReductionOrder>
-    uint64_t KnuthBendixImpl<RewritingSystem, ReductionOrder>::number_of_classes() {
+    uint64_t
+    KnuthBendixImpl<RewritingSystem, ReductionOrder>::number_of_classes() {
       if (is_obviously_infinite(*this)) {
         return POSITIVE_INFINITY;
       }
@@ -300,12 +298,11 @@ namespace libsemigroups {
               typename Iterator2,
               typename Iterator3,
               typename Iterator4>
-    tril
-    KnuthBendixImpl<RewritingSystem, ReductionOrder>::currently_contains_no_checks(
-        Iterator1 first1,
-        Iterator2 last1,
-        Iterator3 first2,
-        Iterator4 last2) const {
+    tril KnuthBendixImpl<RewritingSystem, ReductionOrder>::
+        currently_contains_no_checks(Iterator1 first1,
+                                     Iterator2 last1,
+                                     Iterator3 first2,
+                                     Iterator4 last2) const {
       if (std::equal(first1, last1, first2, last2)) {
         return tril::TRUE;
       }
@@ -346,23 +343,23 @@ namespace libsemigroups {
     template <typename RewritingSystem, typename ReductionOrder>
     auto KnuthBendixImpl<RewritingSystem, ReductionOrder>::active_rules() {
       using rx::iterator_range;
-      using rx::transform;
-      if (_rules.number_of_active_rules() == 0
-          && _rules.number_of_pending_rules() != 0) {
+      // TODO move to RewritingSystem
+      if (_rewriter.number_of_active_rules() == 0
+          && _rewriter.number_of_pending_rules() != 0) {
         process_pending_rules();
       }
-      return iterator_range(_rules.active_rules().begin(),
-                            _rules.active_rules().end());
+      return iterator_range(_rewriter.active_rules().begin(),
+                            _rewriter.active_rules().end());
     }
 
     // TODO(1) export a version of this for use elsewhere
     template <typename RewritingSystem, typename ReductionOrder>
-    void
-    KnuthBendixImpl<RewritingSystem, ReductionOrder>::report_presentation() const {
+    void KnuthBendixImpl<RewritingSystem, ReductionOrder>::report_presentation()
+        const {
       using detail::group_digits;
       size_t min = POSITIVE_INFINITY, max = 0, len = 0;
-      for (auto it = _rules.active_rules().begin();
-           it != _rules.active_rules().end();
+      for (auto it = _rewriter.active_rules().begin();
+           it != _rewriter.active_rules().end();
            ++it) {
         auto rule_len = (**it).lhs().size() + (**it).rhs().size();
         len += rule_len;
@@ -390,8 +387,8 @@ namespace libsemigroups {
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
-    void KnuthBendixImpl<RewritingSystem, ReductionOrder>::report_progress_from_thread(
-        std::atomic_bool const& pause) {
+    void KnuthBendixImpl<RewritingSystem, ReductionOrder>::
+        report_progress_from_thread(std::atomic_bool const& pause) {
       using detail::group_digits;
       using detail::signed_group_digits;
       using std::chrono::duration_cast;
@@ -401,7 +398,7 @@ namespace libsemigroups {
       if (!pause) {
         auto active   = number_of_active_rules();
         auto inactive = number_of_inactive_rules();
-        auto defined  = _rules.stats().total_rules;
+        auto defined  = _rewriter.stats().total_rules;
 
         int64_t const active_diff   = active - _stats.prev_active_rules;
         int64_t const inactive_diff = inactive - _stats.prev_inactive_rules;
@@ -450,11 +447,11 @@ namespace libsemigroups {
           rc("KnuthBendix: RUN STATISTICS\n");
           // rc.divider();
           rc("KnuthBendix: max number of pending rules {}\n",
-             group_digits(_rules.stats().max_pending_rules));
+             group_digits(_rewriter.stats().max_pending_rules));
           rc("KnuthBendix: max length lhs rule         {}\n",
-             group_digits(_rules.stats().max_length_lhs_rule));
+             group_digits(_rewriter.stats().max_length_lhs_rule));
           rc("KnuthBendix: max length lhs active rule  {}\n",
-             group_digits(_rules.max_length_lhs_active_rule()));
+             group_digits(_rewriter.max_length_lhs_active_rule()));
           // rc("KnuthBendix: number of unique lhs   {}\n",
           //    group_digits(_stats.unique_lhs_rules.size()));
         }
@@ -487,8 +484,9 @@ namespace libsemigroups {
     template <typename RewritingSystem, typename ReductionOrder>
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::rewrite_inplace(
         native_word_type& w) {
-      if (_rules.number_of_active_rules() == 0
-          && _rules.number_of_pending_rules() != 0) {
+      // TODO move to RewritingSystem
+      if (_rewriter.number_of_active_rules() == 0
+          && _rewriter.number_of_pending_rules() != 0) {
         process_pending_rules();
       }
       add_octo(w);
@@ -519,8 +517,9 @@ namespace libsemigroups {
 
     template <typename RewritingSystem, typename ReductionOrder>
     bool KnuthBendixImpl<RewritingSystem, ReductionOrder>::confluent() const {
-      if (_rules.number_of_active_rules() == 0
-          && _rules.number_of_pending_rules() != 0) {
+      // TODO move to RewritingSystem
+      if (_rewriter.number_of_active_rules() == 0
+          && _rewriter.number_of_pending_rules() != 0) {
         const_cast<KnuthBendixImpl<RewritingSystem, ReductionOrder>*>(this)
             ->process_pending_rules();
       }
@@ -528,18 +527,21 @@ namespace libsemigroups {
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
-    bool KnuthBendixImpl<RewritingSystem, ReductionOrder>::finished_impl() const {
+    bool
+    KnuthBendixImpl<RewritingSystem, ReductionOrder>::finished_impl() const {
       return confluent_known() && confluent();
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
-    bool KnuthBendixImpl<RewritingSystem, ReductionOrder>::stop_running() const {
-      return stopped() || _rules.number_of_active_rules() > _settings.max_rules;
+    bool
+    KnuthBendixImpl<RewritingSystem, ReductionOrder>::stop_running() const {
+      return stopped()
+             || _rewriter.number_of_active_rules() > _settings.max_rules;
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
-    void
-    KnuthBendixImpl<RewritingSystem, ReductionOrder>::init_from_generating_pairs() {
+    void KnuthBendixImpl<RewritingSystem,
+                         ReductionOrder>::init_from_generating_pairs() {
       if (_gen_pairs_initted) {
         return;
       }
@@ -579,22 +581,22 @@ namespace libsemigroups {
         std::atomic_bool& pause) {
       bool add_overlaps = true;
 
-      auto& first  = _rules.cursor(0);
-      auto& second = _rules.cursor(1);
-      first        = _rules.active_rules().begin();
+      auto& first  = _rewriter.cursor(0);
+      auto& second = _rewriter.cursor(1);
+      first        = _rewriter.active_rules().begin();
 
       size_t nr = 0;
       // Add overlaps that occur between rules. Repeat this process until no
       // non-trivial overlaps are added and there are a no pending rules.
       while (add_overlaps) {
-        while (first != _rules.active_rules().end() && !stop_running()) {
+        while (first != _rewriter.active_rules().end() && !stop_running()) {
           detail::Rule const* rule1 = *first;
           // It is tempting to remove rule1 and rule2 here and use *first and
           // *second instead but this leads to some badness (which we didn't
           // understand, but it also didn't seem super important).
           second = first++;
           overlap(rule1, rule1);
-          while (second != _rules.active_rules().begin()
+          while (second != _rewriter.active_rules().begin()
                  && rule1->state() == Rule::State::active) {
             --second;
             detail::Rule const* rule2 = *second;
@@ -605,7 +607,7 @@ namespace libsemigroups {
               overlap(rule2, rule1);
               ++nr;
             }
-            if (_rules.number_of_pending_rules()
+            if (_rewriter.number_of_pending_rules()
                 >= _settings.max_pending_rules) {
               process_pending_rules();
             }
@@ -631,7 +633,7 @@ namespace libsemigroups {
           }
         }
 
-        if (_rules.number_of_pending_rules() != 0) {
+        if (_rewriter.number_of_pending_rules() != 0) {
           process_pending_rules();
           // is_reduced is in the helper file now so can't check this here
           // anymore LIBSEMIGROUPS_ASSERT(knuth_bendix::is_reduced(*this));
@@ -641,7 +643,7 @@ namespace libsemigroups {
       }
 
     confluence_achieved:
-      LIBSEMIGROUPS_ASSERT(_rules.number_of_pending_rules() == 0);
+      LIBSEMIGROUPS_ASSERT(_rewriter.number_of_pending_rules() == 0);
 
       if (_settings.max_overlap == POSITIVE_INFINITY
           && _settings.max_rules == POSITIVE_INFINITY && !stop_running()) {
@@ -656,7 +658,7 @@ namespace libsemigroups {
 
       init_from_generating_pairs();
       process_pending_rules();
-      if (_rules.number_of_pending_rules() == 0 && confluent()
+      if (_rewriter.number_of_pending_rules() == 0 && confluent()
           && !stop_running()) {
         // _rewriter._pending_rules can be non-empty if non-reduced rules were
         // used to define the KnuthBendixImpl.  If _rewriter._pending_rules is
@@ -664,10 +666,10 @@ namespace libsemigroups {
         // the system.
         report_default("KnuthBendix: the system is confluent already!\n");
         return;
-      } else if (_rules.number_of_active_rules() >= max_rules()) {
+      } else if (_rewriter.number_of_active_rules() >= max_rules()) {
         report_default(
             "KnuthBendix: too many rules, found {}, max_rules() is {}\n",
-            _rules.number_of_active_rules(),
+            _rewriter.number_of_active_rules(),
             max_rules());
         return;
       }
@@ -686,9 +688,10 @@ namespace libsemigroups {
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
-    size_t KnuthBendixImpl<RewritingSystem, ReductionOrder>::number_of_active_rules()
+    size_t
+    KnuthBendixImpl<RewritingSystem, ReductionOrder>::number_of_active_rules()
         const noexcept {
-      return _rules.number_of_active_rules();
+      return _rewriter.number_of_active_rules();
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
@@ -697,8 +700,9 @@ namespace libsemigroups {
       using detail::Rule;
       if (_gilman_graph.number_of_nodes() == 0
           && !internal_presentation().alphabet().empty()) {
-        // TODO(1) the Gilman graph is just the trie used by RewritingSystemTrie, maybe
-        // this can make this function simpler in that case.
+        // TODO(1) the Gilman graph is just the trie used by
+        // RewritingSystemTrie, maybe this can make this function simpler in
+        // that case.
         // TODO(1) should implement a SettingsGuard as in ToddCoxeterImpl
         // reset the settings so that we really run!
         max_rules(POSITIVE_INFINITY);
@@ -708,7 +712,7 @@ namespace libsemigroups {
         std::unordered_map<Rule::native_word_type, size_t> prefixes;
         prefixes.emplace(Rule::native_word_type(), 0);
         size_t n = 1;
-        for (auto const* rule : _rules.active_rules()) {
+        for (auto const* rule : _rewriter.active_rules()) {
           detail::prefixes_string(prefixes, rule->lhs(), n);
         }
 
@@ -784,7 +788,7 @@ namespace libsemigroups {
       if (p == q) {
         return;
       }
-      rules::add_pending_rule_no_checks(_rules, p, q);
+      rules::add_pending_rule_no_checks(_rewriter, p, q);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -833,30 +837,24 @@ namespace libsemigroups {
 
     // OVERLAP_2 from Sims, p77
     template <typename RewritingSystem, typename ReductionOrder>
-    void
-    KnuthBendixImpl<RewritingSystem, ReductionOrder>::overlap(detail::Rule const* u,
-                                                       detail::Rule const* v) {
+    void KnuthBendixImpl<RewritingSystem, ReductionOrder>::overlap(
+        detail::Rule const* u,
+        detail::Rule const* v) {
       LIBSEMIGROUPS_ASSERT(u->state() == Rule::State::active
                            && v->state() == Rule::State::active);
       auto const &ulhs = u->lhs(), vlhs = v->lhs();
       auto const &urhs = u->rhs(), vrhs = v->rhs();
       auto const lower_limit = ulhs.cend() - std::min(ulhs.size(), vlhs.size());
 
-      // TODO rm
-      // int64_t const u_id = u->id(), v_id = v->id();
-
       for (auto it = ulhs.cend() - 1;
-           it > lower_limit &&
-           // TODO rm
-           //  u_id == u->id() && v_id == v->id() &&
-           it < ulhs.cend() && !stop_running()
+           it > lower_limit && it < ulhs.cend() && !stop_running()
            && (_settings.max_overlap == POSITIVE_INFINITY
                || (*_overlap_measure)(u, v, it) <= _settings.max_overlap);
            --it) {
         // Check if B = [it, ulhs.cend()) is a prefix of v->lhs()
         if (detail::is_prefix(vlhs.cbegin(), vlhs.cend(), it, ulhs.cend())) {
           // u = P_i = AB -> Q_i and v = P_j = BC -> Q_j This version of
-          // new_rule does not reorder _rules.add_rule(AQ_j, Q_iC);
+          // new_rule does not reorder _rewriter.add_rule(AQ_j, Q_iC);
           detail::MultiView<native_word_type> x(ulhs.cbegin(), it);
           x.append(vrhs.cbegin(), vrhs.cend());
           detail::MultiView<native_word_type> y(urhs.cbegin(), urhs.cend());
@@ -882,7 +880,7 @@ namespace libsemigroups {
 
   template <typename RewritingSystem, typename ReductionOrder>
   std::ostream&
-  operator<<(std::ostream&                                      os,
+  operator<<(std::ostream&                                             os,
              detail::KnuthBendixImpl<RewritingSystem, ReductionOrder>& kb) {
     os << kb.active_rules();
     return os;

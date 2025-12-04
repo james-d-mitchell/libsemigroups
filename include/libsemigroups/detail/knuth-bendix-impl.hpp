@@ -132,8 +132,8 @@ namespace libsemigroups {
     //! Those functions with the prefix `current_` do not perform any
     //! further enumeration.
 
-    template <typename RewritingSystem       = detail::RewritingSystemTrie,
-              typename ReductionOrder = ShortLexCompare>
+    template <typename RewritingSystem = detail::RewritingSystemTrie,
+              typename ReductionOrder  = ShortLexCompare>
     class KnuthBendixImpl : public CongruenceCommon {
      public:
       ////////////////////////////////////////////////////////////////////////
@@ -210,12 +210,10 @@ namespace libsemigroups {
       std::vector<native_word_type>   _gilman_graph_node_labels;
       std::unique_ptr<OverlapMeasure> _overlap_measure;
       Presentation<native_word_type>  _presentation;
-      // _rules before _rewriter because we require _rules to init _rewriter
-      mutable Rules            _rules;
       mutable RewritingSystem         _rewriter;
-      Settings                 _settings;
-      mutable Stats            _stats;
-      mutable native_word_type _tmp_element1;
+      Settings                        _settings;
+      mutable Stats                   _stats;
+      mutable native_word_type        _tmp_element1;
 
      public:
       //////////////////////////////////////////////////////////////////////////
@@ -735,7 +733,7 @@ namespace libsemigroups {
       //! \complexity
       //! Constant.
       [[nodiscard]] size_t number_of_inactive_rules() const noexcept {
-        return _rules.number_of_inactive_rules();
+        return _rewriter.number_of_inactive_rules();
       }
 
       //! \ingroup knuth_bendix_class_accessors_group
@@ -759,7 +757,7 @@ namespace libsemigroups {
       //! \complexity
       //! Constant.
       [[nodiscard]] size_t number_of_pending_rules() const noexcept {
-        return _rules.number_of_pending_rules();
+        return _rewriter.number_of_pending_rules();
       }
 
       //! \ingroup knuth_bendix_class_accessors_group
@@ -781,17 +779,12 @@ namespace libsemigroups {
       //! \complexity
       //! Constant.
       [[nodiscard]] size_t total_rules() const noexcept {
-        return _rules.stats().total_rules;
+        return _rewriter.stats().total_rules;
       }
 
       // TODO doc
       RewritingSystem& rewriter() noexcept {
         return _rewriter;
-      }
-
-      // TODO doc
-      Rules& rules() noexcept {
-        return _rules;
       }
 
       // Documented in KnuthBendix
@@ -820,7 +813,7 @@ namespace libsemigroups {
       //! \exceptions
       //! \no_libsemigroups_except
       KnuthBendixImpl& process_pending_rules() {
-        _rules.sort_pending_rules();
+        _rewriter.sort_pending_rules();
 
         // auto           start_time =
         // std::chrono::high_resolution_clock::now();
@@ -829,9 +822,9 @@ namespace libsemigroups {
 
         // TODO add some way of accumulating the newly added rules, so we can
         // reintroduce the stuff with the new rule trie.
-        while (_rules.number_of_pending_rules() != 0) {
-          while (_rules.number_of_pending_rules() != 0) {
-            Rule* new_rule = _rules.pop_pending_rule();
+        while (_rewriter.number_of_pending_rules() != 0) {
+          while (_rewriter.number_of_pending_rules() != 0) {
+            Rule* new_rule = _rewriter.pop_pending_rule();
             LIBSEMIGROUPS_ASSERT(new_rule->state() == Rule::State::pending);
             LIBSEMIGROUPS_ASSERT(new_rule->lhs() != new_rule->rhs());
             _rewriter.rewrite(new_rule);
@@ -839,9 +832,9 @@ namespace libsemigroups {
             // Check rule is non-trivial
             if (new_rule->lhs() != new_rule->rhs()) {
               _rewriter.add_rule(new_rule);
-              _rules.add_active_rule(new_rule);
+              _rewriter.add_active_rule(new_rule);
             } else {
-              _rules.add_inactive_rule(new_rule);
+              _rewriter.add_inactive_rule(new_rule);
             }
             // if (!_ticker_running &&
             // reporting_enabled()
@@ -869,12 +862,13 @@ namespace libsemigroups {
       }
 
       // Reduce existing active rules wrt new_rule
+
       void reduce_active_rules() {
         if constexpr (RewritingSystem::always_reduced) {
           return;
         } else {
-          auto const first = _rules.active_rules().begin();
-          auto const last  = _rules.active_rules().end();
+          auto const first = _rewriter.active_rules().begin();
+          auto const last  = _rewriter.active_rules().end();
 
           // For every lhs and rhs (<word>) of every active rule (<rule>), find
           // every rule (<match>) whose lhs is a subword of <word>. If such a
@@ -888,7 +882,7 @@ namespace libsemigroups {
               if (range
                   | rx::any_of([rule](Rule* match) { return match != rule; })) {
                 _rewriter.rm_rule(*it);
-                it = --_rules.make_active_rule_pending(it);
+                it = --_rewriter.make_active_rule_pending(it);
                 break;
               }
             }
@@ -993,7 +987,7 @@ namespace libsemigroups {
 
       bool finished_impl() const override;
     };  // class KnuthBendixImpl
-  }     // namespace detail
+  }  // namespace detail
 
 ////////////////////////////////////////////////////////////////////////
 // global functions - to_human_readable_repr
@@ -1019,13 +1013,13 @@ namespace libsemigroups {
 #ifdef LIBSEMIGROUPS_PARSED_BY_DOXYGEN
   template <typename Word, typename RewritingSystem, typename ReductionOrder>
   std::ostream&
-  operator<<(std::ostream&                                      os,
+  operator<<(std::ostream&                                             os,
              KnuthBendix<Word, RewritingSystem, ReductionOrder> const& kb);
 #else
   template <typename RewritingSystem, typename ReductionOrder>
-  std::ostream&
-  operator<<(std::ostream&                                            os,
-             detail::KnuthBendixImpl<RewritingSystem, ReductionOrder> const& kb);
+  std::ostream& operator<<(
+      std::ostream&                                                   os,
+      detail::KnuthBendixImpl<RewritingSystem, ReductionOrder> const& kb);
 #endif
 
 //! \ingroup knuth_bendix_group
@@ -1048,12 +1042,12 @@ namespace libsemigroups {
 // TODO(1) preferably kb would be a const&
 #ifdef LIBSEMIGROUPS_PARSED_BY_DOXYGEN
   template <typename Word, typename RewritingSystem, typename ReductionOrder>
-  std::string
-  to_human_readable_repr(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb);
+  std::string to_human_readable_repr(
+      KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb);
 #else
   template <typename RewritingSystem, typename ReductionOrder>
-  std::string
-  to_human_readable_repr(detail::KnuthBendixImpl<RewritingSystem, ReductionOrder>& kb);
+  std::string to_human_readable_repr(
+      detail::KnuthBendixImpl<RewritingSystem, ReductionOrder>& kb);
 #endif
 
   //! No doc

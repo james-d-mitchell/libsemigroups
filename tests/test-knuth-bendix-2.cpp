@@ -69,9 +69,9 @@ namespace libsemigroups {
   struct LibsemigroupsException;
 
   using RewritingSystemTrie     = detail::RewritingSystemTrie;
-  using RewritingSystemFromLeft = detail::RewritingSystemFromLeft;
+  using RewritingSystemSet = detail::RewritingSystemSet;
 
-#define REWRITER_TYPES RewritingSystemTrie, RewritingSystemFromLeft
+#define REWRITER_TYPES RewritingSystemTrie, RewritingSystemSet
 
   namespace {
     struct weird_cmp {
