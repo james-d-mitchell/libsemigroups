@@ -340,6 +340,8 @@ namespace libsemigroups {
 
      public:
       using native_word_type = Rule::native_word_type;
+      using rule_const_reference
+          = std::pair<native_word_type const&, native_word_type const&>;
 
       ////////////////////////////////////////////////////////////////////////
       // Constructors + inits
@@ -361,6 +363,11 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
       ////////////////////////////////////////////////////////////////////////
+
+      [[nodiscard]] size_t number_of_rules() const noexcept {
+        return Rules::number_of_pending_rules()
+               + Rules::number_of_active_rules();
+      }
 
       // Some rewriters require knowledge of the alphabet size, and some do
       // not. For those that do not we provide a default implementation that
@@ -419,7 +426,8 @@ namespace libsemigroups {
      public:
       using native_word_type = Rule::native_word_type;
       // TODO private
-      using iterator = Rules::iterator;
+      using iterator             = Rules::iterator;
+      using rule_const_reference = RewritingSystemBase::rule_const_reference;
 
       ////////////////////////////////////////////////////////////////////////
       // Constructors + initializers
@@ -440,6 +448,8 @@ namespace libsemigroups {
 
       ~RewritingSystemSet();
 
+      using RewritingSystemBase::number_of_rules;
+
       ////////////////////////////////////////////////////////////////////////
       // Add rules
       ////////////////////////////////////////////////////////////////////////
@@ -449,6 +459,7 @@ namespace libsemigroups {
                                    Iterator last1,
                                    Iterator first2,
                                    Iterator last2) {
+        // TODO what if first1 == last1, will rewriting etc work???
         if (!std::equal(first1, last1, first2, last2)) {
           Rules::add_pending_rule(first1, last1, first2, last2);
           set_cached_confluent(tril::unknown);
@@ -473,7 +484,15 @@ namespace libsemigroups {
       // Iterators to rules
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO iterator to active rules
+      // TODO should be const
+      auto rules() {
+        process_pending_rules();
+        return rx::iterator_range(active_rules().begin(), active_rules().end())
+               | rx::transform([](Rule const* rule) -> rule_const_reference {
+                   return rule_const_reference(rule->lhs(), rule->rhs());
+                 });
+      }
+
      private:
       void     add_active_rule(Rule* rule);
       iterator rm_active_rule(iterator it);
@@ -510,7 +529,8 @@ namespace libsemigroups {
       using iterator = Rules::iterator;
 
      public:
-      using native_word_type = Rule::native_word_type;
+      using native_word_type     = Rule::native_word_type;
+      using rule_const_reference = RewritingSystemBase::rule_const_reference;
 
       // TODO private
       using index_type = AhoCorasickImpl::index_type;
@@ -542,6 +562,8 @@ namespace libsemigroups {
 
       ~RewritingSystemTrie();
 
+      using RewritingSystemBase::number_of_rules;
+
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
       ////////////////////////////////////////////////////////////////////////
@@ -549,6 +571,14 @@ namespace libsemigroups {
       RewritingSystemTrie& increase_alphabet_size_by(size_t val) {
         _rule_trie.increase_alphabet_size_by(val);
         return *this;
+      }
+
+      auto rules() {
+        process_pending_rules();
+        return rx::iterator_range(active_rules().begin(), active_rules().end())
+               | rx::transform([](Rule const* rule) -> rule_const_reference {
+                   return rule_const_reference(rule->lhs(), rule->rhs());
+                 });
       }
 
       // TODO rm

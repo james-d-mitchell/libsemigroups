@@ -15,6 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <iostream>
+
+#define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
 #include "Catch2-3.8.0/catch_amalgamated.hpp"  // for AssertionHandler, ope...
 #include "test-main.hpp"                       // for LIBSEMIGROUPS_TEST_CASE
 
@@ -23,6 +26,19 @@
 
 #include "libsemigroups/detail/report.hpp"     // for ReportGuard
 #include "libsemigroups/detail/rewriters.hpp"  // for RewritingSystemTrie
+
+namespace std {
+  std::ostream& operator<<(std::ostream& os, std::string const& value) {
+    for (auto c : value) {
+      if (c < 10) {
+        os << int(c);
+      } else {
+        os << c;
+      }
+    }
+    return os;
+  }
+}  // namespace std
 
 namespace libsemigroups {
   using literals::operator""_w;
@@ -92,43 +108,52 @@ namespace libsemigroups {
                             "010",
                             "simple test",
                             "[quick]") {
-      auto               rg = ReportGuard(false);
-      RewritingSystemSet rfl;
+      using rule_type = std::pair<std::string, std::string>;
 
-      rfl.increase_alphabet_size_by(3);
-      rewriting_system::add_rule(rfl, "ac"_w, "ca"_w);
-      rewriting_system::add_rule(rfl, "aa"_w, "a"_w);
-      rewriting_system::add_rule(rfl, "ac"_w, "a"_w);
-      rewriting_system::add_rule(rfl, "ca"_w, "a"_w);
-      rewriting_system::add_rule(rfl, "bb"_w, "bb"_w);
-      rewriting_system::add_rule(rfl, "bc"_w, "cb"_w);
-      rewriting_system::add_rule(rfl, "bbb"_w, "b"_w);
-      rewriting_system::add_rule(rfl, "bc"_w, "b"_w);
-      rewriting_system::add_rule(rfl, "cb"_w, "b"_w);
-      rewriting_system::add_rule(rfl, "a"_w, "b"_w);
+      auto rg = ReportGuard(false);
 
-      REQUIRE(rfl.confluent());
+      RewritingSystemSet rws;
+
+      rws.increase_alphabet_size_by(3);
+      rewriting_system::add_rule(rws, "ac"_w, "ca"_w);
+      rewriting_system::add_rule(rws, "aa"_w, "a"_w);
+      rewriting_system::add_rule(rws, "ac"_w, "a"_w);
+      rewriting_system::add_rule(rws, "ca"_w, "a"_w);
+      rewriting_system::add_rule(rws, "bb"_w, "bb"_w);
+      rewriting_system::add_rule(rws, "bc"_w, "cb"_w);
+      rewriting_system::add_rule(rws, "bbb"_w, "b"_w);
+      rewriting_system::add_rule(rws, "bc"_w, "b"_w);
+      rewriting_system::add_rule(rws, "cb"_w, "b"_w);
+      rewriting_system::add_rule(rws, "a"_w, "b"_w);
+
+      REQUIRE(rws.confluent());
+      REQUIRE(rws.number_of_rules() == 4);
+      REQUIRE((rws.rules()
+               | rx::transform([](auto const& pair) { return rule_type(pair); })
+               | rx::to_vector())
+              == std::vector<std::pair<std::string, std::string>>(
+                  {{{0, 0}, {0}}, {{0, 2}, {0}}, {{1}, {0}}, {{2, 0}, {0}}}));
 
       string_type w1 = {0, 0};
-      rfl.rewrite(w1);
+      rws.rewrite(w1);
       REQUIRE(w1 == string_type({0}));
 
       string_type w2 = {0, 1};
-      rfl.rewrite(w2);
+      rws.rewrite(w2);
       REQUIRE(w2 == string_type({0}));
 
       string_type w3 = {0, 1, 2};
-      rfl.rewrite(w3);
+      rws.rewrite(w3);
       REQUIRE(w3 == string_type({0}));
 
       string_type w4 = {0, 1, 2, 0};
-      rfl.rewrite(w4);
+      rws.rewrite(w4);
       REQUIRE(w4 == string_type({0}));
 
       string_type w5 = {2, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 0, 2, 1, 0, 2, 1,
                         0, 2, 0, 1, 0, 2, 0, 1, 1, 0, 2, 2, 0, 1, 1, 0, 2, 0, 1,
                         1, 0, 2, 2, 0, 1, 0, 2, 0, 1, 1, 0, 2, 0, 1, 1, 0};
-      rfl.rewrite(w5);
+      rws.rewrite(w5);
       REQUIRE(w5 == string_type({0}));
     }
 
@@ -136,23 +161,33 @@ namespace libsemigroups {
                             "002",
                             "confluent",
                             "[quick]") {
+      using rule_type        = std::pair<std::string, std::string>;
       auto                rg = ReportGuard(false);
-      RewritingSystemTrie rt;
-      rt.increase_alphabet_size_by(3);
+      RewritingSystemTrie rws;
+      rws.increase_alphabet_size_by(3);
 
-      rewriting_system::add_rule(rt, "ab"_w, "ba"_w);
-      rewriting_system::add_rule(rt, "ac"_w, "ca"_w);
-      rewriting_system::add_rule(rt, "aa"_w, "a"_w);
-      rewriting_system::add_rule(rt, "ac"_w, "a"_w);
-      rewriting_system::add_rule(rt, "ca"_w, "a"_w);
-      rewriting_system::add_rule(rt, "bb"_w, "bb"_w);
-      rewriting_system::add_rule(rt, "bc"_w, "cb"_w);
-      rewriting_system::add_rule(rt, "bbb"_w, "b"_w);
-      rewriting_system::add_rule(rt, "bc"_w, "b"_w);
-      rewriting_system::add_rule(rt, "cb"_w, "b"_w);
-      rewriting_system::add_rule(rt, "a"_w, "b"_w);
+      rewriting_system::add_rule(rws, "ab"_w, "ba"_w);
+      rewriting_system::add_rule(rws, "ac"_w, "ca"_w);
+      rewriting_system::add_rule(rws, "aa"_w, "a"_w);
+      rewriting_system::add_rule(rws, "ac"_w, "a"_w);
+      rewriting_system::add_rule(rws, "ca"_w, "a"_w);
+      rewriting_system::add_rule(rws, "bb"_w, "bb"_w);
+      rewriting_system::add_rule(rws, "bc"_w, "cb"_w);
+      rewriting_system::add_rule(rws, "bbb"_w, "b"_w);
+      rewriting_system::add_rule(rws, "bc"_w, "b"_w);
+      rewriting_system::add_rule(rws, "cb"_w, "b"_w);
+      rewriting_system::add_rule(rws, "a"_w, "b"_w);
 
-      REQUIRE(rt.confluent());
+      REQUIRE(rws.number_of_rules() == 10);
+      rewriting_system::add_rule(rws, "a"_w, "a"_w);
+      REQUIRE(rws.number_of_rules() == 10);
+
+      REQUIRE(rws.confluent());
+      REQUIRE((rws.rules()
+               | rx::transform([](auto const& pair) { return rule_type(pair); })
+               | rx::to_vector())
+              == std::vector<std::pair<std::string, std::string>>(
+                  {{{0, 0}, {0}}, {{0, 2}, {0}}, {{1}, {0}}, {{2, 0}, {0}}}));
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie",
@@ -262,6 +297,8 @@ namespace libsemigroups {
       rewriting_system::add_rule(rt, "ac"_w, "a"_w);
       rewriting_system::add_rule(rt, "bc"_w, "b"_w);
       rewriting_system::add_rule(rt, "bc"_w, "c"_w);
+
+      REQUIRE(rt.number_of_rules() == 6);
 
       REQUIRE(!rt.confluent());
     }
