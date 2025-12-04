@@ -31,10 +31,6 @@ namespace libsemigroups {
   namespace detail {
 
     ////////////////////////////////////////////////////////////////////////
-    // Rule
-    ////////////////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////////////////
     // RuleLookup
     ////////////////////////////////////////////////////////////////////////
 
@@ -96,9 +92,13 @@ namespace libsemigroups {
         add_active_rule(copy_rule(rule));
       }
       for (auto const* rule : that._pending_rules) {
-        // TODO use add_pending_rule
-        _pending_rules.emplace_back(copy_rule(rule));
+        add_pending_rule(copy_rule(rule));
       }
+      // NOTE: copy the stats after calling add_active_rule and add_pending_rule
+      // because they also set values in the stats, that we don't want to
+      // retain. This does some unnecessary work, but we'll optimize that if it
+      // is an issue later. A similar comment applies to _cursors.
+      _stats = that._stats;
       for (size_t i = 0; i < _cursors.size(); ++i) {
         _cursors[i] = _active_rules.begin();
         std::advance(
@@ -659,12 +659,13 @@ namespace libsemigroups {
       RewriteBase::init();
       _rule_map.clear();
       _rule_trie.init();
+      // TODO what about _ticker_running?
       // Do nothing to _rewrite_tmp_buf, _new_rule_map, or _new_rule_trie
       return *this;
     }
 
     RewriteTrie& RewriteTrie::operator=(RewriteTrie const& that) {
-      init();
+      init();  // TODO rm?
       RewriteBase::operator=(that);
       _rule_trie = that._rule_trie;
       for (Rule* rule : _rules->active_rules()) {
