@@ -51,7 +51,7 @@
 #include "libsemigroups/detail/fmt.hpp"    // for format, print
 #include "libsemigroups/detail/iterator.hpp"   // for operator+
 #include "libsemigroups/detail/report.hpp"     // for ReportGuard
-#include "libsemigroups/detail/rewriters.hpp"  // for RewriteTrie
+#include "libsemigroups/detail/rewriters.hpp"  // for RewritingSystemTrie
 
 namespace libsemigroups {
 

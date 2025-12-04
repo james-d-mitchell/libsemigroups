@@ -132,7 +132,7 @@ namespace libsemigroups {
   //! `Presentation<WordOut>` for some type `WordOut`.
   //! \tparam WordIn the type of the rules in the presentation of the
   //! \ref_knuth_bendix object \p kb.
-  //! \tparam Rewriter the second template parameter for \ref_knuth_bendix.
+  //! \tparam RewritingSystem the second template parameter for \ref_knuth_bendix.
   //! \tparam ReductionOrder the third template parameter for \ref_knuth_bendix.
   //!
   //! \param kb the \ref_knuth_bendix object from which to obtain the rules.
@@ -147,9 +147,9 @@ namespace libsemigroups {
   //! then the simpler `to<Presentation>(kb)` may be used instead.
   template <typename Result,
             typename WordIn,
-            typename Rewriter,
+            typename RewritingSystem,
             typename ReductionOrder>
-  auto to(KnuthBendix<WordIn, Rewriter, ReductionOrder>& kb)
+  auto to(KnuthBendix<WordIn, RewritingSystem, ReductionOrder>& kb)
       -> std::enable_if_t<
           std::is_same_v<Presentation<typename Result::word_type>, Result>,
           Result>;
@@ -180,7 +180,7 @@ namespace libsemigroups {
 //! \tparam Thing used for SFINAE, must be Presentation.
 //! \tparam Word the type of the rules in the presentation of the
 //! \ref_knuth_bendix object \p kb.
-//! \tparam Rewriter the second template parameter for \ref_knuth_bendix.
+//! \tparam RewritingSystem the second template parameter for \ref_knuth_bendix.
 //! \tparam ReductionOrder the third template parameter for \ref_knuth_bendix.
 //!
 //! \param kb the \ref_knuth_bendix object from which to obtain the rules.
@@ -195,16 +195,16 @@ namespace libsemigroups {
   // same name and signature.
   template <template <typename...> typename Thing,
             typename Word,
-            typename Rewriter typename ReductionOrder>
-  auto to(KnutBendix<Word, Rewriter, ReductionOrder>& kb)
+            typename RewritingSystem typename ReductionOrder>
+  auto to(KnutBendix<Word, RewritingSystem, ReductionOrder>& kb)
       -> std::enable_if_t<std::is_same_v<Thing<Word>, Presentation<Word>>,
                           Presentation<Word>>;
 #else
   template <template <typename...> typename Thing,
             typename Word,
-            typename Rewriter,
+            typename RewritingSystem,
             typename ReductionOrder>
-  auto to(KnuthBendix<Word, Rewriter, ReductionOrder>& kb)
+  auto to(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb)
       -> std::enable_if_t<std::is_same_v<Thing<Word>, Presentation<Word>>,
                           Presentation<Word>> {
     return to<Presentation<Word>>(kb);

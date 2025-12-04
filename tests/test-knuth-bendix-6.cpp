@@ -55,10 +55,10 @@ namespace libsemigroups {
 
   using literals::operator""_w;
 
-  using RewriteTrie     = detail::RewriteTrie;
-  using RewriteFromLeft = detail::RewriteFromLeft;
+  using RewritingSystemTrie     = detail::RewritingSystemTrie;
+  using RewritingSystemFromLeft = detail::RewritingSystemFromLeft;
 
-#define KNUTH_BENDIX_TYPES RewriteTrie, RewriteFromLeft
+#define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemFromLeft
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "129",
@@ -447,7 +447,7 @@ namespace libsemigroups {
                                    "118",
                                    "process pending rules x1",
                                    "[extreme][knuth-bendix]",
-                                   RewriteTrie) {
+                                   RewritingSystemTrie) {
     Presentation<word_type> p;
     p.alphabet(2);
     p.contains_empty_word(true);
@@ -488,7 +488,7 @@ namespace libsemigroups {
                                    "144",
                                    "process pending rules x3",
                                    "[extreme][knuth-bendix]",
-                                   RewriteTrie) {
+                                   RewritingSystemTrie) {
     Presentation<word_type> p;
     p.alphabet(2);
     p.contains_empty_word(true);

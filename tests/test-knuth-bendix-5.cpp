@@ -75,14 +75,14 @@ namespace libsemigroups {
   using knuth_bendix::reduce;
   using knuth_bendix::reduce_no_run;
 
-  using RewriteTrie     = detail::RewriteTrie;
-  using RewriteFromLeft = detail::RewriteFromLeft;
+  using RewritingSystemTrie     = detail::RewritingSystemTrie;
+  using RewritingSystemFromLeft = detail::RewritingSystemFromLeft;
 
   // TODO uncomment
-  // using RewriteTrieRPC     = detail::RewriteTrie<RecursivePathCompare>;
-  // using RewriteFromLeftRPC = detail::RewriteFromLeft<RecursivePathCompare>;
+  // using RewritingSystemTrieRPC     = detail::RewritingSystemTrie<RecursivePathCompare>;
+  // using RewritingSystemFromLeftRPC = detail::RewritingSystemFromLeft<RecursivePathCompare>;
 
-#define KNUTH_BENDIX_TYPES RewriteTrie, RewriteFromLeft
+#define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemFromLeft
 
   namespace {
     using rule_type = std::pair<std::string, std::string>;
@@ -613,8 +613,8 @@ namespace libsemigroups {
   //                                  "995",  // TODO renumber tests
   //                                  "finite semigroup congruence",
   //                                  "[quick][congruence][knuth-bendix]",
-  //                                  RewriteTrieRPC,
-  //                                  RewriteFromLeftRPC) {
+  //                                  RewritingSystemTrieRPC,
+  //                                  RewritingSystemFromLeftRPC) {
   //   auto rg      = ReportGuard(false);
   //   using Transf = LeastTransf<5>;
   //   FroidurePin<Transf> S;

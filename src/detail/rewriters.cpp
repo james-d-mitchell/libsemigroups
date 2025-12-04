@@ -224,10 +224,10 @@ namespace libsemigroups {
     }
 
     ////////////////////////////////////////////////////////////////////////
-    // RewriteBase
+    // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
-    RewriteBase::RewriteBase()
+    RewritingSystemBase::RewritingSystemBase()
         : _cached_confluent(),
           _confluence_known(),
           _rules(),
@@ -235,7 +235,7 @@ namespace libsemigroups {
       init();
     }
 
-    RewriteBase& RewriteBase::init() {
+    RewritingSystemBase& RewritingSystemBase::init() {
       _cached_confluent = false;
       _confluence_known = false;
       _rules            = nullptr;
@@ -244,26 +244,26 @@ namespace libsemigroups {
     }
 
     // TODO should be Rules&
-    RewriteBase::RewriteBase(Rules* rules) : RewriteBase() {
+    RewritingSystemBase::RewritingSystemBase(Rules* rules) : RewritingSystemBase() {
       LIBSEMIGROUPS_ASSERT(rules != nullptr);
       _rules = rules;
     }
 
     // TODO should be Rules&
-    RewriteBase& RewriteBase::init(Rules* rules) {
+    RewritingSystemBase& RewritingSystemBase::init(Rules* rules) {
       LIBSEMIGROUPS_ASSERT(rules != nullptr);
       init();
       _rules = rules;
       return *this;
     }
 
-    RewriteBase::RewriteBase(RewriteBase&& that)
+    RewritingSystemBase::RewritingSystemBase(RewritingSystemBase&& that)
         : _cached_confluent(that._cached_confluent.load()),
           _confluence_known(that._confluence_known.load()),
           _rules(std::move(that._rules)),
           _ticker_running(std::move(that._ticker_running)) {}
 
-    RewriteBase& RewriteBase::operator=(RewriteBase const& that) {
+    RewritingSystemBase& RewritingSystemBase::operator=(RewritingSystemBase const& that) {
       _cached_confluent = that._cached_confluent.load();
       _confluence_known = that._confluence_known.load();
       _rules            = that._rules;
@@ -272,7 +272,7 @@ namespace libsemigroups {
       return *this;
     }
 
-    RewriteBase& RewriteBase::operator=(RewriteBase&& that) {
+    RewritingSystemBase& RewritingSystemBase::operator=(RewritingSystemBase&& that) {
       _cached_confluent = that._cached_confluent.load();
       _confluence_known = that._confluence_known.load();
       _rules            = std::move(that._rules);
@@ -280,9 +280,9 @@ namespace libsemigroups {
       return *this;
     }
 
-    RewriteBase::~RewriteBase() = default;
+    RewritingSystemBase::~RewritingSystemBase() = default;
 
-    void RewriteBase::set_cached_confluent(tril val) const {
+    void RewritingSystemBase::set_cached_confluent(tril val) const {
       if (val == tril::TRUE) {
         _confluence_known = true;
         _cached_confluent = true;
@@ -294,7 +294,7 @@ namespace libsemigroups {
       }
     }
 
-    bool RewriteBase::confluent() {
+    bool RewritingSystemBase::confluent() {
       using std::chrono::high_resolution_clock;
       using std::chrono::time_point;
 
@@ -302,7 +302,7 @@ namespace libsemigroups {
         set_cached_confluent(tril::unknown);
         return false;
       } else if (confluence_known()) {
-        return RewriteBase::cached_confluent();
+        return RewritingSystemBase::cached_confluent();
       }
 
       std::atomic_uint64_t seen = 0;
@@ -318,7 +318,7 @@ namespace libsemigroups {
       }
     }
 
-    void RewriteBase::report_progress_from_thread(
+    void RewritingSystemBase::report_progress_from_thread(
         std::atomic_uint64_t const&                           seen,
         std::chrono::high_resolution_clock::time_point const& start_time) {
       if (_state == State::none) {
@@ -346,20 +346,20 @@ namespace libsemigroups {
     }
 
     ////////////////////////////////////////////////////////////////////////
-    // RewriteFromLeft
+    // RewritingSystemFromLeft
     ////////////////////////////////////////////////////////////////////////
 
-    RewriteFromLeft::~RewriteFromLeft() = default;
+    RewritingSystemFromLeft::~RewritingSystemFromLeft() = default;
 
-    RewriteFromLeft& RewriteFromLeft::init() {
-      RewriteBase::init();
+    RewritingSystemFromLeft& RewritingSystemFromLeft::init() {
+      RewritingSystemBase::init();
       _set_rules.clear();
       return *this;
     }
 
-    RewriteFromLeft& RewriteFromLeft::operator=(RewriteFromLeft const& that) {
+    RewritingSystemFromLeft& RewritingSystemFromLeft::operator=(RewritingSystemFromLeft const& that) {
       init();
-      RewriteBase::operator=(that);
+      RewritingSystemBase::operator=(that);
       for (auto* rule : _rules->active_rules()) {
 #ifdef LIBSEMIGROUPS_DEBUG
         LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
@@ -370,7 +370,7 @@ namespace libsemigroups {
       return *this;
     }
 
-    void RewriteFromLeft::rm_rule(Rule* rule) {
+    void RewritingSystemFromLeft::rm_rule(Rule* rule) {
 #ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(_set_rules.erase(RuleLookup(rule)));
 #else
@@ -380,7 +380,7 @@ namespace libsemigroups {
                            == _rules->number_of_active_rules() - 1);
     }
 
-    void RewriteFromLeft::add_rule(Rule* new_rule) {
+    void RewritingSystemFromLeft::add_rule(Rule* new_rule) {
       // It's a requirement of this data structure requires that the rules are
       // reduced, so we ensure this here, before adding the new rule.
       auto const  first = _rules->active_rules().begin();
@@ -412,7 +412,7 @@ namespace libsemigroups {
     // REWRITE_FROM_LEFT from Sims, p67
     // Caution: this uses the assumption that rules are length reducing, if they
     // are not, then u might not have sufficient space!
-    void RewriteFromLeft::rewrite2(native_word_type& u) {
+    void RewritingSystemFromLeft::rewrite2(native_word_type& u) {
       if (u.size() < _rules->stats().min_length_lhs_rule) {
         return;
       }
@@ -452,7 +452,7 @@ namespace libsemigroups {
       u.erase(v_end - u.cbegin());
     }
 
-    void RewriteFromLeft::rewrite(native_word_type& v) {
+    void RewritingSystemFromLeft::rewrite(native_word_type& v) {
       if (v.size() < _rules->stats().min_length_lhs_rule) {
         return;
       }
@@ -461,7 +461,7 @@ namespace libsemigroups {
       // TODO we could try to modify rewrite2 to work with indices rather
       // than allocating w here every time (indices not iterators because
       // indices are independent of memory allocation)
-      // TODO we could also, make w a data member like in RewriteTrie
+      // TODO we could also, make w a data member like in RewritingSystemTrie
       std::string w(v.rbegin(), v.rbegin() + v.size() - n + 1);
       v.erase(v.begin() + n - 1, v.end());
 
@@ -500,7 +500,7 @@ namespace libsemigroups {
       }
     }
 
-    void RewriteFromLeft::report_checking_confluence(
+    void RewritingSystemFromLeft::report_checking_confluence(
         std::atomic_uint64_t const&                           seen,
         std::chrono::high_resolution_clock::time_point const& start_time)
         const {
@@ -524,7 +524,7 @@ namespace libsemigroups {
       }
     }
 
-    bool RewriteFromLeft::confluent_impl(std::atomic_uint64_t& seen) {
+    bool RewritingSystemFromLeft::confluent_impl(std::atomic_uint64_t& seen) {
       using std::chrono::time_point;
       time_point start_time = std::chrono::high_resolution_clock::now();
 
@@ -585,7 +585,7 @@ namespace libsemigroups {
       return cached_confluent();
     }
 
-    bool RewriteFromLeft::process_pending_rules() {
+    bool RewritingSystemFromLeft::process_pending_rules() {
       _rules->sort_pending_rules();
 
       auto           start_time = std::chrono::high_resolution_clock::now();
@@ -598,7 +598,7 @@ namespace libsemigroups {
         Rule* rule1 = _rules->pop_pending_rule();
         LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::pending);
         LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
-        // Rewrite both sides and reorder if necessary . . .
+        // RewritingSystem both sides and reorder if necessary . . .
         rewrite(rule1);
 
         // Check rule is non-trivial
@@ -641,11 +641,11 @@ namespace libsemigroups {
     }
 
     ////////////////////////////////////////////////////////////////////////
-    // RewriteTrie
+    // RewritingSystemTrie
     ////////////////////////////////////////////////////////////////////////
 
-    RewriteTrie::RewriteTrie()
-        : RewriteBase(),
+    RewritingSystemTrie::RewritingSystemTrie()
+        : RewritingSystemBase(),
           _new_rule_map(),
           _new_rule_trie(),
           _rewrite_tmp_buf(),
@@ -653,10 +653,10 @@ namespace libsemigroups {
           _rule_trie(0),
           _ticker_running(false) {}
 
-    RewriteTrie::~RewriteTrie() = default;
+    RewritingSystemTrie::~RewritingSystemTrie() = default;
 
-    RewriteTrie& RewriteTrie::init() {
-      RewriteBase::init();
+    RewritingSystemTrie& RewritingSystemTrie::init() {
+      RewritingSystemBase::init();
       _rule_map.clear();
       _rule_trie.init();
       // TODO what about _ticker_running?
@@ -664,9 +664,9 @@ namespace libsemigroups {
       return *this;
     }
 
-    RewriteTrie& RewriteTrie::operator=(RewriteTrie const& that) {
+    RewritingSystemTrie& RewritingSystemTrie::operator=(RewritingSystemTrie const& that) {
       init();  // TODO rm?
-      RewriteBase::operator=(that);
+      RewritingSystemBase::operator=(that);
       _rule_trie = that._rule_trie;
       for (Rule* rule : _rules->active_rules()) {
         index_type node = _rule_trie.traverse_trie_no_checks(
@@ -678,9 +678,9 @@ namespace libsemigroups {
       return *this;
     }
 
-    // As with RewriteFromLeft::rewrite, this assumes that all rules are
+    // As with RewritingSystemFromLeft::rewrite, this assumes that all rules are
     // length reducing.
-    void RewriteTrie::rewrite2(native_word_type& u) {
+    void RewritingSystemTrie::rewrite2(native_word_type& u) {
       // Check if u is rewriteable
       if (u.size() < _rules->stats().min_length_lhs_rule) {
         return;
@@ -731,7 +731,7 @@ namespace libsemigroups {
       u.erase(v_end - u.cbegin());
     }
 
-    void RewriteTrie::rewrite(native_word_type& v) {
+    void RewritingSystemTrie::rewrite(native_word_type& v) {
       // Check if v is rewriteable
       if (v.size() < _rules->stats().min_length_lhs_rule) {
         return;
@@ -769,7 +769,7 @@ namespace libsemigroups {
       }
     }
 
-    bool RewriteTrie::process_pending_rules() {
+    bool RewritingSystemTrie::process_pending_rules() {
       using detail::aho_corasick_impl::begin_search_no_checks;
       using detail::aho_corasick_impl::end_search_no_checks;
 
@@ -796,7 +796,7 @@ namespace libsemigroups {
           Rule* rule = _rules->pop_pending_rule();
           LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::pending);
           LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
-          // Rewrite both sides and reorder if necessary . . .
+          // RewritingSystem both sides and reorder if necessary . . .
           rewrite(rule);
 
           if (rule->lhs() != rule->rhs()) {
@@ -875,7 +875,7 @@ namespace libsemigroups {
       return rules_added;
     }
 
-    bool RewriteTrie::confluent_impl(std::atomic_uint64_t& seen) {
+    bool RewritingSystemTrie::confluent_impl(std::atomic_uint64_t& seen) {
       using std::chrono::time_point;
       time_point start_time = std::chrono::high_resolution_clock::now();
 
@@ -905,7 +905,7 @@ namespace libsemigroups {
     }
 
     [[nodiscard]] bool
-    RewriteTrie::descendants_confluent(Rule const* rule1,
+    RewritingSystemTrie::descendants_confluent(Rule const* rule1,
                                        index_type  current_node,
                                        size_t      overlap_length) const {
       LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::active);
@@ -952,13 +952,13 @@ namespace libsemigroups {
       return true;
     }
 
-    void RewriteTrie::rm_rule(Rule* rule) {
+    void RewritingSystemTrie::rm_rule(Rule* rule) {
       index_type node = _rule_trie.rm_word_no_checks(rule->lhs().cbegin(),
                                                      rule->lhs().cend());
       _rule_map.erase(node);
     }
 
-    void RewriteTrie::report_checking_confluence(
+    void RewritingSystemTrie::report_checking_confluence(
         std::atomic_uint64_t const&                           seen,
         std::chrono::high_resolution_clock::time_point const& start_time)
         const {
@@ -981,7 +981,7 @@ namespace libsemigroups {
       }
     }
 
-    void RewriteTrie::report_reducing_rules(
+    void RewritingSystemTrie::report_reducing_rules(
         std::atomic_uint64_t const&                           seen,
         std::chrono::high_resolution_clock::time_point const& start_time)
         const {

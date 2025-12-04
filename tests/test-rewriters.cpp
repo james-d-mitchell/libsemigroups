@@ -22,24 +22,24 @@
 #include "libsemigroups/word-range.hpp"    // for operator""_w
 
 #include "libsemigroups/detail/report.hpp"     // for ReportGuard
-#include "libsemigroups/detail/rewriters.hpp"  // for RewriteTrie
+#include "libsemigroups/detail/rewriters.hpp"  // for RewritingSystemTrie
 
 namespace libsemigroups {
   using literals::operator""_w;
 
   namespace detail {
-    using string_type = RewriteTrie::native_word_type;
+    using string_type = RewritingSystemTrie::native_word_type;
     using namespace std::literals;
 
     /*
-    LIBSEMIGROUPS_TEST_CASE("RewriteTrie", "000", "initial test", "[quick]") {
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie", "000", "initial test", "[quick]") {
       auto rg = ReportGuard(false);
 
       Rules rules;
       REQUIRE(rules.number_of_active_rules() == 0);
       rules::add_pending_rule(rules, "ba"_w, "a"_w);
 
-      RewriteTrie rt(rules);
+      RewritingSystemTrie rt(rules);
 
       rt.increase_alphabet_size_by(2);
       REQUIRE(rt.rules().number_of_pending_rules() == 1);
@@ -49,8 +49,8 @@ namespace libsemigroups {
       rules::add_pending_rule(rules, "baa"_w, "aab"_w);
     }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteTrie", "001", "simple test", "[quick]")
-       { auto        rg = ReportGuard(false); RewriteTrie rt;
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie", "001", "simple test", "[quick]")
+       { auto        rg = ReportGuard(false); RewritingSystemTrie rt;
 
           rt.increase_alphabet_size_by(3);
           rt.add_rule("ac"_w, "ca"_w);
@@ -90,12 +90,12 @@ namespace libsemigroups {
        string_type({0}));
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteFromLeft",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemFromLeft",
                                 "010",
                                 "simple test",
                                 "[quick]") {
           auto            rg = ReportGuard(false);
-          RewriteFromLeft rfl;
+          RewritingSystemFromLeft rfl;
 
           rfl.increase_alphabet_size_by(3);
           rfl.add_rule("ac"_w, "ca"_w);
@@ -135,12 +135,12 @@ namespace libsemigroups {
        string_type({0}));
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteTrie",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie",
                                 "002",
                                 "confluent fp semigroup 3 (infinite)",
                                 "[quick]") {
           auto        rg = ReportGuard(false);
-          RewriteTrie rt;
+          RewritingSystemTrie rt;
           rt.increase_alphabet_size_by(3);
 
           rt.add_rule("ab"_w, "ba"_w);
@@ -160,13 +160,13 @@ namespace libsemigroups {
           REQUIRE(rt.confluent());
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteTrie",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie",
                                 "003",
                                 "non-confluent fp semigroup from "
                                 "wikipedia (infinite)",
                                 "[quick]") {
           auto        rg = ReportGuard(false);
-          RewriteTrie rt;
+          RewritingSystemTrie rt;
           rt.increase_alphabet_size_by(2);
           rt.add_rule("aaa"_w, ""_w);
           rt.add_rule("bbb"_w, ""_w);
@@ -176,12 +176,12 @@ namespace libsemigroups {
           REQUIRE(!rt.confluent());
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteTrie",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie",
                                 "004",
                                 "Example 5.1 in Sims (infinite)",
                                 "[quick]") {
           auto        rg = ReportGuard(false);
-          RewriteTrie rt;
+          RewritingSystemTrie rt;
           rt.increase_alphabet_size_by(4);
           rt.add_rule("ab"_w, ""_w);
           rt.add_rule("ba"_w, ""_w);
@@ -194,12 +194,12 @@ namespace libsemigroups {
           REQUIRE(!rt.confluent());
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteTrie",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie",
                                 "005",
                                 "Example 5.1 in Sims (infinite)",
                                 "[quick]") {
           auto        rg = ReportGuard(false);
-          RewriteTrie rt;
+          RewritingSystemTrie rt;
 
           rt.increase_alphabet_size_by(4);
           rt.add_rule("ca"_w, ""_w);
@@ -213,12 +213,12 @@ namespace libsemigroups {
           REQUIRE(!rt.confluent());
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteTrie",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie",
                                 "006",
                                 "Example 5.3 in Sims",
                                 "[quick]") {
           auto        rg = ReportGuard(false);
-          RewriteTrie rt;
+          RewritingSystemTrie rt;
           rt.increase_alphabet_size_by(2);
           rt.add_rule("aa"_w, ""_w);
           rt.add_rule("bbb"_w, ""_w);
@@ -229,12 +229,12 @@ namespace libsemigroups {
           REQUIRE(!rt.confluent());
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteTrie",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie",
                                 "007",
                                 "Example 5.4 in Sims",
                                 "[quick]") {
           auto        rg = ReportGuard(false);
-          RewriteTrie rt;
+          RewritingSystemTrie rt;
           rt.increase_alphabet_size_by(3);
 
           rt.add_rule("aa"_w, ""_w);
@@ -247,12 +247,12 @@ namespace libsemigroups {
           REQUIRE(!rt.confluent());
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteTrie",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie",
                                 "008",
                                 "Example 6.4 in Sims (size 168)",
                                 "[no-valgrind][quick]") {
           auto        rg = ReportGuard(false);
-          RewriteTrie rt;
+          RewritingSystemTrie rt;
           rt.increase_alphabet_size_by(3);
 
           rt.add_rule("aa"_w, ""_w);
@@ -266,12 +266,12 @@ namespace libsemigroups {
           REQUIRE(!rt.confluent());
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteTrie",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie",
                                 "009",
                                 "random example",
                                 "[no-valgrind][quick]") {
           auto        rg = ReportGuard(false);
-          RewriteTrie rt;
+          RewritingSystemTrie rt;
 
           rt.increase_alphabet_size_by(3);
           rt.add_rule("aaa"_w, "c"_w);
@@ -286,12 +286,12 @@ namespace libsemigroups {
           REQUIRE(!rt.confluent());
         }
 
-        LIBSEMIGROUPS_TEST_CASE("RewriteFromLeft",
+        LIBSEMIGROUPS_TEST_CASE("RewritingSystemFromLeft",
                                 "012",
                                 "stacks",
                                 "[no-valgrind][quick]") {
           auto            rg = ReportGuard(false);
-          RewriteFromLeft rfl;
+          RewritingSystemFromLeft rfl;
 
           rfl.increase_alphabet_size_by(2);
           rfl.add_rule("ba", "ab");
@@ -306,12 +306,12 @@ namespace libsemigroups {
 
     // TODO add a proper test using a reduction order, and rules that are
     // length increasing
-    // LIBSEMIGROUPS_TEMPLATE_TEST_CASE("Rewriters",
+    // LIBSEMIGROUPS_TEMPLATE_TEST_CASE("RewritingSystems",
     //                                  "013",
     //                                  "non-length reducing",
     //                                  "[no-valgrind][quick]",
-    //                                  RewriteFromLeft,
-    //                                  RewriteTrie) {
+    //                                  RewritingSystemFromLeft,
+    //                                  RewritingSystemTrie) {
     //   auto     rg = ReportGuard(false);
     //   TestType rewriter;
 

@@ -59,7 +59,7 @@ namespace libsemigroups {
   //!
   //! \code
   //! \skip-test
-  //! to<KnuthBendix<Word, Rewriter>>(knd, fpb);
+  //! to<KnuthBendix<Word, RewritingSystem>>(knd, fpb);
   //! \endcode
   //!
   //! This function converts the \ref FroidurePin object \p fpb into a
@@ -67,7 +67,7 @@ namespace libsemigroups {
   //! \ref to<Presentation<Word>>(FroidurePinBase&).
   //!
   //! \tparam Result used for SFINAE, the return type of this function, must be
-  //! `KnuthBendix<Word, Rewriter>` for some type \c Word and \c Rewriter.
+  //! `KnuthBendix<Word, RewritingSystem>` for some type \c Word and \c RewritingSystem.
   //!
   //! \param knd the kind of the congruence being constructed.
   //! \param fpb the FroidurePin instance to be converted.
@@ -81,8 +81,8 @@ namespace libsemigroups {
                      Result>,
       Result> {
     using Word     = typename Result::native_word_type;
-    using Rewriter = typename Result::rewriter_type;
-    return KnuthBendix<Word, Rewriter>(knd, to<Presentation<Word>>(fpb));
+    using RewritingSystem = typename Result::rewriter_type;
+    return KnuthBendix<Word, RewritingSystem>(knd, to<Presentation<Word>>(fpb));
   }
 
   //! \ingroup to_knuth_bendix_group
@@ -131,14 +131,14 @@ namespace libsemigroups {
   //!
   //! \code
   //! \skip-test
-  //! to<KnuthBendix<Word, Rewriter>>(knd, tc);
+  //! to<KnuthBendix<Word, RewritingSystem>>(knd, tc);
   //! \endcode
   //!
   //! This function converts the \ref_todd_coxeter object \p tc into a
   //! \ref_knuth_bendix object using ToddCoxeter::presentation.
   //!
   //! \tparam Result used for SFINAE, the return type of this function, must be
-  //! `KnuthBendix<Word, Rewriter>` for some type \c Word and \c Rewriter.
+  //! `KnuthBendix<Word, RewritingSystem>` for some type \c Word and \c RewritingSystem.
   //!
   //! \param knd the kind of the congruence being constructed.
   //! \param tc the \ref_todd_coxeter object being converted.
@@ -157,8 +157,8 @@ namespace libsemigroups {
                          Result>,
           Result> {
     using Word     = typename Result::native_word_type;
-    using Rewriter = typename Result::rewriter_type;
-    return KnuthBendix<Word, Rewriter>(knd, tc.presentation());
+    using RewritingSystem = typename Result::rewriter_type;
+    return KnuthBendix<Word, RewritingSystem>(knd, tc.presentation());
   }
 
 }  // namespace libsemigroups

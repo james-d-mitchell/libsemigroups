@@ -39,12 +39,12 @@
 
 namespace libsemigroups {
 
-  using RewriteTrie     = detail::RewriteTrie;
-  using RewriteFromLeft = detail::RewriteFromLeft;
+  using RewritingSystemTrie     = detail::RewritingSystemTrie;
+  using RewritingSystemFromLeft = detail::RewritingSystemFromLeft;
 
   congruence_kind constexpr twosided = congruence_kind::twosided;
 
-#define REWRITER_TYPES RewriteTrie, RewriteFromLeft
+#define REWRITER_TYPES RewritingSystemTrie, RewritingSystemFromLeft
 
   LIBSEMIGROUPS_TEST_CASE("to<FroidurePin>",
                           "000",

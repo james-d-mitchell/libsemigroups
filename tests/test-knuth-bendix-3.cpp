@@ -65,10 +65,10 @@ namespace libsemigroups {
 
   struct LibsemigroupsException;
 
-  using RewriteTrie     = detail::RewriteTrie;
-  using RewriteFromLeft = detail::RewriteFromLeft;
+  using RewritingSystemTrie     = detail::RewritingSystemTrie;
+  using RewritingSystemFromLeft = detail::RewritingSystemFromLeft;
 
-#define KNUTH_BENDIX_TYPES RewriteTrie, RewriteFromLeft
+#define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemFromLeft
 
   namespace {
     struct weird_cmp {

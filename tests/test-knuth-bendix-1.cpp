@@ -77,9 +77,9 @@ namespace libsemigroups {
     // implementation dependent, the below function can be used to check that
     // `gilman_graph()` returns something that generates the correct normal
     // forms.
-    template <typename Rewriter, typename ReductionOrder, typename WordType>
+    template <typename RewritingSystem, typename ReductionOrder, typename WordType>
     [[nodiscard]] inline auto
-    normal_forms_from_word_graph(KnuthBendix<Rewriter, ReductionOrder>& kb,
+    normal_forms_from_word_graph(KnuthBendix<RewritingSystem, ReductionOrder>& kb,
                                  WordGraph<WordType>&                   wg) {
       Paths paths(wg);
       paths.source(0);
@@ -90,13 +90,13 @@ namespace libsemigroups {
     }
   }  // namespace
 
-  using RewriteTrie     = detail::RewriteTrie;
-  using RewriteFromLeft = detail::RewriteFromLeft;
+  using RewritingSystemTrie     = detail::RewritingSystemTrie;
+  using RewritingSystemFromLeft = detail::RewritingSystemFromLeft;
 
-  // using RewriteTrieRPC     = detail::RewriteTrie<RecursivePathCompare>;
-  // using RewriteFromLeftRPC = detail::RewriteFromLeft<RecursivePathCompare>;
+  // using RewritingSystemTrieRPC     = detail::RewritingSystemTrie<RecursivePathCompare>;
+  // using RewritingSystemFromLeftRPC = detail::RewritingSystemFromLeft<RecursivePathCompare>;
 
-#define REWRITER_TYPES RewriteTrie, RewriteFromLeft
+#define REWRITER_TYPES RewritingSystemTrie, RewritingSystemFromLeft
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "000",
@@ -1283,8 +1283,8 @@ namespace libsemigroups {
   //                                  "994",
   //                                  "kbmag/verifynilp",
   //                                  "[quick][knuth-bendix][kbmag][recursive]",
-  //                                  RewriteTrieRPC,
-  //                                  RewriteFromLeftRPC) {
+  //                                  RewritingSystemTrieRPC,
+  //                                  RewritingSystemFromLeftRPC) {
   //   auto rg = ReportGuard(false);
 
   //   Presentation<std::string> p;
@@ -1335,8 +1335,8 @@ namespace libsemigroups {
   //                                  "996",
   //                                  "kbmag/nonhopf",
   //                                  "[quick][knuth-bendix][kbmag][recursive]",
-  //                                  RewriteTrieRPC,
-  //                                  RewriteFromLeftRPC) {
+  //                                  RewritingSystemTrieRPC,
+  //                                  RewritingSystemFromLeftRPC) {
   //   auto                      rg = ReportGuard(false);
   //   Presentation<std::string> p;
 
@@ -1368,8 +1368,8 @@ namespace libsemigroups {
   //                                  "997",
   //                                  "kbmag/freenilpc3",
   //                                  "[quick][knuth-bendix][kbmag][recursive]",
-  //                                  RewriteTrieRPC,
-  //                                  RewriteFromLeftRPC) {
+  //                                  RewritingSystemTrieRPC,
+  //                                  RewritingSystemFromLeftRPC) {
   //   auto rg = ReportGuard(false);
 
   //   Presentation<std::string> p;
@@ -1414,8 +1414,8 @@ namespace libsemigroups {
   //                                  "998",
   //                                  "kbmag/nilp2",
   //                                  "[quick][knuth-bendix][kbmag][recursive]",
-  //                                  RewriteTrieRPC,
-  //                                  RewriteFromLeftRPC) {
+  //                                  RewritingSystemTrieRPC,
+  //                                  RewritingSystemFromLeftRPC) {
   //   auto                      rg = ReportGuard(false);
   //   Presentation<std::string> p;
   //   p.alphabet("cCbBaA").contains_empty_word(true);
@@ -1443,8 +1443,8 @@ namespace libsemigroups {
   //                                  "999",
   //                                  "kbmag/f27monoid",
   //                                  "[fail][knuth-bendix][kbmag][recursive]",
-  //                                  RewriteTrieRPC,
-  //                                  RewriteFromLeftRPC) {
+  //                                  RewritingSystemTrieRPC,
+  //                                  RewritingSystemFromLeftRPC) {
   //   auto                      rg = ReportGuard(true);
   //   Presentation<std::string> p;
   //   p.alphabet("abcdefg");
@@ -1475,7 +1475,7 @@ namespace libsemigroups {
   //                                  "932",
   //                                  "kbmag/heinnilp",
   //                                  "[fail][knuth-bendix][kbmag][recursive]",
-  //                                  RewriteTrieRPC) {
+  //                                  RewritingSystemTrieRPC) {
   //   auto rg = ReportGuard(true);
 
   //   Presentation<std::string> p;

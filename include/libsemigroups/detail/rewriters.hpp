@@ -304,10 +304,10 @@ namespace libsemigroups {
     }  // namespace rules
 
     ////////////////////////////////////////////////////////////////////////
-    // RewriteBase
+    // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteBase {
+    class RewritingSystemBase {
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
 
@@ -323,8 +323,8 @@ namespace libsemigroups {
       State  _state;
       bool   _ticker_running;
 
-      RewriteBase();
-      RewriteBase& init();
+      RewritingSystemBase();
+      RewritingSystemBase& init();
 
      public:
       using native_word_type = Rule::native_word_type;
@@ -335,19 +335,19 @@ namespace libsemigroups {
       // Constructors + inits
       ////////////////////////////////////////////////////////////////////////
 
-      RewriteBase(Rules*);
-      RewriteBase& init(Rules*);
+      RewritingSystemBase(Rules*);
+      RewritingSystemBase& init(Rules*);
 
-      RewriteBase(RewriteBase const& that) : RewriteBase() {
+      RewritingSystemBase(RewritingSystemBase const& that) : RewritingSystemBase() {
         *this = that;
       }
-      RewriteBase(RewriteBase&& that);
-      RewriteBase& operator=(RewriteBase const& that);
-      RewriteBase& operator=(RewriteBase&& that);
+      RewritingSystemBase(RewritingSystemBase&& that);
+      RewritingSystemBase& operator=(RewritingSystemBase const& that);
+      RewritingSystemBase& operator=(RewritingSystemBase&& that);
 
-      virtual ~RewriteBase();
+      virtual ~RewritingSystemBase();
 
-      RewriteBase& rules(Rules& rules) {
+      RewritingSystemBase& rules(Rules& rules) {
         _rules = &rules;
         return *this;
       }
@@ -363,7 +363,7 @@ namespace libsemigroups {
       // Some rewriters require knowledge of the alphabet size, and some do
       // not. For those that do not we provide a default implementation that
       // does nothing.
-      RewriteBase& increase_alphabet_size_by(size_t) {
+      RewritingSystemBase& increase_alphabet_size_by(size_t) {
         return *this;
       }
 
@@ -405,17 +405,17 @@ namespace libsemigroups {
       virtual void report_reducing_rules(
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const {}
-    };  // class RewriteBase
+    };  // class RewritingSystemBase
 
     ////////////////////////////////////////////////////////////////////////
-    // RewriteFromLeft
+    // RewritingSystemFromLeft
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteFromLeft : public RewriteBase {
+    class RewritingSystemFromLeft : public RewritingSystemBase {
       std::set<RuleLookup> _set_rules;
 
-      RewriteFromLeft() = default;
-      RewriteFromLeft& init();
+      RewritingSystemFromLeft() = default;
+      RewritingSystemFromLeft& init();
 
      public:
       using native_word_type = Rule::native_word_type;
@@ -423,25 +423,25 @@ namespace libsemigroups {
 
       static const bool always_reduced = true;
 
-      RewriteFromLeft(Rules& rules) : RewriteBase(&rules), _set_rules() {}
+      RewritingSystemFromLeft(Rules& rules) : RewritingSystemBase(&rules), _set_rules() {}
 
-      RewriteFromLeft& init(Rules& rules) {
+      RewritingSystemFromLeft& init(Rules& rules) {
         init();
-        RewriteBase::init(&rules);
+        RewritingSystemBase::init(&rules);
         return *this;
       }
 
-      RewriteFromLeft(RewriteFromLeft const& that) : RewriteFromLeft() {
+      RewritingSystemFromLeft(RewritingSystemFromLeft const& that) : RewritingSystemFromLeft() {
         *this = that;
       }
 
       // TODO should be the same as the previous one?
-      RewriteFromLeft(RewriteFromLeft&&) = default;
+      RewritingSystemFromLeft(RewritingSystemFromLeft&&) = default;
 
-      RewriteFromLeft& operator=(RewriteFromLeft const&);
-      RewriteFromLeft& operator=(RewriteFromLeft&&) = default;
+      RewritingSystemFromLeft& operator=(RewritingSystemFromLeft const&);
+      RewritingSystemFromLeft& operator=(RewritingSystemFromLeft&&) = default;
 
-      ~RewriteFromLeft();
+      ~RewritingSystemFromLeft();
 
       bool process_pending_rules();
 
@@ -449,7 +449,7 @@ namespace libsemigroups {
       void rewrite2(native_word_type& u);
 
       void rewrite(native_word_type& u) const {
-        const_cast<RewriteFromLeft*>(this)->rewrite(u);
+        const_cast<RewritingSystemFromLeft*>(this)->rewrite(u);
       }
 
       // TODO add_rule(Iterators) when Rule* not in data structure here any
@@ -503,10 +503,10 @@ namespace libsemigroups {
     };
 
     ////////////////////////////////////////////////////////////////////////
-    // RewriteTrie
+    // RewritingSystemTrie
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteTrie : public RewriteBase {
+    class RewritingSystemTrie : public RewritingSystemBase {
      public:
       using index_type       = AhoCorasickImpl::index_type;
       using iterator         = native_word_type::iterator;
@@ -521,13 +521,13 @@ namespace libsemigroups {
       AhoCorasickImpl                       _rule_trie;
       bool                                  _ticker_running;
 
-      RewriteTrie();
-      RewriteTrie& init();
+      RewritingSystemTrie();
+      RewritingSystemTrie& init();
 
      public:
       // TODO to cpp
-      RewriteTrie(Rules& rules)
-          : RewriteBase(&rules),
+      RewritingSystemTrie(Rules& rules)
+          : RewritingSystemBase(&rules),
             _new_rule_map(),
             _new_rule_trie(),
             _rewrite_tmp_buf(),
@@ -536,24 +536,24 @@ namespace libsemigroups {
             _ticker_running(false) {}
 
       // TODO to cpp
-      RewriteTrie& init(Rules& rules) {
+      RewritingSystemTrie& init(Rules& rules) {
         init();
-        RewriteBase::init(&rules);
+        RewritingSystemBase::init(&rules);
         return *this;
       }
 
-      RewriteTrie(RewriteTrie const& that) : RewriteTrie() {
+      RewritingSystemTrie(RewritingSystemTrie const& that) : RewritingSystemTrie() {
         *this = that;
       }
-      RewriteTrie(RewriteTrie&& that) = default;
-      RewriteTrie& operator=(RewriteTrie const& that);
-      RewriteTrie& operator=(RewriteTrie&& that) = default;
+      RewritingSystemTrie(RewritingSystemTrie&& that) = default;
+      RewritingSystemTrie& operator=(RewritingSystemTrie const& that);
+      RewritingSystemTrie& operator=(RewritingSystemTrie&& that) = default;
 
-      ~RewriteTrie();
+      ~RewritingSystemTrie();
 
-      using RewriteBase::cached_confluent;
+      using RewritingSystemBase::cached_confluent;
 
-      RewriteTrie& increase_alphabet_size_by(size_t val) {
+      RewritingSystemTrie& increase_alphabet_size_by(size_t val) {
         _rule_trie.increase_alphabet_size_by(val);
         return *this;
       }
@@ -562,7 +562,7 @@ namespace libsemigroups {
 
       // TODO out of line
       // TODO rename to add_rule, and remove the notions of active and pending
-      // rules from Rewrite objects
+      // rules from RewritingSystem objects
       void add_rule(Rule* rule) {
         index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
                                                         rule->lhs().cend());
@@ -583,7 +583,7 @@ namespace libsemigroups {
       }
 
       void rewrite(native_word_type& u) const {
-        const_cast<RewriteTrie*>(this)->rewrite(u);
+        const_cast<RewritingSystemTrie*>(this)->rewrite(u);
       }
 
       // Returns a range object iterating through Rule* whose lhs is contained

@@ -32,7 +32,7 @@
 #include "detail/citow.hpp"              // for citow
 #include "detail/cong-common-class.hpp"  // for CongruenceCommon
 #include "detail/knuth-bendix-impl.hpp"  // for KnuthBendixImpl
-#include "detail/rewriters.hpp"          // for RewriteTrie
+#include "detail/rewriters.hpp"          // for RewritingSystemTrie
 
 namespace libsemigroups {
   enum class congruence_kind;
@@ -64,7 +64,7 @@ namespace libsemigroups {
   //! finitely presented monoid or semigroup.
   //!
   //! \tparam Word the type of the words in rules in the presentation.
-  //! \tparam Rewriter the type of the rewriter.
+  //! \tparam RewritingSystem the type of the rewriter.
   //! \tparam ReductionOrder the reduction ordering.
   //!
   //! \par Example
@@ -93,11 +93,11 @@ namespace libsemigroups {
   //! * 128 letters if `char` a signed integer;
   //! * 256 letters if `char` is an unsigned integer.
   template <typename Word,
-            typename Rewriter       = detail::RewriteTrie,
+            typename RewritingSystem       = detail::RewritingSystemTrie,
             typename ReductionOrder = ShortLexCompare>
-  class KnuthBendix : public detail::KnuthBendixImpl<Rewriter, ReductionOrder> {
+  class KnuthBendix : public detail::KnuthBendixImpl<RewritingSystem, ReductionOrder> {
    private:
-    using KnuthBendixImpl_ = detail::KnuthBendixImpl<Rewriter, ReductionOrder>;
+    using KnuthBendixImpl_ = detail::KnuthBendixImpl<RewritingSystem, ReductionOrder>;
 
     bool               _extra_letter_added;
     std::vector<Word>  _generating_pairs;

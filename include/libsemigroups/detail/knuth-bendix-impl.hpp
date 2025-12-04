@@ -132,7 +132,7 @@ namespace libsemigroups {
     //! Those functions with the prefix `current_` do not perform any
     //! further enumeration.
 
-    template <typename Rewriter       = detail::RewriteTrie,
+    template <typename RewritingSystem       = detail::RewritingSystemTrie,
               typename ReductionOrder = ShortLexCompare>
     class KnuthBendixImpl : public CongruenceCommon {
      public:
@@ -140,9 +140,9 @@ namespace libsemigroups {
       // Aliases
       ////////////////////////////////////////////////////////////////////////
 
-      using native_word_type = typename Rewriter::native_word_type;
+      using native_word_type = typename RewritingSystem::native_word_type;
       using rule_type        = std::pair<native_word_type, native_word_type>;
-      using rewriter_type    = Rewriter;
+      using rewriter_type    = RewritingSystem;
 
       //////////////////////////////////////////////////////////////////////////
       // Nested classes - public
@@ -212,7 +212,7 @@ namespace libsemigroups {
       Presentation<native_word_type>  _presentation;
       // _rules before _rewriter because we require _rules to init _rewriter
       mutable Rules            _rules;
-      mutable Rewriter         _rewriter;
+      mutable RewritingSystem         _rewriter;
       Settings                 _settings;
       mutable Stats            _stats;
       mutable native_word_type _tmp_element1;
@@ -785,7 +785,7 @@ namespace libsemigroups {
       }
 
       // TODO doc
-      Rewriter& rewriter() noexcept {
+      RewritingSystem& rewriter() noexcept {
         return _rewriter;
       }
 
@@ -870,7 +870,7 @@ namespace libsemigroups {
 
       // Reduce existing active rules wrt new_rule
       void reduce_active_rules() {
-        if constexpr (Rewriter::always_reduced) {
+        if constexpr (RewritingSystem::always_reduced) {
           return;
         } else {
           auto const first = _rules.active_rules().begin();
@@ -1017,15 +1017,15 @@ namespace libsemigroups {
 //!
 //! \returns A reference to the first argument.
 #ifdef LIBSEMIGROUPS_PARSED_BY_DOXYGEN
-  template <typename Word, typename Rewriter, typename ReductionOrder>
+  template <typename Word, typename RewritingSystem, typename ReductionOrder>
   std::ostream&
   operator<<(std::ostream&                                      os,
-             KnuthBendix<Word, Rewriter, ReductionOrder> const& kb);
+             KnuthBendix<Word, RewritingSystem, ReductionOrder> const& kb);
 #else
-  template <typename Rewriter, typename ReductionOrder>
+  template <typename RewritingSystem, typename ReductionOrder>
   std::ostream&
   operator<<(std::ostream&                                            os,
-             detail::KnuthBendixImpl<Rewriter, ReductionOrder> const& kb);
+             detail::KnuthBendixImpl<RewritingSystem, ReductionOrder> const& kb);
 #endif
 
 //! \ingroup knuth_bendix_group
@@ -1038,7 +1038,7 @@ namespace libsemigroups {
 //! instance, specifying the size of the underlying alphabet and the number
 //! of active rules.
 //!
-//! \tparam Rewriter the first template parameter for \ref_knuth_bendix.
+//! \tparam RewritingSystem the first template parameter for \ref_knuth_bendix.
 //! \tparam ReductionOrder the second template parameter for
 //! \ref_knuth_bendix.
 //!
@@ -1047,19 +1047,19 @@ namespace libsemigroups {
 //! \returns The representation, a value of type \c std::string.
 // TODO(1) preferably kb would be a const&
 #ifdef LIBSEMIGROUPS_PARSED_BY_DOXYGEN
-  template <typename Word, typename Rewriter, typename ReductionOrder>
+  template <typename Word, typename RewritingSystem, typename ReductionOrder>
   std::string
-  to_human_readable_repr(KnuthBendix<Word, Rewriter, ReductionOrder>& kb);
+  to_human_readable_repr(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb);
 #else
-  template <typename Rewriter, typename ReductionOrder>
+  template <typename RewritingSystem, typename ReductionOrder>
   std::string
-  to_human_readable_repr(detail::KnuthBendixImpl<Rewriter, ReductionOrder>& kb);
+  to_human_readable_repr(detail::KnuthBendixImpl<RewritingSystem, ReductionOrder>& kb);
 #endif
 
   //! No doc
   // TODO(1) kb should be const
-  template <typename Result, typename Rewriter, typename ReductionOrder>
-  auto to(detail::KnuthBendixImpl<Rewriter, ReductionOrder>& kb)
+  template <typename Result, typename RewritingSystem, typename ReductionOrder>
+  auto to(detail::KnuthBendixImpl<RewritingSystem, ReductionOrder>& kb)
       -> std::enable_if_t<
           std::is_same_v<Presentation<typename Result::word_type>, Result>,
           Result>;
