@@ -346,7 +346,7 @@ namespace libsemigroups {
       // TODO move to RewritingSystem
       if (_rewriter.number_of_active_rules() == 0
           && _rewriter.number_of_pending_rules() != 0) {
-        process_pending_rules();
+        _rewriter.process_pending_rules();
       }
       return iterator_range(_rewriter.active_rules().begin(),
                             _rewriter.active_rules().end());
@@ -487,7 +487,7 @@ namespace libsemigroups {
       // TODO move to RewritingSystem
       if (_rewriter.number_of_active_rules() == 0
           && _rewriter.number_of_pending_rules() != 0) {
-        process_pending_rules();
+        _rewriter.process_pending_rules();
       }
       add_octo(w);
       _rewriter.rewrite(w);
@@ -521,7 +521,7 @@ namespace libsemigroups {
       if (_rewriter.number_of_active_rules() == 0
           && _rewriter.number_of_pending_rules() != 0) {
         const_cast<KnuthBendixImpl<RewritingSystem, ReductionOrder>*>(this)
-            ->process_pending_rules();
+            ->_rewriter.process_pending_rules();
       }
       return _rewriter.confluent();
     }
@@ -609,7 +609,7 @@ namespace libsemigroups {
             }
             if (_rewriter.number_of_pending_rules()
                 >= _settings.max_pending_rules) {
-              process_pending_rules();
+              _rewriter.process_pending_rules();
             }
           }
 
@@ -634,7 +634,7 @@ namespace libsemigroups {
         }
 
         if (_rewriter.number_of_pending_rules() != 0) {
-          process_pending_rules();
+          _rewriter.process_pending_rules();
           // is_reduced is in the helper file now so can't check this here
           // anymore LIBSEMIGROUPS_ASSERT(knuth_bendix::is_reduced(*this));
         } else {
@@ -657,7 +657,7 @@ namespace libsemigroups {
       reset_start_time();
 
       init_from_generating_pairs();
-      process_pending_rules();
+      _rewriter.process_pending_rules();
       if (_rewriter.number_of_pending_rules() == 0 && confluent()
           && !stop_running()) {
         // _rewriter._pending_rules can be non-empty if non-reduced rules were
@@ -861,18 +861,6 @@ namespace libsemigroups {
           y.append(vlhs.cbegin() + (ulhs.cend() - it),
                    vlhs.cend());  // rule = AQ_j -> Q_iC
           add_pending_rule(x, y);
-
-          // It can be that the iterator `it` is invalidated by the call to
-          // proccess_pending_rule (i.e. if `u` is deactivated, then
-          // rewritten, actually changed, and reactivated) and that is the
-          // reason for the checks in the for-loop above. If this is the case,
-          // then we should stop considering the overlaps of u and v here, and
-          // note that they will be considered later, because when the rule
-          // `u` is reactivated it is added to the end of the active rules
-          // list.
-
-          // TODO(1) remove some of the above checks, since now rules don't
-          // get processed after being added.
         }
       }
     }

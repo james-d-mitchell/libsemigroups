@@ -166,7 +166,7 @@ namespace libsemigroups {
 
         size_t   max_active_rules;
         size_t   max_length_lhs_rule;
-        size_t   max_pending_rules;
+        size_t   max_pending_rules;  // TODO rename
         size_t   min_length_lhs_rule;
         uint64_t total_rules;
       };
@@ -204,11 +204,11 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
 
       template <typename Iterator>
-      void add_pending_rule(Iterator first1,
-                            Iterator last1,
-                            Iterator first2,
-                            Iterator last2) {
-        add_pending_rule(new_rule(first1, last1, first2, last2));
+      Rule* add_pending_rule(Iterator first1,
+                             Iterator last1,
+                             Iterator first2,
+                             Iterator last2) {
+        return add_pending_rule(new_rule(first1, last1, first2, last2));
       }
 
       void add_active_rule(Rule* rule);
@@ -263,7 +263,7 @@ namespace libsemigroups {
       [[nodiscard]] size_t max_length_lhs_active_rule() const;
 
      private:
-      void add_pending_rule(Rule* rule);
+      Rule* add_pending_rule(Rule* rule);
 
       [[nodiscard]] Rule* copy_rule(Rule const* rule);
       [[nodiscard]] Rule* new_rule();
@@ -303,12 +303,21 @@ namespace libsemigroups {
       }
     }  // namespace rules
 
+    namespace rewriting_system {
+
+      template <typename RewritingSystem, typename Word>
+      void add_rule(RewritingSystem& rs, Word const& lhs, Word const& rhs) {
+        rs.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+      }
+    }  // namespace rewriting_system
+
     ////////////////////////////////////////////////////////////////////////
     // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
     // TODO change public -> protected
     class RewritingSystemBase : public Rules {
+     private:
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
 
@@ -321,14 +330,16 @@ namespace libsemigroups {
         checking_confluence
       };
 
-      Rules* _rules;
-      State  _state;
-      bool   _ticker_running;
+      struct Settings {
+        size_t max_pending_rules = 128;
+      };
+
+      Settings _settings;
+      State    _state;
+      bool     _ticker_running;
 
      public:
       using native_word_type = Rule::native_word_type;
-
-      static const bool always_reduced = false;
 
       ////////////////////////////////////////////////////////////////////////
       // Constructors + inits
@@ -346,8 +357,6 @@ namespace libsemigroups {
       RewritingSystemBase& operator=(RewritingSystemBase&& that);
 
       virtual ~RewritingSystemBase();
-
-      // TODO iterator to active rules
 
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
@@ -409,9 +418,12 @@ namespace libsemigroups {
 
      public:
       using native_word_type = Rule::native_word_type;
-      using iterator         = Rules::iterator;
+      // TODO private
+      using iterator = Rules::iterator;
 
-      static const bool always_reduced = true;
+      ////////////////////////////////////////////////////////////////////////
+      // Constructors + initializers
+      ////////////////////////////////////////////////////////////////////////
 
       RewritingSystemSet() = default;
       RewritingSystemSet& init();
@@ -427,20 +439,44 @@ namespace libsemigroups {
       RewritingSystemSet& operator=(RewritingSystemSet&&) = default;
 
       ~RewritingSystemSet();
-      // TODO private
-      bool process_pending_rules();
+
+      ////////////////////////////////////////////////////////////////////////
+      // Add rules
+      ////////////////////////////////////////////////////////////////////////
+
+      template <typename Iterator>
+      RewritingSystemSet& add_rule(Iterator first1,
+                                   Iterator last1,
+                                   Iterator first2,
+                                   Iterator last2) {
+        if (!std::equal(first1, last1, first2, last2)) {
+          Rules::add_pending_rule(first1, last1, first2, last2);
+          set_cached_confluent(tril::unknown);
+          process_pending_rules_if_enough();
+        }
+        return *this;
+      }
+
+      // TODO is rm_rule required?
+
+      ////////////////////////////////////////////////////////////////////////
+      // Rewrite
+      ////////////////////////////////////////////////////////////////////////
 
       void rewrite(native_word_type& u);
       void rewrite2(native_word_type& u);
-
       void rewrite(native_word_type& u) const {
         const_cast<RewritingSystemSet*>(this)->rewrite(u);
       }
 
-      // TODO add_rule(Iterators) when Rule* not in data structure here any
-      // TODO rm_rule(Iterators) when Rule* not in data structure here any
-      void add_rule(Rule* rule);
-      void rm_rule(Rule* rule);
+      ////////////////////////////////////////////////////////////////////////
+      // Iterators to rules
+      ////////////////////////////////////////////////////////////////////////
+
+      // TODO iterator to active rules
+     private:
+      void     add_active_rule(Rule* rule);
+      iterator rm_active_rule(iterator it);
 
       // TODO rm
       void rewrite(Rule* rule) const {
@@ -449,23 +485,21 @@ namespace libsemigroups {
         rule->reorder();
       }
 
-      // TODO rm
-      // Returns a range object iterating through Rule* whose lhs is contained
-      // in word
-      auto lhs_search_no_checks(native_word_type const& word) {
-        return rx::iterator_range(_rules->active_rules().begin(),
-                                  _rules->active_rules().end())
-               | rx::filter([&word](Rule* rule) {
-                   return word.find(rule->lhs()) != native_word_type::npos;
-                 });
+      // TODO nodiscard or is the return value used for anything?
+      bool process_pending_rules();
+
+      void process_pending_rules_if_enough() {
+        if (Rules::number_of_pending_rules() >= _settings.max_pending_rules) {
+          process_pending_rules();
+        }
       }
 
-     private:
+      // TODO nodiscard or is the return value used for anything?
+      bool confluent_impl(std::atomic_uint64_t&) override;
+
       void report_checking_confluence(
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const override;
-
-      bool confluent_impl(std::atomic_uint64_t&) override;
     };
 
     ////////////////////////////////////////////////////////////////////////
@@ -473,11 +507,15 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
 
     class RewritingSystemTrie : public RewritingSystemBase {
+      using iterator = Rules::iterator;
+
      public:
-      using index_type       = AhoCorasickImpl::index_type;
-      using iterator         = native_word_type::iterator;
-      using rule_iterator    = std::unordered_map<index_type, Rule*>::iterator;
       using native_word_type = Rule::native_word_type;
+
+      // TODO private
+      using index_type = AhoCorasickImpl::index_type;
+      // TODO private
+      using rule_iterator = std::unordered_map<index_type, Rule*>::iterator;
 
      private:
       std::unordered_map<index_type, Rule*> _new_rule_map;
@@ -488,6 +526,10 @@ namespace libsemigroups {
       bool                                  _ticker_running;
 
      public:
+      ////////////////////////////////////////////////////////////////////////
+      // Constructors + initializers
+      ////////////////////////////////////////////////////////////////////////
+
       RewritingSystemTrie();
       RewritingSystemTrie& init();
       RewritingSystemTrie(RewritingSystemTrie const& that)
@@ -500,58 +542,79 @@ namespace libsemigroups {
 
       ~RewritingSystemTrie();
 
-      using RewritingSystemBase::cached_confluent;
+      ////////////////////////////////////////////////////////////////////////
+      // Public mem fns
+      ////////////////////////////////////////////////////////////////////////
 
       RewritingSystemTrie& increase_alphabet_size_by(size_t val) {
         _rule_trie.increase_alphabet_size_by(val);
         return *this;
       }
 
-      bool process_pending_rules();
+      // TODO rm
+      using RewritingSystemBase::cached_confluent;
 
-      // TODO out of line
-      // TODO rename to add_rule, and remove the notions of active and pending
-      // rules from RewritingSystem objects
-      void add_rule(Rule* rule) {
-        index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
-                                                        rule->lhs().cend());
-        _rule_map.emplace(node, rule);
-        set_cached_confluent(tril::unknown);
+      ////////////////////////////////////////////////////////////////////////
+      // Add rules
+      ////////////////////////////////////////////////////////////////////////
+
+      template <typename Iterator>
+      RewritingSystemTrie& add_rule(Iterator first1,
+                                    Iterator last1,
+                                    Iterator first2,
+                                    Iterator last2) {
+        if (!std::equal(first1, last1, first2, last2)) {
+          Rules::add_pending_rule(first1, last1, first2, last2);
+          set_cached_confluent(tril::unknown);
+          process_pending_rules_if_enough();
+        }
+        return *this;
       }
-      void rm_rule(Rule* rule);
+
+      ////////////////////////////////////////////////////////////////////////
 
       // TODO(1) iterators
       void rewrite(native_word_type& u);
       void rewrite2(native_word_type& u);
 
-      // TODO privatize
+      void rewrite(native_word_type& u) const {
+        const_cast<RewritingSystemTrie*>(this)->rewrite(u);
+      }
+
+      // TODO nodiscard or is the return value used for anything?
+      // TODO private
+      bool process_pending_rules();
+
+     private:
+      // TODO out of line
+      void add_active_rule(Rule* new_rule) {
+        Rules::add_active_rule(new_rule);
+        index_type node = _rule_trie.add_word_no_checks(
+            new_rule->lhs().cbegin(), new_rule->lhs().cend());
+        _rule_map.emplace(node, new_rule);
+        set_cached_confluent(tril::unknown);
+      }
+
+      iterator rm_active_rule(iterator it);
+
+      // TODO rm
       void rewrite(Rule* rule) const {
         rewrite(rule->lhs());
         rewrite(rule->rhs());
         rule->reorder();
       }
 
-      void rewrite(native_word_type& u) const {
-        const_cast<RewritingSystemTrie*>(this)->rewrite(u);
+      void process_pending_rules_if_enough() {
+        if (Rules::number_of_pending_rules() >= _settings.max_pending_rules) {
+          process_pending_rules();
+        }
       }
 
-      // Returns a range object iterating through Rule* whose lhs is contained
-      // in word
-      auto lhs_search_no_checks(native_word_type const& word) {
-        auto first
-            = aho_corasick_impl::begin_search_no_checks(_rule_trie, word);
-        auto last = aho_corasick_impl::end_search_no_checks(_rule_trie, word);
-
-        return rx::iterator_range(first, last)
-               | rx::transform(
-                   [this](auto node_index) { return _rule_map[node_index]; });
-      }
-
-     private:
       [[nodiscard]] bool descendants_confluent(Rule const* rule1,
                                                index_type  current_node,
                                                size_t backtrack_depth) const;
 
+      // TODO nodiscard or is the return value used for anything?
       bool confluent_impl(std::atomic_uint64_t&) override;
 
       void report_checking_confluence(

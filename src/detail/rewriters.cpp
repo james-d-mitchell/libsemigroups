@@ -178,13 +178,14 @@ namespace libsemigroups {
       }
     }
 
-    void Rules::add_pending_rule(Rule* rule) {
+    Rule* Rules::add_pending_rule(Rule* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
       rule->state(Rule::State::pending);
       rule->reorder();
       _pending_rules.push_back(rule);
       _stats.max_pending_rules
           = std::max(_stats.max_pending_rules, _pending_rules.size());
+      return rule;
     }
 
     Rules::iterator Rules::make_active_rule_pending(iterator it) {
@@ -287,10 +288,7 @@ namespace libsemigroups {
       using std::chrono::high_resolution_clock;
       using std::chrono::time_point;
 
-      if (Rules::number_of_pending_rules() != 0) {
-        set_cached_confluent(tril::unknown);
-        return false;
-      } else if (confluence_known()) {
+      if (confluence_known()) {
         return RewritingSystemBase::cached_confluent();
       }
 
@@ -360,43 +358,28 @@ namespace libsemigroups {
       return *this;
     }
 
-    void RewritingSystemSet::rm_rule(Rule* rule) {
-#ifdef LIBSEMIGROUPS_DEBUG
-      LIBSEMIGROUPS_ASSERT(_set_rules.erase(RuleLookup(rule)));
-#else
-      _set_rules.erase(RuleLookup(rule));
-#endif
-      LIBSEMIGROUPS_ASSERT(_set_rules.size()
-                           == Rules::number_of_active_rules() - 1);
-    }
-
-    void RewritingSystemSet::add_rule(Rule* new_rule) {
-      // It's a requirement of this data structure requires that the rules are
-      // reduced, so we ensure this here, before adding the new rule.
-      auto const  first = Rules::active_rules().begin();
-      auto const  last  = Rules::active_rules().end();
-      auto const& lhs   = new_rule->lhs();
-
-      for (auto it = first; it != last;) {
-        Rule* old_rule = *it;
-
-        // TODO(1) investigate whether or not this can be improved?
-        if (old_rule->lhs().find(lhs) != native_word_type::npos
-            || old_rule->rhs().find(lhs) != native_word_type::npos) {
-          rm_rule(*it);
-          it = Rules::make_active_rule_pending(it);
-        } else {
-          ++it;
-        }
-      }
+    void RewritingSystemSet::add_active_rule(Rule* new_rule) {
+      Rules::add_active_rule(new_rule);
 #ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(new_rule)).second);
 #else
       _set_rules.emplace(RuleLookup(new_rule));
 #endif
       LIBSEMIGROUPS_ASSERT(_set_rules.size()
-                           == Rules::number_of_active_rules() + 1);
+                           == Rules::number_of_active_rules());
       set_cached_confluent(tril::unknown);
+    }
+
+    RewritingSystemSet::iterator
+    RewritingSystemSet::rm_active_rule(iterator it) {
+#ifdef LIBSEMIGROUPS_DEBUG
+      LIBSEMIGROUPS_ASSERT(_set_rules.erase(RuleLookup(*it)));
+#else
+      _set_rules.erase(RuleLookup(*it));
+#endif
+      LIBSEMIGROUPS_ASSERT(_set_rules.size()
+                           == Rules::number_of_active_rules());
+      return Rules::make_active_rule_pending(it);
     }
 
     // REWRITE_FROM_LEFT from Sims, p67
@@ -518,6 +501,7 @@ namespace libsemigroups {
       using std::chrono::time_point;
       time_point start_time = std::chrono::high_resolution_clock::now();
 
+      process_pending_rules();
       set_cached_confluent(tril::TRUE);
       native_word_type word1;
       native_word_type word2;
@@ -606,18 +590,17 @@ namespace libsemigroups {
             if (rule2->lhs().find(lhs) != native_word_type::npos
                 || rule2->rhs().find(lhs) != native_word_type::npos) {
               // If it is, rule2 must be deactivated and re-processed
-              rm_rule(*it);
-              it = Rules::make_active_rule_pending(it);
+              it = rm_active_rule(it);
             } else {
               ++it;
             }
           }
-          add_rule(rule1);
-          Rules::add_active_rule(rule1);
+          add_active_rule(rule1);
           rules_added = true;
         } else {
           Rules::add_inactive_rule(rule1);
         }
+
         if (!_ticker_running && reporting_enabled()
             && delta(start_time) >= std::chrono::seconds(1)) {
           _ticker_running = true;
@@ -672,6 +655,7 @@ namespace libsemigroups {
     // As with RewritingSystemSet::rewrite, this assumes that all rules are
     // length reducing.
     void RewritingSystemTrie::rewrite2(native_word_type& u) {
+      using iterator = native_word_type::iterator;
       // Check if u is rewriteable
       if (u.size() < Rules::stats().min_length_lhs_rule) {
         return;
@@ -791,8 +775,7 @@ namespace libsemigroups {
           rewrite(rule);
 
           if (rule->lhs() != rule->rhs()) {
-            Rules::add_active_rule(rule);
-            add_rule(rule);
+            add_active_rule(rule);
             if (use_separate_trie) {
               index_type node = _new_rule_trie.add_word_no_checks(
                   rule->lhs().cbegin(), rule->lhs().cend());
@@ -843,8 +826,7 @@ namespace libsemigroups {
               if (std::any_of(first, last, [rule, rule_map](auto node_index) {
                     return (*rule_map)[node_index] != rule;
                   })) {
-                rm_rule(*it);
-                it        = Rules::make_active_rule_pending(it);
+                it        = rm_active_rule(it);
                 increment = false;
                 break;
               }
@@ -870,6 +852,7 @@ namespace libsemigroups {
       using std::chrono::time_point;
       time_point start_time = std::chrono::high_resolution_clock::now();
 
+      process_pending_rules();
       index_type link;
       set_cached_confluent(tril::TRUE);
 
@@ -943,10 +926,12 @@ namespace libsemigroups {
       return true;
     }
 
-    void RewritingSystemTrie::rm_rule(Rule* rule) {
-      index_type node = _rule_trie.rm_word_no_checks(rule->lhs().cbegin(),
-                                                     rule->lhs().cend());
+    RewritingSystemTrie::iterator
+    RewritingSystemTrie::rm_active_rule(iterator it) {
+      index_type node = _rule_trie.rm_word_no_checks((*it)->lhs().cbegin(),
+                                                     (*it)->lhs().cend());
       _rule_map.erase(node);
+      return Rules::make_active_rule_pending(it);
     }
 
     void RewritingSystemTrie::report_checking_confluence(
