@@ -497,10 +497,12 @@ namespace libsemigroups {
       void     add_active_rule(Rule* rule);
       iterator rm_active_rule(iterator it);
 
+      void rewrite_no_process_pending_rules(native_word_type& u) const;
+
       // TODO rm
-      void rewrite(Rule* rule) const {
-        rewrite(rule->lhs());
-        rewrite(rule->rhs());
+      void rewrite_no_process_pending_rules(Rule* rule) const {
+        rewrite_no_process_pending_rules(rule->lhs());
+        rewrite_no_process_pending_rules(rule->rhs());
         rule->reorder();
       }
 
@@ -540,7 +542,7 @@ namespace libsemigroups {
      private:
       std::unordered_map<index_type, Rule*> _new_rule_map;
       AhoCorasickImpl                       _new_rule_trie;
-      std::vector<index_type>               _rewrite_tmp_buf;
+      mutable std::vector<index_type>       _rewrite_tmp_buf;
       std::unordered_map<index_type, Rule*> _rule_map;
       AhoCorasickImpl                       _rule_trie;
       bool                                  _ticker_running;
@@ -626,10 +628,12 @@ namespace libsemigroups {
 
       iterator rm_active_rule(iterator it);
 
+      void rewrite_no_process_pending_rules(native_word_type& u) const;
+
       // TODO rm
-      void rewrite(Rule* rule) const {
-        rewrite(rule->lhs());
-        rewrite(rule->rhs());
+      void rewrite_no_process_pending_rules(Rule* rule) const {
+        rewrite_no_process_pending_rules(rule->lhs());
+        rewrite_no_process_pending_rules(rule->rhs());
         rule->reorder();
       }
 

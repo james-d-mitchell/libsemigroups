@@ -531,11 +531,14 @@ namespace libsemigroups {
     template <typename RewritingSystem, typename ReductionOrder>
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::run_real() {
       while (!_rewriter.confluent()) {
-        for (auto rule1 : _rewriter.rules()) {
+        // _rewriter.rules() calls process_pending_rules, so can't call it
+        // inside the rule1 loop below.
+        auto rules = _rewriter.rules();
+        for (auto rule1 : rules) {
           if (stop_running()) {
-            break;
+            return;
           }
-          for (auto rule2 : _rewriter.rules()) {
+          for (auto rule2 : rules) {
             overlap(rule1, rule2);
           }
         }

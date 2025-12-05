@@ -71,7 +71,7 @@ namespace libsemigroups {
       KnuthBendix kb(congruence_kind::twosided, to<Presentation<word_type>>(S));
       using KBE = typename decltype(to<FroidurePin>(kb))::element_type;
 
-      REQUIRE(kb.confluent());
+      REQUIRE(kb.rewriting_system().confluent());
 
       auto T = to<FroidurePin>(kb);
       REQUIRE(T.size() == 4);
@@ -94,7 +94,7 @@ namespace libsemigroups {
           = make<FroidurePin>({make<Transf<>>({1, 0}), make<Transf<>>({0, 0})});
 
       KnuthBendix kb(congruence_kind::twosided, to<Presentation<word_type>>(S));
-      REQUIRE(kb.confluent());
+      REQUIRE(kb.rewriting_system().confluent());
 
       auto T = to<FroidurePin>(kb);
       REQUIRE(T.size() == 4);
@@ -107,7 +107,7 @@ namespace libsemigroups {
           = make<FroidurePin>({make<Transf<>>({1, 0}), make<Transf<>>({0, 0})});
 
       KnuthBendix kb(congruence_kind::twosided, to<Presentation<word_type>>(S));
-      REQUIRE(kb.confluent());
+      REQUIRE(kb.rewriting_system().confluent());
       using KBE = typename decltype(to<FroidurePin>(kb))::element_type;
 
       auto x = KBE(kb, 0);
@@ -127,7 +127,7 @@ namespace libsemigroups {
           = make<FroidurePin>({make<Transf<>>({1, 0}), make<Transf<>>({0, 0})});
 
       KnuthBendix kb(congruence_kind::twosided, to<Presentation<word_type>>(S));
-      REQUIRE(kb.confluent());
+      REQUIRE(kb.rewriting_system().confluent());
 
       using KBE = typename decltype(to<FroidurePin>(kb))::element_type;
       auto x    = KBE(kb, 0);
@@ -146,7 +146,7 @@ namespace libsemigroups {
 
       KnuthBendix kb(congruence_kind::twosided, to<Presentation<word_type>>(S));
       using KBE = typename decltype(to<FroidurePin>(kb))::element_type;
-      REQUIRE(kb.confluent());
+      REQUIRE(kb.rewriting_system().confluent());
 
       auto x = KBE(kb, 0);
       REQUIRE(x.word() == 0_w);

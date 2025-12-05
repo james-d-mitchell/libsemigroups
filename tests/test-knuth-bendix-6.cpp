@@ -315,7 +315,7 @@ namespace libsemigroups {
     REQUIRE(to_human_readable_repr(kb)
             == "<confluent 2-sided KnuthBendix over <monoid presentation with "
                "5 letters, 260 rules, and length 4,131> with 0 gen. pairs, 362 "
-               "active rules, 0 pending rules>");
+               "rules>");
   }
 
   // Takes about 1 minute
@@ -358,7 +358,7 @@ namespace libsemigroups {
                                    "[quick][knuth-bendix]",
                                    KNUTH_BENDIX_TYPES) {
     using literals::operator""_w;
-    auto rg = ReportGuard(false);
+    auto            rg = ReportGuard(false);
 
     Presentation<word_type> p1;
     p1.contains_empty_word(true);
@@ -480,7 +480,8 @@ namespace libsemigroups {
     }
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    // kb.process_pending_rules(); TODO reinstate
+    REQUIRE(kb.rewriting_system().number_of_rules() == 524'286);
+    kb.active_rules();  // trigger processing of pending rules
     REQUIRE(kb.rewriting_system().number_of_rules() == 2);
   }
 

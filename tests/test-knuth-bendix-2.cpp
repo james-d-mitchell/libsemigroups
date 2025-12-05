@@ -1093,8 +1093,7 @@ namespace libsemigroups {
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
 
-    REQUIRE(kb.rewriting_system().number_of_rules() == 0);
-    //     REQUIRE(kb.number_of_pending_rules() == 47);
+    REQUIRE(kb.rewriting_system().number_of_rules() == 47);
     REQUIRE(!kb.rewriting_system().confluent());
     kb.run();
     REQUIRE(kb.rewriting_system().confluent());
@@ -1809,7 +1808,7 @@ namespace libsemigroups {
     p.alphabet(2);
     presentation::add_idempotent_rules_no_checks(p, 01_w);
     using words::operator+;
-    WordRange words;
+    WordRange    words;
     words.alphabet_size(2).min(0).max(6);
     size_t n = 2;
     for (size_t a = 0; a < n - 1; ++a) {

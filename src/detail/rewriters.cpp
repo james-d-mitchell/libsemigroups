@@ -427,6 +427,11 @@ namespace libsemigroups {
 
     void RewritingSystemSet::rewrite(native_word_type& v) {
       process_pending_rules();
+      rewrite_no_process_pending_rules(v);
+    }
+
+    void RewritingSystemSet::rewrite_no_process_pending_rules(
+        native_word_type& v) const {
       if (v.size() < stats().min_length_lhs_rule) {
         return;
       }
@@ -540,8 +545,8 @@ namespace libsemigroups {
                            rule2->lhs().cend());  // E
 
               if (word1 != word2) {
-                rewrite(word1);
-                rewrite(word2);
+                rewrite_no_process_pending_rules(word1);
+                rewrite_no_process_pending_rules(word2);
                 if (word1 != word2) {
                   set_cached_confluent(tril::FALSE);
                   if (reporting_enabled()) {
@@ -574,7 +579,7 @@ namespace libsemigroups {
         LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::pending);
         LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
         // RewritingSystem both sides and reorder if necessary . . .
-        rewrite(rule1);
+        rewrite_no_process_pending_rules(rule1);
 
         // Check rule is non-trivial
         if (rule1->lhs() != rule1->rhs()) {
@@ -709,6 +714,11 @@ namespace libsemigroups {
 
     void RewritingSystemTrie::rewrite(native_word_type& v) {
       process_pending_rules();
+      rewrite_no_process_pending_rules(v);
+    }
+
+    void RewritingSystemTrie::rewrite_no_process_pending_rules(
+        native_word_type& v) const {
       // Check if v is rewriteable
       if (v.size() < Rules::stats().min_length_lhs_rule) {
         return;
@@ -774,7 +784,7 @@ namespace libsemigroups {
           LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::pending);
           LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
           // RewritingSystem both sides and reorder if necessary . . .
-          rewrite(rule);
+          rewrite_no_process_pending_rules(rule);
 
           if (rule->lhs() != rule->rhs()) {
             add_active_rule(rule);
@@ -907,8 +917,8 @@ namespace libsemigroups {
         word2.append(rule2->rhs());                          // Y
 
         if (word1 != word2) {
-          rewrite(word1);
-          rewrite(word2);
+          rewrite_no_process_pending_rules(word1);
+          rewrite_no_process_pending_rules(word2);
           if (word1 != word2) {
             set_cached_confluent(tril::FALSE);
             return false;

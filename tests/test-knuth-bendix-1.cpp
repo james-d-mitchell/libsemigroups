@@ -230,9 +230,9 @@ namespace libsemigroups {
     kb.run();
     // REQUIRE(kb.rewriting_system().number_of_rules() == 4);
     REQUIRE(
-        (kb.active_rules() | rx::to_vector())
+        (kb.active_rules() | rx::sort() | rx::to_vector())
         == std::vector<std::pair<std::string, std::string>>(
-            {{"000", ""}, {"111", ""}, {"1010", "0011"}, {"1100", "0101"}}));
+            {{"000", ""}, {"1010", "0011"}, {"1100", "0101"}, {"111", ""}}));
     REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);
 
