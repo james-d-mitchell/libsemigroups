@@ -66,8 +66,8 @@ namespace libsemigroups {
 
   using namespace rx;
 
-  using RewritingSystemTrie     = detail::RewritingSystemTrie;
-  using RewritingSystemSet = detail::RewritingSystemSet;
+  using RewritingSystemTrie = detail::RewritingSystemTrie;
+  using RewritingSystemSet  = detail::RewritingSystemSet;
 
 #define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemSet
 
@@ -95,7 +95,7 @@ namespace libsemigroups {
     presentation::add_rule(p, "abacabacabacabacabacabacabacabac", "");
     KnuthBendix<std::string, TestType> kb(twosided, p);
 
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
 
     // In Sims it says to use 44 here, but that doesn't seem to work.
     kb.max_overlap(45);
@@ -104,8 +104,8 @@ namespace libsemigroups {
     kb.check_confluence_interval(LIMIT_MAX);
 
     kb.run();
-    REQUIRE(kb.number_of_active_rules() == 1'026);
-    // REQUIRE(kb.confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
+    // REQUIRE(kb.rewriting_system().confluent());
     // REQUIRE(kb.number_of_classes() == 10752);
   }
 
@@ -133,12 +133,12 @@ namespace libsemigroups {
     presentation::add_rule(p, "cbACBacbACBacbACBa", "");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
 
     knuth_bendix::by_overlap_length(kb);
     // kb.run() // also works, but is slower
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 8);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 8);
     REQUIRE(kb.number_of_classes() == 3);
     auto nf = knuth_bendix::normal_forms(kb);
     REQUIRE((nf | to_vector()) == std::vector<std::string>({"", "a", "A"}));
@@ -172,13 +172,13 @@ namespace libsemigroups {
     presentation::add_rule(p, "ga", "b");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
 
     kb.run();
     // knuth_bendix::by_overlap_length(kb);
     REQUIRE(kb.finished());
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 194);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 194);
     REQUIRE(kb.number_of_classes() == 29);
   }
 
@@ -202,11 +202,11 @@ namespace libsemigroups {
     presentation::add_rule(p, "aBaBababaBabaBBaBab", "");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
 
     knuth_bendix::by_overlap_length(kb);
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 1'731);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 1'731);
     REQUIRE(kb.number_of_classes() == 7'920);
     REQUIRE(knuth_bendix::reduce(kb, "") == "");
 
@@ -272,10 +272,10 @@ namespace libsemigroups {
     presentation::add_rule(p, "hgh", "ghg");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
     knuth_bendix::by_overlap_length(kb);
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 192);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 192);
     REQUIRE(kb.gilman_graph().number_of_nodes() == 332);
     REQUIRE(kb.gilman_graph().number_of_edges() == 533);
     REQUIRE(kb.number_of_classes() == 696'729'600);
@@ -301,11 +301,11 @@ namespace libsemigroups {
     presentation::add_rule(p, "aaCAcAbaBBCacAAbbABabbABa", "");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
     // kb.run();
     knuth_bendix::by_overlap_length(kb);
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 6);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 6);
     REQUIRE(kb.number_of_classes() == 1);
   }
 
@@ -328,11 +328,11 @@ namespace libsemigroups {
     presentation::add_rule(p, "abbabbababbaba", "b");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
 
     knuth_bendix::by_overlap_length(kb);
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 19);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 19);
     REQUIRE(kb.number_of_classes() == 29);
   }
 
@@ -354,11 +354,11 @@ namespace libsemigroups {
     presentation::add_rule(p, "abacabacabacabacabacabacabacabac", "");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
     kb.run();
     // knuth_bendix::by_overlap_length(kb);
-    REQUIRE(kb.number_of_active_rules() == 1'026);
-    // REQUIRE(kb.confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
+    // REQUIRE(kb.rewriting_system().confluent());
     // REQUIRE(kb.number_of_classes() == 10'752);
   }
 
@@ -384,12 +384,12 @@ namespace libsemigroups {
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
 
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
 
     knuth_bendix::by_overlap_length(kb);
     // Fails to terminate, or is very slow, with knuth_bendix
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 47);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 47);
     REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);
   }
 
@@ -413,12 +413,12 @@ namespace libsemigroups {
     presentation::add_rule(p, "aBabaBabaBabaBab", "BabaBabaBabaBaba");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
     kb.run();
 
     // knuth_bendix::by_overlap_length(kb);
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 1'026);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
     REQUIRE(kb.number_of_classes() == 10'752);
 
     auto& wg = kb.gilman_graph();
@@ -486,11 +486,11 @@ namespace libsemigroups {
 
       KnuthBendix<std::string, TestType> kb(twosided, p);
 
-      REQUIRE(!kb.confluent());
+      REQUIRE(!kb.rewriting_system().confluent());
 
       knuth_bendix::by_overlap_length(kb);
-      if (kb.confluent()) {
-        REQUIRE(kb.number_of_active_rules() == 0);
+      if (kb.rewriting_system().confluent()) {
+        REQUIRE(kb.rewriting_system().number_of_rules() == 0);
         REQUIRE(kb.number_of_classes() == 0);
         break;
       }
@@ -514,10 +514,10 @@ namespace libsemigroups {
     presentation::add_rule(p, "ab", pow("b", q) + "a");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
 
     kb.run();
-    REQUIRE(kb.number_of_active_rules() == 7);
+    REQUIRE(kb.rewriting_system().number_of_rules() == 7);
     REQUIRE(kb.number_of_classes() == size_t(std::pow(5, n)) + 4 * q - 5);
     REQUIRE(knuth_bendix::reduce(kb, "aabb") == "aabb");
     REQUIRE(knuth_bendix::reduce(kb, "aabbaabb") == "bbbb");
@@ -656,7 +656,7 @@ namespace libsemigroups {
             presentation::add_rule(p, lhs, rhs);
             KnuthBendix<std::string, TestType> k(twosided, p);
             k.run_for(std::chrono::milliseconds(10));
-            if (k.confluent()) {
+            if (k.rewriting_system().confluent()) {
               register_relation(lhs, rhs, total_c4);
             } else {
               try_again = true;
@@ -669,7 +669,7 @@ namespace libsemigroups {
             presentation::add_rule(p, lhs, rhs);
             KnuthBendix<std::string, TestType> k(twosided, p);
             k.run_for(std::chrono::milliseconds(10));
-            if (k.confluent()) {
+            if (k.rewriting_system().confluent()) {
               register_relation(lhs, rhs, total_c4);
             }
           }
@@ -749,7 +749,7 @@ namespace libsemigroups {
       }
       KnuthBendix<std::string, TestType> k(twosided, p);
       k.run_for(std::chrono::seconds(1));
-      if (k.confluent()) {
+      if (k.rewriting_system().confluent()) {
         size_t const N = k.number_of_classes();
         std::cout << "k.number_of_classes() == " << N << std::endl;
         if (k.number_of_classes() == POSITIVE_INFINITY) {

@@ -288,7 +288,7 @@ namespace libsemigroups {
       using std::chrono::high_resolution_clock;
       using std::chrono::time_point;
 
-      if (confluence_known()) {
+      if (confluent_known()) {
         return RewritingSystemBase::cached_confluent();
       }
 
@@ -378,7 +378,7 @@ namespace libsemigroups {
       _set_rules.erase(RuleLookup(*it));
 #endif
       LIBSEMIGROUPS_ASSERT(_set_rules.size()
-                           == Rules::number_of_active_rules());
+                           == Rules::number_of_active_rules() - 1);
       return Rules::make_active_rule_pending(it);
     }
 
@@ -426,6 +426,7 @@ namespace libsemigroups {
     }
 
     void RewritingSystemSet::rewrite(native_word_type& v) {
+      process_pending_rules();
       if (v.size() < stats().min_length_lhs_rule) {
         return;
       }
@@ -707,6 +708,7 @@ namespace libsemigroups {
     }
 
     void RewritingSystemTrie::rewrite(native_word_type& v) {
+      process_pending_rules();
       // Check if v is rewriteable
       if (v.size() < Rules::stats().min_length_lhs_rule) {
         return;
@@ -853,6 +855,7 @@ namespace libsemigroups {
       time_point start_time = std::chrono::high_resolution_clock::now();
 
       process_pending_rules();
+
       index_type link;
       set_cached_confluent(tril::TRUE);
 

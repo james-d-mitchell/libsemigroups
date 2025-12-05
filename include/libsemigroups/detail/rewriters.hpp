@@ -384,7 +384,7 @@ namespace libsemigroups {
 
       void set_cached_confluent(tril val) const;
 
-      [[nodiscard]] bool confluence_known() const {
+      [[nodiscard]] bool confluent_known() const {
         return _confluence_known;
       }
 
@@ -463,7 +463,7 @@ namespace libsemigroups {
         if (!std::equal(first1, last1, first2, last2)) {
           Rules::add_pending_rule(first1, last1, first2, last2);
           set_cached_confluent(tril::unknown);
-          process_pending_rules_if_enough();
+          // process_pending_rules_if_enough();
         }
         return *this;
       }
@@ -596,7 +596,7 @@ namespace libsemigroups {
         if (!std::equal(first1, last1, first2, last2)) {
           Rules::add_pending_rule(first1, last1, first2, last2);
           set_cached_confluent(tril::unknown);
-          process_pending_rules_if_enough();
+          // process_pending_rules_if_enough();
         }
         return *this;
       }
@@ -611,11 +611,10 @@ namespace libsemigroups {
         const_cast<RewritingSystemTrie*>(this)->rewrite(u);
       }
 
+     private:
       // TODO nodiscard or is the return value used for anything?
-      // TODO private
       bool process_pending_rules();
 
-     private:
       // TODO out of line
       void add_active_rule(Rule* new_rule) {
         Rules::add_active_rule(new_rule);

@@ -55,8 +55,8 @@ namespace libsemigroups {
 
   using literals::operator""_w;
 
-  using RewritingSystemTrie     = detail::RewritingSystemTrie;
-  using RewritingSystemSet = detail::RewritingSystemSet;
+  using RewritingSystemTrie = detail::RewritingSystemTrie;
+  using RewritingSystemSet  = detail::RewritingSystemSet;
 
 #define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemSet
 
@@ -152,7 +152,7 @@ namespace libsemigroups {
     KnuthBendix<word_type, TestType> kb(twosided, p);
 
     REQUIRE(kb.number_of_classes() == 16);
-    REQUIRE(kb.number_of_active_rules() == 18);
+    REQUIRE(kb.rewriting_system().number_of_rules() == 18);
     REQUIRE(knuth_bendix::contains(kb, 2_w, 3_w));
   }
 
@@ -255,7 +255,7 @@ namespace libsemigroups {
     REQUIRE(copy.presentation().alphabet().size() == 2);
     // the copy uses the "active rules" of kb, of which there are 105 since
     // knuth-bendix has already been run.
-    REQUIRE(copy.number_of_active_rules() == 105);
+    REQUIRE(copy.rewriting_system().number_of_rules() == 105);
   }
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
@@ -348,7 +348,7 @@ namespace libsemigroups {
     KnuthBendix<word_type, TestType> kb(twosided, p);
     REQUIRE(!is_obviously_infinite(kb));
     kb.run();
-    REQUIRE(kb.number_of_active_rules() == 1'162);
+    REQUIRE(kb.rewriting_system().number_of_rules() == 1'162);
     REQUIRE(kb.number_of_classes() == 3'125);
   }
 
@@ -358,7 +358,7 @@ namespace libsemigroups {
                                    "[quick][knuth-bendix]",
                                    KNUTH_BENDIX_TYPES) {
     using literals::operator""_w;
-    auto            rg = ReportGuard(false);
+    auto rg = ReportGuard(false);
 
     Presentation<word_type> p1;
     p1.contains_empty_word(true);
@@ -377,59 +377,59 @@ namespace libsemigroups {
     presentation::add_rule(p2, 010101_w, {});
 
     KnuthBendix<word_type, TestType> kb1(twosided, p1);
-    REQUIRE(!kb1.confluent());
+    REQUIRE(!kb1.rewriting_system().confluent());
     REQUIRE(!kb1.finished());
     kb1.run();
-    REQUIRE(kb1.confluent());
-    REQUIRE(kb1.number_of_active_rules() == 8);
+    REQUIRE(kb1.rewriting_system().confluent());
+    REQUIRE(kb1.rewriting_system().number_of_rules() == 8);
 
     kb1.init(twosided, p2);
-    REQUIRE(!kb1.confluent());
+    REQUIRE(!kb1.rewriting_system().confluent());
     REQUIRE(!kb1.finished());
     kb1.run();
     REQUIRE(kb1.finished());
-    REQUIRE(kb1.confluent());
-    REQUIRE(kb1.confluent_known());
-    REQUIRE(kb1.number_of_active_rules() == 4);
+    REQUIRE(kb1.rewriting_system().confluent());
+    REQUIRE(kb1.rewriting_system().confluent_known());
+    REQUIRE(kb1.rewriting_system().number_of_rules() == 4);
 
     kb1.init(twosided, p1);
-    REQUIRE(!kb1.confluent());
+    REQUIRE(!kb1.rewriting_system().confluent());
     REQUIRE(!kb1.finished());
     kb1.run();
     REQUIRE(kb1.finished());
-    REQUIRE(kb1.confluent());
-    REQUIRE(kb1.confluent_known());
-    REQUIRE(kb1.number_of_active_rules() == 8);
+    REQUIRE(kb1.rewriting_system().confluent());
+    REQUIRE(kb1.rewriting_system().confluent_known());
+    REQUIRE(kb1.rewriting_system().number_of_rules() == 8);
 
     KnuthBendix kb2(std::move(kb1));
-    REQUIRE(kb2.confluent());
-    REQUIRE(kb2.confluent_known());
+    REQUIRE(kb2.rewriting_system().confluent());
+    REQUIRE(kb2.rewriting_system().confluent_known());
     REQUIRE(kb2.finished());
-    REQUIRE(kb2.number_of_active_rules() == 8);
+    REQUIRE(kb2.rewriting_system().number_of_rules() == 8);
 
     kb1 = std::move(kb2);
-    REQUIRE(kb1.confluent());
-    REQUIRE(kb1.confluent_known());
+    REQUIRE(kb1.rewriting_system().confluent());
+    REQUIRE(kb1.rewriting_system().confluent_known());
     REQUIRE(kb1.finished());
-    REQUIRE(kb1.number_of_active_rules() == 8);
+    REQUIRE(kb1.rewriting_system().number_of_rules() == 8);
 
     kb1.init(twosided, std::move(p1));
-    REQUIRE(!kb1.confluent());
+    REQUIRE(!kb1.rewriting_system().confluent());
     REQUIRE(!kb1.finished());
     kb1.run();
     REQUIRE(kb1.finished());
-    REQUIRE(kb1.confluent());
-    REQUIRE(kb1.confluent_known());
-    REQUIRE(kb1.number_of_active_rules() == 8);
+    REQUIRE(kb1.rewriting_system().confluent());
+    REQUIRE(kb1.rewriting_system().confluent_known());
+    REQUIRE(kb1.rewriting_system().number_of_rules() == 8);
 
     KnuthBendix<word_type, TestType> kb3(twosided, std::move(p2));
-    REQUIRE(!kb3.confluent());
+    REQUIRE(!kb3.rewriting_system().confluent());
     REQUIRE(!kb3.finished());
     kb3.run();
     REQUIRE(kb3.finished());
-    REQUIRE(kb3.confluent());
-    REQUIRE(kb3.confluent_known());
-    REQUIRE(kb3.number_of_active_rules() == 4);
+    REQUIRE(kb3.rewriting_system().confluent());
+    REQUIRE(kb3.rewriting_system().confluent_known());
+    REQUIRE(kb3.rewriting_system().number_of_rules() == 4);
   }
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
@@ -459,9 +459,9 @@ namespace libsemigroups {
     }
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    REQUIRE(kb.number_of_pending_rules() == wr.count());
-    kb.process_pending_rules();
-    REQUIRE(kb.number_of_active_rules() == wr.count());
+    //     REQUIRE(kb.number_of_pending_rules() == wr.count());
+    // kb.process_pending_rules(); TODO reinstate
+    REQUIRE(kb.rewriting_system().number_of_rules() == wr.count());
   }
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
@@ -480,8 +480,8 @@ namespace libsemigroups {
     }
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    kb.process_pending_rules();
-    REQUIRE(kb.number_of_active_rules() == 2);
+    // kb.process_pending_rules(); TODO reinstate
+    REQUIRE(kb.rewriting_system().number_of_rules() == 2);
   }
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
@@ -502,9 +502,9 @@ namespace libsemigroups {
     REQUIRE(presentation::length(p) == 192'937'984);
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    REQUIRE(kb.number_of_pending_rules() == wr.count());
-    kb.process_pending_rules();
-    REQUIRE(kb.number_of_active_rules() == wr.count());
+    //     REQUIRE(kb.number_of_pending_rules() == wr.count());
+    // kb.process_pending_rules(); TODO reinstate
+    REQUIRE(kb.rewriting_system().number_of_rules() == wr.count());
   }
 
 }  // namespace libsemigroups

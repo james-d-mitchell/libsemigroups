@@ -75,12 +75,13 @@ namespace libsemigroups {
   using knuth_bendix::reduce;
   using knuth_bendix::reduce_no_run;
 
-  using RewritingSystemTrie     = detail::RewritingSystemTrie;
-  using RewritingSystemSet = detail::RewritingSystemSet;
+  using RewritingSystemTrie = detail::RewritingSystemTrie;
+  using RewritingSystemSet  = detail::RewritingSystemSet;
 
   // TODO uncomment
-  // using RewritingSystemTrieRPC     = detail::RewritingSystemTrie<RecursivePathCompare>;
-  // using RewritingSystemSetRPC = detail::RewritingSystemSet<RecursivePathCompare>;
+  // using RewritingSystemTrieRPC     =
+  // detail::RewritingSystemTrie<RecursivePathCompare>; using
+  // RewritingSystemSetRPC = detail::RewritingSystemSet<RecursivePathCompare>;
 
 #define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemSet
 
@@ -110,9 +111,9 @@ namespace libsemigroups {
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
     // kb.process_pending_rules();
-    REQUIRE(kb.confluent());
+    REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.presentation().rules.size() / 2 == 4);
-    REQUIRE(kb.number_of_active_rules() == 4);
+    REQUIRE(kb.rewriting_system().number_of_rules() == 4);
     REQUIRE(kb.number_of_classes() == 4);
   }
 
@@ -133,8 +134,8 @@ namespace libsemigroups {
     auto                             p = to<Presentation<word_type>>(S);
     KnuthBendix<word_type, TestType> kb(twosided, p);
     // kb.process_pending_rules();
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 3);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 3);
     REQUIRE(kb.number_of_classes() == 9);
   }
 
@@ -155,8 +156,8 @@ namespace libsemigroups {
     auto                             p = to<Presentation<word_type>>(S);
     KnuthBendix<word_type, TestType> kb(twosided, p);
     // kb.process_pending_rules();
-    REQUIRE(kb.confluent());
-    REQUIRE(kb.number_of_active_rules() == 18);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 18);
     REQUIRE(kb.number_of_classes() == 88);
   }
 
@@ -173,7 +174,7 @@ namespace libsemigroups {
     auto p = to<Presentation<word_type>>(S);
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    REQUIRE(kb.confluent());
+    REQUIRE(kb.rewriting_system().confluent());
     auto t = to<FroidurePin>(kb);
     REQUIRE(t.generator(0).word() == 0_w);
   }
@@ -193,7 +194,7 @@ namespace libsemigroups {
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
     kb.run();
-    REQUIRE(kb.confluent());
+    REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.number_of_classes() == 88);
   }
 
@@ -271,11 +272,10 @@ namespace libsemigroups {
     auto ntc = (iterator_range(pp.begin(), pp.end())
                 | filter([](auto const& val) { return val.size() > 1; })
                 | transform([](auto& val) {
-                    std::for_each(
-                        val.begin(), val.end(), [](auto& w) -> auto& {
-                          w.erase(w.begin());
-                          return w;
-                        });
+                    std::for_each(val.begin(), val.end(), [](auto& w) -> auto& {
+                      w.erase(w.begin());
+                      return w;
+                    });
                     return val;
                   }));
 
@@ -426,7 +426,7 @@ namespace libsemigroups {
 
     REQUIRE(kb.number_of_generating_pairs() == 1);
     kb.run();
-    REQUIRE(kb.number_of_active_rules() == 23);
+    REQUIRE(kb.rewriting_system().number_of_rules() == 23);
 
     auto copy   = kb.gilman_graph();
     auto source = copy.target(0, 2);

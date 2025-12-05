@@ -26,9 +26,9 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
 
     template <typename Word, typename RewritingSystem, typename ReductionOrder>
-    std::vector<std::vector<Word>>
-    non_trivial_classes(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb1,
-                        KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb2) {
+    std::vector<std::vector<Word>> non_trivial_classes(
+        KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb1,
+        KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb2) {
       using rx::operator|;
 
       // It is intended that kb2 is defined using the same presentation as kb1
@@ -262,13 +262,14 @@ namespace libsemigroups {
     }
 
     template <typename Word, typename RewritingSystem, typename ReductionOrder>
-    void by_overlap_length(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb) {
+    void
+    by_overlap_length(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb) {
       size_t prev_max_overlap               = kb.max_overlap();
       size_t prev_check_confluence_interval = kb.check_confluence_interval();
       kb.max_overlap(1);
       kb.check_confluence_interval(POSITIVE_INFINITY);
 
-      while (!kb.confluent()) {
+      while (!kb.rewriting_system().confluent()) {
         kb.run();
         kb.max_overlap(kb.max_overlap() + 1);
       }
@@ -278,16 +279,17 @@ namespace libsemigroups {
 
     // TODO(1) deprecate and make this RewritingSystem mem fn
     template <typename RewritingSystem, typename ReductionOrder>
-    bool is_reduced(detail::KnuthBendixImpl<RewritingSystem, ReductionOrder>& kb) {
-      for (auto const& test_rule : kb.active_rules()) {
-        auto const lhs = test_rule->lhs();
-        for (auto const& rule : kb.active_rules()) {
+    bool
+    is_reduced(detail::KnuthBendixImpl<RewritingSystem, ReductionOrder>& kb) {
+      for (auto const& test_rule : kb.rewriting_system().rules()) {
+        auto const lhs = test_rule.first;
+        for (auto const& rule : kb.rewriting_system().rules()) {
           if (test_rule == rule) {
             continue;
           }
 
-          if (rule->lhs().find(lhs) != std::string::npos
-              || rule->rhs().find(lhs) != std::string::npos) {
+          if (rule.first.find(lhs) != std::string::npos
+              || rule.second.find(lhs) != std::string::npos) {
             return false;
           }
         }

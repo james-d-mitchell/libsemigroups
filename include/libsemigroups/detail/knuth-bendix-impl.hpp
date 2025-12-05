@@ -141,8 +141,11 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
 
       using native_word_type = typename RewritingSystem::native_word_type;
-      using rule_type        = std::pair<native_word_type, native_word_type>;
-      using rewriter_type    = RewritingSystem;
+      // TODO rule_type should be RewritingSystem::rule_value_type
+      using rule_type = std::pair<native_word_type, native_word_type>;
+      using rule_const_reference =
+          typename RewritingSystem::rule_const_reference;
+      using rewriter_type = RewritingSystem;
 
       //////////////////////////////////////////////////////////////////////////
       // Nested classes - public
@@ -699,122 +702,9 @@ namespace libsemigroups {
         return _presentation;
       }
 
-      //! \ingroup knuth_bendix_class_accessors_group
-      //! \brief Return the current number of active rules in the
-      //! \ref_knuth_bendix instance.
-      //!
-      //! This function returns the current number of active rules in the
-      //! \ref_knuth_bendix instance.
-      //!
-      //! \returns
-      //! The current number of active rules, a value of type \c size_t.
-      //!
-      //! \exceptions
-      //! \noexcept
-      //!
-      //! \complexity
-      //! Constant.
-      [[nodiscard]] size_t number_of_active_rules() const noexcept;
-
-      //! \ingroup knuth_bendix_class_accessors_group
-      //!
-      //! \brief Return the current number of inactive rules in the
-      //! \ref_knuth_bendix instance.
-      //!
-      //! This function returns the current number of inactive rules in the
-      //! \ref_knuth_bendix instance.
-      //!
-      //! \returns
-      //! The current number of inactive rules, a value of type \c size_t.
-      //!
-      //! \exceptions
-      //! \noexcept
-      //!
-      //! \complexity
-      //! Constant.
-      [[nodiscard]] size_t number_of_inactive_rules() const noexcept {
-        return _rewriter.number_of_inactive_rules();
-      }
-
-      //! \ingroup knuth_bendix_class_accessors_group
-      //!
-      //! \brief Return the number of pending rules.
-      //!
-      //! This function returns the number of pending rules in the system. All
-      //! rules in the system are either active or pending. Active rules are
-      //! used to perform rewriting, but pending rules are not, until they have
-      //! been processed and become active rules. For example, when a
-      //! \ref_knuth_bendix object is constructed from a presentation, the rules
-      //! in the presentation are initially pending. This is to avoid incurring
-      //! the cost of processing the pending rules before absolutely necessary.
-      //!
-      //! \returns
-      //! The number of pending rules.
-      //!
-      //! \exceptions
-      //! \noexcept
-      //!
-      //! \complexity
-      //! Constant.
-      [[nodiscard]] size_t number_of_pending_rules() const noexcept {
-        return _rewriter.number_of_pending_rules();
-      }
-
-      //! \ingroup knuth_bendix_class_accessors_group
-      //!
-      //! \brief Return the number of rules that \ref_knuth_bendix has created.
-      //!
-      //! This function returns the total number of Rule instances that have
-      //! been created whilst whilst the Knuth-Bendix algorithm has been
-      //! running. Note that this is not the sum of \ref number_of_active_rules
-      //! and \ref number_of_inactive_rules, due to the re-initialisation of
-      //! rules where possible.
-      //!
-      //! \returns
-      //! The total number of rules, a value of type \c size_t.
-      //!
-      //! \exceptions
-      //! \noexcept
-      //!
-      //! \complexity
-      //! Constant.
-      [[nodiscard]] size_t total_rules() const noexcept {
-        return _rewriter.stats().total_rules;
-      }
-
       // TODO doc
-      RewritingSystem& rewriter() noexcept {
+      RewritingSystem& rewriting_system() noexcept {
         return _rewriter;
-      }
-
-      // Documented in KnuthBendix
-      // TODO(1) should be const
-      // TODO(1) add note about empty active rules after, or better discuss that
-      // there are three kinds of rules in the system: active, inactive, and
-      // pending.
-      [[nodiscard]] auto active_rules();
-
-      //! \ingroup knuth_bendix_class_accessors_group
-      //!
-      //! \brief Process any pending rules.
-      //!
-      //! This function processes any pending rules in the system.
-      //! All rules in
-      //! the system are either active or pending. Active rules are used to
-      //! perform rewriting, but pending rules are not, until they have been
-      //! processed and become active rules. For example, when a
-      //! \ref_knuth_bendix object is constructed from a presentation, the rules
-      //! in the presentation are initially pending. This is to avoid incurring
-      //! the cost of processing the pending rules before absolutely necessary.
-      //!
-      //! \return
-      //! A reference to `*this`.
-      //!
-      //! \exceptions
-      //! \no_libsemigroups_except
-      KnuthBendixImpl& process_pending_rules() {
-        _rewriter.process_pending_rules();
-        return *this;
       }
 
      private:
@@ -867,28 +757,6 @@ namespace libsemigroups {
 
       //! \ingroup knuth_bendix_class_accessors_group
       //!
-      //! \brief Check confluence of the current rules.
-      //!
-      //! Check confluence of the current rules.
-      //!
-      //! \returns \c true if the \ref_knuth_bendix instance is
-      //! [confluent](https://w.wiki/9DA) and \c false if it is not.
-      [[nodiscard]] bool confluent() const;
-
-      //! \ingroup knuth_bendix_class_accessors_group
-      //!
-      //! \brief Check if the current system knows the state of confluence of
-      //! the current rules.
-      //!
-      //! Check if the current system knows the state of confluence of the
-      //! current rules.
-      //!
-      //! \returns \c true if the confluence of the rules in the
-      //! \ref_knuth_bendix instance is known, and \c false if it is not.
-      [[nodiscard]] bool confluent_known() const noexcept;
-
-      //! \ingroup knuth_bendix_class_accessors_group
-      //!
       //! \brief Return the Gilman \ref WordGraph.
       //!
       //! This function returns the Gilman WordGraph of the system.
@@ -929,7 +797,7 @@ namespace libsemigroups {
 
       void report_presentation() const;
       void report_before_run();
-      void report_progress_from_thread(std::atomic_bool const&);
+      void report_progress_from_thread();
       void report_after_run();
 
       void stats_check_point();
@@ -937,18 +805,14 @@ namespace libsemigroups {
       void add_octo(native_word_type& w) const;
       void rm_octo(native_word_type& w) const;
 
-      // TODO no_checks? or is this the unique one that should check
-      void add_pending_rule(native_word_type const& p,
-                            native_word_type const& q);
-
-      void overlap(detail::Rule const* u, detail::Rule const* v);
+      void overlap(rule_const_reference u, rule_const_reference v);
 
       // TODO rm
       // [[nodiscard]] size_t max_active_word_length() const {
       //   return _rewriter.max_active_word_length();
       // }
 
-      void               run_real(std::atomic_bool&);
+      void               run_real();
       [[nodiscard]] bool stop_running() const;
 
       //////////////////////////////////////////////////////////////////////////
