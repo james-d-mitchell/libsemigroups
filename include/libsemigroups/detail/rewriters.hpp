@@ -716,6 +716,7 @@ namespace libsemigroups {
           std::swap(rule->lhs(), rule->rhs());
         }
       }
+
       // TODO out of line
       void add_active_rule(Rule* new_rule) {
         LIBSEMIGROUPS_ASSERT(
