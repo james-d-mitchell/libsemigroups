@@ -538,6 +538,19 @@ namespace libsemigroups {
           if (stop_running()) {
             return;
           }
+          // WARNING: We cannot call process_pending_rules here, because it
+          // messes up the "rules", i.e. makes the corresponding iterators
+          // invalid due to adding rules. So, in some examples we accumulate
+          // many many pending rules inside these 2 for loops, before they are
+          // processed by _rewriter.confluent() above. This makes some tests
+          // much slower than they were before (and possibly others faster),
+          // e.g. [016]. Hence the 3 lines below, which then makes e.g. [016]
+          // run faster but other tests run much much slower. We will fix this
+          // later. FIXME
+
+          // else if
+          // (_rewriter.break_from_overlap_check()) { break;
+          // }
           for (auto rule2 : rules) {
             overlap(rule1, rule2);
           }

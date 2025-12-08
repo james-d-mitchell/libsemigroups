@@ -331,7 +331,7 @@ namespace libsemigroups {
       };
 
       struct Settings {
-        size_t max_pending_rules = 128;
+        size_t max_pending_rules = 512;
       };
 
       Settings _settings;
@@ -386,6 +386,10 @@ namespace libsemigroups {
 
       [[nodiscard]] bool confluent_known() const {
         return _confluence_known;
+      }
+
+      [[nodiscard]] bool break_from_overlap_check() const noexcept {
+        return Rules::number_of_pending_rules() >= _settings.max_pending_rules;
       }
 
      protected:
