@@ -86,10 +86,7 @@ namespace libsemigroups {
 
       // TODO rm
       void reorder() {
-        // if (ReductionOrder()(_lhs, _rhs)) {
-        if (shortlex_compare(_lhs, _rhs)) {
-          std::swap(_lhs, _rhs);
-        }
+        LIBSEMIGROUPS_ASSERT(!shortlex_compare(_lhs, _rhs));
       }
 
       [[nodiscard]] State state() const noexcept {
