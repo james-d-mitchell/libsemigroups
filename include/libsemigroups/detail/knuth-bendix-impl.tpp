@@ -346,10 +346,8 @@ namespace libsemigroups {
         const {
       using detail::group_digits;
       size_t min = POSITIVE_INFINITY, max = 0, len = 0;
-      for (auto it = _rewriter.active_rules().begin();
-           it != _rewriter.active_rules().end();
-           ++it) {
-        auto rule_len = (**it).lhs().size() + (**it).rhs().size();
+      for (auto const& rule : _rewriter.rules()) {
+        auto rule_len = rule.first.size() + rule.second.size();
         len += rule_len;
         min = (rule_len < min ? rule_len : min);
         max = (rule_len > max ? rule_len : max);
@@ -427,8 +425,9 @@ namespace libsemigroups {
              group_digits(_rewriter.stats().max_pending_rules));
           rc("KnuthBendix: max length lhs rule         {}\n",
              group_digits(_rewriter.stats().max_length_lhs_rule));
-          rc("KnuthBendix: max length lhs active rule  {}\n",
-             group_digits(_rewriter.max_length_lhs_active_rule()));
+          // TODO uncomment max_length_lhs_rule
+          // rc("KnuthBendix: max length lhs active rule  {}\n",
+          //   group_digits(_rewriter.stats().max_length_lhs_rule));
           // rc("KnuthBendix: number of unique lhs   {}\n",
           //    group_digits(_stats.unique_lhs_rules.size()));
         }
@@ -603,9 +602,6 @@ namespace libsemigroups {
       using detail::Rule;
       if (_gilman_graph.number_of_nodes() == 0
           && !internal_presentation().alphabet().empty()) {
-        // TODO(1) the Gilman graph is just the trie used by
-        // RewritingSystemTrie, maybe this can make this function simpler in
-        // that case.
         // TODO(1) should implement a SettingsGuard as in ToddCoxeterImpl
         // reset the settings so that we really run!
         max_rules(POSITIVE_INFINITY);
@@ -615,8 +611,8 @@ namespace libsemigroups {
         std::unordered_map<Rule::native_word_type, size_t> prefixes;
         prefixes.emplace(Rule::native_word_type(), 0);
         size_t n = 1;
-        for (auto const* rule : _rewriter.active_rules()) {
-          detail::prefixes_string(prefixes, rule->lhs(), n);
+        for (auto const& rule : _rewriter.rules()) {
+          detail::prefixes_string(prefixes, rule.first, n);
         }
 
         _gilman_graph_node_labels.resize(prefixes.size(),

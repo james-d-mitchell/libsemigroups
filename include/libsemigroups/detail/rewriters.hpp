@@ -317,8 +317,7 @@ namespace libsemigroups {
     // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
-    // TODO change public -> protected
-    class RewritingSystemBase : public Rules {
+    class RewritingSystemBase : protected Rules {
      private:
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
@@ -361,6 +360,8 @@ namespace libsemigroups {
       RewritingSystemBase& operator=(RewritingSystemBase&& that);
 
       virtual ~RewritingSystemBase();
+
+      using Rules::stats;
 
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
