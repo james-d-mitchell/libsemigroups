@@ -132,29 +132,8 @@ namespace libsemigroups {
     }
 
     ////////////////////////////////////////////////////////////////////////
-    // Rules - get/set rules
+    // Rules - Adding/modifying rules - public
     ////////////////////////////////////////////////////////////////////////
-
-    Rule* Rules::new_rule() {
-      ++_stats.total_rules;
-      Rule* rule;
-      if (!_inactive_rules.empty()) {
-        rule = _inactive_rules.front();
-        _inactive_rules.erase(_inactive_rules.begin());
-      } else {
-        // TODO could add x2 new Rules
-        rule = new Rule();
-      }
-      LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::inactive);
-      return rule;
-    }
-
-    Rule* Rules::copy_rule(Rule const* rule) {
-      return new_rule(rule->lhs().cbegin(),
-                      rule->lhs().cend(),
-                      rule->rhs().cbegin(),
-                      rule->rhs().cend());
-    }
 
     void Rules::add_active_rule(Rule* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
@@ -180,15 +159,11 @@ namespace libsemigroups {
       }
     }
 
-    Rule* Rules::add_pending_rule(Rule* rule) {
-      LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
-#ifdef LIBSEMIGROUPS_DEBUG
-      rule->state(Rule::State::pending);
-#endif
-      _pending_rules.push_back(rule);
-      _stats.max_pending_rules
-          = std::max(_stats.max_pending_rules, _pending_rules.size());
-      return rule;
+    void Rules::sort_pending_rules() {
+      std::sort(
+          _pending_rules.begin(),
+          _pending_rules.end(),
+          [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
     }
 
     Rules::iterator Rules::make_active_rule_pending(iterator it) {
@@ -212,6 +187,21 @@ namespace libsemigroups {
       return it;
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    // Rules - Getting rules - public
+    ////////////////////////////////////////////////////////////////////////
+
+    Rule* Rules::pop_pending_rule() {
+      LIBSEMIGROUPS_ASSERT(_pending_rules.size() != 0);
+      Rule* rule = _pending_rules.back();
+      _pending_rules.pop_back();
+      return rule;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // Rules - Numbers of rules - public
+    ////////////////////////////////////////////////////////////////////////
+
     size_t Rules::max_length_lhs_active_rule() const {
       size_t result = 0;
       for (Rule const* rule : _active_rules) {
@@ -220,10 +210,39 @@ namespace libsemigroups {
       return result;
     }
 
-    Rule* Rules::pop_pending_rule() {
-      LIBSEMIGROUPS_ASSERT(_pending_rules.size() != 0);
-      Rule* rule = _pending_rules.back();
-      _pending_rules.pop_back();
+    ////////////////////////////////////////////////////////////////////////
+    // Rules - mem fns - private
+    ////////////////////////////////////////////////////////////////////////
+
+    Rule* Rules::add_pending_rule(Rule* rule) {
+      LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
+#ifdef LIBSEMIGROUPS_DEBUG
+      rule->state(Rule::State::pending);
+#endif
+      _pending_rules.push_back(rule);
+      _stats.max_pending_rules
+          = std::max(_stats.max_pending_rules, _pending_rules.size());
+      return rule;
+    }
+
+    Rule* Rules::copy_rule(Rule const* rule) {
+      return new_rule(rule->lhs().cbegin(),
+                      rule->lhs().cend(),
+                      rule->rhs().cbegin(),
+                      rule->rhs().cend());
+    }
+
+    Rule* Rules::new_rule() {
+      ++_stats.total_rules;
+      Rule* rule;
+      if (!_inactive_rules.empty()) {
+        rule = _inactive_rules.front();
+        _inactive_rules.erase(_inactive_rules.begin());
+      } else {
+        // TODO could add x2 new Rules
+        rule = new Rule();
+      }
+      LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::inactive);
       return rule;
     }
 
@@ -243,12 +262,6 @@ namespace libsemigroups {
       _ticker_running   = false;
       return *this;
     }
-
-    RewritingSystemBase::RewritingSystemBase(RewritingSystemBase&& that)
-        : Rules(std::move(that)),
-          _cached_confluent(that._cached_confluent.load()),
-          _confluence_known(that._confluence_known.load()),
-          _ticker_running(std::move(that._ticker_running)) {}
 
     RewritingSystemBase&
     RewritingSystemBase::operator=(RewritingSystemBase const& that) {

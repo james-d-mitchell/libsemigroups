@@ -180,7 +180,7 @@ namespace libsemigroups {
       };
 
       std::list<Rule*>        _active_rules;
-      std::array<iterator, 2> _cursors;
+      std::array<iterator, 2> _cursors;  // TODO rm?
       std::list<Rule*>        _inactive_rules;
       std::vector<Rule*>      _pending_rules;
       mutable Stats           _stats;
@@ -208,7 +208,7 @@ namespace libsemigroups {
       ~Rules();
 
       ////////////////////////////////////////////////////////////////////////
-      // Public mem fns
+      // Adding/modifying rules
       ////////////////////////////////////////////////////////////////////////
 
       template <typename Iterator>
@@ -221,13 +221,20 @@ namespace libsemigroups {
 
       void add_active_rule(Rule* rule);
 
-      // TODO out of line
       void add_inactive_rule(Rule* rule) {
 #ifdef LIBSEMIGROUPS_DEBUG
         rule->state(Rule::State::inactive);
 #endif
         _inactive_rules.push_back(rule);
       }
+
+      void sort_pending_rules();
+
+      [[nodiscard]] iterator make_active_rule_pending(iterator it);
+
+      ////////////////////////////////////////////////////////////////////////
+      // Getting rules
+      ////////////////////////////////////////////////////////////////////////
 
       [[nodiscard]] std::list<Rule*> const& active_rules() const noexcept {
         return _active_rules;
@@ -245,6 +252,18 @@ namespace libsemigroups {
         return _pending_rules;
       }
 
+      [[nodiscard]] Rule* pop_pending_rule();
+
+      // TODO remove?
+      [[nodiscard]] iterator& cursor(size_t index) {
+        LIBSEMIGROUPS_ASSERT(index < _cursors.size());
+        return _cursors[index];
+      }
+
+      ////////////////////////////////////////////////////////////////////////
+      // Numbers of rules
+      ////////////////////////////////////////////////////////////////////////
+
       [[nodiscard]] size_t number_of_active_rules() const noexcept {
         return _active_rules.size();
       }
@@ -257,25 +276,9 @@ namespace libsemigroups {
         return _pending_rules.size();
       }
 
-      [[nodiscard]] Rule* pop_pending_rule();
-
-      [[nodiscard]] iterator& cursor(size_t index) {
-        LIBSEMIGROUPS_ASSERT(index < _cursors.size());
-        return _cursors[index];
-      }
-
       [[nodiscard]] Stats const& stats() const {
         return _stats;
       }
-
-      void sort_pending_rules() {
-        std::sort(
-            _pending_rules.begin(),
-            _pending_rules.end(),
-            [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
-      }
-
-      [[nodiscard]] iterator make_active_rule_pending(iterator it);
 
       // TODO helper
       [[nodiscard]] size_t max_length_lhs_active_rule() const;
@@ -285,32 +288,25 @@ namespace libsemigroups {
 
       [[nodiscard]] Rule* copy_rule(Rule const* rule);
       [[nodiscard]] Rule* new_rule();
-      // TODO to tpp
+
       template <typename Iterator>
-      [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
-                                   Iterator end_lhs,
-                                   Iterator begin_rhs,
-                                   Iterator end_rhs) {
-        Rule* rule = new_rule();
-        rule->lhs().assign(begin_lhs, end_lhs);
-        rule->rhs().assign(begin_rhs, end_rhs);
-        return rule;
-      }
+      [[nodiscard]] Rule* new_rule(Iterator first1,
+                                   Iterator last1,
+                                   Iterator first2,
+                                   Iterator last2);
     };  // class Rules
 
     namespace rules {
 
-      // TODO to tpp
-      template <typename StringLike>
-      void add_pending_rule_no_checks(Rules&            rules,
-                                      StringLike const& lhs,
-                                      StringLike const& rhs) {
+      template <typename Word>
+      void add_pending_rule_no_checks(Rules&      rules,
+                                      Word const& lhs,
+                                      Word const& rhs) {
         LIBSEMIGROUPS_ASSERT(lhs != rhs);
         rules.add_pending_rule(
             lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
       }
 
-      // TODO to cpp
       inline void add_pending_rule_no_check(Rules&      rules,
                                             char const* lhs,
                                             char const* rhs) {
@@ -326,6 +322,35 @@ namespace libsemigroups {
       void add_rule(RewritingSystem& rs, Word const& lhs, Word const& rhs) {
         rs.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
       }
+
+      template <typename Thing>
+      struct is_length_non_increasing : std::false_type {};
+
+      template <>
+      struct is_length_non_increasing<ShortLexCompare> : std::true_type {};
+
+      template <typename Thing>
+      static constexpr bool is_length_non_increasing_v
+          = is_length_non_increasing<Thing>::value;
+
+      template <typename Thing>
+      struct is_terminating : std::false_type {};
+
+      template <>
+      struct is_terminating<ShortLexCompare> : std::true_type {};
+
+      template <>
+      struct is_terminating<RecursivePathCompare> : std::true_type {};
+
+      template <>
+      struct is_terminating<WtShortLexCompare> : std::true_type {};
+
+      template <>
+      struct is_terminating<WtLexCompare> : std::true_type {};
+
+      template <typename Thing>
+      static constexpr bool is_terminating_v = is_terminating<Thing>::value;
+
     }  // namespace rewriting_system
 
     ////////////////////////////////////////////////////////////////////////
@@ -338,10 +363,9 @@ namespace libsemigroups {
       mutable std::atomic<bool> _confluence_known;
 
      protected:
-      // TODO update this
       enum class State : uint8_t {
         none,
-        adding_pending_rules,
+        adding_pending_rules,  // TODO rm this?
         reducing_pending_rules,
         checking_confluence
       };
@@ -370,7 +394,11 @@ namespace libsemigroups {
           : RewritingSystemBase() {
         *this = that;
       }
-      RewritingSystemBase(RewritingSystemBase&& that);
+
+      RewritingSystemBase(RewritingSystemBase&& that) : RewritingSystemBase() {
+        *this = std::move(that);
+      }
+
       RewritingSystemBase& operator=(RewritingSystemBase const& that);
       RewritingSystemBase& operator=(RewritingSystemBase&& that);
 
@@ -413,10 +441,33 @@ namespace libsemigroups {
         return _confluence_known;
       }
 
-      // [[nodiscard]] bool break_from_overlap_check() const noexcept {
-      //   return Rules::number_of_pending_rules() >=
-      //   _settings.max_pending_rules;
-      // }
+      template <typename Subclass>
+      [[nodiscard]] tril is_length_non_increasing() const noexcept {
+        if constexpr (rewriting_system::is_length_non_increasing_v<
+                          typename Subclass::reduction_order>) {
+          return tril::TRUE;
+        }
+
+        for (Rule const* rule : active_rules()) {
+          if (rule->lhs().size() < rule->rhs().size()) {
+            return tril::FALSE;
+          }
+        }
+
+        return (number_of_pending_rules() == 0) ? tril::TRUE : tril::unknown;
+      }
+
+      template <typename Subclass>
+      [[nodiscard]] tril is_terminating() const noexcept {
+        if constexpr (rewriting_system::is_terminating_v<
+                          typename Subclass::reduction_order>) {
+          return tril::TRUE;
+        }
+        if (is_length_non_increasing<Subclass>() == tril::TRUE) {
+          return tril::TRUE;
+        }
+        return tril::unknown;
+      }
 
      protected:
       ////////////////////////////////////////////////////////////////////////
@@ -457,6 +508,8 @@ namespace libsemigroups {
 
      public:
       using native_word_type = Rule::native_word_type;
+      using reduction_order  = ReductionOrder;
+
       // TODO private
       using iterator             = Rules::iterator;
       using rule_const_reference = RewritingSystemBase::rule_const_reference;
@@ -515,6 +568,16 @@ namespace libsemigroups {
         const_cast<RewritingSystemSet*>(this)->rewrite(u);
       }
 
+      [[nodiscard]] tril is_length_non_increasing() const noexcept {
+        return RewritingSystemBase::is_length_non_increasing<
+            RewritingSystemSet<ReductionOrder>>();
+      }
+
+      [[nodiscard]] tril is_terminating() const noexcept {
+        return RewritingSystemBase::is_terminating<
+            RewritingSystemSet<ReductionOrder>>();
+      }
+
      private:
       void reorder(Rule* rule) {
         if (ReductionOrder{}(rule->lhs(), rule->rhs())) {
@@ -558,6 +621,7 @@ namespace libsemigroups {
      public:
       using native_word_type     = Rule::native_word_type;
       using rule_const_reference = RewritingSystemBase::rule_const_reference;
+      using reduction_order      = ReductionOrder;
 
       // TODO private
       using index_type = AhoCorasickImpl::index_type;
@@ -634,6 +698,16 @@ namespace libsemigroups {
 
       void rewrite(native_word_type& u) const {
         const_cast<RewritingSystemTrie*>(this)->rewrite(u);
+      }
+
+      [[nodiscard]] tril is_length_non_increasing() const noexcept {
+        return RewritingSystemBase::is_length_non_increasing<
+            RewritingSystemTrie<ReductionOrder>>();
+      }
+
+      [[nodiscard]] tril is_terminating() const noexcept {
+        return RewritingSystemBase::is_terminating<
+            RewritingSystemTrie<ReductionOrder>>();
       }
 
      private:

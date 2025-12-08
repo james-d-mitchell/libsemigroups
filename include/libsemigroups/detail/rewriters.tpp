@@ -23,6 +23,21 @@
 namespace libsemigroups::detail {
 
   ////////////////////////////////////////////////////////////////////////
+  // Rules
+  ////////////////////////////////////////////////////////////////////////
+
+  template <typename Iterator>
+  [[nodiscard]] Rule* Rules::new_rule(Iterator first1,
+                                      Iterator last1,
+                                      Iterator first2,
+                                      Iterator last2) {
+    Rule* rule = new_rule();
+    rule->lhs().assign(first1, last1);
+    rule->rhs().assign(first2, last2);
+    return rule;
+  }
+
+  ////////////////////////////////////////////////////////////////////////
   // RewritingSystemSet
   ////////////////////////////////////////////////////////////////////////
 
@@ -112,7 +127,7 @@ namespace libsemigroups::detail {
       if (it != _set_rules.end()) {
         Rule const* rule = (*it).rule();
         if (rule->lhs().size() <= static_cast<size_t>(v_end - v_begin)) {
-          LIBSEMIGROUPS_ASSERT(detail::is_suffix(
+          LIBSEMIGROUPS_ASSERT(is_suffix(
               v_begin, v_end, rule->lhs().cbegin(), rule->lhs().cend()));
           v_end -= rule->lhs().size();
           // u.resize(u.size() + rule->rhs() - rule->lhs);
@@ -162,7 +177,7 @@ namespace libsemigroups::detail {
       if (it != _set_rules.end()) {
         Rule const* rule = (*it).rule();
         if (rule->lhs().size() <= static_cast<size_t>(v.size())) {
-          LIBSEMIGROUPS_ASSERT(detail::is_suffix(
+          LIBSEMIGROUPS_ASSERT(is_suffix(
               v.begin(), v.end(), rule->lhs().cbegin(), rule->lhs().cend()));
           v.erase(v.end() - rule->lhs().size(), v.end());
           w.append(rule->rhs().rbegin(), rule->rhs().rend());
@@ -194,14 +209,14 @@ namespace libsemigroups::detail {
     if (reporting_enabled()) {
       auto total_pairs = std::pow(Rules::number_of_active_rules(), 2);
 
-      auto total_pairs_s = detail::group_digits(total_pairs);
+      auto total_pairs_s = group_digits(total_pairs);
       auto now           = std::chrono::high_resolution_clock::now();
       auto time
           = std::chrono::duration_cast<std::chrono::seconds>(now - start_time);
       report_no_prefix("{:-<95}\n", "");
       report_default("KnuthBendix: locally confluent for: {0:>{width}} / "
                      "{1:>{width}} ({2:>4.1f}%) pairs of rules ({3}s)\n",
-                     detail::group_digits(seen),
+                     group_digits(seen),
                      total_pairs_s,
                      (total_pairs != 0)
                          ? 100 * static_cast<double>(seen) / total_pairs
@@ -236,10 +251,10 @@ namespace libsemigroups::detail {
              --it) {
           // Find longest common prefix of suffix B of rule1.lhs() defined
           // by it and R = rule2.lhs()
-          auto prefix = detail::maximum_common_prefix(it,
-                                                      rule1->lhs().cend(),
-                                                      rule2->lhs().cbegin(),
-                                                      rule2->lhs().cend());
+          auto prefix = maximum_common_prefix(it,
+                                              rule1->lhs().cend(),
+                                              rule2->lhs().cbegin(),
+                                              rule2->lhs().cend());
           if (prefix.first == rule1->lhs().cend()
               || prefix.second == rule2->lhs().cend()) {
             // Seems that this function isn't called enough to merit using
@@ -279,9 +294,9 @@ namespace libsemigroups::detail {
   bool RewritingSystemSet<ReductionOrder>::reduce_system() {
     Rules::sort_pending_rules();
 
-    auto           start_time = std::chrono::high_resolution_clock::now();
-    detail::Ticker ticker;
-    bool           old_ticker_running = _ticker_running;
+    auto   start_time = std::chrono::high_resolution_clock::now();
+    Ticker ticker;
+    bool   old_ticker_running = _ticker_running;
 
     bool rules_added = false;
 
@@ -478,12 +493,12 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder>
   bool RewritingSystemTrie<ReductionOrder>::reduce_system() {
-    using detail::aho_corasick_impl::begin_search_no_checks;
-    using detail::aho_corasick_impl::end_search_no_checks;
+    using aho_corasick_impl::begin_search_no_checks;
+    using aho_corasick_impl::end_search_no_checks;
 
     auto                 start_time = std::chrono::high_resolution_clock::now();
-    detail::Ticker       ticker;
-    detail::Guard        guard(_ticker_running);
+    Ticker               ticker;
+    Guard                guard(_ticker_running);
     std::atomic_uint64_t seen = 0;
 
     Rules::sort_pending_rules();
@@ -679,14 +694,14 @@ namespace libsemigroups::detail {
       std::chrono::high_resolution_clock::time_point const& start_time) const {
     if (reporting_enabled()) {
       auto total_rules   = Rules::number_of_active_rules();
-      auto total_rules_s = detail::group_digits(total_rules);
+      auto total_rules_s = group_digits(total_rules);
       auto now           = std::chrono::high_resolution_clock::now();
       auto time
           = std::chrono::duration_cast<std::chrono::seconds>(now - start_time);
       report_no_prefix("{:-<95}\n", "");
       report_default("KnuthBendix: locally confluent for: {0:>{width}} / "
                      "{1:>{width}} ({2:>4.1f}%) rules ({3}s)\n",
-                     detail::group_digits(seen),
+                     group_digits(seen),
                      total_rules_s,
                      (total_rules != 0)
                          ? 100 * static_cast<double>(seen) / total_rules
@@ -700,8 +715,7 @@ namespace libsemigroups::detail {
   void RewritingSystemTrie<ReductionOrder>::report_reducing_rules(
       std::atomic_uint64_t const&                           seen,
       std::chrono::high_resolution_clock::time_point const& start_time) const {
-    auto gd = detail::group_digits;
-    using detail::string_time;
+    auto gd = group_digits;
     if (reporting_enabled()) {
       // TODO(1) This could maybe be better, more like the formatting in
       // "report_progress_from_thread"
