@@ -92,8 +92,8 @@ namespace libsemigroups {
     }
   }  // namespace
 
-  using RewritingSystemTrie = detail::RewritingSystemTrie;
-  using RewritingSystemSet  = detail::RewritingSystemSet;
+  using RewritingSystemTrie = detail::RewritingSystemTrie<>;
+  using RewritingSystemSet  = detail::RewritingSystemSet<>;
 
   // using RewritingSystemTrieRPC     =
   // detail::RewritingSystemTrie<RecursivePathCompare>; using

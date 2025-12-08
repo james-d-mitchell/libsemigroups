@@ -132,7 +132,7 @@ namespace libsemigroups {
     //! Those functions with the prefix `current_` do not perform any
     //! further enumeration.
 
-    template <typename RewritingSystem = detail::RewritingSystemTrie,
+    template <typename RewritingSystem = detail::RewritingSystemTrie<>,
               typename ReductionOrder  = ShortLexCompare>
     class KnuthBendixImpl : public CongruenceCommon {
      public:
@@ -821,7 +821,7 @@ namespace libsemigroups {
 
       bool finished_impl() const override;
     };  // class KnuthBendixImpl
-  }  // namespace detail
+  }     // namespace detail
 
 ////////////////////////////////////////////////////////////////////////
 // global functions - to_human_readable_repr

@@ -55,8 +55,8 @@ namespace libsemigroups {
 
   using literals::operator""_w;
 
-  using RewritingSystemTrie = detail::RewritingSystemTrie;
-  using RewritingSystemSet  = detail::RewritingSystemSet;
+  using RewritingSystemTrie = detail::RewritingSystemTrie<>;
+  using RewritingSystemSet  = detail::RewritingSystemSet<>;
 
 #define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemSet
 

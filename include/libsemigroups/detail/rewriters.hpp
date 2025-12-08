@@ -29,12 +29,15 @@
 #include <string>         // for basic_string, operator==
 #include <unordered_map>  // for unordered_map
 
-#include "libsemigroups/debug.hpp"  // for LIBSEMIGROUPS_ASSERT
-#include "libsemigroups/order.hpp"  // for shortlex_compare
-#include "libsemigroups/types.hpp"  // for u8string
+#include "libsemigroups/debug.hpp"   // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups/order.hpp"   // for shortlex_compare
+#include "libsemigroups/runner.hpp"  // for delta
+#include "libsemigroups/types.hpp"   // for u8string
 
 #include "aho-corasick-impl.hpp"  // for AhoCorasickImpl
+#include "guard.hpp"              // for Guard
 #include "multi-view.hpp"         // for MultiView
+#include "report.hpp"             // for reporting_enabled
 
 namespace libsemigroups {
   namespace detail {
@@ -388,9 +391,10 @@ namespace libsemigroups {
         return _confluence_known;
       }
 
-      [[nodiscard]] bool break_from_overlap_check() const noexcept {
-        return Rules::number_of_pending_rules() >= _settings.max_pending_rules;
-      }
+      // [[nodiscard]] bool break_from_overlap_check() const noexcept {
+      //   return Rules::number_of_pending_rules() >=
+      //   _settings.max_pending_rules;
+      // }
 
      protected:
       ////////////////////////////////////////////////////////////////////////
@@ -424,6 +428,8 @@ namespace libsemigroups {
     // RewritingSystemSet
     ////////////////////////////////////////////////////////////////////////
 
+    // TODO remove default template param
+    template <typename ReductionOrder = ShortLexCompare>
     class RewritingSystemSet : public RewritingSystemBase {
       std::set<RuleLookup> _set_rules;
 
@@ -531,6 +537,8 @@ namespace libsemigroups {
     // RewritingSystemTrie
     ////////////////////////////////////////////////////////////////////////
 
+    // TODO remove default template param
+    template <typename ReductionOrder = ShortLexCompare>
     class RewritingSystemTrie : public RewritingSystemBase {
       using iterator = Rules::iterator;
 
@@ -664,4 +672,6 @@ namespace libsemigroups {
     };
   }  // namespace detail
 }  // namespace libsemigroups
+
+#include "rewriters.tpp"
 #endif  // LIBSEMIGROUPS_DETAIL_REWRITERS_HPP_
