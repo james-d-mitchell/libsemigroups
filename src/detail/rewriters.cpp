@@ -169,7 +169,9 @@ namespace libsemigroups {
       _stats.min_length_lhs_rule
           = std::min(_stats.min_length_lhs_rule, rule->lhs().size());
 
+#ifdef LIBSEMIGROUPS_DEBUG
       rule->state(Rule::State::active);
+#endif
       _active_rules.push_back(rule);
       for (auto& it : _cursors) {
         if (it == _active_rules.end()) {
@@ -180,7 +182,9 @@ namespace libsemigroups {
 
     Rule* Rules::add_pending_rule(Rule* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
+#ifdef LIBSEMIGROUPS_DEBUG
       rule->state(Rule::State::pending);
+#endif
       _pending_rules.push_back(rule);
       _stats.max_pending_rules
           = std::max(_stats.max_pending_rules, _pending_rules.size());

@@ -48,18 +48,29 @@ namespace libsemigroups {
 
     class Rule {
      public:
-      // TODO only when DEBUG is enabled
+#ifdef LIBSEMIGROUPS_DEBUG
       enum class State : uint8_t { active = 0, inactive = 1, pending = 2 };
+#endif
 
       using native_word_type = std::string;
 
      private:
       native_word_type _lhs;
       native_word_type _rhs;
-      State            _state;
+#ifdef LIBSEMIGROUPS_DEBUG
+      State _state;
+#endif
 
      public:
-      Rule() : _lhs(), _rhs(), _state(Rule::State::inactive) {}
+      Rule()
+          : _lhs(),
+            _rhs()
+#ifdef LIBSEMIGROUPS_DEGUG
+            ,
+            _state(Rule::State::inactive)
+#endif
+      {
+      }
 
       Rule& operator=(Rule const& copy) = delete;
       Rule(Rule const& copy)            = delete;
@@ -84,6 +95,7 @@ namespace libsemigroups {
         return _rhs;
       }
 
+#ifdef LIBSEMIGROUPS_DEBUG
       [[nodiscard]] State state() const noexcept {
         return _state;
       }
@@ -92,6 +104,7 @@ namespace libsemigroups {
         _state = val;
         return *this;
       }
+#endif
     };  // class Rule
 
     ////////////////////////////////////////////////////////////////////////
@@ -210,7 +223,9 @@ namespace libsemigroups {
 
       // TODO out of line
       void add_inactive_rule(Rule* rule) {
+#ifdef LIBSEMIGROUPS_DEBUG
         rule->state(Rule::State::inactive);
+#endif
         _inactive_rules.push_back(rule);
       }
 
