@@ -84,14 +84,6 @@ namespace libsemigroups {
         return _rhs;
       }
 
-      // TODO rm
-      void reorder() {
-        LIBSEMIGROUPS_ASSERT(!shortlex_compare(_lhs, _rhs));
-        // if (shortlex_compare(_lhs, _rhs)) {
-        //   std::swap(_lhs, _rhs);
-        // }
-      }
-
       [[nodiscard]] State state() const noexcept {
         return _state;
       }
@@ -522,7 +514,6 @@ namespace libsemigroups {
       void rewrite_no_reduce_system(Rule* rule) const {
         rewrite_no_reduce_system(rule->lhs());
         rewrite_no_reduce_system(rule->rhs());
-        // rule->reorder();
       }
 
       void process_pending_rules_if_enough() {
