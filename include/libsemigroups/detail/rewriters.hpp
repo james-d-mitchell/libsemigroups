@@ -86,7 +86,10 @@ namespace libsemigroups {
 
       // TODO rm
       void reorder() {
-        LIBSEMIGROUPS_ASSERT(!shortlex_compare(_lhs, _rhs));
+        // LIBSEMIGROUPS_ASSERT(!shortlex_compare(_lhs, _rhs));
+        if (shortlex_compare(_lhs, _rhs)) {
+          std::swap(_lhs, _rhs);
+        }
       }
 
       [[nodiscard]] State state() const noexcept {
@@ -225,6 +228,14 @@ namespace libsemigroups {
 
       [[nodiscard]] std::list<Rule*>& active_rules() noexcept {
         return _active_rules;
+      }
+
+      [[nodiscard]] std::vector<Rule*> const& pending_rules() const noexcept {
+        return _pending_rules;
+      }
+
+      [[nodiscard]] std::vector<Rule*>& pending_rules() noexcept {
+        return _pending_rules;
       }
 
       [[nodiscard]] size_t number_of_active_rules() const noexcept {
@@ -369,6 +380,13 @@ namespace libsemigroups {
                + Rules::number_of_active_rules();
       }
 
+      [[nodiscard]] auto rules() const {
+        return chain(active_rules(), pending_rules())
+               | rx::transform([](Rule const* rule) -> rule_const_reference {
+                   return rule_const_reference(rule->lhs(), rule->rhs());
+                 });
+      }
+
       // Some rewriters require knowledge of the alphabet size, and some do
       // not. For those that do not we provide a default implementation that
       // does nothing.
@@ -470,10 +488,12 @@ namespace libsemigroups {
         if (!std::equal(first1, last1, first2, last2)) {
           Rules::add_pending_rule(first1, last1, first2, last2);
           set_cached_confluent(tril::unknown);
-          // process_pending_rules_if_enough();
         }
         return *this;
       }
+
+      // TODO nodiscard or is the return value used for anything?
+      bool reduce_system();
 
       // TODO is rm_rule required?
 
@@ -487,38 +507,22 @@ namespace libsemigroups {
         const_cast<RewritingSystemSet*>(this)->rewrite(u);
       }
 
-      ////////////////////////////////////////////////////////////////////////
-      // Iterators to rules
-      ////////////////////////////////////////////////////////////////////////
-
-      // TODO should be const
-      auto rules() {
-        process_pending_rules();
-        return rx::iterator_range(active_rules().begin(), active_rules().end())
-               | rx::transform([](Rule const* rule) -> rule_const_reference {
-                   return rule_const_reference(rule->lhs(), rule->rhs());
-                 });
-      }
-
      private:
       void     add_active_rule(Rule* rule);
       iterator rm_active_rule(iterator it);
 
-      void rewrite_no_process_pending_rules(native_word_type& u) const;
+      void rewrite_no_reduce_system(native_word_type& u) const;
 
       // TODO rm
-      void rewrite_no_process_pending_rules(Rule* rule) const {
-        rewrite_no_process_pending_rules(rule->lhs());
-        rewrite_no_process_pending_rules(rule->rhs());
+      void rewrite_no_reduce_system(Rule* rule) const {
+        rewrite_no_reduce_system(rule->lhs());
+        rewrite_no_reduce_system(rule->rhs());
         rule->reorder();
       }
 
-      // TODO nodiscard or is the return value used for anything?
-      bool process_pending_rules();
-
       void process_pending_rules_if_enough() {
         if (Rules::number_of_pending_rules() >= _settings.max_pending_rules) {
-          process_pending_rules();
+          reduce_system();
         }
       }
 
@@ -573,6 +577,11 @@ namespace libsemigroups {
 
       ~RewritingSystemTrie();
 
+      ////////////////////////////////////////////////////////////////////////
+      // RewritingSystemBase aliases
+      ////////////////////////////////////////////////////////////////////////
+
+      using RewritingSystemBase::cached_confluent;
       using RewritingSystemBase::number_of_rules;
 
       ////////////////////////////////////////////////////////////////////////
@@ -584,19 +593,8 @@ namespace libsemigroups {
         return *this;
       }
 
-      auto rules() {
-        process_pending_rules();
-        return rx::iterator_range(active_rules().begin(), active_rules().end())
-               | rx::transform([](Rule const* rule) -> rule_const_reference {
-                   return rule_const_reference(rule->lhs(), rule->rhs());
-                 });
-      }
-
-      // TODO rm
-      using RewritingSystemBase::cached_confluent;
-
       ////////////////////////////////////////////////////////////////////////
-      // Add rules
+      // Add rule
       ////////////////////////////////////////////////////////////////////////
 
       template <typename Iterator>
@@ -607,10 +605,12 @@ namespace libsemigroups {
         if (!std::equal(first1, last1, first2, last2)) {
           Rules::add_pending_rule(first1, last1, first2, last2);
           set_cached_confluent(tril::unknown);
-          // process_pending_rules_if_enough();
         }
         return *this;
       }
+
+      // TODO nodiscard or is the return value used for anything?
+      bool reduce_system();
 
       ////////////////////////////////////////////////////////////////////////
 
@@ -623,9 +623,6 @@ namespace libsemigroups {
       }
 
      private:
-      // TODO nodiscard or is the return value used for anything?
-      bool process_pending_rules();
-
       // TODO out of line
       void add_active_rule(Rule* new_rule) {
         Rules::add_active_rule(new_rule);
@@ -637,18 +634,18 @@ namespace libsemigroups {
 
       iterator rm_active_rule(iterator it);
 
-      void rewrite_no_process_pending_rules(native_word_type& u) const;
+      void rewrite_no_reduce_system(native_word_type& u) const;
 
       // TODO rm
-      void rewrite_no_process_pending_rules(Rule* rule) const {
-        rewrite_no_process_pending_rules(rule->lhs());
-        rewrite_no_process_pending_rules(rule->rhs());
+      void rewrite_no_reduce_system(Rule* rule) const {
+        rewrite_no_reduce_system(rule->lhs());
+        rewrite_no_reduce_system(rule->rhs());
         rule->reorder();
       }
 
       void process_pending_rules_if_enough() {
         if (Rules::number_of_pending_rules() >= _settings.max_pending_rules) {
-          process_pending_rules();
+          reduce_system();
         }
       }
 

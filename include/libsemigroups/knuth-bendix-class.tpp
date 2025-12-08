@@ -190,6 +190,7 @@ namespace libsemigroups {
   auto KnuthBendix<Word, RewritingSystem, ReductionOrder>::active_rules() {
     // TODO(1) remove allocations here somehow (probably by making a custom
     // range object holding memory to put the incoming rules into)
+    KnuthBendixImpl_::rewriting_system().reduce_system();
     auto        result = KnuthBendixImpl_::rewriting_system().rules();
     auto const& p      = presentation();
     return result | rx::transform([&p](auto const& rule) {

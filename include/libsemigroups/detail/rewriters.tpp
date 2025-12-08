@@ -124,12 +124,12 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder>
   void RewritingSystemSet<ReductionOrder>::rewrite(native_word_type& v) {
-    process_pending_rules();
-    rewrite_no_process_pending_rules(v);
+    reduce_system();
+    rewrite_no_reduce_system(v);
   }
 
   template <typename ReductionOrder>
-  void RewritingSystemSet<ReductionOrder>::rewrite_no_process_pending_rules(
+  void RewritingSystemSet<ReductionOrder>::rewrite_no_reduce_system(
       native_word_type& v) const {
     if (v.size() < stats().min_length_lhs_rule) {
       return;
@@ -208,7 +208,7 @@ namespace libsemigroups::detail {
     using std::chrono::time_point;
     time_point start_time = std::chrono::high_resolution_clock::now();
 
-    process_pending_rules();
+    reduce_system();
     set_cached_confluent(tril::TRUE);
     native_word_type word1;
     native_word_type word2;
@@ -246,8 +246,8 @@ namespace libsemigroups::detail {
                          rule2->lhs().cend());  // E
 
             if (word1 != word2) {
-              rewrite_no_process_pending_rules(word1);
-              rewrite_no_process_pending_rules(word2);
+              rewrite_no_reduce_system(word1);
+              rewrite_no_reduce_system(word2);
               if (word1 != word2) {
                 set_cached_confluent(tril::FALSE);
                 if (reporting_enabled()) {
@@ -267,7 +267,7 @@ namespace libsemigroups::detail {
   }
 
   template <typename ReductionOrder>
-  bool RewritingSystemSet<ReductionOrder>::process_pending_rules() {
+  bool RewritingSystemSet<ReductionOrder>::reduce_system() {
     Rules::sort_pending_rules();
 
     auto           start_time = std::chrono::high_resolution_clock::now();
@@ -280,8 +280,8 @@ namespace libsemigroups::detail {
       Rule* rule1 = Rules::pop_pending_rule();
       LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::pending);
       LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
-      // RewritingSystem both sides and reorder if necessary . . .
-      rewrite_no_process_pending_rules(rule1);
+
+      rewrite_no_reduce_system(rule1);
 
       // Check rule is non-trivial
       if (rule1->lhs() != rule1->rhs()) {
@@ -422,12 +422,12 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder>
   void RewritingSystemTrie<ReductionOrder>::rewrite(native_word_type& v) {
-    process_pending_rules();
-    rewrite_no_process_pending_rules(v);
+    reduce_system();
+    rewrite_no_reduce_system(v);
   }
 
   template <typename ReductionOrder>
-  void RewritingSystemTrie<ReductionOrder>::rewrite_no_process_pending_rules(
+  void RewritingSystemTrie<ReductionOrder>::rewrite_no_reduce_system(
       native_word_type& v) const {
     // Check if v is rewriteable
     if (v.size() < Rules::stats().min_length_lhs_rule) {
@@ -466,7 +466,7 @@ namespace libsemigroups::detail {
   }
 
   template <typename ReductionOrder>
-  bool RewritingSystemTrie<ReductionOrder>::process_pending_rules() {
+  bool RewritingSystemTrie<ReductionOrder>::reduce_system() {
     using detail::aho_corasick_impl::begin_search_no_checks;
     using detail::aho_corasick_impl::end_search_no_checks;
 
@@ -494,7 +494,7 @@ namespace libsemigroups::detail {
         LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::pending);
         LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
         // RewritingSystem both sides and reorder if necessary . . .
-        rewrite_no_process_pending_rules(rule);
+        rewrite_no_reduce_system(rule);
 
         if (rule->lhs() != rule->rhs()) {
           add_active_rule(rule);
@@ -576,7 +576,7 @@ namespace libsemigroups::detail {
     using std::chrono::time_point;
     time_point start_time = std::chrono::high_resolution_clock::now();
 
-    process_pending_rules();
+    reduce_system();
 
     index_type link;
     set_cached_confluent(tril::TRUE);
@@ -630,8 +630,8 @@ namespace libsemigroups::detail {
       word2.append(rule2->rhs());                          // Y
 
       if (word1 != word2) {
-        rewrite_no_process_pending_rules(word1);
-        rewrite_no_process_pending_rules(word2);
+        rewrite_no_reduce_system(word1);
+        rewrite_no_reduce_system(word2);
         if (word1 != word2) {
           set_cached_confluent(tril::FALSE);
           return false;
