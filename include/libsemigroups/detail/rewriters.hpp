@@ -710,6 +710,10 @@ namespace libsemigroups {
             RewritingSystemTrie<ReductionOrder>>();
       }
 
+      [[nodiscard]] AhoCorasickImpl const& trie() const noexcept {
+        return _rule_trie;
+      }
+
      private:
       void reorder(Rule* rule) {
         if (ReductionOrder{}(rule->lhs(), rule->rhs())) {

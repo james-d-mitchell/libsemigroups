@@ -357,7 +357,7 @@ namespace libsemigroups {
                   {{{0, 0}, {2, 2, 2}}, {{1, 1, 1}, {2, 2, 2}}}));
       REQUIRE(!rws.confluent());
 
-      REQUIRE(rws.is_length_non_increasing() == tril::unknown);
+      REQUIRE(rws.is_length_non_increasing() == tril::FALSE);
       REQUIRE(rws.is_terminating() == tril::unknown);
 
       std::string w({0, 0});
