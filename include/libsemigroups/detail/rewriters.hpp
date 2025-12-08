@@ -86,10 +86,10 @@ namespace libsemigroups {
 
       // TODO rm
       void reorder() {
-        // LIBSEMIGROUPS_ASSERT(!shortlex_compare(_lhs, _rhs));
-        if (shortlex_compare(_lhs, _rhs)) {
-          std::swap(_lhs, _rhs);
-        }
+        LIBSEMIGROUPS_ASSERT(!shortlex_compare(_lhs, _rhs));
+        // if (shortlex_compare(_lhs, _rhs)) {
+        //   std::swap(_lhs, _rhs);
+        // }
       }
 
       [[nodiscard]] State state() const noexcept {
@@ -287,7 +287,6 @@ namespace libsemigroups {
         Rule* rule = new_rule();
         rule->lhs().assign(begin_lhs, end_lhs);
         rule->rhs().assign(begin_rhs, end_rhs);
-        rule->reorder();
         return rule;
       }
     };  // class Rules
@@ -486,8 +485,9 @@ namespace libsemigroups {
                                    Iterator last2) {
         // TODO what if first1 == last1, will rewriting etc work???
         if (!std::equal(first1, last1, first2, last2)) {
-          Rules::add_pending_rule(first1, last1, first2, last2);
           set_cached_confluent(tril::unknown);
+          Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
+          reorder(rule);
         }
         return *this;
       }
@@ -508,6 +508,11 @@ namespace libsemigroups {
       }
 
      private:
+      void reorder(Rule* rule) {
+        if (ReductionOrder{}(rule->lhs(), rule->rhs())) {
+          std::swap(rule->lhs(), rule->rhs());
+        }
+      }
       void     add_active_rule(Rule* rule);
       iterator rm_active_rule(iterator it);
 
@@ -517,7 +522,7 @@ namespace libsemigroups {
       void rewrite_no_reduce_system(Rule* rule) const {
         rewrite_no_reduce_system(rule->lhs());
         rewrite_no_reduce_system(rule->rhs());
-        rule->reorder();
+        // rule->reorder();
       }
 
       void process_pending_rules_if_enough() {
@@ -597,13 +602,15 @@ namespace libsemigroups {
       // Add rule
       ////////////////////////////////////////////////////////////////////////
 
+      // TODO remove code duplicate
       template <typename Iterator>
       RewritingSystemTrie& add_rule(Iterator first1,
                                     Iterator last1,
                                     Iterator first2,
                                     Iterator last2) {
         if (!std::equal(first1, last1, first2, last2)) {
-          Rules::add_pending_rule(first1, last1, first2, last2);
+          Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
+          reorder(rule);
           set_cached_confluent(tril::unknown);
         }
         return *this;
@@ -623,8 +630,15 @@ namespace libsemigroups {
       }
 
      private:
+      void reorder(Rule* rule) {
+        if (ReductionOrder{}(rule->lhs(), rule->rhs())) {
+          std::swap(rule->lhs(), rule->rhs());
+        }
+      }
       // TODO out of line
       void add_active_rule(Rule* new_rule) {
+        LIBSEMIGROUPS_ASSERT(
+            ReductionOrder{}(new_rule->rhs(), new_rule->lhs()));
         Rules::add_active_rule(new_rule);
         index_type node = _rule_trie.add_word_no_checks(
             new_rule->lhs().cbegin(), new_rule->lhs().cend());
@@ -640,7 +654,6 @@ namespace libsemigroups {
       void rewrite_no_reduce_system(Rule* rule) const {
         rewrite_no_reduce_system(rule->lhs());
         rewrite_no_reduce_system(rule->rhs());
-        rule->reorder();
       }
 
       void process_pending_rules_if_enough() {

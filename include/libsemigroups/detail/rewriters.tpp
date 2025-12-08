@@ -43,6 +43,7 @@ namespace libsemigroups::detail {
       RewritingSystemSet const& that) {
     init();
     RewritingSystemBase::operator=(that);
+    // TODO copy pending rules also (unless already done in RewritingSystemBase)
     for (auto* rule : Rules::active_rules()) {
 #ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
@@ -55,6 +56,14 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder>
   void RewritingSystemSet<ReductionOrder>::add_active_rule(Rule* new_rule) {
+    // NOTE: unlike add_active_rule in RewritingSystemTrie, we do not reorder
+    // new_rule, but in reduce_system, because we need it ordered correctly
+    // before we can add it here. This is because in RewritingSystemSet we
+    // require the rules in _set_rules to be reduced. If we add a new_rule
+    // e.g. aba -> a and there is a currently active rule of the form abab ->
+    // aba, then we must make abab -> aba pending before adding aba -> a.
+    LIBSEMIGROUPS_ASSERT(ReductionOrder{}(new_rule->rhs(), new_rule->lhs()));
+
     Rules::add_active_rule(new_rule);
 #ifdef LIBSEMIGROUPS_DEBUG
     LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(new_rule)).second);
@@ -285,6 +294,8 @@ namespace libsemigroups::detail {
 
       // Check rule is non-trivial
       if (rule1->lhs() != rule1->rhs()) {
+        reorder(rule1);
+
         native_word_type& lhs = rule1->lhs();
 
         auto const first = Rules::active_rules().begin();
@@ -493,10 +504,11 @@ namespace libsemigroups::detail {
         Rule* rule = Rules::pop_pending_rule();
         LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::pending);
         LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
-        // RewritingSystem both sides and reorder if necessary . . .
+        // Rewrite both sides . . .
         rewrite_no_reduce_system(rule);
 
         if (rule->lhs() != rule->rhs()) {
+          reorder(rule);
           add_active_rule(rule);
           if (use_separate_trie) {
             index_type node = _new_rule_trie.add_word_no_checks(

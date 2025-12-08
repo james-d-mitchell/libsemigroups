@@ -66,10 +66,10 @@ namespace libsemigroups {
 
   using namespace rx;
 
-  using RewritingSystemTrie = detail::RewritingSystemTrie<>;
-  using RewritingSystemSet  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<>;
+  using Set  = detail::RewritingSystemSet<>;
 
-#define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemSet
+#define REWRITING_SYSTEM_TYPES Trie, Set
 
   ////////////////////////////////////////////////////////////////////////
   // Standard tests
@@ -80,7 +80,7 @@ namespace libsemigroups {
                                    "100",
                                    "Sims Ex. 6.6 (limited overlap lengths)",
                                    "[standard][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -114,7 +114,7 @@ namespace libsemigroups {
                                    "101",
                                    "kbmag/standalone/kb_data/funny3",
                                    "[standard][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -155,7 +155,7 @@ namespace libsemigroups {
       "102",
       "kbmag/standalone/kb_data/f27) (finite) (2 / 2",
       "[extreme][knuth-bendix][kbmag][shortlex]",
-      KNUTH_BENDIX_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
     Presentation<std::string> p;
@@ -188,7 +188,7 @@ namespace libsemigroups {
                                    "103",
                                    "kbmag/standalone/kb_data/m11",
                                    "[extreme][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
     Presentation<std::string> p;
@@ -234,7 +234,7 @@ namespace libsemigroups {
                                    "104",
                                    "kbmag/standalone/kb_data/e8",
                                    "[extreme][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
     Presentation<std::string> p;
@@ -289,7 +289,7 @@ namespace libsemigroups {
                                    "105",
                                    "kbmag/standalone/kb_data/degen4b",
                                    "[extreme][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
     Presentation<std::string> p;
@@ -317,7 +317,7 @@ namespace libsemigroups {
                                    "106",
                                    "kbmag/standalone/kb_data/f27_2gen",
                                    "[extreme][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
     Presentation<std::string> p;
@@ -341,7 +341,7 @@ namespace libsemigroups {
                                    "107",
                                    "Example 6.6 in Sims",
                                    "[extreme][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -369,7 +369,7 @@ namespace libsemigroups {
       "108",
       "kbmag/standalone/kb_data/f27) (infinite) (1 / 2",
       "[extreme][knuth-bendix][kbmag][shortlex]",
-      KNUTH_BENDIX_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.alphabet("aAbBcCdDyYfFgG");
@@ -399,7 +399,7 @@ namespace libsemigroups {
                                    "109",
                                    "kbmag/standalone/kb_data/l32ext",
                                    "[extreme][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -436,7 +436,7 @@ namespace libsemigroups {
                                    "110",
                                    "Ceitin's undecidable word problem example",
                                    "[fail][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -458,7 +458,7 @@ namespace libsemigroups {
                                    "111",
                                    "kbmag/standalone/kb_data/verifynilp",
                                    "[fail][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                rg    = ReportGuard();
     std::string         lphbt = "hHgGfFyYdDcCbBaA";
     std::string         invrs = "HhGgFfYyDdCcBbAa";
@@ -501,7 +501,7 @@ namespace libsemigroups {
                                    "112",
                                    "Sorouhesh",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using words::pow;
     auto         rg = ReportGuard(false);
     size_t const n  = 2;
@@ -630,7 +630,7 @@ namespace libsemigroups {
       "113",
       "all 2-generated 1-relation semigroups 1 to 10",
       "[fail][knuth-bendix][xxx]",
-      KNUTH_BENDIX_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     StringRange lhss;
@@ -684,7 +684,7 @@ namespace libsemigroups {
                                    "114",
                                    "hard 2-generated 1-relation monoid",
                                    "[fail][knuth-bendix][xxx2]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("abc");
@@ -702,7 +702,7 @@ namespace libsemigroups {
                                    "115",
                                    "Konovalov",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -720,7 +720,7 @@ namespace libsemigroups {
       "116",
       "https://math.stackexchange.com/questions/2649807",
       "[knuth-bendix][fail]",
-      KNUTH_BENDIX_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     do {
       std::string lphbt = "abcABC";
       std::string invrs = "ABCabc";
@@ -763,7 +763,7 @@ namespace libsemigroups {
                                    "117",
                                    "example with undecidable word problem",
                                    "[knuth-bendix][extreme]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("ab");

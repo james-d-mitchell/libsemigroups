@@ -68,10 +68,10 @@ namespace libsemigroups {
 
   struct LibsemigroupsException;
 
-  using RewritingSystemTrie = detail::RewritingSystemTrie<>;
-  using RewritingSystemSet  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<>;
+  using Set  = detail::RewritingSystemSet<>;
 
-#define REWRITER_TYPES RewritingSystemTrie, RewritingSystemSet
+#define REWRITING_SYSTEM_TYPES Trie, Set
 
   namespace {
     struct weird_cmp {
@@ -90,7 +90,7 @@ namespace libsemigroups {
                                    "027",
                                    "kbmag/standalone/kb_data/f25monoid",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -163,7 +163,7 @@ namespace libsemigroups {
       "028",
       "kbmag/standalone/kb_data/degen4a",
       "[quick][knuth-bendix][kbmag][shortlex][no-valgrind]",
-      REWRITER_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -204,7 +204,7 @@ namespace libsemigroups {
                                    "029",
                                    "kbmag/standalone/kb_data/torus",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -258,7 +258,7 @@ namespace libsemigroups {
       "030",
       "kbmag/standalone/kb_data/3a6",
       "[quick][knuth-bendix][kbmag][shortlex][no-valgrind]",
-      REWRITER_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -317,7 +317,7 @@ namespace libsemigroups {
                                    "031",
                                    "kbmag/standalone/kb_data/f2",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -362,7 +362,7 @@ namespace libsemigroups {
       "032",
       "kbmag/standalone/kb_data/s16",
       "[quick][knuth-bendix][kbmag][shortlex][no-valgrind]",
-      REWRITER_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abcdefghijklmno");
@@ -629,7 +629,7 @@ namespace libsemigroups {
                                    "033",
                                    "kbmag/standalone/kb_data/a4monoid",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -667,7 +667,7 @@ namespace libsemigroups {
       "034",
       "kbmag/standalone/kb_data/degen3",
       "[quick][knuth-bendix][kbmag][shortlex][no-valgrind]",
-      REWRITER_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -700,7 +700,7 @@ namespace libsemigroups {
                                    "035",
                                    "kbmag/standalone/kb_data/ab1",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("aA");
@@ -722,7 +722,7 @@ namespace libsemigroups {
                                    "036",
                                    "kbmag/standalone/kb_data/degen2",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -749,7 +749,7 @@ namespace libsemigroups {
                                    "037",
                                    "kbmag/standalone/kb_data/f25",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -808,7 +808,7 @@ namespace libsemigroups {
                                    "038",
                                    "kbmag/standalone/kb_data/237",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("aAbBc");
@@ -868,7 +868,7 @@ namespace libsemigroups {
                                    "039",
                                    "kbmag/standalone/kb_data/c2",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -895,7 +895,7 @@ namespace libsemigroups {
                                    "040",
                                    "kbmag/standalone/kb_data/cosets",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -953,7 +953,7 @@ namespace libsemigroups {
                                    "041",
                                    "Ex. 5.1 in Sims (KnuthBendix 09 again)",
                                    "[quick][knuth-bendix]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -978,7 +978,7 @@ namespace libsemigroups {
                                    "042",
                                    "kbmag/standalone/kb_data/nilp2",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("cCbBaA");
@@ -998,7 +998,7 @@ namespace libsemigroups {
                                    "043",
                                    "Ex. 6.4 in Sims",
                                    "[quick][knuth-bendix][no-valgrind]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -1040,7 +1040,7 @@ namespace libsemigroups {
       "044",
       "KnuthBendix 071 again",
       "[no-valgrind][quick][knuth-bendix][shortlex]",
-      REWRITER_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("aAbBc");
@@ -1115,7 +1115,7 @@ namespace libsemigroups {
                                    "045",
                                    "Sims Ex. 5.4 - alt. overlap policy",
                                    "[quick][knuth-bendix]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("Bab");
@@ -1158,7 +1158,7 @@ namespace libsemigroups {
                                    "046",
                                    "Sims - Ex. 5.4 - alt. overlap policy",
                                    "[quick][knuth-bendix]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -1188,7 +1188,7 @@ namespace libsemigroups {
                                    "047",
                                    "operator<<",
                                    "[quick][knuth-bendix]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     std::ostringstream os;
 
     Presentation<std::string> p;
@@ -1214,7 +1214,7 @@ namespace libsemigroups {
                                    "048",
                                    "confluence_interval",
                                    "[quick][knuth-bendix]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("Bab");
@@ -1231,7 +1231,7 @@ namespace libsemigroups {
                                    "049",
                                    "max_overlap",
                                    "[quick][knuth-bendix]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("Bab");
@@ -1251,7 +1251,7 @@ namespace libsemigroups {
       "050",
       "kbmag/standalone/kb_data/d22",
       "[quick][knuth-bendix][fpsemi][kbmag][shortlex]",
-      REWRITER_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -1287,7 +1287,7 @@ namespace libsemigroups {
       "051",
       "kbmag/standalone/kb_data/d22",
       "[quick][knuth-bendix][fpsemi][kbmag][shortlex]",
-      REWRITER_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("aAbBcCdDyYfF");
@@ -1314,7 +1314,7 @@ namespace libsemigroups {
                                    "052",
                                    "small example",
                                    "[quick][knuth-bendix][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -1334,7 +1334,7 @@ namespace libsemigroups {
                                    "053",
                                    "code coverage",
                                    "[quick]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     KnuthBendix<std::string, TestType> kb1;
     KnuthBendix<std::string, TestType> kb2(kb1);
     REQUIRE(kb1.number_of_classes() == 0);
@@ -1350,7 +1350,7 @@ namespace libsemigroups {
                                    "054",
                                    "small overlap 1",
                                    "[quick]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("BCA");
@@ -1385,7 +1385,7 @@ namespace libsemigroups {
                                    "055",
                                    "kbmag/standalone/kb_data/s9",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -1435,7 +1435,7 @@ namespace libsemigroups {
                                    "056",
                                    "C(4) monoid",
                                    "[quick][knuth-bendix]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     Presentation<std::string> p;
     p.alphabet("abcde");
     presentation::add_rule(p, "bceac", "aeebbc");
@@ -1450,7 +1450,7 @@ namespace libsemigroups {
                                    "057",
                                    "1-relation hard case",
                                    "[fail][knuth-bendix]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -1468,7 +1468,7 @@ namespace libsemigroups {
                                    "058",
                                    "1-relation hard case x 2",
                                    "[quick][knuth-bendix][no-valgrind]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -1531,7 +1531,7 @@ namespace libsemigroups {
                                    "059",
                                    "search for a monoid that might not exist",
                                    "[quick][knuth-bendix]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -1569,7 +1569,7 @@ namespace libsemigroups {
                                    "060",
                                    "Chinese monoid",
                                    "[knuth-bendix][quick][no-valgrind]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
     // fmt::print(bg(fmt::color::white) | fg(fmt::color::black),
     //            "062",": Chinese monoid STARTING . . .\n");
@@ -1591,7 +1591,7 @@ namespace libsemigroups {
                                    "061",
                                    "hypostylic",
                                    "[knuth-bendix][quick]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using namespace literals;
     using words::operator+;
 
@@ -1628,7 +1628,7 @@ namespace libsemigroups {
                                    "062",
                                    "Chinese id monoid",
                                    "[knuth-bendix][quick]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
     auto n  = 4;
     auto p  = presentation::examples::chinese_monoid(n);
@@ -1648,7 +1648,7 @@ namespace libsemigroups {
                                    "063",
                                    "sigma sylvester monoid",
                                    "[knuth-bendix][quick][no-valgrind]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using namespace literals;
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
@@ -1785,7 +1785,7 @@ namespace libsemigroups {
                                    "064",
                                    "Reinis MFE",
                                    "[knuth-bendix][quick]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using literals::operator""_w;
 
     Presentation<word_type> p;
@@ -1801,7 +1801,7 @@ namespace libsemigroups {
                                    "065",
                                    "sigma sylvester monoid x 2",
                                    "[knuth-bendix][standard]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using namespace literals;
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
@@ -1845,7 +1845,7 @@ namespace libsemigroups {
                                    "145",
                                    "alphabet limit",
                                    "[knuth-bendix][quick][no-cygwin]",
-                                   REWRITER_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;

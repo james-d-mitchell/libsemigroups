@@ -65,10 +65,10 @@ namespace libsemigroups {
 
   struct LibsemigroupsException;
 
-  using RewritingSystemTrie = detail::RewritingSystemTrie<>;
-  using RewritingSystemSet  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<>;
+  using Set  = detail::RewritingSystemSet<>;
 
-#define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemSet
+#define REWRITING_SYSTEM_TYPES Trie, Set
 
   namespace {
     struct weird_cmp {
@@ -84,7 +84,7 @@ namespace libsemigroups {
                                    "066",
                                    "Chap. 11, Lem. 1.8 (q = 6, r = 5) in NR",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ABCabc");
@@ -133,7 +133,7 @@ namespace libsemigroups {
                                    "067",
                                    "NR Chap. 11, §2 (q=6, r=2, \u03B1=abaabba)",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -159,7 +159,7 @@ namespace libsemigroups {
                                    "068",
                                    "Chap. 8, Thm. 4.2 in NR ",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -199,7 +199,7 @@ namespace libsemigroups {
                                    "069",
                                    "equal_to fp semigroup",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abc");
@@ -230,7 +230,7 @@ namespace libsemigroups {
                                    "070",
                                    "equal_to free semigroup",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet(2);
@@ -255,7 +255,7 @@ namespace libsemigroups {
                                    "071",
                                    "gap/smalloverlap/gap/test.gi",
                                    "[quick][knuth-bendix][smalloverlap]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abcdefg");
@@ -289,7 +289,7 @@ namespace libsemigroups {
                                    "072",
                                    "gap/smalloverlap/gap/test.gi:49",
                                    "[quick][knuth-bendix][smalloverlap]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abcdefgh");
@@ -322,7 +322,7 @@ namespace libsemigroups {
                                    "073",
                                    "gap/smalloverlap/gap/test.gi:63",
                                    "[quick][knuth-bendix][smalloverlap]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abcdefgh");
@@ -352,7 +352,7 @@ namespace libsemigroups {
                                    "074",
                                    "gap/smalloverlap/gap/test.gi:70",
                                    "[quick][knuth-bendix][smalloverlap]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
     // The following permits a more complex test of case (6), which also
     // involves using the case (2) code to change the prefix being
@@ -388,7 +388,7 @@ namespace libsemigroups {
       "075",
       "gap/smalloverlap/gap/test.gi:77",
       "[quick][knuth-bendix][smalloverlap][no-valgrind]",
-      KNUTH_BENDIX_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abcdefghijkl");
@@ -422,7 +422,7 @@ namespace libsemigroups {
                                    "076",
                                    "gap/pkg/smalloverlap/gap/test.gi:85",
                                    "[quick][knuth-bendix][smalloverlap]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -450,7 +450,7 @@ namespace libsemigroups {
                                    "077",
                                    "Von Dyck (2,3,7) group",
                                    "[quick][knuth-bendix][kbmag]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -484,7 +484,7 @@ namespace libsemigroups {
                                    "078",
                                    "Von Dyck (2,3,7) group - alternate",
                                    "[no-valgrind][quick][knuth-bendix][kbmag]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -514,7 +514,7 @@ namespace libsemigroups {
                                    "079",
                                    "rewriting system from another test",
                                    "[quick][knuth-bendix][kbmag]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -570,7 +570,7 @@ namespace libsemigroups {
                                    "080",
                                    "rewriting system from Congruence 20",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -592,7 +592,7 @@ namespace libsemigroups {
                                    "081",
                                    "(from kbmag/standalone/kb_data/ab2)",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("aAbB");
@@ -628,7 +628,7 @@ namespace libsemigroups {
                                    "082",
                                    "kbmag/standalone/kb_data/d22",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     // Presentation<std::string> p;
@@ -704,7 +704,7 @@ namespace libsemigroups {
                                    "083",
                                    "(from kbmag/standalone/kb_data/degen1)",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     KnuthBendix<std::string, TestType> kb;
@@ -723,7 +723,7 @@ namespace libsemigroups {
                                    "084",
                                    "(from kbmag/standalone/kb_data/s4)",
                                    "[quick][knuth-bendix][kbmag][shortlex]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -759,7 +759,7 @@ namespace libsemigroups {
                                    "085",
                                    "fp semigroup",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet({0, 1, 2});
@@ -792,7 +792,7 @@ namespace libsemigroups {
                                    "086",
                                    "Chap. 11, Sec. 1 (q = 4, r = 3) in NR",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -849,7 +849,7 @@ namespace libsemigroups {
                                    "087",
                                    "Chap. 11, Sec. 1 (q = 8, r = 5) in NR",
                                    "[no-valgrind][knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -902,7 +902,7 @@ namespace libsemigroups {
                                    "088",
                                    "Chap. 7, Thm. 3.9 in NR",
                                    "[no-valgrind][knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -927,7 +927,7 @@ namespace libsemigroups {
                                    "089",
                                    "F(2, 5) - Chap. 9, Sec. 1 in NR",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abcde");
@@ -956,7 +956,7 @@ namespace libsemigroups {
                                    "090",
                                    "F(2, 6) - Chap. 9, Sec. 1 in NR",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abcdef");
@@ -987,7 +987,7 @@ namespace libsemigroups {
                                    "091",
                                    "Chap. 10, Sec. 4 in NR",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abc");
@@ -1016,7 +1016,7 @@ namespace libsemigroups {
                                    "092",
                                    "Sym(5) - Chap. 3, Prop. 1.1 in NR",
                                    "[no-valgrind][knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -1055,7 +1055,7 @@ namespace libsemigroups {
                                    "093",
                                    "SL(2, 7) - Chap. 3, Prop. 1.5 in NR",
                                    "[no-valgrind][quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
@@ -1093,7 +1093,7 @@ namespace libsemigroups {
                                    "094",
                                    "bicyclic monoid",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -1121,7 +1121,7 @@ namespace libsemigroups {
                                    "095",
                                    "plactic monoid of degree 2",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("abc");
@@ -1152,7 +1152,7 @@ namespace libsemigroups {
                                    "096",
                                    "before Chap. 7, Prop. 1.1 in NR",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -1177,7 +1177,7 @@ namespace libsemigroups {
                                    "097",
                                    "Chap. 7, Thm. 3.6 in NR",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -1216,7 +1216,7 @@ namespace libsemigroups {
                                    "098",
                                    "finite semigroup",
                                    "[knuth-bendix][quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.alphabet("ab");
@@ -1257,7 +1257,7 @@ namespace libsemigroups {
       "Giles Gardam in \"A counterexample to the unit conjecture for group "
       "rings\" (https://arxiv.org/abs/2102.11818)",
       "[fail]",
-      KNUTH_BENDIX_TYPES) {
+      REWRITING_SYSTEM_TYPES) {
     Presentation<std::string> p;
     p.alphabet("bABa");
     p.contains_empty_word(true);

@@ -181,7 +181,6 @@ namespace libsemigroups {
     Rule* Rules::add_pending_rule(Rule* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
       rule->state(Rule::State::pending);
-      rule->reorder();
       _pending_rules.push_back(rule);
       _stats.max_pending_rules
           = std::max(_stats.max_pending_rules, _pending_rules.size());

@@ -92,14 +92,14 @@ namespace libsemigroups {
     }
   }  // namespace
 
-  using RewritingSystemTrie = detail::RewritingSystemTrie<>;
-  using RewritingSystemSet  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<>;
+  using Set  = detail::RewritingSystemSet<>;
 
   // using RewritingSystemTrieRPC     =
   // detail::RewritingSystemTrie<RecursivePathCompare>; using
   // RewritingSystemSetRPC = detail::RewritingSystemSet<RecursivePathCompare>;
 
-#define REWRITER_TYPES RewritingSystemTrie, RewritingSystemSet
+#define REWRITER_TYPES Trie, Set
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "000",

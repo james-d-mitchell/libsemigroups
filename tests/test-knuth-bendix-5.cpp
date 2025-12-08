@@ -75,15 +75,15 @@ namespace libsemigroups {
   using knuth_bendix::reduce;
   using knuth_bendix::reduce_no_run;
 
-  using RewritingSystemTrie = detail::RewritingSystemTrie<>;
-  using RewritingSystemSet  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<>;
+  using Set  = detail::RewritingSystemSet<>;
 
   // TODO uncomment
   // using RewritingSystemTrieRPC     =
   // detail::RewritingSystemTrie<RecursivePathCompare>; using
   // RewritingSystemSetRPC = detail::RewritingSystemSet<RecursivePathCompare>;
 
-#define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemSet
+#define REWRITING_SYSTEM_TYPES Trie, Set
 
   namespace {
     using rule_type = std::pair<std::string, std::string>;
@@ -100,7 +100,7 @@ namespace libsemigroups {
                                    "119",
                                    "transformation semigroup (size 4)",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
     auto S
         = make<FroidurePin>({make<Transf<>>({1, 0}), make<Transf<>>({0, 0})});
@@ -121,7 +121,7 @@ namespace libsemigroups {
                                    "120",
                                    "transformation semigroup (size 9)",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                  rg = ReportGuard(false);
     FroidurePin<Transf<>> S;
     S.add_generator(make<Transf<>>({1, 3, 4, 2, 3}));
@@ -143,7 +143,7 @@ namespace libsemigroups {
                                    "121",
                                    "transformation semigroup (size 88)",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                  rg = ReportGuard(false);
     FroidurePin<Transf<>> S;
     S.add_generator(make<Transf<>>({1, 3, 4, 2, 3}));
@@ -165,7 +165,7 @@ namespace libsemigroups {
                                    "122",
                                    "to_froidure_pin x 1",
                                    "[quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                  rg = ReportGuard(false);
     FroidurePin<Transf<>> S;
     S.add_generator(make<Transf<>>({1, 0}));
@@ -183,7 +183,7 @@ namespace libsemigroups {
                                    "123",
                                    "to_froidure_pin x 2",
                                    "[quick]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
     auto S  = make<FroidurePin>(
         {make<Transf<>>({1, 3, 4, 2, 3}), make<Transf<>>({3, 2, 1, 3, 3})});
@@ -202,7 +202,7 @@ namespace libsemigroups {
                                    "124",
                                    "manual onesided congruence",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using words::operator+;
 
     auto rg = ReportGuard(false);
@@ -300,7 +300,7 @@ namespace libsemigroups {
                                    "125",
                                    "onesided congruence!!!",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using words::operator+;
 
     auto rg = ReportGuard(false);
@@ -395,7 +395,7 @@ namespace libsemigroups {
                                    "126",
                                    "manual left congruence!!!",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using words::operator+;
 
     auto rg = ReportGuard(false);
@@ -461,7 +461,7 @@ namespace libsemigroups {
                                    "127",
                                    "automatic left congruence!!!",
                                    "[quick][knuth-bendix][no-valgrind]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using words::operator+;
 
     auto rg = ReportGuard(false);

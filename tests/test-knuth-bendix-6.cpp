@@ -55,16 +55,16 @@ namespace libsemigroups {
 
   using literals::operator""_w;
 
-  using RewritingSystemTrie = detail::RewritingSystemTrie<>;
-  using RewritingSystemSet  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<>;
+  using Set  = detail::RewritingSystemSet<>;
 
-#define KNUTH_BENDIX_TYPES RewritingSystemTrie, RewritingSystemSet
+#define REWRITING_SYSTEM_TYPES Trie, Set
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "129",
                                    "Presentation<word_type>",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<word_type> p;
@@ -89,7 +89,7 @@ namespace libsemigroups {
                                    "130",
                                    "free semigroup congruence (6 classes)",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.alphabet(5);
@@ -122,7 +122,7 @@ namespace libsemigroups {
                                    "131",
                                    "free semigroup congruence (16 classes)",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     Presentation<word_type> p;
@@ -160,7 +160,7 @@ namespace libsemigroups {
                                    "132",
                                    "free semigroup congruence x 2",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.alphabet(11);
@@ -203,7 +203,7 @@ namespace libsemigroups {
                                    "133",
                                    "free semigroup congruence (240 classes)",
                                    "[no-valgrind][quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.alphabet(2);
@@ -221,7 +221,7 @@ namespace libsemigroups {
                                    "134",
                                    "free semigroup congruence x 2",
                                    "[no-valgrind][quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.alphabet(2);
@@ -239,7 +239,7 @@ namespace libsemigroups {
                                    "135",
                                    "constructors",
                                    "[quick][knuth-bendix][no-valgrind]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.alphabet(2);
@@ -262,7 +262,7 @@ namespace libsemigroups {
                                    "136",
                                    "number of classes when obv-inf",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p;
     p.alphabet(3);
@@ -287,7 +287,7 @@ namespace libsemigroups {
                                    "137",
                                    "Chinese monoid x 2",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                    rg = ReportGuard(false);
     Presentation<word_type> p  = presentation::examples::chinese_monoid(3);
 
@@ -303,7 +303,7 @@ namespace libsemigroups {
                                    "138",
                                    "partial_transformation_monoid(4)",
                                    "[quick][knuth-bendix][no-valgrind]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
 
     size_t n = 4;
@@ -323,7 +323,7 @@ namespace libsemigroups {
                                    "139",
                                    "partial_transformation_monoid5",
                                    "[extreme][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
     size_t n = 5;
@@ -340,7 +340,7 @@ namespace libsemigroups {
                                    "140",
                                    "full_transformation_monoid Iwahori",
                                    "[extreme][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
     size_t n = 5;
@@ -356,7 +356,7 @@ namespace libsemigroups {
                                    "141",
                                    "constructors/init for finished x 2",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     using literals::operator""_w;
     auto            rg = ReportGuard(false);
 
@@ -436,7 +436,7 @@ namespace libsemigroups {
                                    "142",
                                    "close to or greater than 255 letters",
                                    "[quick][knuth-bendix]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     Presentation<word_type> p;
     p.alphabet(257);
 
@@ -447,7 +447,7 @@ namespace libsemigroups {
                                    "118",
                                    "process pending rules x1",
                                    "[extreme][knuth-bendix]",
-                                   RewritingSystemTrie) {
+                                   Trie) {
     Presentation<word_type> p;
     p.alphabet(2);
     p.contains_empty_word(true);
@@ -468,7 +468,7 @@ namespace libsemigroups {
                                    "143",
                                    "process pending rules x2",
                                    "[quick][knuth-bendix][no-valgrind]",
-                                   KNUTH_BENDIX_TYPES) {
+                                   REWRITING_SYSTEM_TYPES) {
     Presentation<word_type> p;
     p.alphabet(2);
     p.contains_empty_word(true);
@@ -489,7 +489,7 @@ namespace libsemigroups {
                                    "144",
                                    "process pending rules x3",
                                    "[extreme][knuth-bendix]",
-                                   RewritingSystemTrie) {
+                                   Trie) {
     Presentation<word_type> p;
     p.alphabet(2);
     p.contains_empty_word(true);
