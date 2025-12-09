@@ -129,13 +129,6 @@ namespace libsemigroups {
         return *this;
       }
 
-      RuleLookup& operator()(native_word_type::const_iterator first,
-                             native_word_type::const_iterator last) {
-        _first = first;
-        _last  = last;
-        return *this;
-      }
-
       Rule const* rule() const {
         return _rule;
       }
@@ -504,14 +497,23 @@ namespace libsemigroups {
     // TODO remove default template param
     template <typename ReductionOrder = ShortLexCompare>
     class RewritingSystemSet : public RewritingSystemBase {
+      ////////////////////////////////////////////////////////////////////////
+      // Private aliases
+      ////////////////////////////////////////////////////////////////////////
+      using iterator = Rules::iterator;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Private data
+      ////////////////////////////////////////////////////////////////////////
       std::set<RuleLookup> _set_rules;
 
      public:
-      using native_word_type = Rule::native_word_type;
-      using reduction_order  = ReductionOrder;
+      ////////////////////////////////////////////////////////////////////////
+      // Public aliases
+      ////////////////////////////////////////////////////////////////////////
 
-      // TODO private
-      using iterator             = Rules::iterator;
+      using native_word_type     = Rule::native_word_type;
+      using reduction_order      = ReductionOrder;
       using rule_const_reference = RewritingSystemBase::rule_const_reference;
 
       ////////////////////////////////////////////////////////////////////////
@@ -538,7 +540,7 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
       // Add rules
       ////////////////////////////////////////////////////////////////////////
-
+      // TODO out of line
       template <typename Iterator>
       RewritingSystemSet& add_rule(Iterator first1,
                                    Iterator last1,
