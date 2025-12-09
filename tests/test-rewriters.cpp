@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "libsemigroups/order.hpp"
 #include <iostream>
 
 #define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
@@ -365,5 +366,92 @@ namespace libsemigroups {
       REQUIRE(w == std::string({2, 2, 2}));
       REQUIRE(rws.is_terminating() == tril::unknown);
     }
+
+    LIBSEMIGROUPS_TEST_CASE("Rules", "013", "constructors/init", "[quick]") {
+      Rules rules1;
+
+      Rules rules2(rules1);
+      Rules rules3(std::move(rules1));
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystem",
+                            "014",
+                            "constructors/init",
+                            "[quick]") {
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rws;
+
+      rws.increase_alphabet_size_by(3);
+      rewriting_system::add_rule(rws, "aaa"_w, "c"_w);
+      rewriting_system::add_rule(rws, "c"_w, "bbb"_w);
+      rewriting_system::add_rule(rws, "ababab"_w, "c"_w);
+      rewriting_system::add_rule(rws, "a"_w, "ac"_w);
+      rewriting_system::add_rule(rws, "bc"_w, "b"_w);
+      rewriting_system::add_rule(rws, "bc"_w, "c"_w);
+      REQUIRE(rws.number_of_rules() == 6);
+
+      rws.init();
+      REQUIRE(rws.number_of_rules() == 0);
+      REQUIRE(rws.trie().number_of_nodes() == 1);
+      REQUIRE(rws.is_length_non_increasing() == tril::TRUE);
+      REQUIRE(rws.is_terminating() == tril::TRUE);
+
+      rws.increase_alphabet_size_by(3);
+      rewriting_system::add_rule(rws, "aaa"_w, "c"_w);
+      rewriting_system::add_rule(rws, "bbb"_w, "c"_w);
+      rewriting_system::add_rule(rws, "ababab"_w, "c"_w);
+      rewriting_system::add_rule(rws, "ac"_w, "a"_w);
+      rewriting_system::add_rule(rws, "bc"_w, "b"_w);
+      rewriting_system::add_rule(rws, "bc"_w, "c"_w);
+
+      auto copy = rws;
+      REQUIRE(rws.number_of_rules() == 6);
+      REQUIRE(!rws.confluent());
+      REQUIRE(copy.number_of_rules() == 6);
+      REQUIRE(!copy.confluent());
+
+      copy = rws;
+      REQUIRE(rws.number_of_rules() == 4);
+      REQUIRE(!rws.confluent());
+      REQUIRE(copy.number_of_rules() == 4);
+      REQUIRE(!copy.confluent());
+
+      rws.init();
+      copy = std::move(rws);
+      REQUIRE(copy.number_of_rules() == 0);
+      REQUIRE(copy.trie().number_of_nodes() == 1);
+
+      copy.increase_alphabet_size_by(3);
+      rewriting_system::add_rule(copy, "aaa"_w, "c"_w);
+      rewriting_system::add_rule(copy, "bbb"_w, "c"_w);
+      rewriting_system::add_rule(copy, "ababab"_w, "c"_w);
+      rewriting_system::add_rule(copy, "ac"_w, "a"_w);
+      rewriting_system::add_rule(copy, "bc"_w, "b"_w);
+      rewriting_system::add_rule(copy, "bc"_w, "c"_w);
+
+      auto other_copy(copy);
+      REQUIRE(copy.number_of_rules() == 6);
+      REQUIRE(copy.trie().number_of_nodes() == 1);
+      REQUIRE(other_copy.number_of_rules() == 6);
+      REQUIRE(other_copy.trie().number_of_nodes() == 1);
+
+      auto other_other_copy(std::move(copy));
+      REQUIRE(other_other_copy.number_of_rules() == 6);
+      REQUIRE(other_other_copy.trie().number_of_nodes() == 1);
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystem",
+                            "015",
+                            "is_terminating",
+                            "[quick]") {
+      RewritingSystemTrie<ReturnFalse> rws;
+      rws.increase_alphabet_size_by(3);
+      rewriting_system::add_rule(rws, "bbb"_w, "aa"_w);
+      rewriting_system::add_rule(rws, "bbb"_w, "ccc"_w);
+      REQUIRE(rws.is_terminating() == tril::unknown);
+      rws.reduce_system();
+      REQUIRE(rws.is_terminating() == tril::TRUE);
+    }
+
   }  // namespace detail
 }  // namespace libsemigroups

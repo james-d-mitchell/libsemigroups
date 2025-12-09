@@ -64,8 +64,27 @@ namespace libsemigroups {
     }
 
     ////////////////////////////////////////////////////////////////////////
+    // Rules - private
+    ////////////////////////////////////////////////////////////////////////
+
+    void Rules::init_cursors() {
+      for (auto& it : _cursors) {
+        it = _active_rules.end();
+      }
+    }
+
+    ////////////////////////////////////////////////////////////////////////
     // Rules - constructors + initializers
     ////////////////////////////////////////////////////////////////////////
+
+    Rules::Rules()
+        : _active_rules(),
+          _cursors(),
+          _inactive_rules(),
+          _pending_rules(),
+          _stats() {
+      init_cursors();
+    }
 
     Rules& Rules::init() {
       _stats.init();
@@ -79,10 +98,8 @@ namespace libsemigroups {
         add_inactive_rule(rule);
       }
       _pending_rules.clear();
+      init_cursors();
 
-      for (auto& it : _cursors) {
-        it = _active_rules.end();
-      }
       return *this;
     }
 
@@ -99,13 +116,9 @@ namespace libsemigroups {
       // retain. This does some unnecessary work, but we'll optimize that if it
       // is an issue later. A similar comment applies to _cursors.
       _stats = that._stats;
-      for (size_t i = 0; i < _cursors.size(); ++i) {
-        _cursors[i] = _active_rules.begin();
-        std::advance(
-            _cursors[i],
-            std::distance(that.active_rules().begin(),
-                          static_cast<const_iterator>(that._cursors[i])));
-      }
+      // It seems to be too hard to keep the cursors alive across move
+      // construction, so we don't try.
+      init_cursors();
       return *this;
     }
 
@@ -114,8 +127,10 @@ namespace libsemigroups {
       std::swap(_active_rules, that._active_rules);
       std::swap(_inactive_rules, that._inactive_rules);
       std::swap(_pending_rules, that._pending_rules);
-      _cursors = std::move(that._cursors);
-      _stats   = std::move(that._stats);
+      // It seems to be too hard to keep the cursors alive across move
+      // construction, so we don't try.
+      init_cursors();
+      _stats = std::move(that._stats);
       return *this;
     }
 
@@ -269,7 +284,6 @@ namespace libsemigroups {
       _cached_confluent = that._cached_confluent.load();
       _confluence_known = that._confluence_known.load();
       _ticker_running   = that._ticker_running;
-
       return *this;
     }
 

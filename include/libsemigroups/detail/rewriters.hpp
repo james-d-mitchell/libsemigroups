@@ -29,6 +29,7 @@
 #include <string>         // for basic_string, operator==
 #include <unordered_map>  // for unordered_map
 
+#include "libsemigroups/config.hpp"  // for LIBSEMIGROUPS_DEBUG
 #include "libsemigroups/debug.hpp"   // for LIBSEMIGROUPS_ASSERT
 #include "libsemigroups/order.hpp"   // for shortlex_compare
 #include "libsemigroups/runner.hpp"  // for delta
@@ -41,6 +42,43 @@
 
 namespace libsemigroups {
   namespace detail {
+
+    namespace rewriting_system {
+
+      template <typename RewritingSystem, typename Word>
+      void add_rule(RewritingSystem& rs, Word const& lhs, Word const& rhs) {
+        rs.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+      }
+
+      template <typename Thing>
+      struct is_length_non_increasing : std::false_type {};
+
+      template <>
+      struct is_length_non_increasing<ShortLexCompare> : std::true_type {};
+
+      template <typename Thing>
+      static constexpr bool is_length_non_increasing_v
+          = is_length_non_increasing<Thing>::value;
+
+      template <typename Thing>
+      struct is_terminating : std::false_type {};
+
+      template <>
+      struct is_terminating<ShortLexCompare> : std::true_type {};
+
+      template <>
+      struct is_terminating<RecursivePathCompare> : std::true_type {};
+
+      template <>
+      struct is_terminating<WtShortLexCompare> : std::true_type {};
+
+      template <>
+      struct is_terminating<WtLexCompare> : std::true_type {};
+
+      template <typename Thing>
+      static constexpr bool is_terminating_v = is_terminating<Thing>::value;
+
+    }  // namespace rewriting_system
 
     ////////////////////////////////////////////////////////////////////////
     // Rule
@@ -65,7 +103,7 @@ namespace libsemigroups {
       Rule()
           : _lhs(),
             _rhs()
-#ifdef LIBSEMIGROUPS_DEGUG
+#ifdef LIBSEMIGROUPS_DEBUG
             ,
             _state(Rule::State::inactive)
 #endif
@@ -180,17 +218,26 @@ namespace libsemigroups {
 
       // TODO(1) try maintaining pending_rules as a heap?
 
+      void init_cursors();
+
      public:
       ////////////////////////////////////////////////////////////////////////
       // Constructors and initializers
       ////////////////////////////////////////////////////////////////////////
 
-      Rules() = default;
+      Rules();
       Rules& init();
 
+      // This is currently not used anywhere, because we go through the
+      // copy/move assignment operators (so no RewritingSystem calls these
+      // functions in their copy/move constructors).
       Rules(Rules const& that) : Rules() {
         *this = that;
       }
+
+      // This is currently not used anywhere, because we go through the
+      // copy/move assignment operators (so no RewritingSystem calls these
+      // functions in their copy/move constructors).
       Rules(Rules&& that) : Rules() {
         *this = std::move(that);
       }
@@ -288,63 +335,6 @@ namespace libsemigroups {
                                    Iterator first2,
                                    Iterator last2);
     };  // class Rules
-
-    namespace rules {
-
-      template <typename Word>
-      void add_pending_rule_no_checks(Rules&      rules,
-                                      Word const& lhs,
-                                      Word const& rhs) {
-        LIBSEMIGROUPS_ASSERT(lhs != rhs);
-        rules.add_pending_rule(
-            lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
-      }
-
-      inline void add_pending_rule_no_check(Rules&      rules,
-                                            char const* lhs,
-                                            char const* rhs) {
-        LIBSEMIGROUPS_ASSERT(lhs != rhs);
-        rules.add_pending_rule(
-            lhs, lhs + std::strlen(lhs), rhs, rhs + std::strlen(rhs));
-      }
-    }  // namespace rules
-
-    namespace rewriting_system {
-
-      template <typename RewritingSystem, typename Word>
-      void add_rule(RewritingSystem& rs, Word const& lhs, Word const& rhs) {
-        rs.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
-      }
-
-      template <typename Thing>
-      struct is_length_non_increasing : std::false_type {};
-
-      template <>
-      struct is_length_non_increasing<ShortLexCompare> : std::true_type {};
-
-      template <typename Thing>
-      static constexpr bool is_length_non_increasing_v
-          = is_length_non_increasing<Thing>::value;
-
-      template <typename Thing>
-      struct is_terminating : std::false_type {};
-
-      template <>
-      struct is_terminating<ShortLexCompare> : std::true_type {};
-
-      template <>
-      struct is_terminating<RecursivePathCompare> : std::true_type {};
-
-      template <>
-      struct is_terminating<WtShortLexCompare> : std::true_type {};
-
-      template <>
-      struct is_terminating<WtLexCompare> : std::true_type {};
-
-      template <typename Thing>
-      static constexpr bool is_terminating_v = is_terminating<Thing>::value;
-
-    }  // namespace rewriting_system
 
     ////////////////////////////////////////////////////////////////////////
     // RewritingSystemBase
@@ -645,12 +635,15 @@ namespace libsemigroups {
 
       RewritingSystemTrie();
       RewritingSystemTrie& init();
+
       RewritingSystemTrie(RewritingSystemTrie const& that)
           : RewritingSystemTrie() {
         *this = that;
       }
       RewritingSystemTrie(RewritingSystemTrie&& that) = default;
+
       RewritingSystemTrie& operator=(RewritingSystemTrie const& that);
+
       RewritingSystemTrie& operator=(RewritingSystemTrie&& that) = default;
 
       ~RewritingSystemTrie();
@@ -725,8 +718,9 @@ namespace libsemigroups {
 
       // TODO out of line
       void add_active_rule(Rule* new_rule) {
+        // Must check negation here so we can use ReturnFalse to mean "no order"
         LIBSEMIGROUPS_ASSERT(
-            ReductionOrder{}(new_rule->rhs(), new_rule->lhs()));
+            !ReductionOrder{}(new_rule->lhs(), new_rule->rhs()));
         Rules::add_active_rule(new_rule);
         index_type node = _rule_trie.add_word_no_checks(
             new_rule->lhs().cbegin(), new_rule->lhs().cend());

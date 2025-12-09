@@ -555,7 +555,6 @@ namespace libsemigroups {
           }
         }
       }
-      LIBSEMIGROUPS_ASSERT(_rewriter.number_of_pending_rules() == 0);
 
       if (_settings.max_overlap == POSITIVE_INFINITY
           && _settings.max_rules == POSITIVE_INFINITY && !stop_running()) {
