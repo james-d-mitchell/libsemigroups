@@ -40,13 +40,14 @@ namespace libsemigroups {
 
   congruence_kind constexpr twosided = congruence_kind::twosided;
   congruence_kind constexpr onesided = congruence_kind::onesided;
-  using RewritingSystemSet              = detail::RewritingSystemSet;
-  using RewritingSystemTrie                  = detail::RewritingSystemTrie;
+  using RewritingSystemSet           = detail::RewritingSystemSet<>;
+  using RewritingSystemTrie          = detail::RewritingSystemTrie<>;
 
   using RewritingSystemSet_string = std::pair<RewritingSystemSet, std::string>;
   using RewritingSystemSet_word   = std::pair<RewritingSystemSet, word_type>;
-  using RewritingSystemTrie_string     = std::pair<RewritingSystemTrie, std::string>;
-  using RewritingSystemTrie_word       = std::pair<RewritingSystemTrie, word_type>;
+  using RewritingSystemTrie_string
+      = std::pair<RewritingSystemTrie, std::string>;
+  using RewritingSystemTrie_word = std::pair<RewritingSystemTrie, word_type>;
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("to<KnuthBendix>",
                                    "010",
@@ -56,9 +57,9 @@ namespace libsemigroups {
                                    RewritingSystemSet_word,
                                    RewritingSystemTrie_string,
                                    RewritingSystemTrie_word) {
-    auto rg        = ReportGuard(false);
+    auto rg               = ReportGuard(false);
     using RewritingSystem = typename TestType::first_type;
-    using Word     = typename TestType::second_type;
+    using Word            = typename TestType::second_type;
 
     FroidurePin<Transf<>> S;
     S.add_generator(make<Transf<>>({1, 0}));
@@ -119,9 +120,9 @@ namespace libsemigroups {
                                    RewritingSystemSet_word,
                                    RewritingSystemTrie_string,
                                    RewritingSystemTrie_word) {
-    auto rg        = ReportGuard(false);
+    auto rg               = ReportGuard(false);
     using RewritingSystem = typename TestType::first_type;
-    using Word     = typename TestType::second_type;
+    using Word            = typename TestType::second_type;
 
     Presentation<Word> p;
     if constexpr (std::is_same_v<Word, std::string>) {
