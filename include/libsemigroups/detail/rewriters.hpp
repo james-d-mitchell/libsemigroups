@@ -205,13 +205,13 @@ namespace libsemigroups {
 
         size_t   max_active_rules;
         size_t   max_length_lhs_rule;
-        size_t   max_pending_rules;  // TODO rename
+        size_t   max_pending_rules;  // TODO(1) rename
         size_t   min_length_lhs_rule;
         uint64_t total_rules;
       };
 
       std::list<Rule*>        _active_rules;
-      std::array<iterator, 2> _cursors;  // TODO rm?
+      std::array<iterator, 2> _cursors;  // TODO(1) rm?
       std::list<Rule*>        _inactive_rules;
       std::vector<Rule*>      _pending_rules;
       mutable Stats           _stats;
@@ -294,7 +294,7 @@ namespace libsemigroups {
 
       [[nodiscard]] Rule* pop_pending_rule();
 
-      // TODO remove?
+      // TODO(1) remove?
       [[nodiscard]] iterator& cursor(size_t index) {
         LIBSEMIGROUPS_ASSERT(index < _cursors.size());
         return _cursors[index];
@@ -517,7 +517,6 @@ namespace libsemigroups {
           : RewritingSystemSet() {
         *this = that;
       }
-      // TODO should be the same as the previous one?
       RewritingSystemSet(RewritingSystemSet&&) = default;
 
       RewritingSystemSet& operator=(RewritingSystemSet const&);
