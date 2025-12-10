@@ -226,7 +226,7 @@ namespace libsemigroups {
     //!
     //! \complexity
     //! See std::lexicographical_compare.
-    // TODO(v3) remove this?
+    // TODO(v4) remove this?
     template <typename T>
     bool operator()(T first1, T last1, T first2, T last2) const {
       return std::lexicographical_compare(first1, last1, first2, last2);
@@ -272,11 +272,12 @@ namespace libsemigroups {
   //!                   (first1, last1, first2, last2));
   //! }
   //! \end_code_no_test
-  template <typename T, typename = std::enable_if_t<!rx::is_input_or_sink_v<T>>>
-  bool shortlex_compare(T const& first1,
-                        T const& last1,
-                        T const& first2,
-                        T const& last2) {
+  template <typename Iterator,
+            typename = std::enable_if_t<!rx::is_input_or_sink_v<Iterator>>>
+  bool shortlex_compare(Iterator first1,
+                        Iterator last1,
+                        Iterator first2,
+                        Iterator last2) {
     return (last1 - first1) < (last2 - first2)
            || ((last1 - first1) == (last2 - first2)
                && std::lexicographical_compare(first1, last1, first2, last2));
@@ -312,8 +313,9 @@ namespace libsemigroups {
   //!
   //! \sa
   //! \ref shortlex_compare(T const&, T const&, T const&, T const&).
-  template <typename T, typename = std::enable_if_t<!rx::is_input_or_sink_v<T>>>
-  bool shortlex_compare(T const& x, T const& y) {
+  template <typename Thing,
+            typename = std::enable_if_t<!rx::is_input_or_sink_v<Thing>>>
+  bool shortlex_compare(Thing const& x, Thing const& y) {
     return shortlex_compare(x.cbegin(), x.cend(), y.cbegin(), y.cend());
   }
 
@@ -324,7 +326,7 @@ namespace libsemigroups {
   //! This function compares two objects via their pointers using
   //! \ref shortlex_compare.
   //!
-  //! \tparam T the type of the objects to be compared.
+  //! \tparam Thing the type of the objects to be compared.
   //!
   //! \param x pointer to the first object for comparison.
   //! \param y pointer to the second object for comparison.
@@ -333,7 +335,7 @@ namespace libsemigroups {
   //! than the word pointed to by \p y, and \c false otherwise.
   //!
   //! \exceptions
-  //! See \ref shortlex_compare(T const&, T const&, T const&, T const&).
+  //! See \ref shortlex_compare(Iterator, Iterator, Iterator, Iterator).
   //!
   //! \complexity
   //! At most \f$O(n)\f$ where \f$n\f$ is the minimum of the length of the word
@@ -346,9 +348,9 @@ namespace libsemigroups {
   //! \end_code_no_test
   //!
   //! \sa
-  //! \ref shortlex_compare(T const&, T const&, T const&, T const&).
+  //! \ref shortlex_compare(Iterator, Iterator, Iterator, Iterator).
   template <typename T>
-  bool shortlex_compare(T* const x, T* const y) {
+  bool shortlex_compare(T const* x, T const* y) {
     return shortlex_compare(x->cbegin(), x->cend(), y->cbegin(), y->cend());
   }
 
@@ -425,13 +427,12 @@ namespace libsemigroups {
   //! \warning
   //! This function has significantly worse performance than all
   //! the variants of \ref shortlex_compare and std::lexicographical_compare.
-  // TODO: T -> Iterator
-  // TODO: remove const&
-  template <typename T, typename = std::enable_if_t<!rx::is_input_or_sink_v<T>>>
-  bool recursive_path_compare(T const& first1,
-                              T        last1,
-                              T const& first2,
-                              T        last2) noexcept {
+  template <typename Iterator,
+            typename = std::enable_if_t<!rx::is_input_or_sink_v<Iterator>>>
+  bool recursive_path_compare(Iterator first1,
+                              Iterator last1,
+                              Iterator first2,
+                              Iterator last2) noexcept {
     if (first2 == last2) {
       // Empty word is not bigger than every word
       return false;
@@ -575,8 +576,8 @@ namespace libsemigroups {
   //!
   //! This function compares two objects of the same type using the weighted
   //! short-lex ordering. The weight of a word is computed by adding up the
-  //! weights of the letters in the word, where the ith index of the weights
-  //! vector corresponds to the weight of the ith letter in the alphabet.
+  //! weights of the letters in the word, where the `i`th index of the weights
+  //! vector corresponds to the weight of the `i`th letter in the alphabet.
   //! Heavier words come later in the ordering than all lighter words. Amongst
   //! words of equal weight, short-lex ordering is used.
   //!
@@ -602,16 +603,17 @@ namespace libsemigroups {
   //!
   //! \warning
   //! It is not checked that the letters in the ranges are valid indices into
-  //! the weights vector.
+  //! the \p weights vector.
   //!
   //! \sa
-  //! \ref wt_shortlex_compare(T const&, T const&, T const&, T const&,
+  //! \ref wt_shortlex_compare(Iterator, Iterator, Iterator, Iterator,
   //! std::vector<size_t> const&).
-  template <typename T, typename = std::enable_if_t<!rx::is_input_or_sink_v<T>>>
-  bool wt_shortlex_compare_no_checks(T const&                   first1,
-                                     T const&                   last1,
-                                     T const&                   first2,
-                                     T const&                   last2,
+  template <typename Iterator,
+            typename = std::enable_if_t<!rx::is_input_or_sink_v<Iterator>>>
+  bool wt_shortlex_compare_no_checks(Iterator                   first1,
+                                     Iterator                   last1,
+                                     Iterator                   first2,
+                                     Iterator                   last2,
                                      std::vector<size_t> const& weights) {
     size_t weight1 = std::accumulate(
         first1, last1, size_t(0), [&weights](size_t sum, auto letter) {
@@ -762,13 +764,14 @@ namespace libsemigroups {
   //! \p first2.
   //!
   //! \sa
-  //! \ref wt_shortlex_compare_no_checks(T const&, T const&, T const&, T const&,
+  //! \ref wt_shortlex_compare_no_checks(Iterator, Iterator, Iterator, Iterator,
   //! std::vector<size_t> const&).
-  template <typename T, typename = std::enable_if_t<!rx::is_input_or_sink_v<T>>>
-  bool wt_shortlex_compare(T const&                   first1,
-                           T const&                   last1,
-                           T const&                   first2,
-                           T const&                   last2,
+  template <typename Iterator,
+            typename = std::enable_if_t<!rx::is_input_or_sink_v<Iterator>>>
+  bool wt_shortlex_compare(Iterator                   first1,
+                           Iterator                   last1,
+                           Iterator                   first2,
+                           Iterator                   last2,
                            std::vector<size_t> const& weights) {
     size_t const alphabet_size = weights.size();
 
@@ -835,7 +838,7 @@ namespace libsemigroups {
   //! \end_code_no_test
   //!
   //! \sa
-  //! \ref wt_shortlex_compare(T const&, T const&, T const&, T const&,
+  //! \ref wt_shortlex_compare(Iterator, Iterator, Iterator, Iterator,
   //! std::vector<size_t> const&).
   template <typename T, typename = std::enable_if_t<!rx::is_input_or_sink_v<T>>>
   bool wt_shortlex_compare(T const&                   x,
@@ -881,7 +884,7 @@ namespace libsemigroups {
   //! \end_code_no_test
   //!
   //! \sa
-  //! \ref wt_shortlex_compare(T const&, T const&, T const&, T const&,
+  //! \ref wt_shortlex_compare(Iterator, Iterator, Iterator, Iterator,
   //! std::vector<size_t> const&).
   template <typename T>
   bool wt_shortlex_compare(T* const                   x,
