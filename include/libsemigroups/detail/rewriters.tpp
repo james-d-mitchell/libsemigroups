@@ -282,29 +282,9 @@ namespace libsemigroups::detail {
     }
   }
 
-  template <typename ReductionOrder>
-  void RewritingSystemSet<ReductionOrder>::report_checking_confluence(
-      std::atomic_uint64_t const&                           seen,
-      std::chrono::high_resolution_clock::time_point const& start_time) const {
-    if (reporting_enabled()) {
-      auto total_pairs = std::pow(Rules::number_of_active_rules(), 2);
-
-      auto total_pairs_s = group_digits(total_pairs);
-      auto now           = std::chrono::high_resolution_clock::now();
-      auto time
-          = std::chrono::duration_cast<std::chrono::seconds>(now - start_time);
-      report_no_prefix("{:-<95}\n", "");
-      report_default("KnuthBendix: locally confluent for: {0:>{width}} / "
-                     "{1:>{width}} ({2:>4.1f}%) pairs of rules ({3}s)\n",
-                     group_digits(seen),
-                     total_pairs_s,
-                     (total_pairs != 0)
-                         ? 100 * static_cast<double>(seen) / total_pairs
-                         : 100,
-                     time.count(),
-                     fmt::arg("width", total_pairs_s.size()));
-    }
-  }
+  ////////////////////////////////////////////////////////////////////////
+  // Confluence
+  ////////////////////////////////////////////////////////////////////////
 
   template <typename ReductionOrder>
   bool RewritingSystemSet<ReductionOrder>::confluent_impl(
@@ -371,7 +351,35 @@ namespace libsemigroups::detail {
   }
 
   ////////////////////////////////////////////////////////////////////////
-  // RewritingSystemTrie
+  // RewritingSystemSet --- Reporting
+  ////////////////////////////////////////////////////////////////////////
+
+  template <typename ReductionOrder>
+  void RewritingSystemSet<ReductionOrder>::report_checking_confluence(
+      std::atomic_uint64_t const&                           seen,
+      std::chrono::high_resolution_clock::time_point const& start_time) const {
+    if (reporting_enabled()) {
+      auto total_pairs = std::pow(Rules::number_of_active_rules(), 2);
+
+      auto total_pairs_s = group_digits(total_pairs);
+      auto now           = std::chrono::high_resolution_clock::now();
+      auto time
+          = std::chrono::duration_cast<std::chrono::seconds>(now - start_time);
+      report_no_prefix("{:-<95}\n", "");
+      report_default("KnuthBendix: locally confluent for: {0:>{width}} / "
+                     "{1:>{width}} ({2:>4.1f}%) pairs of rules ({3}s)\n",
+                     group_digits(seen),
+                     total_pairs_s,
+                     (total_pairs != 0)
+                         ? 100 * static_cast<double>(seen) / total_pairs
+                         : 100,
+                     time.count(),
+                     fmt::arg("width", total_pairs_s.size()));
+    }
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // RewritingSystemTrie - constructors + initializers
   ////////////////////////////////////////////////////////////////////////
 
   template <typename ReductionOrder>
@@ -415,104 +423,23 @@ namespace libsemigroups::detail {
   template <typename ReductionOrder>
   RewritingSystemTrie<ReductionOrder>::~RewritingSystemTrie() = default;
 
-  template <typename ReductionOrder>
-  // As with RewritingSystemSet<ReductionOrder>::rewrite, this assumes that all
-  // rules are length reducing.
-  void RewritingSystemTrie<ReductionOrder>::rewrite2(native_word_type& u) {
-    using iterator = native_word_type::iterator;
-    // Check if u is rewriteable
-    if (u.size() < Rules::stats().min_length_lhs_rule) {
-      return;
-    }
-
-    _rewrite_tmp_buf.clear();
-    index_type current = _rule_trie.root;
-    _rewrite_tmp_buf.push_back(current);
-
-#ifdef LIBSEMIGROUPS_DEBUG
-    iterator v_begin = u.begin();
-#endif
-    iterator v_end   = u.begin();
-    iterator w_begin = v_end;
-    iterator w_end   = u.end();
-
-    while (w_begin != w_end) {
-      // Read first letter of w and traverse trie
-      auto x = *w_begin;
-      ++w_begin;
-      current
-          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
-
-      if (!_rule_trie.node_no_checks(current).terminal()) {
-        _rewrite_tmp_buf.push_back(current);
-        *v_end = x;
-        ++v_end;
-      } else {
-        auto rule_it = _rule_map.find(current);
-        // Find rule that corresponds to terminal node
-        Rule const* rule     = rule_it->second;
-        auto        lhs_size = rule->lhs().size();
-        LIBSEMIGROUPS_ASSERT(lhs_size != 0);
-
-        // Check the lhs is smaller than the portion of the word that has
-        // been read
-        LIBSEMIGROUPS_ASSERT(lhs_size
-                             <= static_cast<size_t>(v_end - v_begin) + 1);
-        v_end -= lhs_size - 1;
-        w_begin -= rule->rhs().size();
-        // Replace lhs with rhs in-place
-        std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
-        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - lhs_size + 1,
-                               _rewrite_tmp_buf.end());
-        current = _rewrite_tmp_buf.back();
-      }
-    }
-    u.erase(v_end - u.cbegin());
-  }
+  ////////////////////////////////////////////////////////////////////////
+  // Public member functions - alphabetical order
+  ////////////////////////////////////////////////////////////////////////
 
   template <typename ReductionOrder>
-  void RewritingSystemTrie<ReductionOrder>::rewrite(native_word_type& v) {
-    reduce_system();
-    rewrite_no_reduce_system(v);
-  }
-
-  template <typename ReductionOrder>
-  void RewritingSystemTrie<ReductionOrder>::rewrite_no_reduce_system(
-      native_word_type& v) const {
-    // Check if v is rewriteable
-    if (v.size() < Rules::stats().min_length_lhs_rule) {
-      return;
+  template <typename Iterator>
+  RewritingSystemTrie<ReductionOrder>&
+  RewritingSystemTrie<ReductionOrder>::add_rule(Iterator first1,
+                                                Iterator last1,
+                                                Iterator first2,
+                                                Iterator last2) {
+    if (!std::equal(first1, last1, first2, last2)) {
+      Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
+      reorder<ReductionOrder>(rule);
+      set_cached_confluent(tril::unknown);
     }
-
-    _rewrite_tmp_buf.clear();
-    index_type current = _rule_trie.root;
-    _rewrite_tmp_buf.push_back(current);
-
-    std::string w;  // unread suffix of input word
-    std::swap(v, w);
-    std::reverse(w.begin(), w.end());
-
-    while (!w.empty()) {
-      // Read first letter of w and traverse trie
-      auto x = w.back();
-      w.pop_back();
-      current
-          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
-
-      if (!_rule_trie.node_no_checks(current).terminal()) {
-        _rewrite_tmp_buf.push_back(current);
-        v.push_back(x);
-      } else {
-        Rule const* rule = _rule_map.find(current)->second;
-        // TODO add comment about off by one
-        LIBSEMIGROUPS_ASSERT(rule->lhs().size() <= v.size() + 1);
-        v.erase(v.end() - (rule->lhs().size() - 1), v.end());
-        w.append(rule->rhs().rbegin(), rule->rhs().rend());
-        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - rule->lhs().size() + 1,
-                               _rewrite_tmp_buf.end());
-        current = _rewrite_tmp_buf.back();
-      }
-    }
+    return *this;
   }
 
   template <typename ReductionOrder>
@@ -622,6 +549,134 @@ namespace libsemigroups::detail {
   }
 
   template <typename ReductionOrder>
+  // As with RewritingSystemSet<ReductionOrder>::rewrite, this assumes that all
+  // rules are length reducing.
+  void RewritingSystemTrie<ReductionOrder>::rewrite2(native_word_type& u) {
+    using iterator = native_word_type::iterator;
+    // Check if u is rewriteable
+    if (u.size() < Rules::stats().min_length_lhs_rule) {
+      return;
+    }
+
+    _rewrite_tmp_buf.clear();
+    index_type current = _rule_trie.root;
+    _rewrite_tmp_buf.push_back(current);
+
+#ifdef LIBSEMIGROUPS_DEBUG
+    iterator v_begin = u.begin();
+#endif
+    iterator v_end   = u.begin();
+    iterator w_begin = v_end;
+    iterator w_end   = u.end();
+
+    while (w_begin != w_end) {
+      // Read first letter of w and traverse trie
+      auto x = *w_begin;
+      ++w_begin;
+      current
+          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
+
+      if (!_rule_trie.node_no_checks(current).terminal()) {
+        _rewrite_tmp_buf.push_back(current);
+        *v_end = x;
+        ++v_end;
+      } else {
+        auto rule_it = _rule_map.find(current);
+        // Find rule that corresponds to terminal node
+        Rule const* rule     = rule_it->second;
+        auto        lhs_size = rule->lhs().size();
+        LIBSEMIGROUPS_ASSERT(lhs_size != 0);
+
+        // Check the lhs is smaller than the portion of the word that has
+        // been read
+        LIBSEMIGROUPS_ASSERT(lhs_size
+                             <= static_cast<size_t>(v_end - v_begin) + 1);
+        v_end -= lhs_size - 1;
+        w_begin -= rule->rhs().size();
+        // Replace lhs with rhs in-place
+        std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
+        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - lhs_size + 1,
+                               _rewrite_tmp_buf.end());
+        current = _rewrite_tmp_buf.back();
+      }
+    }
+    u.erase(v_end - u.cbegin());
+  }
+
+  template <typename ReductionOrder>
+  void RewritingSystemTrie<ReductionOrder>::rewrite(native_word_type& v) {
+    reduce_system();
+    rewrite_no_reduce_system(v);
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // RewritingSystemTrie --- Private member functions
+  ////////////////////////////////////////////////////////////////////////
+
+  template <typename ReductionOrder>
+  void RewritingSystemTrie<ReductionOrder>::add_active_rule(Rule* new_rule) {
+    // Must check negation here so we can use ReturnFalse to mean "no order"
+    LIBSEMIGROUPS_ASSERT(!ReductionOrder{}(new_rule->lhs(), new_rule->rhs()));
+    Rules::add_active_rule(new_rule);
+    index_type node = _rule_trie.add_word_no_checks(new_rule->lhs().cbegin(),
+                                                    new_rule->lhs().cend());
+    _rule_map.emplace(node, new_rule);
+    set_cached_confluent(tril::unknown);
+  }
+
+  template <typename ReductionOrder>
+  typename RewritingSystemTrie<ReductionOrder>::iterator
+  RewritingSystemTrie<ReductionOrder>::rm_active_rule(iterator it) {
+    index_type node = _rule_trie.rm_word_no_checks((*it)->lhs().cbegin(),
+                                                   (*it)->lhs().cend());
+    _rule_map.erase(node);
+    return Rules::make_active_rule_pending(it);
+  }
+
+  template <typename ReductionOrder>
+  void RewritingSystemTrie<ReductionOrder>::rewrite_no_reduce_system(
+      native_word_type& v) const {
+    // Check if v is rewriteable
+    if (v.size() < Rules::stats().min_length_lhs_rule) {
+      return;
+    }
+
+    _rewrite_tmp_buf.clear();
+    index_type current = _rule_trie.root;
+    _rewrite_tmp_buf.push_back(current);
+
+    std::string w;  // unread suffix of input word
+    std::swap(v, w);
+    std::reverse(w.begin(), w.end());
+
+    while (!w.empty()) {
+      // Read first letter of w and traverse trie
+      auto x = w.back();
+      w.pop_back();
+      current
+          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
+
+      if (!_rule_trie.node_no_checks(current).terminal()) {
+        _rewrite_tmp_buf.push_back(current);
+        v.push_back(x);
+      } else {
+        Rule const* rule = _rule_map.find(current)->second;
+        // TODO add comment about off by one
+        LIBSEMIGROUPS_ASSERT(rule->lhs().size() <= v.size() + 1);
+        v.erase(v.end() - (rule->lhs().size() - 1), v.end());
+        w.append(rule->rhs().rbegin(), rule->rhs().rend());
+        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - rule->lhs().size() + 1,
+                               _rewrite_tmp_buf.end());
+        current = _rewrite_tmp_buf.back();
+      }
+    }
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Confluence
+  ////////////////////////////////////////////////////////////////////////
+
+  template <typename ReductionOrder>
   bool RewritingSystemTrie<ReductionOrder>::confluent_impl(
       std::atomic_uint64_t& seen) {
     using std::chrono::time_point;
@@ -703,14 +758,9 @@ namespace libsemigroups::detail {
     return true;
   }
 
-  template <typename ReductionOrder>
-  typename RewritingSystemTrie<ReductionOrder>::iterator
-  RewritingSystemTrie<ReductionOrder>::rm_active_rule(iterator it) {
-    index_type node = _rule_trie.rm_word_no_checks((*it)->lhs().cbegin(),
-                                                   (*it)->lhs().cend());
-    _rule_map.erase(node);
-    return Rules::make_active_rule_pending(it);
-  }
+  ////////////////////////////////////////////////////////////////////////
+  // RewritingSystemTrie --- Reporting
+  ////////////////////////////////////////////////////////////////////////
 
   template <typename ReductionOrder>
   void RewritingSystemTrie<ReductionOrder>::report_checking_confluence(

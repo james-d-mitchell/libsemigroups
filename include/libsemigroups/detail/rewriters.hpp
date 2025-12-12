@@ -585,8 +585,7 @@ namespace libsemigroups {
       // Confluence
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO nodiscard
-      bool confluent_impl(std::atomic_uint64_t&) override;
+      [[nodiscard]] bool confluent_impl(std::atomic_uint64_t&) override;
 
       ////////////////////////////////////////////////////////////////////////
       // Reporting
@@ -654,26 +653,17 @@ namespace libsemigroups {
       // Public member functions --- from RewritingSystemBase
       ////////////////////////////////////////////////////////////////////////
 
-      using RewritingSystemBase::cached_confluent;
       using RewritingSystemBase::number_of_rules;
 
       ////////////////////////////////////////////////////////////////////////
       // Public member functions - alphabetical order
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO to tpp
       template <typename Iterator>
       RewritingSystemTrie& add_rule(Iterator first1,
                                     Iterator last1,
                                     Iterator first2,
-                                    Iterator last2) {
-        if (!std::equal(first1, last1, first2, last2)) {
-          Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
-          reorder<ReductionOrder>(rule);
-          set_cached_confluent(tril::unknown);
-        }
-        return *this;
-      }
+                                    Iterator last2);
 
       RewritingSystemTrie& increase_alphabet_size_by(size_t val) {
         _rule_trie.increase_alphabet_size_by(val);
@@ -697,6 +687,7 @@ namespace libsemigroups {
       void rewrite(native_word_type& u);
       void rewrite2(native_word_type& u);
 
+      // TODO shouldn't be necessary
       void rewrite(native_word_type& u) const {
         const_cast<RewritingSystemTrie*>(this)->rewrite(u);
       }
@@ -710,17 +701,7 @@ namespace libsemigroups {
       // Private member functions
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO out of line
-      void add_active_rule(Rule* new_rule) {
-        // Must check negation here so we can use ReturnFalse to mean "no order"
-        LIBSEMIGROUPS_ASSERT(
-            !ReductionOrder{}(new_rule->lhs(), new_rule->rhs()));
-        Rules::add_active_rule(new_rule);
-        index_type node = _rule_trie.add_word_no_checks(
-            new_rule->lhs().cbegin(), new_rule->lhs().cend());
-        _rule_map.emplace(node, new_rule);
-        set_cached_confluent(tril::unknown);
-      }
+      void     add_active_rule(Rule* new_rule);
       iterator rm_active_rule(iterator it);
 
       void rewrite_no_reduce_system(native_word_type& u) const;
@@ -733,8 +714,7 @@ namespace libsemigroups {
                                                index_type  current_node,
                                                size_t backtrack_depth) const;
 
-      // TODO nodiscard
-      bool confluent_impl(std::atomic_uint64_t&) override;
+      [[nodiscard]] bool confluent_impl(std::atomic_uint64_t&) override;
 
       ////////////////////////////////////////////////////////////////////////
       // Reporting
