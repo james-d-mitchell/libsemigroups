@@ -329,7 +329,7 @@ namespace libsemigroups {
                                          {{0}, {0, 2}},
                                          {{1, 2}, {1}},
                                          {{1, 2}, {2}}}));
-      REQUIRE(rws.is_length_non_increasing() == tril::unknown);
+      REQUIRE(rws.is_length_decreasing() == tril::unknown);
       REQUIRE(rws.is_terminating() == tril::unknown);
     }
 
@@ -358,7 +358,7 @@ namespace libsemigroups {
                   {{{0, 0}, {2, 2, 2}}, {{1, 1, 1}, {2, 2, 2}}}));
       REQUIRE(!rws.confluent());
 
-      REQUIRE(rws.is_length_non_increasing() == tril::FALSE);
+      REQUIRE(rws.is_length_decreasing() == tril::FALSE);
       REQUIRE(rws.is_terminating() == tril::unknown);
 
       std::string w({0, 0});
@@ -393,7 +393,7 @@ namespace libsemigroups {
       rws.init();
       REQUIRE(rws.number_of_rules() == 0);
       REQUIRE(rws.trie().number_of_nodes() == 1);
-      REQUIRE(rws.is_length_non_increasing() == tril::TRUE);
+      REQUIRE(rws.is_length_decreasing() == tril::TRUE);
       REQUIRE(rws.is_terminating() == tril::TRUE);
 
       rws.increase_alphabet_size_by(3);

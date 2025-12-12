@@ -51,14 +51,14 @@ namespace libsemigroups {
       }
 
       template <typename Thing>
-      struct is_length_non_increasing : std::false_type {};
+      struct is_length_decreasing : std::false_type {};
 
       template <>
-      struct is_length_non_increasing<ShortLexCompare> : std::true_type {};
+      struct is_length_decreasing<ShortLexCompare> : std::true_type {};
 
       template <typename Thing>
-      static constexpr bool is_length_non_increasing_v
-          = is_length_non_increasing<Thing>::value;
+      static constexpr bool is_length_decreasing_v
+          = is_length_decreasing<Thing>::value;
 
       template <typename Thing>
       struct is_terminating : std::false_type {};
@@ -144,6 +144,13 @@ namespace libsemigroups {
       }
 #endif
     };  // class Rule
+
+    template <typename ReductionOrder>
+    void reorder(Rule* rule) {
+      if (ReductionOrder{}(rule->lhs(), rule->rhs())) {
+        std::swap(rule->lhs(), rule->rhs());
+      }
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // RuleLookup
@@ -425,14 +432,14 @@ namespace libsemigroups {
       }
 
       template <typename Subclass>
-      [[nodiscard]] tril is_length_non_increasing() const noexcept {
-        if constexpr (rewriting_system::is_length_non_increasing_v<
+      [[nodiscard]] tril is_length_decreasing() const noexcept {
+        if constexpr (rewriting_system::is_length_decreasing_v<
                           typename Subclass::reduction_order>) {
           return tril::TRUE;
         }
 
         for (Rule const* rule : active_rules()) {
-          if (rule->lhs().size() < rule->rhs().size()) {
+          if (rule->lhs().size() <= rule->rhs().size()) {
             return tril::FALSE;
           }
         }
@@ -446,7 +453,7 @@ namespace libsemigroups {
                           typename Subclass::reduction_order>) {
           return tril::TRUE;
         }
-        if (is_length_non_increasing<Subclass>() == tril::TRUE) {
+        if (is_length_decreasing<Subclass>() == tril::TRUE) {
           return tril::TRUE;
         }
         return tril::unknown;
@@ -466,7 +473,7 @@ namespace libsemigroups {
         report_progress_from_thread(0, start_time);
       }
 
-     private:
+     private:  // TODO nodiscard
       virtual bool confluent_impl(std::atomic_uint64_t& seen) = 0;
 
       virtual void report_checking_confluence(
@@ -524,43 +531,24 @@ namespace libsemigroups {
 
       ~RewritingSystemSet();
 
+      ////////////////////////////////////////////////////////////////////////
+      // Public member functions --- from RewritingSystemBase
+      ////////////////////////////////////////////////////////////////////////
+
       using RewritingSystemBase::number_of_rules;
 
       ////////////////////////////////////////////////////////////////////////
-      // Add rules
+      // Public member functions - alphabetical order
       ////////////////////////////////////////////////////////////////////////
-      // TODO out of line
+
       template <typename Iterator>
       RewritingSystemSet& add_rule(Iterator first1,
                                    Iterator last1,
                                    Iterator first2,
-                                   Iterator last2) {
-        // TODO what if first1 == last1, will rewriting etc work???
-        if (!std::equal(first1, last1, first2, last2)) {
-          set_cached_confluent(tril::unknown);
-          Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
-          reorder(rule);
-        }
-        return *this;
-      }
+                                   Iterator last2);
 
-      // TODO nodiscard or is the return value used for anything?
-      bool reduce_system();
-
-      // TODO is rm_rule required?
-
-      ////////////////////////////////////////////////////////////////////////
-      // Rewrite
-      ////////////////////////////////////////////////////////////////////////
-
-      void rewrite(native_word_type& u);
-      void rewrite2(native_word_type& u);
-      void rewrite(native_word_type& u) const {
-        const_cast<RewritingSystemSet*>(this)->rewrite(u);
-      }
-
-      [[nodiscard]] tril is_length_non_increasing() const noexcept {
-        return RewritingSystemBase::is_length_non_increasing<
+      [[nodiscard]] tril is_length_decreasing() const noexcept {
+        return RewritingSystemBase::is_length_decreasing<
             RewritingSystemSet<ReductionOrder>>();
       }
 
@@ -569,36 +557,45 @@ namespace libsemigroups {
             RewritingSystemSet<ReductionOrder>>();
       }
 
-     private:
-      void reorder(Rule* rule) {
-        if (ReductionOrder{}(rule->lhs(), rule->rhs())) {
-          std::swap(rule->lhs(), rule->rhs());
-        }
+      // TODO nodiscard or is the return value used for anything?
+      bool reduce_system();
+
+      // TODO it'd be possible to check if we encounter a cycle in rewriting,
+      // which we could then use to say is_terminating is false
+      void rewrite(native_word_type& u);
+      void rewrite2(native_word_type& u);
+
+      // TODO the next function shouldn't be necessary, i.e. make things
+      // mutable
+      void rewrite(native_word_type& u) const {
+        const_cast<RewritingSystemSet*>(this)->rewrite(u);
       }
+
+     private:
+      ////////////////////////////////////////////////////////////////////////
+      // Private member functions
+      ////////////////////////////////////////////////////////////////////////
+
       void     add_active_rule(Rule* rule);
       iterator rm_active_rule(iterator it);
 
       void rewrite_no_reduce_system(native_word_type& u) const;
 
-      // TODO rm
-      void rewrite_no_reduce_system(Rule* rule) const {
-        rewrite_no_reduce_system(rule->lhs());
-        rewrite_no_reduce_system(rule->rhs());
-      }
+      ////////////////////////////////////////////////////////////////////////
+      // Confluence
+      ////////////////////////////////////////////////////////////////////////
 
-      void process_pending_rules_if_enough() {
-        if (Rules::number_of_pending_rules() >= _settings.max_pending_rules) {
-          reduce_system();
-        }
-      }
-
-      // TODO nodiscard or is the return value used for anything?
+      // TODO nodiscard
       bool confluent_impl(std::atomic_uint64_t&) override;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Reporting
+      ////////////////////////////////////////////////////////////////////////
 
       void report_checking_confluence(
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const override;
-    };
+    };  // RewritingSystemSet
 
     ////////////////////////////////////////////////////////////////////////
     // RewritingSystemTrie
@@ -607,19 +604,18 @@ namespace libsemigroups {
     // TODO remove default template param
     template <typename ReductionOrder = ShortLexCompare>
     class RewritingSystemTrie : public RewritingSystemBase {
-      using iterator = Rules::iterator;
+      ////////////////////////////////////////////////////////////////////////
+      // Private aliases
+      ////////////////////////////////////////////////////////////////////////
 
-     public:
-      using native_word_type     = Rule::native_word_type;
-      using rule_const_reference = RewritingSystemBase::rule_const_reference;
-      using reduction_order      = ReductionOrder;
-
-      // TODO private
-      using index_type = AhoCorasickImpl::index_type;
-      // TODO private
+      using iterator      = Rules::iterator;
+      using index_type    = AhoCorasickImpl::index_type;
       using rule_iterator = std::unordered_map<index_type, Rule*>::iterator;
 
-     private:
+      ////////////////////////////////////////////////////////////////////////
+      // Private data
+      ////////////////////////////////////////////////////////////////////////
+
       std::unordered_map<index_type, Rule*> _new_rule_map;
       AhoCorasickImpl                       _new_rule_trie;
       mutable std::vector<index_type>       _rewrite_tmp_buf;
@@ -628,6 +624,14 @@ namespace libsemigroups {
       bool                                  _ticker_running;
 
      public:
+      ////////////////////////////////////////////////////////////////////////
+      // Public aliases
+      ////////////////////////////////////////////////////////////////////////
+
+      using native_word_type     = Rule::native_word_type;
+      using rule_const_reference = RewritingSystemBase::rule_const_reference;
+      using reduction_order      = ReductionOrder;
+
       ////////////////////////////////////////////////////////////////////////
       // Constructors + initializers
       ////////////////////////////////////////////////////////////////////////
@@ -642,32 +646,22 @@ namespace libsemigroups {
       RewritingSystemTrie(RewritingSystemTrie&& that) = default;
 
       RewritingSystemTrie& operator=(RewritingSystemTrie const& that);
-
       RewritingSystemTrie& operator=(RewritingSystemTrie&& that) = default;
 
       ~RewritingSystemTrie();
 
       ////////////////////////////////////////////////////////////////////////
-      // RewritingSystemBase aliases
+      // Public member functions --- from RewritingSystemBase
       ////////////////////////////////////////////////////////////////////////
 
       using RewritingSystemBase::cached_confluent;
       using RewritingSystemBase::number_of_rules;
 
       ////////////////////////////////////////////////////////////////////////
-      // Public mem fns
+      // Public member functions - alphabetical order
       ////////////////////////////////////////////////////////////////////////
 
-      RewritingSystemTrie& increase_alphabet_size_by(size_t val) {
-        _rule_trie.increase_alphabet_size_by(val);
-        return *this;
-      }
-
-      ////////////////////////////////////////////////////////////////////////
-      // Add rule
-      ////////////////////////////////////////////////////////////////////////
-
-      // TODO remove code duplicate
+      // TODO to tpp
       template <typename Iterator>
       RewritingSystemTrie& add_rule(Iterator first1,
                                     Iterator last1,
@@ -675,16 +669,29 @@ namespace libsemigroups {
                                     Iterator last2) {
         if (!std::equal(first1, last1, first2, last2)) {
           Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
-          reorder(rule);
+          reorder<ReductionOrder>(rule);
           set_cached_confluent(tril::unknown);
         }
         return *this;
       }
 
+      RewritingSystemTrie& increase_alphabet_size_by(size_t val) {
+        _rule_trie.increase_alphabet_size_by(val);
+        return *this;
+      }
+
+      [[nodiscard]] tril is_length_decreasing() const noexcept {
+        return RewritingSystemBase::is_length_decreasing<
+            RewritingSystemTrie<ReductionOrder>>();
+      }
+
+      [[nodiscard]] tril is_terminating() const noexcept {
+        return RewritingSystemBase::is_terminating<
+            RewritingSystemTrie<ReductionOrder>>();
+      }
+
       // TODO nodiscard or is the return value used for anything?
       bool reduce_system();
-
-      ////////////////////////////////////////////////////////////////////////
 
       // TODO(1) iterators
       void rewrite(native_word_type& u);
@@ -694,26 +701,14 @@ namespace libsemigroups {
         const_cast<RewritingSystemTrie*>(this)->rewrite(u);
       }
 
-      [[nodiscard]] tril is_length_non_increasing() const noexcept {
-        return RewritingSystemBase::is_length_non_increasing<
-            RewritingSystemTrie<ReductionOrder>>();
-      }
-
-      [[nodiscard]] tril is_terminating() const noexcept {
-        return RewritingSystemBase::is_terminating<
-            RewritingSystemTrie<ReductionOrder>>();
-      }
-
       [[nodiscard]] AhoCorasickImpl const& trie() const noexcept {
         return _rule_trie;
       }
 
      private:
-      void reorder(Rule* rule) {
-        if (ReductionOrder{}(rule->lhs(), rule->rhs())) {
-          std::swap(rule->lhs(), rule->rhs());
-        }
-      }
+      ////////////////////////////////////////////////////////////////////////
+      // Private member functions
+      ////////////////////////////////////////////////////////////////////////
 
       // TODO out of line
       void add_active_rule(Rule* new_rule) {
@@ -726,29 +721,24 @@ namespace libsemigroups {
         _rule_map.emplace(node, new_rule);
         set_cached_confluent(tril::unknown);
       }
-
       iterator rm_active_rule(iterator it);
 
       void rewrite_no_reduce_system(native_word_type& u) const;
 
-      // TODO rm
-      void rewrite_no_reduce_system(Rule* rule) const {
-        rewrite_no_reduce_system(rule->lhs());
-        rewrite_no_reduce_system(rule->rhs());
-      }
-
-      void process_pending_rules_if_enough() {
-        if (Rules::number_of_pending_rules() >= _settings.max_pending_rules) {
-          reduce_system();
-        }
-      }
+      ////////////////////////////////////////////////////////////////////////
+      // Confluence
+      ////////////////////////////////////////////////////////////////////////
 
       [[nodiscard]] bool descendants_confluent(Rule const* rule1,
                                                index_type  current_node,
                                                size_t backtrack_depth) const;
 
-      // TODO nodiscard or is the return value used for anything?
+      // TODO nodiscard
       bool confluent_impl(std::atomic_uint64_t&) override;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Reporting
+      ////////////////////////////////////////////////////////////////////////
 
       void report_checking_confluence(
           std::atomic_uint64_t const&,

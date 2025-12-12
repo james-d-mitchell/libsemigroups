@@ -38,7 +38,7 @@ namespace libsemigroups::detail {
   }
 
   ////////////////////////////////////////////////////////////////////////
-  // RewritingSystemSet
+  // RewritingSystemSet --- Constructors + initializers
   ////////////////////////////////////////////////////////////////////////
 
   template <typename ReductionOrder>
@@ -68,6 +68,136 @@ namespace libsemigroups::detail {
     }
     return *this;
   }
+
+  ////////////////////////////////////////////////////////////////////////
+  // RewritingSystemSet --- Public member functions
+  ////////////////////////////////////////////////////////////////////////
+
+  template <typename ReductionOrder>
+  template <typename Iterator>
+  RewritingSystemSet<ReductionOrder>&
+  RewritingSystemSet<ReductionOrder>::add_rule(Iterator first1,
+                                               Iterator last1,
+                                               Iterator first2,
+                                               Iterator last2) {
+    // TODO what if first1 == last1, will rewriting etc work???
+    if (!std::equal(first1, last1, first2, last2)) {
+      set_cached_confluent(tril::unknown);
+      Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
+      reorder<ReductionOrder>(rule);
+    }
+    return *this;
+  }
+
+  template <typename ReductionOrder>
+  bool RewritingSystemSet<ReductionOrder>::reduce_system() {
+    Rules::sort_pending_rules();
+
+    auto   start_time = std::chrono::high_resolution_clock::now();
+    Ticker ticker;
+    bool   old_ticker_running = _ticker_running;
+
+    bool rules_added = false;
+
+    while (Rules::number_of_pending_rules() != 0) {
+      Rule* rule1 = Rules::pop_pending_rule();
+      LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::pending);
+      LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
+
+      rewrite_no_reduce_system(rule1->lhs());
+      rewrite_no_reduce_system(rule1->rhs());
+
+      // Check rule is non-trivial
+      if (rule1->lhs() != rule1->rhs()) {
+        reorder<ReductionOrder>(rule1);
+
+        native_word_type& lhs = rule1->lhs();
+
+        auto const first = Rules::active_rules().begin();
+        auto const last  = Rules::active_rules().end();
+
+        for (auto it = first; it != last;) {
+          Rule* rule2 = *it;
+
+          // Check if lhs is contained within either the lhs or rhs of rule2
+          // TODO(1) investigate whether or not this can be improved?
+          if (rule2->lhs().find(lhs) != native_word_type::npos
+              || rule2->rhs().find(lhs) != native_word_type::npos) {
+            // If it is, rule2 must be deactivated and re-processed
+            it = rm_active_rule(it);
+          } else {
+            ++it;
+          }
+        }
+        add_active_rule(rule1);
+        rules_added = true;
+      } else {
+        Rules::add_inactive_rule(rule1);
+      }
+
+      if (!_ticker_running && reporting_enabled()
+          && delta(start_time) >= std::chrono::seconds(1)) {
+        _ticker_running = true;
+        ticker(
+            [this, start_time]() { report_progress_from_thread(start_time); });
+      }
+    }
+    _ticker_running = old_ticker_running;
+    return rules_added;
+  }
+
+  // REWRITE_FROM_LEFT from Sims, p67
+  // Caution: this uses the assumption that rules are length reducing, if they
+  // are not, then u might not have sufficient space!
+  template <typename ReductionOrder>
+  void RewritingSystemSet<ReductionOrder>::rewrite2(native_word_type& u) {
+    if (u.size() < Rules::stats().min_length_lhs_rule) {
+      return;
+    }
+
+    auto v_begin = u.begin();  // 0
+    auto v_end   = u.begin() + Rules::stats().min_length_lhs_rule - 1;
+    auto w_begin = v_end;
+    auto w_end   = u.end();  // u.size()
+
+    RuleLookup lookup;
+
+    while (w_begin != w_end) {
+      *v_end = *w_begin;
+      ++v_end;
+      ++w_begin;
+
+      auto it = _set_rules.find(lookup(v_begin, v_end));
+      if (it != _set_rules.end()) {
+        Rule const* rule = (*it).rule();
+        if (rule->lhs().size() <= static_cast<size_t>(v_end - v_begin)) {
+          LIBSEMIGROUPS_ASSERT(is_suffix(
+              v_begin, v_end, rule->lhs().cbegin(), rule->lhs().cend()));
+          v_end -= rule->lhs().size();
+          w_begin -= rule->rhs().size();
+          std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
+        }
+      }
+      while (w_begin != w_end
+             && Rules::stats().min_length_lhs_rule - 1
+                    > static_cast<size_t>((v_end - v_begin))) {
+        *v_end = *w_begin;
+        ++v_end;
+        ++w_begin;
+      }
+    }
+    u.erase(v_end - u.cbegin());
+  }
+
+  template <typename ReductionOrder>
+  void RewritingSystemSet<ReductionOrder>::rewrite(native_word_type& v) {
+    reduce_system();
+    rewrite_no_reduce_system(v);
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // RewritingSystemSet --- Private member functions
+  ////////////////////////////////////////////////////////////////////////
 
   template <typename ReductionOrder>
   void RewritingSystemSet<ReductionOrder>::add_active_rule(Rule* new_rule) {
@@ -100,56 +230,6 @@ namespace libsemigroups::detail {
     LIBSEMIGROUPS_ASSERT(_set_rules.size()
                          == Rules::number_of_active_rules() - 1);
     return Rules::make_active_rule_pending(it);
-  }
-
-  template <typename ReductionOrder>
-  // REWRITE_FROM_LEFT from Sims, p67
-  // Caution: this uses the assumption that rules are length reducing, if they
-  // are not, then u might not have sufficient space!
-  void RewritingSystemSet<ReductionOrder>::rewrite2(native_word_type& u) {
-    if (u.size() < Rules::stats().min_length_lhs_rule) {
-      return;
-    }
-
-    auto v_begin = u.begin();  // 0
-    auto v_end   = u.begin() + Rules::stats().min_length_lhs_rule - 1;
-    auto w_begin = v_end;
-    auto w_end   = u.end();  // u.size()
-
-    RuleLookup lookup;
-
-    while (w_begin != w_end) {
-      *v_end = *w_begin;
-      ++v_end;
-      ++w_begin;
-
-      auto it = _set_rules.find(lookup(v_begin, v_end));
-      if (it != _set_rules.end()) {
-        Rule const* rule = (*it).rule();
-        if (rule->lhs().size() <= static_cast<size_t>(v_end - v_begin)) {
-          LIBSEMIGROUPS_ASSERT(is_suffix(
-              v_begin, v_end, rule->lhs().cbegin(), rule->lhs().cend()));
-          v_end -= rule->lhs().size();
-          // u.resize(u.size() + rule->rhs() - rule->lhs);
-          w_begin -= rule->rhs().size();
-          std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
-        }
-      }
-      while (w_begin != w_end
-             && Rules::stats().min_length_lhs_rule - 1
-                    > static_cast<size_t>((v_end - v_begin))) {
-        *v_end = *w_begin;
-        ++v_end;
-        ++w_begin;
-      }
-    }
-    u.erase(v_end - u.cbegin());
-  }
-
-  template <typename ReductionOrder>
-  void RewritingSystemSet<ReductionOrder>::rewrite(native_word_type& v) {
-    reduce_system();
-    rewrite_no_reduce_system(v);
   }
 
   template <typename ReductionOrder>
@@ -288,62 +368,6 @@ namespace libsemigroups::detail {
       report_checking_confluence(seen, start_time);
     }
     return cached_confluent();
-  }
-
-  template <typename ReductionOrder>
-  bool RewritingSystemSet<ReductionOrder>::reduce_system() {
-    Rules::sort_pending_rules();
-
-    auto   start_time = std::chrono::high_resolution_clock::now();
-    Ticker ticker;
-    bool   old_ticker_running = _ticker_running;
-
-    bool rules_added = false;
-
-    while (Rules::number_of_pending_rules() != 0) {
-      Rule* rule1 = Rules::pop_pending_rule();
-      LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::pending);
-      LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
-
-      rewrite_no_reduce_system(rule1);
-
-      // Check rule is non-trivial
-      if (rule1->lhs() != rule1->rhs()) {
-        reorder(rule1);
-
-        native_word_type& lhs = rule1->lhs();
-
-        auto const first = Rules::active_rules().begin();
-        auto const last  = Rules::active_rules().end();
-
-        for (auto it = first; it != last;) {
-          Rule* rule2 = *it;
-
-          // Check if lhs is contained within either the lhs or rhs of rule2
-          // TODO(1) investigate whether or not this can be improved?
-          if (rule2->lhs().find(lhs) != native_word_type::npos
-              || rule2->rhs().find(lhs) != native_word_type::npos) {
-            // If it is, rule2 must be deactivated and re-processed
-            it = rm_active_rule(it);
-          } else {
-            ++it;
-          }
-        }
-        add_active_rule(rule1);
-        rules_added = true;
-      } else {
-        Rules::add_inactive_rule(rule1);
-      }
-
-      if (!_ticker_running && reporting_enabled()
-          && delta(start_time) >= std::chrono::seconds(1)) {
-        _ticker_running = true;
-        ticker(
-            [this, start_time]() { report_progress_from_thread(start_time); });
-      }
-    }
-    _ticker_running = old_ticker_running;
-    return rules_added;
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -519,11 +543,11 @@ namespace libsemigroups::detail {
         Rule* rule = Rules::pop_pending_rule();
         LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::pending);
         LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
-        // Rewrite both sides . . .
-        rewrite_no_reduce_system(rule);
+        rewrite_no_reduce_system(rule->lhs());
+        rewrite_no_reduce_system(rule->rhs());
 
         if (rule->lhs() != rule->rhs()) {
-          reorder(rule);
+          reorder<ReductionOrder>(rule);
           add_active_rule(rule);
           if (use_separate_trie) {
             index_type node = _new_rule_trie.add_word_no_checks(
