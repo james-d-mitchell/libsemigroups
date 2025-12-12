@@ -473,8 +473,8 @@ namespace libsemigroups {
         report_progress_from_thread(0, start_time);
       }
 
-     private:  // TODO nodiscard
-      virtual bool confluent_impl(std::atomic_uint64_t& seen) = 0;
+     private:
+      [[nodiscard]] virtual bool confluent_impl(std::atomic_uint64_t& seen) = 0;
 
       virtual void report_checking_confluence(
           std::atomic_uint64_t const&                           seen,
