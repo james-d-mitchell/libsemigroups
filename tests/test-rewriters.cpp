@@ -465,7 +465,7 @@ namespace libsemigroups {
       rewriting_system::add_rule(rt, "abab"_w, "bbb"_w);
       rt.reduce_system();
 
-      AhoCorasickImpl const& trie = rt.trie();
+      auto const& trie = rt.trie();
 
       auto start = OverlapIteratorTrie(trie);
       auto end   = OverlapIteratorTrie();

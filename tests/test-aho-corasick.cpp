@@ -561,7 +561,7 @@ namespace libsemigroups {
       r->lhs().assign({0, 1, 1, 1, 0, 1, 0});
       r->rhs().assign({0, 1, 0});
       ac.insert(r->lhs(), r);
-      REQUIRE(aho_corasick_impl::at_no_checks(ac, r->lhs()) == r);
+      REQUIRE(ac[r->lhs()] == r);
       delete r;
     }
 
