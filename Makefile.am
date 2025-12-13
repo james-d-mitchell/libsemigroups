@@ -922,7 +922,6 @@ test_all_SOURCES += tests/test-cong-common.cpp
 test_all_SOURCES += tests/test-cong.cpp
 test_all_SOURCES += tests/test-constants.cpp
 test_all_SOURCES += tests/test-containers.cpp
-test_all_SOURCES += tests/test-docs-code-examples.cpp
 test_all_SOURCES += tests/test-dot.cpp
 test_all_SOURCES += tests/test-felsch-tree.cpp
 test_all_SOURCES += tests/test-forest.cpp
