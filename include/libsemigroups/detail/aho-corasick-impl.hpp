@@ -72,12 +72,11 @@ namespace libsemigroups {
       template <typename Iterator>
       class Match {
        public:
-        Iterator first;
-        Iterator last;
+        Iterator                    first;
+        Iterator                    last;
+        std::optional<Value> const* value_ptr;
 
        private:
-        std::optional<Value> const* _value;
-
         template <std::size_t Index, typename T>
         auto&& get_helper(T&& t) {
           static_assert(Index < 3);
@@ -88,18 +87,18 @@ namespace libsemigroups {
             return std::forward<T>(t).last;
           }
           if constexpr (Index == 2) {
-            return std::forward<T>(t)._value;
+            return std::forward<T>(t).value_ptr;
           }
         }
 
        public:
         Match(Iterator frst, Iterator lst, std::optional<Value> const& val)
-            : first(frst), last(lst), _value(&val) {}
+            : first(frst), last(lst), value_ptr(&val) {}
 
         Match& operator=(Match&& that) {
-          first  = std::move(that.first);
-          last   = std::move(that.last);
-          _value = that._value;
+          first     = std::move(that.first);
+          last      = std::move(that.last);
+          value_ptr = that.value_ptr;
           return *this;
         }
 
@@ -110,11 +109,11 @@ namespace libsemigroups {
             return that.first == that.last;
           }
           return first == that.first && last == that.last
-                 && *_value == *that._value;
+                 && value() == that.value();
         }
 
         [[nodiscard]] std::optional<Value> const& value() const noexcept {
-          return *_value;
+          return *value_ptr;
         }
 
         template <std::size_t Index>

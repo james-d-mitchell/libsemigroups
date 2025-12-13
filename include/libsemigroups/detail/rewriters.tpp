@@ -649,8 +649,6 @@ namespace libsemigroups::detail {
       return;
     }
 
-    index_type current = _rule_trie.root;
-
     // [v.begin() + pos, v.end()) is the unrewritten suffix of v
     size_t pos = 0;
 
@@ -658,18 +656,17 @@ namespace libsemigroups::detail {
       // [v.begin() + pos, v.end()) = [v.begin() + pos, first) + [first, last) +
       // [last, v.end())
       // where [first, last) is a key into _rule_trie
-      auto [first, last, opt_rule]
+      auto [first, last, opt_rule_ptr]
           = _rule_trie.subword_no_checks(v.begin() + pos, v.end());
       if (first == last) {
         // no match
         break;
       }
+      Rule const* rule = opt_rule_ptr->value();
 
       // lhs of a rule is key = [first, last), so we erase this from v
       v.erase(first, last);
-      v.insert(v.begin() + pos,
-               opt_rule.value()->rhs().begin(),
-               opt_rule.value()->rhs().end());
+      v.insert(v.begin() + pos, rule->rhs().begin(), rule->rhs().end());
       // TODO update pos
     }
   }
