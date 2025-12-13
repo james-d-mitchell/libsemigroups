@@ -649,35 +649,30 @@ namespace libsemigroups::detail {
       return;
     }
 
-    _rewrite_tmp_buf.clear();
-    index_type current = _rule_trie.root;
-    _rewrite_tmp_buf.push_back(current);
+    // index_type current = _rule_trie.root;
 
-    std::string w;  // unread suffix of input word
-    std::swap(v, w);
-    std::reverse(w.begin(), w.end());
+    // // [v.begin() + pos, v.end()) is the unrewritten suffix of v
+    // size_t pos = 0;
 
-    while (!w.empty()) {
-      // Read first letter of w and traverse trie
-      auto x = w.back();
-      w.pop_back();
-      current
-          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
+    // while (pos != v.size()) {
+    //   // [v.begin() + pos, v.end()) = [v.begin(), v.begin() + pos') + key +
+    //   // [v.begin() + pos' + key.size(), v.end())
+    //   // where
+    //   // * pos' >= pos is the value of pos after the call in the next line
+    //   //   (this is the position of the match in [v.begin() + pos, v.end())
+    //   // * key = _rule_trie.node(it->first).signature
+    //   // * value = it->second
+    //   auto [it, pos] = _rule_trie.find_subword(v.begin() + pos, v.end());
+    //   if (pos == v.size()) {
+    //     // no match
+    //     break;
+    //   }
 
-      if (!_rule_trie.node_no_checks(current).terminal()) {
-        _rewrite_tmp_buf.push_back(current);
-        v.push_back(x);
-      } else {
-        Rule const* rule = _rule_trie.node_no_checks(current).value.value();
-        // TODO add comment about off by one
-        LIBSEMIGROUPS_ASSERT(rule->lhs().size() <= v.size() + 1);
-        v.erase(v.end() - (rule->lhs().size() - 1), v.end());
-        w.append(rule->rhs().rbegin(), rule->rhs().rend());
-        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - rule->lhs().size() + 1,
-                               _rewrite_tmp_buf.end());
-        current = _rewrite_tmp_buf.back();
-      }
-    }
+    //   // lhs of a rule is key = it->first, so we erase this from v
+    //   v.erase(v.begin() + pos, v.begin() + pos + it->first.size());
+    //   // rhs of a rule is val = it->second, so we insert it
+    //   v.insert(v.begin() + pos, it->second.begin(), it->second.end());
+    // }
   }
 
   ////////////////////////////////////////////////////////////////////////

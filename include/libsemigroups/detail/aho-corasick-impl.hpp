@@ -66,6 +66,31 @@ namespace libsemigroups {
 
       static constexpr const index_type root = 0;
 
+      // This struct represents a match of the "key" [first, last) in the trie,
+      // which has value "value"
+      template <typename Iterator>
+      struct Match {
+        Iterator                    first;
+        Iterator                    last;
+        std::optional<Value> const& value;
+
+        Match(Iterator frst, Iterator lst, std::optional<Value> const& val)
+            : first(frst), last(lst), value(val) {}
+
+        Match(Iterator frst, Iterator lst, Value const& val)
+            : first(frst), last(lst), value(val) {}
+
+        // TODO to tpp
+        [[nodiscard]] bool operator==(Match that) const {
+          if (first == last) {
+            // Indicates no match, and we don't care about value in that case
+            return that.first == that.last;
+          }
+          return first == that.first && last == that.last
+                 && value == that.value;
+        }
+      };
+
      private:
       class Node {
         friend class AhoCorasickImpl;
@@ -195,6 +220,15 @@ namespace libsemigroups {
       }
 
       AhoCorasickImpl& increase_alphabet_size_by(size_t val);
+
+      // TODO private?
+      [[nodiscard]] size_t height_no_checks(index_type i) const;
+
+      // TODO private?
+      [[nodiscard]] Node const& node_no_checks(index_type i) const {
+        LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
+        return _all_nodes[i];
+      }
 
       ////////////////////////////////////////////////////////////////////////
       // New API - somewhat similar mem fns to std::unordered_map
@@ -326,6 +360,10 @@ namespace libsemigroups {
                                   cend_terminal_nodes());
       }
 
+      [[nodiscard]] bool empty() const noexcept {
+        return number_of_nodes() == 1;
+      }
+
       // The following are implemented for std::unordered_map and could be
       // impled here too.
       // TODO find
@@ -341,30 +379,29 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
 
       // Returns the longest prefix of [first, last) that belongs to *this.
-      // TODO should return iterator (which I need to implement)
       // TODO to tpp
       template <typename Iterator>
-      [[nodiscard]] std::optional<Value> const&
+      [[nodiscard]] Match<Iterator>
       longest_prefix_no_checks(Iterator first, Iterator last) const {
         index_type current = root;
         index_type best    = root;
+        auto       best_it = first;
         for (auto it = first; it != last; ++it) {
-          // TODO check that there aren't other places where I used "traverse"
-          // but should have used _children
           current = _children.get(current, *it);
           if (current == UNDEFINED) {
-            return node_no_checks(best).value;
+            break;
           } else if (node_no_checks(current).value.has_value()) {
-            best = current;
+            best    = current;
+            best_it = it + 1;
           }
         }
-        return node_no_checks(best).value;
+        return Match(first, best_it, node_no_checks(best).value);
       }
 
       // Returns the longest prefix of [first, last) that belongs to *this.
       // TODO should return iterator (which I need to implement)
       template <typename Word>
-      [[nodiscard]] std::optional<Value> const&
+      [[nodiscard]] Match<typename Word::const_iterator>
       longest_prefix_no_checks(Word const& key) const {
         return longest_prefix_no_checks(key.begin(), key.end());
       }
@@ -372,14 +409,14 @@ namespace libsemigroups {
       // TODO should return iterator (which I need to implement)
       // TODO to tpp
       template <typename Iterator>
-      [[nodiscard]] std::optional<Value> const&
-      longest_prefix(Iterator first, Iterator last) const {
+      [[nodiscard]]
+      Match<Iterator> longest_prefix(Iterator first, Iterator last) const {
         throw_if_any_letter_out_of_range(first, last);
         return longest_prefix_no_checks(first, last);
       }
 
       template <typename Word>
-      [[nodiscard]] std::optional<Value> const&
+      [[nodiscard]] Match<typename Word::const_iterator>
       longest_prefix(Word const& key) const {
         return longest_prefix(key.begin(), key.end());
       }
@@ -410,19 +447,12 @@ namespace libsemigroups {
         return traverse_no_checks(suffix_link_no_checks(current), a);
       }
 
-      [[nodiscard]] bool empty() const noexcept {
-        return number_of_nodes() == 1;
-      }
-
       // TODO private?
       [[nodiscard]] index_type traverse(index_type  current,
                                         letter_type a) const {
         throw_if_node_index_not_active(current);
         return traverse_no_checks(current, a);
       }
-
-      // TODO private?
-      [[nodiscard]] size_t height_no_checks(index_type i) const;
 
       // TODO private?
       [[nodiscard]] size_t height(index_type i) const {
@@ -450,12 +480,6 @@ namespace libsemigroups {
       [[nodiscard]] index_type suffix_link(index_type current) const {
         throw_if_node_index_not_active(current);
         return suffix_link_no_checks(current);
-      }
-
-      // TODO private?
-      [[nodiscard]] Node const& node_no_checks(index_type i) const {
-        LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
-        return _all_nodes[i];
       }
 
       // TODO private?
@@ -558,21 +582,6 @@ namespace libsemigroups {
     };  // class AhoCorasickImpl
 
     namespace aho_corasick_impl {
-
-      template <typename Value, typename Iterator>
-      [[nodiscard]] bool contains_no_checks(AhoCorasickImpl<Value> const& ac,
-                                            Iterator                      first,
-                                            Iterator last) {
-        auto index = ac.traverse_trie_no_checks(first, last);
-        return index == UNDEFINED ? false : ac.node_no_checks(index).terminal();
-      }
-
-      // TODO rm?
-      template <typename Value, typename Word>
-      [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
-      contains_no_checks(AhoCorasickImpl<Value>& ac, Word const& w) {
-        return contains_no_checks(ac, w.begin(), w.end());
-      }
 
       // TODO rm?
       template <typename Value, typename Iterator>

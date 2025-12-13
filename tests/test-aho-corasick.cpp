@@ -353,14 +353,14 @@ namespace libsemigroups {
       ac.insert(01101_w, 3);
       ac.insert(01100_w, 4);
 
-      REQUIRE(aho_corasick_impl::contains_no_checks(ac, 0101_w));
-      REQUIRE(!aho_corasick_impl::contains_no_checks(ac, 010_w));
+      REQUIRE(ac.contains(0101_w));
+      REQUIRE(!ac.contains(010_w));
 
       WordRange words;
       words.alphabet_size(2).min(0).max(7);
       size_t count = 0;
       for (auto const& w : words) {
-        count += aho_corasick_impl::contains_no_checks(ac, w);
+        count += ac.contains(w);
       }
 
       REQUIRE(count == 4);
@@ -569,6 +569,7 @@ namespace libsemigroups {
                             "019",
                             "longest_prefix",
                             "[quick]") {
+      using Match = AhoCorasickImpl<int>::Match<word_type::const_iterator>;
       AhoCorasickImpl<int> ac(2);
 
       std::vector words = {000_w, 111_w, 1010_w, 001100_w, 1100_w};
@@ -579,9 +580,14 @@ namespace libsemigroups {
         count++;
       }
 
-      REQUIRE(!ac.longest_prefix(0011100001010101010_w).has_value());
-      REQUIRE(ac.longest_prefix(001100001010101010_w).value() == 3);
-      REQUIRE(ac.longest_prefix(1111111_w).value() == 1);
+      REQUIRE(!ac.longest_prefix(0011100001010101010_w).value.has_value());
+
+      auto               w   = 001100001010101010_w;
+      std::optional<int> val = 3;
+      REQUIRE(ac.longest_prefix(w) == Match(w.cbegin(), w.cbegin() + 6, val));
+      w   = 1111111_w;
+      val = 1;
+      REQUIRE(ac.longest_prefix(w) == Match(w.cbegin(), w.cbegin() + 3, val));
 
       WordRange allwords;
       allwords.alphabet_size(2).min(0).max(5);
