@@ -565,5 +565,43 @@ namespace libsemigroups {
       delete r;
     }
 
+    LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
+                            "019",
+                            "longest_prefix",
+                            "[quick]") {
+      AhoCorasickImpl<int> ac(2);
+
+      std::vector words = {000_w, 111_w, 1010_w, 001100_w, 1100_w};
+
+      size_t count = 0;
+      for (auto const& word : words) {
+        ac.insert(word, count);
+        count++;
+      }
+
+      REQUIRE(!ac.longest_prefix(0011100001010101010_w).has_value());
+      REQUIRE(ac.longest_prefix(001100001010101010_w).value() == 3);
+      REQUIRE(ac.longest_prefix(1111111_w).value() == 1);
+
+      WordRange allwords;
+      allwords.alphabet_size(2).min(0).max(5);
+
+      count = 0;
+      for (auto const& word : allwords) {
+        if (ac.contains(word)) {
+          count++;
+        }
+      }
+      REQUIRE(count == 4);
+
+      count = 0;
+      for (auto const& word : allwords) {
+        if (ac.at(word).has_value()) {
+          count++;
+        }
+      }
+      REQUIRE(count == 4);
+    }
+
   }  // namespace detail
 }  // namespace libsemigroups

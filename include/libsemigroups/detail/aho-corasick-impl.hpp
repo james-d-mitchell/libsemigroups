@@ -197,7 +197,7 @@ namespace libsemigroups {
       AhoCorasickImpl& increase_alphabet_size_by(size_t val);
 
       ////////////////////////////////////////////////////////////////////////
-      // New API
+      // New API - somewhat similar mem fns to std::unordered_map
       ////////////////////////////////////////////////////////////////////////
 
       // TODO return type should be maybe a bool to indicate if insertion
@@ -249,16 +249,23 @@ namespace libsemigroups {
       }
 
       template <typename Iterator>
-      [[nodiscard]] Value const& at(Iterator first, Iterator last) const {
+      [[nodiscard]] std::optional<Value> const& at(Iterator first,
+                                                   Iterator last) const {
         index_type current = root;
         for (auto it = first; it != last; ++it) {
-          current = traverse(current, *it);
+          throw_if_letter_out_of_range(*it);
+          current = _children.get(current, *it);
+          if (current == UNDEFINED) {
+            // TODO this doesn't really make sense, should throw
+            // std::out_of_range
+            return node_no_checks(root).value;
+          }
         }
-        return node_no_checks(current).value();
+        return node_no_checks(current).value;
       }
 
       template <typename Word>
-      [[nodiscard]] Value const& at(Word const& key) const {
+      [[nodiscard]] std::optional<Value> const& at(Word const& key) const {
         return at(key.begin(), key.end());
       }
 
@@ -266,7 +273,7 @@ namespace libsemigroups {
       [[nodiscard]] Value const& operator[](Word const& key) const {
         index_type current = root;
         for (auto it = key.begin(); it != key.end(); ++it) {
-          current = traverse_no_checks(current, *it);
+          current = _children.get(current, *it);
         }
         return node_no_checks(current).value.value();
       }
@@ -276,7 +283,7 @@ namespace libsemigroups {
                                             Iterator last) const {
         index_type current = root;
         for (auto it = first; it != last; ++it) {
-          current = traverse_no_checks(current, *it);
+          current = _children.get(current, *it);
           if (current == UNDEFINED) {
             return false;
           }
@@ -291,14 +298,8 @@ namespace libsemigroups {
 
       template <typename Iterator>
       [[nodiscard]] bool contains(Iterator first, Iterator last) const {
-        index_type current = root;
-        for (auto it = first; it != last; ++it) {
-          current = traverse(current, *it);
-          if (current == UNDEFINED) {
-            return false;
-          }
-        }
-        return node_no_checks(current).value.has_value();
+        throw_if_any_letter_out_of_range(first, last);
+        return contains_no_checks(first, last);
       }
 
       template <typename Word>
@@ -334,6 +335,54 @@ namespace libsemigroups {
       // TODO std::swap fn
       // TODO  operator==
       // TODO reserve? not sure how this would work
+
+      ////////////////////////////////////////////////////////////////////////
+      // New API - trie specific
+      ////////////////////////////////////////////////////////////////////////
+
+      // Returns the longest prefix of [first, last) that belongs to *this.
+      // TODO should return iterator (which I need to implement)
+      // TODO to tpp
+      template <typename Iterator>
+      [[nodiscard]] std::optional<Value> const&
+      longest_prefix_no_checks(Iterator first, Iterator last) const {
+        index_type current = root;
+        index_type best    = root;
+        for (auto it = first; it != last; ++it) {
+          // TODO check that there aren't other places where I used "traverse"
+          // but should have used _children
+          current = _children.get(current, *it);
+          if (current == UNDEFINED) {
+            return node_no_checks(best).value;
+          } else if (node_no_checks(current).value.has_value()) {
+            best = current;
+          }
+        }
+        return node_no_checks(best).value;
+      }
+
+      // Returns the longest prefix of [first, last) that belongs to *this.
+      // TODO should return iterator (which I need to implement)
+      template <typename Word>
+      [[nodiscard]] std::optional<Value> const&
+      longest_prefix_no_checks(Word const& key) const {
+        return longest_prefix_no_checks(key.begin(), key.end());
+      }
+
+      // TODO should return iterator (which I need to implement)
+      // TODO to tpp
+      template <typename Iterator>
+      [[nodiscard]] std::optional<Value> const&
+      longest_prefix(Iterator first, Iterator last) const {
+        throw_if_any_letter_out_of_range(first, last);
+        return longest_prefix_no_checks(first, last);
+      }
+
+      template <typename Word>
+      [[nodiscard]] std::optional<Value> const&
+      longest_prefix(Word const& key) const {
+        return longest_prefix(key.begin(), key.end());
+      }
 
       ////////////////////////////////////////////////////////////////////////
       // Old API

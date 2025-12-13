@@ -698,12 +698,6 @@ namespace libsemigroups {
         return _rule_trie;
       }
 
-      // TODO rm
-      // [[nodiscard]] std::unordered_map<index_type, Rule*> const&
-      // rule_map() const noexcept {
-      //   return _rule_map;
-      // }
-
      private:
       ////////////////////////////////////////////////////////////////////////
       // Private member functions
