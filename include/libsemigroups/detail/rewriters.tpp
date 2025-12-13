@@ -649,24 +649,23 @@ namespace libsemigroups::detail {
       return;
     }
 
-    // [v.begin() + pos, v.end()) is the unrewritten suffix of v
-    size_t pos = 0;
-
-    while (pos != v.size()) {
-      // [v.begin() + pos, v.end()) = [v.begin() + pos, first) + [first, last) +
-      // [last, v.end())
-      // where [first, last) is a key into _rule_trie
-      auto match = _rule_trie.subword_no_checks(v.begin() + pos, v.end());
-      if (match.first == match.last) {
-        // no match
-        break;
-      }
+    // FIXME although this works, I think it's strictly worse than what was
+    // here before, because here we repeatedly retraverse the trie, whereas
+    // previously we just walked back to where we left off reading it before.
+    auto match = _rule_trie.subword_no_checks(v.begin(), v.end());
+    while (match) {
+      // [v.begin(), v.end())
+      //   = [v.begin(), match.first)
+      //     + [match.first, match.last)
+      //     + [match.last, v.end())
+      // where [match.first, match.last) is a key into _rule_trie
       Rule const* rule = match.value().value();
 
+      size_t pos = std::distance(v.begin(), match.first);
       // lhs of a rule is key = [first, last), so we erase this from v
       v.erase(match.first, match.last);
       v.insert(v.begin() + pos, rule->rhs().begin(), rule->rhs().end());
-      pos -= rule->rhs().size();
+      match = _rule_trie.subword_no_checks(v.begin(), v.end());
     }
   }
 
