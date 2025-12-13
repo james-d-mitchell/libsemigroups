@@ -170,6 +170,7 @@ detailinclude_HEADERS += include/libsemigroups/detail/node-managed-graph.hpp
 detailinclude_HEADERS += include/libsemigroups/detail/node-managed-graph.tpp
 detailinclude_HEADERS += include/libsemigroups/detail/node-manager.hpp
 detailinclude_HEADERS += include/libsemigroups/detail/node-manager.tpp
+detailinclude_HEADERS += include/libsemigroups/detail/overlap-iterators.hpp
 detailinclude_HEADERS += include/libsemigroups/detail/path-iterators.hpp
 detailinclude_HEADERS += include/libsemigroups/detail/path-iterators.tpp
 detailinclude_HEADERS += include/libsemigroups/detail/print.hpp

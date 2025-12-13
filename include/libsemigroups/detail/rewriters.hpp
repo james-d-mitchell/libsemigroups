@@ -406,6 +406,7 @@ namespace libsemigroups {
       }
 
       [[nodiscard]] auto rules() const {
+        // TODO use stringviews rather than references
         return chain(active_rules(), pending_rules())
                | rx::transform([](Rule const* rule) -> rule_const_reference {
                    return rule_const_reference(rule->lhs(), rule->rhs());
@@ -615,12 +616,13 @@ namespace libsemigroups {
       // Private data
       ////////////////////////////////////////////////////////////////////////
 
-      std::unordered_map<index_type, Rule*> _new_rule_map;
-      AhoCorasickImpl                       _new_rule_trie;
-      mutable std::vector<index_type>       _rewrite_tmp_buf;
-      std::unordered_map<index_type, Rule*> _rule_map;
-      AhoCorasickImpl                       _rule_trie;
-      bool                                  _ticker_running;
+      // TODO rm
+      // std::unordered_map<index_type, Rule*> _new_rule_map;
+      // std::unordered_map<index_type, Rule*> _rule_map;
+      AhoCorasickImpl                 _new_rule_trie;
+      mutable std::vector<index_type> _rewrite_tmp_buf;
+      AhoCorasickImpl                 _rule_trie;
+      bool                            _ticker_running;
 
      public:
       ////////////////////////////////////////////////////////////////////////
@@ -696,6 +698,12 @@ namespace libsemigroups {
         return _rule_trie;
       }
 
+      // TODO rm
+      // [[nodiscard]] std::unordered_map<index_type, Rule*> const&
+      // rule_map() const noexcept {
+      //   return _rule_map;
+      // }
+
      private:
       ////////////////////////////////////////////////////////////////////////
       // Private member functions
@@ -728,6 +736,7 @@ namespace libsemigroups {
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const override;
     };
+
   }  // namespace detail
 }  // namespace libsemigroups
 

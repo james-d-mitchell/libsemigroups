@@ -53,6 +53,7 @@ namespace libsemigroups {
         }
         current = next;
       }
+      _terminal_nodes_index.emplace(current);
       _all_nodes[current].terminal(true);
       return current;
     }
@@ -83,6 +84,7 @@ namespace libsemigroups {
       auto rule_index = last_index;
       if (number_of_children_no_checks(last_index) != 0) {
         LIBSEMIGROUPS_ASSERT(_all_nodes[last_index].terminal());
+        _terminal_nodes_index.erase(last_index);
         _all_nodes[last_index].terminal(false);
         return rule_index;
       }

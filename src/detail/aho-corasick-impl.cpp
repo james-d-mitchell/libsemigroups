@@ -39,7 +39,12 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
 
     AhoCorasickImpl::Node::Node(index_type parent, letter_type a)
-        : _height(), _link(), _parent(), _parent_letter(), _terminal() {
+        : _height(),
+          _link(),
+          _parent(),
+          _parent_letter(),
+          _terminal(),
+          _value() {
       init(parent, a);
     }
 
@@ -55,6 +60,8 @@ namespace libsemigroups {
       _parent_letter = a;
       _terminal      = false;
       _suffix_link_sources.clear();
+      // TODO make this something sensible once AhoCorasick is a template
+      _value = nullptr;
 
       // Cannot set _link or _height here because we don't have access to the
       // relevant info here.
@@ -70,7 +77,8 @@ namespace libsemigroups {
           _children(0, 1, UNDEFINED),
           _active_nodes_index({root}),
           _inactive_nodes_index(),
-          _node_indices_to_update() {}
+          _node_indices_to_update(),
+          _terminal_nodes_index() {}
 
     AhoCorasickImpl& AhoCorasickImpl::init() {
       init(0);
@@ -89,7 +97,8 @@ namespace libsemigroups {
           _children(num_letters, 1, UNDEFINED),
           _active_nodes_index({root}),
           _inactive_nodes_index(),
-          _node_indices_to_update() {}
+          _node_indices_to_update(),
+          _terminal_nodes_index() {}
 
     AhoCorasickImpl& AhoCorasickImpl::init(size_t num_letters) {
       LIBSEMIGROUPS_ASSERT(!_all_nodes.empty());
@@ -109,6 +118,7 @@ namespace libsemigroups {
       _active_nodes_index.clear();
       _active_nodes_index.insert(root);
       _all_nodes[0].init();
+      _terminal_nodes_index.clear();
       LIBSEMIGROUPS_ASSERT(_active_nodes_index.size()
                                + _inactive_nodes_index.size()
                            == _all_nodes.size());
@@ -138,6 +148,8 @@ namespace libsemigroups {
     [[nodiscard]] bool AhoCorasickImpl::terminal_no_checks(index_type i) const {
       LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
       LIBSEMIGROUPS_ASSERT(_active_nodes_index.count(i) == 1);
+      LIBSEMIGROUPS_ASSERT(_all_nodes[i].terminal()
+                           == (_terminal_nodes_index.count(i) != 0));
       return _all_nodes[i].terminal();
     }
 
@@ -231,6 +243,7 @@ namespace libsemigroups {
 #endif
           _active_nodes_index.erase(node_index);
       LIBSEMIGROUPS_ASSERT(num_removed == 1);
+      _terminal_nodes_index.erase(node_index);
       _inactive_nodes_index.push_back(node_index);
     }
 
