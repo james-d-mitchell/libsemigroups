@@ -230,11 +230,9 @@ namespace libsemigroups {
 
     KnuthBendix kb(congruence_kind::twosided, p);
 
-    REQUIRE(kb.number_of_active_rules() == 0);
-    REQUIRE(kb.number_of_pending_rules() == 4);
+    REQUIRE(kb.rewriter().number_of_rules() == 4);
     kb.run();
-    REQUIRE(kb.number_of_active_rules() == 4);
-    REQUIRE(kb.number_of_pending_rules() == 0);
+    REQUIRE(kb.rewriter().number_of_rules() == 4);
     REQUIRE(kb.confluent() == true);
     REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);
   }
