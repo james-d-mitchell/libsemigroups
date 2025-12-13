@@ -656,18 +656,17 @@ namespace libsemigroups::detail {
       // [v.begin() + pos, v.end()) = [v.begin() + pos, first) + [first, last) +
       // [last, v.end())
       // where [first, last) is a key into _rule_trie
-      auto [first, last, opt_rule_ptr]
-          = _rule_trie.subword_no_checks(v.begin() + pos, v.end());
-      if (first == last) {
+      auto match = _rule_trie.subword_no_checks(v.begin() + pos, v.end());
+      if (match.first == match.last) {
         // no match
         break;
       }
-      Rule const* rule = opt_rule_ptr->value();
+      Rule const* rule = match.value().value();
 
       // lhs of a rule is key = [first, last), so we erase this from v
-      v.erase(first, last);
+      v.erase(match.first, match.last);
       v.insert(v.begin() + pos, rule->rhs().begin(), rule->rhs().end());
-      // TODO update pos
+      pos -= rule->rhs().size();
     }
   }
 

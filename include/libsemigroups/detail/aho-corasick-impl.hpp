@@ -72,24 +72,12 @@ namespace libsemigroups {
       template <typename Iterator>
       class Match {
        public:
-        Iterator                    first;
-        Iterator                    last;
-        std::optional<Value> const* value_ptr;
+        Iterator first;
+        Iterator last;
 
        private:
-        template <std::size_t Index, typename T>
-        auto&& get_helper(T&& t) {
-          static_assert(Index < 3);
-          if constexpr (Index == 0) {
-            return std::forward<T>(t).first;
-          }
-          if constexpr (Index == 1) {
-            return std::forward<T>(t).last;
-          }
-          if constexpr (Index == 2) {
-            return std::forward<T>(t).value_ptr;
-          }
-        }
+        // TODO should be std::optional<Value const&>
+        std::optional<Value> const* value_ptr;
 
        public:
         Match(Iterator frst, Iterator lst, std::optional<Value> const& val)
@@ -106,6 +94,7 @@ namespace libsemigroups {
         [[nodiscard]] bool operator==(Match const& that) const {
           if (first == last) {
             // Indicates no match, and we don't care about value in that case
+            // TODO What if the empty string is a match?
             return that.first == that.last;
           }
           return first == that.first && last == that.last
@@ -113,27 +102,13 @@ namespace libsemigroups {
         }
 
         [[nodiscard]] std::optional<Value> const& value() const noexcept {
+          // LIBSEMIGROUPS_ASSERT(value_ptr->has_value());
+          // TODO return Value
           return *value_ptr;
         }
 
-        template <std::size_t Index>
-        auto&& get() & {
-          return get_helper<Index>(*this);
-        }
-
-        template <std::size_t Index>
-        auto&& get() && {
-          return get_helper<Index>(*this);
-        }
-
-        template <std::size_t Index>
-        auto&& get() const& {
-          return get_helper<Index>(*this);
-        }
-
-        template <std::size_t Index>
-        auto&& get() const&& {
-          return get_helper<Index>(*this);
+        [[nodiscard]] operator bool() {
+          return first != last;
         }
       };
 
