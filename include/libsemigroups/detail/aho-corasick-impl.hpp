@@ -53,6 +53,8 @@ namespace libsemigroups {
     class AhoCorasickImpl {
      public:
       using index_type = uint32_t;
+      using terminal_node_const_iterator
+          = std::unordered_set<index_type>::const_iterator;
 
       static constexpr const index_type root = 0;
 
@@ -68,7 +70,7 @@ namespace libsemigroups {
         index_type                     _parent;
         letter_type                    _parent_letter;
         std::unordered_set<index_type> _suffix_link_sources;
-        bool                           _terminal;
+        bool                           _terminal;  // TODO rm
 
         Node& init() noexcept {
           return init(UNDEFINED, UNDEFINED);
@@ -101,6 +103,10 @@ namespace libsemigroups {
 
         [[nodiscard]] index_type suffix_link() const noexcept {
           return _link;
+        }
+
+        std::unordered_set<index_type>& suffix_link_sources() noexcept {
+          return _suffix_link_sources;
         }
 
         [[nodiscard]] bool terminal() const noexcept {
@@ -137,8 +143,6 @@ namespace libsemigroups {
           return *this;
         }
 
-        std::unordered_set<index_type>& suffix_link_sources() noexcept {
-          return _suffix_link_sources;
         }
       };  // class Node
 
@@ -152,6 +156,7 @@ namespace libsemigroups {
       std::unordered_set<index_type>    _active_nodes_index;
       std::vector<index_type>           _inactive_nodes_index;
       std::vector<index_type>           _node_indices_to_update;
+      std::unordered_set<index_type>    _terminal_nodes_index;
 
       // TODO(1): it seems likely that the positions of the active nodes in
       // _all_nodes will become scattered and disordered over time, and so it'd
@@ -293,6 +298,19 @@ namespace libsemigroups {
 
       void throw_if_node_index_out_of_range(index_type i) const;
       void throw_if_node_index_not_active(index_type i) const;
+
+      [[nodiscard]] terminal_node_const_iterator cbegin_terminal_nodes() const {
+        return _terminal_nodes_index.cbegin();
+      }
+
+      [[nodiscard]] terminal_node_const_iterator cend_terminal_nodes() const {
+        return _terminal_nodes_index.cend();
+      }
+
+      [[nodiscard]] auto terminal_nodes() const {
+        return rx::iterator_range(cbegin_terminal_nodes(),
+                                  cend_terminal_nodes());
+      }
 
      private:
       ////////////////////////////////////////////////////////////////////////

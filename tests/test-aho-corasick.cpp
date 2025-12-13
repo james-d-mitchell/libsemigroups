@@ -28,6 +28,7 @@
 #include "libsemigroups/constants.hpp"     // for operator==, operator!=
 #include "libsemigroups/dot.hpp"           // for Dot
 #include "libsemigroups/exception.hpp"     // for LibsemigroupsException
+#include "libsemigroups/ranges.hpp"        // for rx::ranges
 #include "libsemigroups/types.hpp"         // for word_type
 #include "libsemigroups/word-range.hpp"    // for operator""_w, WordRange, pow
 
@@ -527,5 +528,31 @@ namespace libsemigroups {
               == aho_corasick_impl::traverse_word_no_checks(ac, 111_w));
     }
 
+    LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
+                            "017",
+                            "terminal_nodes",
+                            "[quick]") {
+      using rx::      operator|;
+      AhoCorasickImpl ac(2);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 0);
+
+      aho_corasick_impl::add_word_no_checks(ac, 0101_w);
+      aho_corasick_impl::add_word_no_checks(ac, 0110_w);
+      aho_corasick_impl::add_word_no_checks(ac, 01101_w);
+      aho_corasick_impl::add_word_no_checks(ac, 01100_w);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 4);
+
+      aho_corasick_impl::add_word_no_checks(ac, 0101_w);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 4);
+
+      aho_corasick_impl::add_word_no_checks(ac, 01_w);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 5);
+
+      aho_corasick_impl::add_word_no_checks(ac, 010101_w);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 6);
+
+      ac.init();
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 0);
+    }
   }  // namespace detail
 }  // namespace libsemigroups
