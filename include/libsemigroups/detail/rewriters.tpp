@@ -649,30 +649,29 @@ namespace libsemigroups::detail {
       return;
     }
 
-    // index_type current = _rule_trie.root;
+    index_type current = _rule_trie.root;
 
-    // // [v.begin() + pos, v.end()) is the unrewritten suffix of v
-    // size_t pos = 0;
+    // [v.begin() + pos, v.end()) is the unrewritten suffix of v
+    size_t pos = 0;
 
-    // while (pos != v.size()) {
-    //   // [v.begin() + pos, v.end()) = [v.begin(), v.begin() + pos') + key +
-    //   // [v.begin() + pos' + key.size(), v.end())
-    //   // where
-    //   // * pos' >= pos is the value of pos after the call in the next line
-    //   //   (this is the position of the match in [v.begin() + pos, v.end())
-    //   // * key = _rule_trie.node(it->first).signature
-    //   // * value = it->second
-    //   auto [it, pos] = _rule_trie.find_subword(v.begin() + pos, v.end());
-    //   if (pos == v.size()) {
-    //     // no match
-    //     break;
-    //   }
+    while (pos != v.size()) {
+      // [v.begin() + pos, v.end()) = [v.begin() + pos, first) + [first, last) +
+      // [last, v.end())
+      // where [first, last) is a key into _rule_trie
+      auto [first, last, opt_rule]
+          = _rule_trie.subword_no_checks(v.begin() + pos, v.end());
+      if (first == last) {
+        // no match
+        break;
+      }
 
-    //   // lhs of a rule is key = it->first, so we erase this from v
-    //   v.erase(v.begin() + pos, v.begin() + pos + it->first.size());
-    //   // rhs of a rule is val = it->second, so we insert it
-    //   v.insert(v.begin() + pos, it->second.begin(), it->second.end());
-    // }
+      // lhs of a rule is key = [first, last), so we erase this from v
+      v.erase(first, last);
+      v.insert(v.begin() + pos,
+               opt_rule.value()->rhs().begin(),
+               opt_rule.value()->rhs().end());
+      // TODO update pos
+    }
   }
 
   ////////////////////////////////////////////////////////////////////////
