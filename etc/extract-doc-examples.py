@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Automated code block extraction from documentation for testing.
 """
