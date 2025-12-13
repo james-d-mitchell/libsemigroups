@@ -18,14 +18,17 @@
 // This file contains implementations of the member functions for the
 // AhoCorasickImpl<Value> class.
 
+#include "libsemigroups/detail/aho-corasick-impl.hpp"
 #include <optional>
 namespace libsemigroups {
   namespace detail {
 
     template <typename Value>
-    template <typename Iterator>
+    template <typename Iterator, typename... Args>
     typename AhoCorasickImpl<Value>::index_type
-    AhoCorasickImpl<Value>::add_word_no_checks(Iterator first, Iterator last) {
+    AhoCorasickImpl<Value>::emplace_no_checks(Iterator first,
+                                              Iterator last,
+                                              Args&&... args) {
       index_type current = root;
       for (auto it = first; it != last; ++it) {
         index_type next = _children.get(current, *it);
@@ -36,18 +39,19 @@ namespace libsemigroups {
         current = next;
       }
       _terminal_nodes_index.emplace(current);
+      _all_nodes[current].value = Value(std::forward<Args>(args)...);
       _all_nodes[current].terminal(true);
+
       return current;
     }
-
     template <typename Value>
     template <typename Iterator, typename... Args>
     typename AhoCorasickImpl<Value>::index_type
     AhoCorasickImpl<Value>::emplace(Iterator first,
                                     Iterator last,
-                                    Args&&... value) {
+                                    Args&&... args) {
       auto last_index = traverse_trie(first, last);
-      if (last_index != UNDEFINED && _all_nodes[last_index].is_terminal()) {
+      if (last_index != UNDEFINED && _all_nodes[last_index].value.has_value()) {
         std::string word;
         if constexpr (std::is_same_v<
                           std::decay_t<decltype(*std::declval<Iterator>())>,
@@ -67,27 +71,7 @@ namespace libsemigroups {
     template <typename Value>
     template <typename Iterator>
     typename AhoCorasickImpl<Value>::index_type
-    AhoCorasickImpl<Value>::rm_word(Iterator first, Iterator last) {
-      auto last_index = traverse_trie(first, last);
-      if (last_index == UNDEFINED) {
-        LIBSEMIGROUPS_EXCEPTION("cannot remove the word {} given by the "
-                                "arguments [first, last), as it does not "
-                                "correspond to a node in the trie",
-                                word_type(first, last));
-      }
-      if (!_all_nodes[last_index].terminal()) {
-        LIBSEMIGROUPS_EXCEPTION("cannot remove the word {} given by the "
-                                "arguments [first, last), as it does not "
-                                "correspond to a terminal node in the trie",
-                                word_type(first, last));
-      }
-      return rm_word_no_checks(first, last);
-    }
-
-    template <typename Value>
-    template <typename Iterator>
-    typename AhoCorasickImpl<Value>::index_type
-    AhoCorasickImpl<Value>::rm_word_no_checks(Iterator first, Iterator last) {
+    AhoCorasickImpl<Value>::erase_no_checks(Iterator first, Iterator last) {
       auto last_index = traverse_trie_no_checks(first, last);
       auto rule_index = last_index;
       if (number_of_children_no_checks(last_index) != 0) {
@@ -117,6 +101,26 @@ namespace libsemigroups {
     template <typename Value>
     template <typename Iterator>
     typename AhoCorasickImpl<Value>::index_type
+    AhoCorasickImpl<Value>::erase(Iterator first, Iterator last) {
+      auto last_index = traverse_trie(first, last);
+      if (last_index == UNDEFINED) {
+        LIBSEMIGROUPS_EXCEPTION("cannot remove the word {} given by the "
+                                "arguments [first, last), as it does not "
+                                "correspond to a node in the trie",
+                                word_type(first, last));
+      }
+      if (!_all_nodes[last_index].terminal()) {
+        LIBSEMIGROUPS_EXCEPTION("cannot remove the word {} given by the "
+                                "arguments [first, last), as it does not "
+                                "correspond to a terminal node in the trie",
+                                word_type(first, last));
+      }
+      return erase_no_checks(first, last);
+    }
+
+    template <typename Value>
+    template <typename Iterator>
+    typename AhoCorasickImpl<Value>::index_type
     AhoCorasickImpl<Value>::traverse_trie_no_checks(Iterator first,
                                                     Iterator last) const {
       index_type current = root;
@@ -140,7 +144,7 @@ namespace libsemigroups {
           _parent(),
           _parent_letter(),
           _terminal(),
-          _value() {
+          value(std::nullopt) {
       init(parent, a);
     }
 
@@ -157,8 +161,8 @@ namespace libsemigroups {
       _parent_letter = a;
       _terminal      = false;
       _suffix_link_sources.clear();
-      // TODO make this something sensible once AhoCorasick is a template
-      _value = std::nullopt;
+
+      value = std::nullopt;
 
       // Cannot set _link or _height here because we don't have access to the
       // relevant info here.

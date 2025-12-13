@@ -137,7 +137,7 @@ namespace libsemigroups::detail {
         _word_index = *_current_word_iterator;
         ++_current_word_iterator;
 
-        _overlap.lhs  = _trie->node_no_checks(_word_index).value();
+        _overlap.lhs  = _trie->node_no_checks(_word_index).value.value();
         _suffix_index = _trie->suffix_link_no_checks(_word_index);
         LIBSEMIGROUPS_ASSERT(_trie->terminal(_word_index));
 
@@ -192,7 +192,7 @@ namespace libsemigroups::detail {
         // Construct the critical pair
         if (_trie->terminal_no_checks(_suffix_descendent_index)) {
           _overlap.rhs
-              = _trie->node_no_checks(_suffix_descendent_index).value();
+              = _trie->node_no_checks(_suffix_descendent_index).value.value();
           _overlap.length = _trie->height_no_checks(_suffix_index);
           return true;
         }
