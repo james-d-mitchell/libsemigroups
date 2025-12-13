@@ -33,6 +33,7 @@
 #include "libsemigroups/word-range.hpp"    // for operator""_w, WordRange, pow
 
 #include "libsemigroups/detail/aho-corasick-impl.hpp"  // for traverse_word, AhoCorasick
+#include "libsemigroups/detail/rewriters.hpp"          // for Rule
 
 namespace libsemigroups {
   using namespace literals;
@@ -554,5 +555,21 @@ namespace libsemigroups {
       ac.init();
       REQUIRE((ac.terminal_nodes() | rx::count()) == 0);
     }
+
+    LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
+                            "018",
+                            "adding and getting values",
+                            "[quick]") {
+      AhoCorasickImpl ac(2);
+      // REQUIRE(acm.node(0).value() == std::vector<size_t>{});
+      REQUIRE(ac.number_of_nodes() == 1);
+      Rule* r = new Rule();
+      r->lhs().assign({0, 1, 1, 1, 0, 1, 0});
+      r->rhs().assign({0, 1, 0});
+      aho_corasick_impl::insert_no_checks(ac, 0_w, r);
+      REQUIRE(aho_corasick_impl::at_no_checks(ac, 0_w) == r);
+      delete r;
+    }
+
   }  // namespace detail
 }  // namespace libsemigroups
