@@ -26,7 +26,8 @@
 #include "libsemigroups/aho-corasick.hpp"  // for dot
 #include "libsemigroups/word-range.hpp"    // for operator""_w
 
-#include "libsemigroups/detail/report.hpp"     // for ReportGuard
+#include "libsemigroups/detail/overlap-iterators.hpp"  // for OverlapIteratorTrie
+#include "libsemigroups/detail/report.hpp"             // for ReportGuard
 #include "libsemigroups/detail/rewriters.hpp"  // for RewritingSystemTrie<>
 
 namespace std {
@@ -453,5 +454,51 @@ namespace libsemigroups {
       REQUIRE(rws.is_terminating() == tril::TRUE);
     }
 
+    LIBSEMIGROUPS_TEST_CASE("OverlapIteratorTrie",
+                            "016",
+                            "basic overlaps",
+                            "[quick]") {
+      auto                  rg = ReportGuard(false);
+      RewritingSystemTrie<> rt;
+      rt.increase_alphabet_size_by(2);
+      rewriting_system::add_rule(rt, "abba"_w, "aaa"_w);
+      rewriting_system::add_rule(rt, "abab"_w, "bbb"_w);
+      rt.reduce_system();
+
+      AhoCorasickImpl const& trie = rt.trie();
+
+      auto start = OverlapIteratorTrie(trie);
+      auto end   = OverlapIteratorTrie();
+
+      REQUIRE(start->lhs->lhs() == std::string({0, 1, 1, 0}));
+      REQUIRE(start->lhs->rhs() == std::string({0, 0, 0}));
+      REQUIRE(start->rhs->lhs() == std::string({0, 1, 1, 0}));
+      REQUIRE(start->rhs->rhs() == std::string({0, 0, 0}));
+      REQUIRE(start->length == 1);
+
+      ++start;
+      REQUIRE(start->lhs->lhs() == std::string({0, 1, 1, 0}));
+      REQUIRE(start->lhs->rhs() == std::string({0, 0, 0}));
+      REQUIRE(start->rhs->lhs() == std::string({0, 1, 0, 1}));
+      REQUIRE(start->rhs->rhs() == std::string({1, 1, 1}));
+      REQUIRE(start->length == 1);
+
+      ++start;
+      REQUIRE(start->lhs->lhs() == std::string({0, 1, 0, 1}));
+      REQUIRE(start->lhs->rhs() == std::string({1, 1, 1}));
+      REQUIRE(start->rhs->lhs() == std::string({0, 1, 1, 0}));
+      REQUIRE(start->rhs->rhs() == std::string({0, 0, 0}));
+      REQUIRE(start->length == 2);
+
+      ++start;
+      REQUIRE(start->lhs->lhs() == std::string({0, 1, 0, 1}));
+      REQUIRE(start->lhs->rhs() == std::string({1, 1, 1}));
+      REQUIRE(start->rhs->lhs() == std::string({0, 1, 0, 1}));
+      REQUIRE(start->rhs->rhs() == std::string({1, 1, 1}));
+      REQUIRE(start->length == 2);
+
+      ++start;
+      REQUIRE(start == end);
+    }
   }  // namespace detail
 }  // namespace libsemigroups

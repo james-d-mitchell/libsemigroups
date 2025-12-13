@@ -530,28 +530,56 @@ namespace libsemigroups {
     template <typename RewritingSystem, typename ReductionOrder>
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::run_real() {
       while (!_rewriter.confluent()) {
-        // _rewriter.rules() calls process_pending_rules, so can't call it
-        // inside the rule1 loop below.
-        auto rules = _rewriter.rules();
-        for (auto rule1 : rules) {
-          if (stop_running()) {
-            return;
-          }
-          // WARNING: We cannot call process_pending_rules here, because it
-          // messes up the "rules", i.e. makes the corresponding iterators
-          // invalid due to adding rules. So, in some examples we accumulate
-          // many many pending rules inside these 2 for loops, before they are
-          // processed by _rewriter.confluent() above. This makes some tests
-          // much slower than they were before (and possibly others faster),
-          // e.g. [016]. Hence the 3 lines below, which then makes e.g. [016]
-          // run faster but other tests run much much slower. We will fix this
-          // later. FIXME
+        if constexpr (std::is_same_v<RewritingSystem,
+                                     detail::RewritingSystemTrie<>>) {
+          OverlapIteratorTrie start = OverlapIteratorTrie(_rewriter.trie());
 
-          // else if
-          // (_rewriter.break_from_overlap_check()) { break;
-          // }
-          for (auto rule2 : rules) {
-            overlap(rule1, rule2);
+          OverlapIteratorTrie end = OverlapIteratorTrie();
+
+          while (start != end) {
+            if (stop_running()) {
+              return;
+            }
+
+            Rule const* rule1          = start->lhs;
+            Rule const* rule2          = start->rhs;
+            size_t      overlap_length = start->length;
+
+            MultiView u(rule1->rhs());
+            u.append(rule2->lhs().cbegin() + overlap_length,
+                     rule2->lhs().cend());
+
+            MultiView v(rule1->lhs().cbegin(),
+                        rule1->lhs().cend() - overlap_length);
+            v.append(rule2->rhs().cbegin(), rule2->rhs().cend());
+
+            _rewriter.add_rule(u.begin(), u.end(), v.begin(), v.end());
+            ++start;
+          }
+        } else {
+          // _rewriter.rules() calls process_pending_rules, so can't call it
+          // inside the rule1 loop below.
+          auto rules = _rewriter.rules();
+          for (auto rule1 : rules) {
+            if (stop_running()) {
+              return;
+            }
+            // WARNING: We cannot call process_pending_rules here, because it
+            // messes up the "rules", i.e. makes the corresponding iterators
+            // invalid due to adding rules. So, in some examples we accumulate
+            // many many pending rules inside these 2 for loops, before they are
+            // processed by _rewriter.confluent() above. This makes some tests
+            // much slower than they were before (and possibly others faster),
+            // e.g. [016]. Hence the 3 lines below, which then makes e.g. [016]
+            // run faster but other tests run much much slower. We will fix this
+            // later. FIXME
+
+            // else if
+            // (_rewriter.break_from_overlap_check()) { break;
+            // }
+            for (auto rule2 : rules) {
+              overlap(rule1, rule2);
+            }
           }
         }
       }

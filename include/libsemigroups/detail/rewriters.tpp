@@ -385,10 +385,11 @@ namespace libsemigroups::detail {
   template <typename ReductionOrder>
   RewritingSystemTrie<ReductionOrder>::RewritingSystemTrie()
       : RewritingSystemBase(),
-        _new_rule_map(),
+        // TODO remove
+        // _new_rule_map(),
         _new_rule_trie(),
         _rewrite_tmp_buf(),
-        _rule_map(),
+        // _rule_map(),
         _rule_trie(0),
         _ticker_running(false) {}
 
@@ -397,7 +398,8 @@ namespace libsemigroups::detail {
   RewritingSystemTrie<ReductionOrder>::init() {
     // Do nothing to _rewrite_tmp_buf, _new_rule_map, or _new_rule_trie
     RewritingSystemBase::init();
-    _rule_map.clear();
+    // TODO rm
+    // _rule_map.clear();
     _rule_trie.init();
     _ticker_running = false;
     return *this;
@@ -410,12 +412,14 @@ namespace libsemigroups::detail {
     init();  // TODO rm?
     RewritingSystemBase::operator=(that);
     _rule_trie = that._rule_trie;
-    for (Rule* rule : Rules::active_rules()) {
-      index_type node = _rule_trie.traverse_trie_no_checks(rule->lhs().cbegin(),
-                                                           rule->lhs().cend());
-      LIBSEMIGROUPS_ASSERT(_rule_trie.terminal(node));
-      _rule_map.emplace(node, rule);
-    }
+    // TODO rm, as rule copying is handled by the trie
+    // for (Rule* rule : Rules::active_rules()) {
+    //   index_type node =
+    //   _rule_trie.traverse_trie_no_checks(rule->lhs().cbegin(),
+    //                                                        rule->lhs().cend());
+    //   LIBSEMIGROUPS_ASSERT(_rule_trie.terminal(node));
+    //   _rule_map.emplace(node, rule);
+    // }
 
     return *this;
   }
@@ -463,7 +467,8 @@ namespace libsemigroups::detail {
     while (Rules::number_of_pending_rules() != 0) {
       if (use_separate_trie) {
         _new_rule_trie.init(_rule_trie.alphabet_size());
-        _new_rule_map.clear();
+        // TODO rm
+        // _new_rule_map.clear();
       }
       bool rules_added_this_pass = false;
       while (Rules::number_of_pending_rules() != 0) {
@@ -477,16 +482,18 @@ namespace libsemigroups::detail {
           reorder<ReductionOrder>(rule);
           add_active_rule(rule);
           if (use_separate_trie) {
-            index_type node = _new_rule_trie.add_word_no_checks(
-                rule->lhs().cbegin(), rule->lhs().cend());
-#ifdef LIBSEMIGROUPS_DEBUG
-            auto [it, inserted] =
-#endif
-                _new_rule_map.emplace(node, rule);
+            _new_rule_trie.insert_no_checks(
+                rule->lhs().cbegin(), rule->lhs().cend(), rule);
+            // TODO replace with new assertion
+            // #ifdef LIBSEMIGROUPS_DEBUG
+            // auto [it, inserted] =
+            // #endif
+            // _new_rule_map.emplace(node, rule);
+            // LIBSEMIGROUPS_ASSERT(inserted);
+
             // Shouldn't be possible for 2 rules with equal left-hand
             // sides to exist, since the later added one will be rewritten
             // using the first.
-            LIBSEMIGROUPS_ASSERT(inserted);
           }
           rules_added           = true;
           rules_added_this_pass = true;
@@ -508,8 +515,9 @@ namespace libsemigroups::detail {
 
         AhoCorasickImpl* new_rule_trie
             = use_separate_trie ? &_new_rule_trie : &_rule_trie;
-        decltype(_rule_map)* rule_map
-            = use_separate_trie ? &_new_rule_map : &_rule_map;
+        // TODO rm
+        // decltype(_rule_map)* rule_map
+        //     = use_separate_trie ? &_new_rule_map : &_rule_map;
 
         auto const first = Rules::active_rules().begin();
         auto const last  = Rules::active_rules().end();
@@ -520,12 +528,15 @@ namespace libsemigroups::detail {
           // rule
           bool increment = true;
           for (auto const& word : {rule->lhs(), rule->rhs()}) {
+            // TODO make better use of the new trie map setup
             auto first = begin_search_no_checks(*new_rule_trie, word);
             auto last  = end_search_no_checks(*new_rule_trie, word);
 
-            if (std::any_of(first, last, [rule, rule_map](auto node_index) {
-                  return (*rule_map)[node_index] != rule;
-                })) {
+            if (std::any_of(
+                    first, last, [rule, new_rule_trie](auto node_index) {
+                      return new_rule_trie->node_no_checks(node_index).value()
+                             != rule;
+                    })) {
               it        = rm_active_rule(it);
               increment = false;
               break;
@@ -581,9 +592,8 @@ namespace libsemigroups::detail {
         *v_end = x;
         ++v_end;
       } else {
-        auto rule_it = _rule_map.find(current);
         // Find rule that corresponds to terminal node
-        Rule const* rule     = rule_it->second;
+        Rule const* rule     = _rule_trie.node_no_checks(current).value();
         auto        lhs_size = rule->lhs().size();
         LIBSEMIGROUPS_ASSERT(lhs_size != 0);
 
@@ -618,18 +628,19 @@ namespace libsemigroups::detail {
     // Must check negation here so we can use ReturnFalse to mean "no order"
     LIBSEMIGROUPS_ASSERT(!ReductionOrder{}(new_rule->lhs(), new_rule->rhs()));
     Rules::add_active_rule(new_rule);
-    index_type node = _rule_trie.add_word_no_checks(new_rule->lhs().cbegin(),
-                                                    new_rule->lhs().cend());
-    _rule_map.emplace(node, new_rule);
+    _rule_trie.insert_no_checks(
+        new_rule->lhs().cbegin(), new_rule->lhs().cend(), new_rule);
+    // TODO rm
+    // _rule_map.emplace(node, new_rule);
     set_cached_confluent(tril::unknown);
   }
 
   template <typename ReductionOrder>
   typename RewritingSystemTrie<ReductionOrder>::iterator
   RewritingSystemTrie<ReductionOrder>::rm_active_rule(iterator it) {
-    index_type node = _rule_trie.rm_word_no_checks((*it)->lhs().cbegin(),
-                                                   (*it)->lhs().cend());
-    _rule_map.erase(node);
+    _rule_trie.rm_word_no_checks((*it)->lhs().cbegin(), (*it)->lhs().cend());
+    // TODO rm
+    // _rule_map.erase(node);
     return Rules::make_active_rule_pending(it);
   }
 
@@ -660,7 +671,7 @@ namespace libsemigroups::detail {
         _rewrite_tmp_buf.push_back(current);
         v.push_back(x);
       } else {
-        Rule const* rule = _rule_map.find(current)->second;
+        Rule const* rule = _rule_trie.node_no_checks(current).value();
         // TODO add comment about off by one
         LIBSEMIGROUPS_ASSERT(rule->lhs().size() <= v.size() + 1);
         v.erase(v.end() - (rule->lhs().size() - 1), v.end());
@@ -689,14 +700,16 @@ namespace libsemigroups::detail {
 
     // For each rule, check if any descendent of any suffix breaks
     // confluence
-    for (auto node_it = _rule_map.begin(); node_it != _rule_map.end();
+    for (auto node_it = _rule_trie.cbegin_terminal_nodes();
+         node_it != _rule_trie.cend_terminal_nodes();
          ++node_it) {
       seen++;
-      link = _rule_trie.suffix_link_no_checks(node_it->first);
-      LIBSEMIGROUPS_ASSERT(node_it->first != _rule_trie.root);
+      link = _rule_trie.suffix_link_no_checks(*node_it);
+      LIBSEMIGROUPS_ASSERT(*node_it != _rule_trie.root);
       while (link != _rule_trie.root) {
-        if (!descendants_confluent(
-                node_it->second, link, _rule_trie.height_no_checks(link))) {
+        if (!descendants_confluent(_rule_trie.node_no_checks(*node_it).value(),
+                                   link,
+                                   _rule_trie.height_no_checks(link))) {
           set_cached_confluent(tril::FALSE);
           report_checking_confluence(seen, start_time);
           return false;
@@ -716,7 +729,7 @@ namespace libsemigroups::detail {
       size_t      overlap_length) const {
     LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::active);
     if (_rule_trie.node_no_checks(current_node).terminal()) {
-      Rule const* rule2 = _rule_map.find(current_node)->second;
+      Rule const* rule2 = _rule_trie.node_no_checks(current_node).value();
       // Process overlap
       // Word looks like ABC where the LHS of rule1 corresponds to AB,
       // the LHS of rule2 corresponds to BC, and |C|=nodes.size() - 1.
@@ -761,7 +774,6 @@ namespace libsemigroups::detail {
   ////////////////////////////////////////////////////////////////////////
   // RewritingSystemTrie --- Reporting
   ////////////////////////////////////////////////////////////////////////
-
   template <typename ReductionOrder>
   void RewritingSystemTrie<ReductionOrder>::report_checking_confluence(
       std::atomic_uint64_t const&                           seen,
