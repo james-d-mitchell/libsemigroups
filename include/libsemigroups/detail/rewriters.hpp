@@ -609,7 +609,7 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
 
       using iterator      = Rules::iterator;
-      using index_type    = AhoCorasickImpl::index_type;
+      using index_type    = AhoCorasickImpl<Rule*>::index_type;
       using rule_iterator = std::unordered_map<index_type, Rule*>::iterator;
 
       ////////////////////////////////////////////////////////////////////////
@@ -619,9 +619,9 @@ namespace libsemigroups {
       // TODO rm
       // std::unordered_map<index_type, Rule*> _new_rule_map;
       // std::unordered_map<index_type, Rule*> _rule_map;
-      AhoCorasickImpl                 _new_rule_trie;
+      AhoCorasickImpl<Rule*>          _new_rule_trie;
       mutable std::vector<index_type> _rewrite_tmp_buf;
-      AhoCorasickImpl                 _rule_trie;
+      AhoCorasickImpl<Rule*>          _rule_trie;
       bool                            _ticker_running;
 
      public:
@@ -694,7 +694,7 @@ namespace libsemigroups {
         const_cast<RewritingSystemTrie*>(this)->rewrite(u);
       }
 
-      [[nodiscard]] AhoCorasickImpl const& trie() const noexcept {
+      [[nodiscard]] AhoCorasickImpl<Rule*> const& trie() const noexcept {
         return _rule_trie;
       }
 

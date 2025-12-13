@@ -47,7 +47,8 @@ namespace libsemigroups::detail {
   // OverlapIteratorTrie
   ////////////////////////////////////////////////////////////////////////
 
-  template <typename Trie = AhoCorasickImpl>
+  // TODO rm default param
+  template <typename Trie = AhoCorasickImpl<Rule*>>
   class OverlapIteratorTrie {
     template <typename OtherTrie>
     friend class OverlapIteratorTrie;
@@ -85,7 +86,7 @@ namespace libsemigroups::detail {
           _suffix_descendent_index(),
           _overlap(),
           _trie(nullptr),
-          _index_stack(){};
+          _index_stack() {};
 
     // TODO: Use an init rather than setting default values?
     OverlapIteratorTrie(Trie const& trie)
