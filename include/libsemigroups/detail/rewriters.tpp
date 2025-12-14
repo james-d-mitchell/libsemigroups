@@ -673,30 +673,24 @@ namespace libsemigroups::detail {
     index_type current = _rule_trie.root;
     _rewrite_tmp_buf.push_back(current);
 
-    std::string w;  // unread suffix of input word
-    std::swap(v, w);
-    std::reverse(w.begin(), w.end());
-
     // position of the start of the unread suffix of the input word
     size_t pos = 0;
 
-    while (!w.empty()) {
-      // Read first letter of w and traverse trie
-      auto x = w.back();
-      w.pop_back();
-      current
-          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
+    while (pos != v.size()) {
+      // Read first letter of the unread suffix and traverse trie
+      current = _rule_trie.traverse_no_checks(current,
+                                              static_cast<letter_type>(v[pos]));
 
-      if (!_rule_trie.node_no_checks(current).terminal()) {
+      if (!_rule_trie.node_no_checks(current).value.has_value()) {
         _rewrite_tmp_buf.push_back(current);
-        v.push_back(x);
+        pos++;
       } else {
         Rule const* rule = _rule_trie.node_no_checks(current).value.value();
-        // TODO add comment about off by one
-        LIBSEMIGROUPS_ASSERT(rule->lhs().size() <= v.size() + 1);
-        v.erase(v.end() - (rule->lhs().size() - 1), v.end());
-        w.append(rule->rhs().rbegin(), rule->rhs().rend());
-        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - rule->lhs().size() + 1,
+        size_t      diff = rule->lhs().size() - 1;
+        pos -= diff;
+        v.erase(v.begin() + pos, v.begin() + pos + diff + 1);
+        v.insert(v.begin() + pos, rule->rhs().begin(), rule->rhs().end());
+        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - diff,
                                _rewrite_tmp_buf.end());
         current = _rewrite_tmp_buf.back();
       }
