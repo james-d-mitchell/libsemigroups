@@ -40,7 +40,6 @@ namespace libsemigroups {
       }
       _terminal_nodes_index.emplace(current);
       _all_nodes[current].value = Value(std::forward<Args>(args)...);
-      _all_nodes[current].terminal(true);
 
       return current;
     }
@@ -77,7 +76,7 @@ namespace libsemigroups {
       if (number_of_children_no_checks(last_index) != 0) {
         LIBSEMIGROUPS_ASSERT(_all_nodes[last_index].terminal());
         _terminal_nodes_index.erase(last_index);
-        _all_nodes[last_index].terminal(false);
+        _all_nodes[last_index].value = std::nullopt;
         return rule_index;
       }
 
@@ -139,12 +138,7 @@ namespace libsemigroups {
 
     template <typename Value>
     AhoCorasickImpl<Value>::Node::Node(index_type parent, letter_type a)
-        : _height(),
-          _link(),
-          _parent(),
-          _parent_letter(),
-          _terminal(),
-          value(std::nullopt) {
+        : _height(), _link(), _parent(), _parent_letter(), value(std::nullopt) {
       init(parent, a);
     }
 
@@ -159,7 +153,6 @@ namespace libsemigroups {
       }
       _parent        = i;
       _parent_letter = a;
-      _terminal      = false;
       _suffix_link_sources.clear();
 
       value = std::nullopt;

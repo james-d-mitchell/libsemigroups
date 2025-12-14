@@ -124,7 +124,6 @@ namespace libsemigroups {
         index_type                     _parent;
         letter_type                    _parent_letter;
         std::unordered_set<index_type> _suffix_link_sources;
-        bool                           _terminal;  // TODO rm
 
         Node& init() noexcept {
           return init(UNDEFINED, UNDEFINED);
@@ -166,7 +165,7 @@ namespace libsemigroups {
         }
 
         [[nodiscard]] bool terminal() const noexcept {
-          return _terminal;
+          return value.has_value();
         }
 
         [[nodiscard]] index_type parent() const noexcept {
@@ -191,11 +190,6 @@ namespace libsemigroups {
 
         Node const& suffix_link(index_type val) noexcept {
           _link = val;
-          return *this;
-        }
-
-        Node& terminal(bool val) noexcept {
-          _terminal = val;
           return *this;
         }
 
@@ -345,7 +339,7 @@ namespace libsemigroups {
             return false;
           }
         }
-        return node_no_checks(current).value.has_value();
+        return node_no_checks(current).terminal();
       }
 
       template <typename Word>
@@ -413,7 +407,7 @@ namespace libsemigroups {
           current = _children.get(current, *it);
           if (current == UNDEFINED) {
             break;
-          } else if (node_no_checks(current).value.has_value()) {
+          } else if (node_no_checks(current).terminal()) {
             best    = current;
             best_it = it + 1;
           }
@@ -455,8 +449,7 @@ namespace libsemigroups {
             // No match possible, the word goes off the trie before a match is
             // found.
             break;
-            // TODO replace value.has_value() by is_terminal() everywhere
-          } else if (node_no_checks(current).value.has_value()) {
+          } else if (node_no_checks(current).terminal()) {
             // The match is the word labelling the path from the root to
             // current, which corresponds to the return value below
             LIBSEMIGROUPS_ASSERT(static_cast<size_t>(std::distance(first, it))

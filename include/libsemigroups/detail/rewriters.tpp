@@ -677,7 +677,7 @@ namespace libsemigroups::detail {
       current = _rule_trie.traverse_no_checks(current,
                                               static_cast<letter_type>(v[pos]));
 
-      if (!_rule_trie.node_no_checks(current).value.has_value()) {
+      if (!_rule_trie.node_no_checks(current).terminal()) {
         _trie_nodes_visited_indices.push_back(current);
         pos++;
       } else {
