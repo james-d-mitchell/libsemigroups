@@ -601,6 +601,13 @@ namespace libsemigroups {
     // RewritingSystemTrie
     ////////////////////////////////////////////////////////////////////////
 
+    // Possible adapters list:
+    // * IncreseAlphabetSize
+    // * Emplace
+    // * Erase  (maybe just erase)
+    // * Rewrite
+    // * Keys (possibly via begin/end)
+
     // TODO remove default template param
     template <typename ReductionOrder = ShortLexCompare>
     class RewritingSystemTrie : public RewritingSystemBase {
@@ -608,9 +615,8 @@ namespace libsemigroups {
       // Private aliases
       ////////////////////////////////////////////////////////////////////////
 
-      using iterator      = Rules::iterator;
-      using index_type    = AhoCorasickImpl<Rule*>::index_type;
-      using rule_iterator = std::unordered_map<index_type, Rule*>::iterator;
+      using iterator   = Rules::iterator;
+      using index_type = AhoCorasickImpl<Rule*>::index_type;
 
       ////////////////////////////////////////////////////////////////////////
       // Private data
