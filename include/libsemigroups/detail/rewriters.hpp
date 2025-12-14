@@ -616,13 +616,10 @@ namespace libsemigroups {
       // Private data
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO rm
-      // std::unordered_map<index_type, Rule*> _new_rule_map;
-      // std::unordered_map<index_type, Rule*> _rule_map;
       AhoCorasickImpl<Rule*>          _new_rule_trie;
-      mutable std::vector<index_type> _rewrite_tmp_buf;
       AhoCorasickImpl<Rule*>          _rule_trie;
       bool                            _ticker_running;
+      mutable std::vector<index_type> _trie_nodes_visited_indices;
 
      public:
       ////////////////////////////////////////////////////////////////////////

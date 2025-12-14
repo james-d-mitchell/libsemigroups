@@ -385,21 +385,16 @@ namespace libsemigroups::detail {
   template <typename ReductionOrder>
   RewritingSystemTrie<ReductionOrder>::RewritingSystemTrie()
       : RewritingSystemBase(),
-        // TODO remove
-        // _new_rule_map(),
         _new_rule_trie(),
-        _rewrite_tmp_buf(),
-        // _rule_map(),
         _rule_trie(0),
-        _ticker_running(false) {}
+        _ticker_running(false),
+        _trie_nodes_visited_indices() {}
 
   template <typename ReductionOrder>
   RewritingSystemTrie<ReductionOrder>&
   RewritingSystemTrie<ReductionOrder>::init() {
-    // Do nothing to _rewrite_tmp_buf, _new_rule_map, or _new_rule_trie
+    // Do nothing to _trie_nodes_visited_indices, or _new_rule_trie
     RewritingSystemBase::init();
-    // TODO rm
-    // _rule_map.clear();
     _rule_trie.init();
     _ticker_running = false;
     return *this;
@@ -570,9 +565,9 @@ namespace libsemigroups::detail {
       return;
     }
 
-    _rewrite_tmp_buf.clear();
+    _trie_nodes_visited_indices.clear();
     index_type current = _rule_trie.root;
-    _rewrite_tmp_buf.push_back(current);
+    _trie_nodes_visited_indices.push_back(current);
 
 #ifdef LIBSEMIGROUPS_DEBUG
     iterator v_begin = u.begin();
@@ -589,7 +584,7 @@ namespace libsemigroups::detail {
           = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
 
       if (!_rule_trie.node_no_checks(current).terminal()) {
-        _rewrite_tmp_buf.push_back(current);
+        _trie_nodes_visited_indices.push_back(current);
         *v_end = x;
         ++v_end;
       } else {
@@ -606,9 +601,10 @@ namespace libsemigroups::detail {
         w_begin -= rule->rhs().size();
         // Replace lhs with rhs in-place
         std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
-        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - lhs_size + 1,
-                               _rewrite_tmp_buf.end());
-        current = _rewrite_tmp_buf.back();
+        _trie_nodes_visited_indices.erase(_trie_nodes_visited_indices.end()
+                                              - lhs_size + 1,
+                                          _trie_nodes_visited_indices.end());
+        current = _trie_nodes_visited_indices.back();
       }
     }
     u.erase(v_end - u.cbegin());
@@ -669,9 +665,9 @@ namespace libsemigroups::detail {
     //      match = _rule_trie.subword_no_checks(v.begin(), v.end());
     //    }
 
-    _rewrite_tmp_buf.clear();
+    _trie_nodes_visited_indices.clear();
     index_type current = _rule_trie.root;
-    _rewrite_tmp_buf.push_back(current);
+    _trie_nodes_visited_indices.push_back(current);
 
     // position of the start of the unread suffix of the input word
     size_t pos = 0;
@@ -682,7 +678,7 @@ namespace libsemigroups::detail {
                                               static_cast<letter_type>(v[pos]));
 
       if (!_rule_trie.node_no_checks(current).value.has_value()) {
-        _rewrite_tmp_buf.push_back(current);
+        _trie_nodes_visited_indices.push_back(current);
         pos++;
       } else {
         Rule const* rule = _rule_trie.node_no_checks(current).value.value();
@@ -690,9 +686,10 @@ namespace libsemigroups::detail {
         pos -= diff;
         v.erase(v.begin() + pos, v.begin() + pos + diff + 1);
         v.insert(v.begin() + pos, rule->rhs().begin(), rule->rhs().end());
-        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - diff,
-                               _rewrite_tmp_buf.end());
-        current = _rewrite_tmp_buf.back();
+        _trie_nodes_visited_indices.erase(_trie_nodes_visited_indices.end()
+                                              - diff,
+                                          _trie_nodes_visited_indices.end());
+        current = _trie_nodes_visited_indices.back();
       }
     }
   }
