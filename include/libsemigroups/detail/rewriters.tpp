@@ -649,23 +649,57 @@ namespace libsemigroups::detail {
       return;
     }
 
-    // FIXME although this works, I think it's strictly worse than what was
+    // NOTE: although this works, I think it's strictly worse than what was
     // here before, because here we repeatedly retraverse the trie, whereas
     // previously we just walked back to where we left off reading it before.
-    auto match = _rule_trie.subword_no_checks(v.begin(), v.end());
-    while (match) {
-      // [v.begin(), v.end())
-      //   = [v.begin(), match.first)
-      //     + [match.first, match.last)
-      //     + [match.last, v.end())
-      // where [match.first, match.last) is a key into _rule_trie
-      Rule const* rule = match.value().value();
 
-      size_t pos = std::distance(v.begin(), match.first);
-      // lhs of a rule is key = [first, last), so we erase this from v
-      v.erase(match.first, match.last);
-      v.insert(v.begin() + pos, rule->rhs().begin(), rule->rhs().end());
-      match = _rule_trie.subword_no_checks(v.begin(), v.end());
+    //    auto match = _rule_trie.subword_no_checks(v.begin(), v.end());
+    //    while (match) {
+    //      // [v.begin(), v.end())
+    //      //   = [v.begin(), match.first)
+    //      //     + [match.first, match.last)
+    //      //     + [match.last, v.end())
+    //      // where [match.first, match.last) is a key into _rule_trie
+    //      Rule const* rule = match.value().value();
+    //
+    //      size_t pos = std::distance(v.begin(), match.first);
+    //      // lhs of a rule is key = [first, last), so we erase this from v
+    //      v.erase(match.first, match.last);
+    //      v.insert(v.begin() + pos, rule->rhs().begin(), rule->rhs().end());
+    //      match = _rule_trie.subword_no_checks(v.begin(), v.end());
+    //    }
+
+    _rewrite_tmp_buf.clear();
+    index_type current = _rule_trie.root;
+    _rewrite_tmp_buf.push_back(current);
+
+    std::string w;  // unread suffix of input word
+    std::swap(v, w);
+    std::reverse(w.begin(), w.end());
+
+    // position of the start of the unread suffix of the input word
+    size_t pos = 0;
+
+    while (!w.empty()) {
+      // Read first letter of w and traverse trie
+      auto x = w.back();
+      w.pop_back();
+      current
+          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
+
+      if (!_rule_trie.node_no_checks(current).terminal()) {
+        _rewrite_tmp_buf.push_back(current);
+        v.push_back(x);
+      } else {
+        Rule const* rule = _rule_trie.node_no_checks(current).value.value();
+        // TODO add comment about off by one
+        LIBSEMIGROUPS_ASSERT(rule->lhs().size() <= v.size() + 1);
+        v.erase(v.end() - (rule->lhs().size() - 1), v.end());
+        w.append(rule->rhs().rbegin(), rule->rhs().rend());
+        _rewrite_tmp_buf.erase(_rewrite_tmp_buf.end() - rule->lhs().size() + 1,
+                               _rewrite_tmp_buf.end());
+        current = _rewrite_tmp_buf.back();
+      }
     }
   }
 
