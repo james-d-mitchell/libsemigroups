@@ -601,29 +601,83 @@ namespace libsemigroups {
     // RewritingSystemTrie
     ////////////////////////////////////////////////////////////////////////
 
+    // Adapters
+
+    template <typename Trie>
+    struct IncreaseAlphabetSize;
+
+    template <typename Trie>
+    struct Emplace;
+
+    template <typename Trie>
+    struct Erase;
+
+    template <typename Trie>
+    struct Rewrite;
+
+    // Specializations for AhoCorasickImpl
+
+    template <>
+    struct IncreaseAlphabetSize<AhoCorasickImpl<Rule*>> {
+      void operator()(AhoCorasickImpl<Rule*>& ac, size_t val) {
+        ac.increase_alphabet_size_by(val);
+      }
+    };
+
+    template <>
+    struct Emplace<AhoCorasickImpl<Rule*>> {
+      template <typename Iterator>
+      void operator()(AhoCorasickImpl<Rule*>& ac,
+                      Iterator                first,
+                      Iterator                last,
+                      Rule*                   val) {
+        ac.emplace_no_checks(first, last, val);
+      }
+    };
+
+    template <>
+    struct Erase<AhoCorasickImpl<Rule*>> {
+      template <typename Iterator>
+      void operator()(AhoCorasickImpl<Rule*>& ac,
+                      Iterator                first,
+                      Iterator                last) {
+        ac.erase_no_checks(first, last);
+      }
+    };
+
+    template <typename Trie>
+    struct RewritingSystemTrieTraits {
+      using IncreaseAlphabetSize = IncreaseAlphabetSize<Trie>;
+      using Emplace              = Emplace<Trie>;
+      using Erase                = Erase<Trie>;
+    };
+
     // Possible adapters list:
-    // * IncreseAlphabetSize
-    // * Emplace
-    // * Erase  (maybe just erase)
+    // * IncreaseAlphabetSize
+    // * Emplace/Insert
+    // * Erase
     // * Rewrite
     // * Keys (possibly via begin/end)
 
-    // TODO remove default template param
-    template <typename ReductionOrder = ShortLexCompare>
+    // TODO remove first 2 default template param
+    template <typename ReductionOrder = ShortLexCompare,
+              typename Trie           = AhoCorasickImpl<Rule*>,
+              typename Traits         = RewritingSystemTrieTraits<Trie>>
     class RewritingSystemTrie : public RewritingSystemBase {
       ////////////////////////////////////////////////////////////////////////
       // Private aliases
       ////////////////////////////////////////////////////////////////////////
 
-      using iterator   = Rules::iterator;
+      using iterator = Rules::iterator;
+      // TODO
       using index_type = AhoCorasickImpl<Rule*>::index_type;
 
       ////////////////////////////////////////////////////////////////////////
       // Private data
       ////////////////////////////////////////////////////////////////////////
 
-      AhoCorasickImpl<Rule*>          _new_rule_trie;
-      AhoCorasickImpl<Rule*>          _rule_trie;
+      Trie                            _new_rule_trie;
+      Trie                            _rule_trie;
       bool                            _ticker_running;
       mutable std::vector<index_type> _trie_nodes_visited_indices;
 

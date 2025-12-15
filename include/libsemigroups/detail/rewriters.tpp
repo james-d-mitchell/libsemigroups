@@ -633,7 +633,7 @@ namespace libsemigroups::detail {
   template <typename ReductionOrder>
   typename RewritingSystemTrie<ReductionOrder>::iterator
   RewritingSystemTrie<ReductionOrder>::rm_active_rule(iterator it) {
-    _rule_trie.erase((*it)->lhs().cbegin(), (*it)->lhs().cend());
+    _rule_trie.erase_no_checks((*it)->lhs().cbegin(), (*it)->lhs().cend());
     return Rules::make_active_rule_pending(it);
   }
 
