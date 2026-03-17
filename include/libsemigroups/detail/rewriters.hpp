@@ -601,68 +601,9 @@ namespace libsemigroups {
     // RewritingSystemTrie
     ////////////////////////////////////////////////////////////////////////
 
-    // Adapters
-
-    template <typename Trie>
-    struct IncreaseAlphabetSize;
-
-    template <typename Trie>
-    struct Emplace;
-
-    template <typename Trie>
-    struct Erase;
-
-    template <typename Trie>
-    struct Rewrite;
-
-    // Specializations for AhoCorasickImpl
-
-    template <>
-    struct IncreaseAlphabetSize<AhoCorasickImpl<Rule*>> {
-      void operator()(AhoCorasickImpl<Rule*>& ac, size_t val) {
-        ac.increase_alphabet_size_by(val);
-      }
-    };
-
-    template <>
-    struct Emplace<AhoCorasickImpl<Rule*>> {
-      template <typename Iterator>
-      void operator()(AhoCorasickImpl<Rule*>& ac,
-                      Iterator                first,
-                      Iterator                last,
-                      Rule*                   val) {
-        ac.emplace_no_checks(first, last, val);
-      }
-    };
-
-    template <>
-    struct Erase<AhoCorasickImpl<Rule*>> {
-      template <typename Iterator>
-      void operator()(AhoCorasickImpl<Rule*>& ac,
-                      Iterator                first,
-                      Iterator                last) {
-        ac.erase_no_checks(first, last);
-      }
-    };
-
-    template <typename Trie>
-    struct RewritingSystemTrieTraits {
-      using IncreaseAlphabetSize = IncreaseAlphabetSize<Trie>;
-      using Emplace              = Emplace<Trie>;
-      using Erase                = Erase<Trie>;
-    };
-
-    // Possible adapters list:
-    // * IncreaseAlphabetSize
-    // * Emplace/Insert
-    // * Erase
-    // * Rewrite
-    // * Keys (possibly via begin/end)
-
     // TODO remove first 2 default template param
     template <typename ReductionOrder = ShortLexCompare,
-              typename Trie           = AhoCorasickImpl<Rule*>,
-              typename Traits         = RewritingSystemTrieTraits<Trie>>
+              typename Trie           = AhoCorasickImpl<Rule*>>
     class RewritingSystemTrie : public RewritingSystemBase {
       ////////////////////////////////////////////////////////////////////////
       // Private aliases
