@@ -36,9 +36,9 @@
 #include "libsemigroups/types.hpp"   // for u8string
 
 #include "aho-corasick-impl.hpp"  // for AhoCorasickImpl
-#include "guard.hpp"              // for Guard
 #include "multi-view.hpp"         // for MultiView
 #include "report.hpp"             // for reporting_enabled
+#include "value-guard.hpp"        // for ValueGuard
 
 namespace libsemigroups {
   namespace detail {
