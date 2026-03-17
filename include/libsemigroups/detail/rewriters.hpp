@@ -311,6 +311,7 @@ namespace libsemigroups {
       // Numbers of rules
       ////////////////////////////////////////////////////////////////////////
 
+      // TODO rm? just use active_rules().size()
       [[nodiscard]] size_t number_of_active_rules() const noexcept {
         return _active_rules.size();
       }
@@ -319,6 +320,7 @@ namespace libsemigroups {
         return _inactive_rules.size();
       }
 
+      // TODO rm? just use pending_rules().size()
       [[nodiscard]] size_t number_of_pending_rules() const noexcept {
         return _pending_rules.size();
       }
@@ -553,6 +555,8 @@ namespace libsemigroups {
             RewritingSystemSet<ReductionOrder>>();
       }
 
+      // TODO it'd be possible to check if we encounter a cycle in rewriting,
+      // which we could then use to say is_terminating is false
       [[nodiscard]] tril is_terminating() const noexcept {
         return RewritingSystemBase::is_terminating<
             RewritingSystemSet<ReductionOrder>>();
@@ -561,9 +565,9 @@ namespace libsemigroups {
       // TODO nodiscard or is the return value used for anything?
       bool reduce_system();
 
-      // TODO it'd be possible to check if we encounter a cycle in rewriting,
-      // which we could then use to say is_terminating is false
       void rewrite(native_word_type& u);
+
+      // TODO rm
       void rewrite2(native_word_type& u);
 
       // TODO the next function shouldn't be necessary, i.e. make things
@@ -685,6 +689,8 @@ namespace libsemigroups {
 
       // TODO(1) iterators
       void rewrite(native_word_type& u);
+
+      // TODO rm
       void rewrite2(native_word_type& u);
 
       // TODO shouldn't be necessary
