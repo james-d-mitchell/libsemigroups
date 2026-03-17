@@ -26,6 +26,7 @@
 
 #include "aho-corasick-impl.hpp"  // for AhoCorasickImpl
 #include "multi-view.hpp"         // for MultiView
+#include "rewriters.hpp"          // for Rule
 
 namespace libsemigroups::detail {
 
