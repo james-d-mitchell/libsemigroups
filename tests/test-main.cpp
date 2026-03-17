@@ -60,10 +60,6 @@ CATCH_REGISTER_ENUM(libsemigroups::Runner::state,
                     libsemigroups::Runner::state::not_running,
                     libsemigroups::Runner::state::dead);
 
-#define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
-#define CATCH_CONFIG_FAST_COMPILE
-#define CATCH_CONFIG_MAIN
-
 namespace {
   bool find_tag(Catch::TestCaseInfo const& testInfo, std::string tag) {
     std::transform(tag.begin(), tag.end(), tag.begin(), ::tolower);
@@ -206,7 +202,7 @@ struct LibsemigroupsListener : Catch::EventListenerBase {
 
     SectionStats(Catch::SectionStats const& ss, SectionInfo const& si)
         : duration(std::chrono::nanoseconds(
-            static_cast<uint64_t>(ss.durationInSeconds * std::pow(10, 9)))),
+              static_cast<uint64_t>(ss.durationInSeconds * std::pow(10, 9)))),
           name(si.name) {}
   };
 

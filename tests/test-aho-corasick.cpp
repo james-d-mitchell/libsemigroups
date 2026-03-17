@@ -28,10 +28,12 @@
 #include "libsemigroups/constants.hpp"     // for operator==, operator!=
 #include "libsemigroups/dot.hpp"           // for Dot
 #include "libsemigroups/exception.hpp"     // for LibsemigroupsException
+#include "libsemigroups/ranges.hpp"        // for rx::ranges
 #include "libsemigroups/types.hpp"         // for word_type
 #include "libsemigroups/word-range.hpp"    // for operator""_w, WordRange, pow
 
 #include "libsemigroups/detail/aho-corasick-impl.hpp"  // for traverse_word, AhoCorasick
+#include "libsemigroups/detail/rewriters.hpp"          // for Rule
 
 namespace libsemigroups {
   using namespace literals;
@@ -344,21 +346,21 @@ namespace libsemigroups {
                             "012",
                             "contains_no_checks",
                             "[quick][aho-corasick]") {
-      AhoCorasickImpl ac(2);
+      AhoCorasickImpl<int> ac(2);
 
-      aho_corasick_impl::add_word_no_checks(ac, 0101_w);
-      aho_corasick_impl::add_word_no_checks(ac, 0110_w);
-      aho_corasick_impl::add_word_no_checks(ac, 01101_w);
-      aho_corasick_impl::add_word_no_checks(ac, 01100_w);
+      ac.insert(0101_w, 1);
+      ac.insert(0110_w, 2);
+      ac.insert(01101_w, 3);
+      ac.insert(01100_w, 4);
 
-      REQUIRE(aho_corasick_impl::contains_no_checks(ac, 0101_w));
-      REQUIRE(!aho_corasick_impl::contains_no_checks(ac, 010_w));
+      REQUIRE(ac.contains(0101_w));
+      REQUIRE(!ac.contains(010_w));
 
       WordRange words;
       words.alphabet_size(2).min(0).max(7);
       size_t count = 0;
       for (auto const& w : words) {
-        count += aho_corasick_impl::contains_no_checks(ac, w);
+        count += ac.contains(w);
       }
 
       REQUIRE(count == 4);
@@ -369,15 +371,16 @@ namespace libsemigroups {
                             "search",
                             "[quick][aho-corasick]") {
       using words::operator+;
-      using index_type = AhoCorasickImpl::index_type;
+      using index_type = AhoCorasickImpl<int>::index_type;
 
-      AhoCorasickImpl ac(2);
+      AhoCorasickImpl<int> ac(2);
 
       std::vector             subwords = {0101_w, 0110_w, 01101_w, 01100_w};
       std::vector<index_type> indexes;
 
+      size_t val = 0;
       for (auto const& word : subwords) {
-        indexes.push_back(aho_corasick_impl::add_word_no_checks(ac, word));
+        indexes.push_back(ac.insert(word, val++));
       }
       // REQUIRE(indexes == std::vector<index_type>({4, 6, 7, 8}));
 
@@ -431,17 +434,17 @@ namespace libsemigroups {
 
     LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
                             "014",
-                            "begin_search_no_checks",
+                            "begin_search_no_checks x1",
                             "[quick][aho-corasick]") {
       using words::operator+;
-      using index_type = AhoCorasickImpl::index_type;
-      AhoCorasickImpl ac(2);
+      using index_type = AhoCorasickImpl<int>::index_type;
+      AhoCorasickImpl<int> ac(2);
 
       std::vector subwords = {000_w, 111_w, 1010_w, 001100_w, 1100_w};
       std::vector<index_type> index;
 
       for (auto const& word : subwords) {
-        index.push_back(aho_corasick_impl::add_word_no_checks(ac, word));
+        index.push_back(ac.insert(word, 0));
       }
 
       // REQUIRE(index == std::vector<index_type>({3, 6, 15, 11, 9}));
@@ -457,17 +460,17 @@ namespace libsemigroups {
 
     LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
                             "015",
-                            "begin_search_no_checks",
+                            "begin_search_no_checks x2",
                             "[quick][aho-corasick]") {
-      using index_type = AhoCorasickImpl::index_type;
+      using index_type = AhoCorasickImpl<int>::index_type;
 
-      AhoCorasickImpl ac(2);
-      std::vector     subwords = {001100_w, 0_w, 1_w, 00_w, 01_w, 10_w, 11_w};
-      //                          6,        1,   7,   2,    8,    9,    10}));
+      AhoCorasickImpl<int> ac(2);
+      std::vector subwords = {001100_w, 0_w, 1_w, 00_w, 01_w, 10_w, 11_w};
+      //                          6,        1,   7,   2,    8,    9, 10}));
       std::vector<size_t> index;
 
       for (auto const& word : subwords) {
-        index.push_back(aho_corasick_impl::add_word_no_checks(ac, word));
+        index.push_back(ac.insert(word, 0));
       }
       // REQUIRE(index == std::vector<size_t>({6, 1, 7, 2, 8, 9, 10}));
 
@@ -483,19 +486,14 @@ namespace libsemigroups {
                             "016",
                             "all words size 4",
                             "[quick][aho-corasick]") {
-      using index_type = AhoCorasick::index_type;
-      AhoCorasickImpl ac(2);
-      AhoCorasick     ac2;
+      using index_type = AhoCorasickImpl<int>::index_type;
+      AhoCorasickImpl<int> ac(2);
 
       WordRange words;
       words.alphabet_size(2).min(4).max(5);
       for (auto const& w : words) {
-        aho_corasick_impl::add_word_no_checks(ac, w);
-        //  aho_corasick::add_word(ac2, w);
+        ac.insert(w, 0);
       }
-      // REQUIRE(aho_corasick::dot(ac2).to_string() == "");
-
-      // REQUIRE(ac.number_of_nodes() == 7);
 
       std::vector<index_type> expected
           = {4, 5, 7, 8, 11, 12, 14, 15, 19, 20, 22, 23, 26, 27, 29, 30};
@@ -521,10 +519,132 @@ namespace libsemigroups {
       REQUIRE(expected == result);
 
       REQUIRE(ac.number_of_nodes() == 31);
-      aho_corasick_impl::rm_word_no_checks(ac, 0111_w);
+      ac.erase(0111_w);
       REQUIRE(ac.number_of_nodes() == 30);
       REQUIRE(aho_corasick_impl::traverse_word_no_checks(ac, 0111_w)
               == aho_corasick_impl::traverse_word_no_checks(ac, 111_w));
+    }
+    LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
+                            "017",
+                            "terminal_nodes",
+                            "[quick]") {
+      using rx::operator|;
+      AhoCorasickImpl<int> ac(2);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 0);
+
+      ac.insert(0101_w, 0);
+      ac.insert(0110_w, 1);
+      ac.insert(01101_w, 2);
+      ac.insert(01100_w, 3);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 4);
+
+      REQUIRE_THROWS_AS(ac.insert(0101_w, 0), LibsemigroupsException);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 4);
+
+      ac.insert(01_w, 0);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 5);
+
+      ac.insert(010101_w, 0);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 6);
+
+      ac.init();
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 0);
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
+                            "018",
+                            "adding and getting values",
+                            "[quick]") {
+      AhoCorasickImpl<Rule*> ac(2);
+      REQUIRE(ac.number_of_nodes() == 1);
+      Rule* r = new Rule();
+      r->lhs().assign({0, 1, 1, 1, 0, 1, 0});
+      r->rhs().assign({0, 1, 0});
+      ac.insert(r->lhs(), r);
+      REQUIRE(ac[r->lhs()] == r);
+      delete r;
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
+                            "019",
+                            "longest_prefix",
+                            "[quick]") {
+      using Match = AhoCorasickImpl<int>::Match<word_type::const_iterator>;
+      AhoCorasickImpl<int> ac(2);
+
+      std::vector words = {000_w, 111_w, 1010_w, 001100_w, 1100_w};
+
+      size_t count = 0;
+      for (auto const& word : words) {
+        ac.insert(word, count);
+        count++;
+      }
+
+      REQUIRE(!ac.longest_prefix(0011100001010101010_w).value().has_value());
+
+      auto               w   = 001100001010101010_w;
+      std::optional<int> val = 3;
+      REQUIRE(ac.longest_prefix(w) == Match(w.cbegin(), w.cbegin() + 6, val));
+      w   = 1111111_w;
+      val = 1;
+      REQUIRE(ac.longest_prefix(w) == Match(w.cbegin(), w.cbegin() + 3, val));
+
+      // TODO put in separate test
+      WordRange allwords;
+      allwords.alphabet_size(2).min(0).max(5);
+
+      count = 0;
+      for (auto const& word : allwords) {
+        if (ac.contains(word)) {
+          count++;
+        }
+      }
+      REQUIRE(count == 4);
+
+      count = 0;
+      for (auto const& word : allwords) {
+        if (ac.at(word).has_value()) {
+          count++;
+        }
+      }
+      REQUIRE(count == 4);
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl", "020", "subword", "[quick]") {
+      using Match = AhoCorasickImpl<int>::Match<word_type::const_iterator>;
+      AhoCorasickImpl<int> ac(2);
+
+      std::vector words = {000_w, 111_w, 1010_w, 001100_w, 1100_w};
+
+      size_t count = 0;
+      for (auto const& word : words) {
+        ac.insert(word, count);
+        count++;
+      }
+
+      auto w     = 0011100001010101010_w;
+      auto match = ac.subword(w);
+
+      REQUIRE(std::distance(w.cbegin(), match.first) == 2);
+      REQUIRE(std::distance(w.cbegin(), match.last) == 5);
+      REQUIRE(match.value() == 1);
+      REQUIRE(word_type(match.first, match.last)
+              == words[match.value().value()]);
+
+      std::optional<int> val = 1;
+      REQUIRE(match == Match(w.begin() + 2, w.begin() + 5, val));
+
+      match = ac.subword(w.cbegin() + 3, w.cend());
+      val   = 4;
+
+      REQUIRE(std::distance(w.cbegin(), match.first) == 3);
+      REQUIRE(std::distance(w.cbegin(), match.last) == 7);
+      REQUIRE(match.value() == 4);
+      REQUIRE(match == Match(w.begin() + 3, w.begin() + 7, val));
+
+      match = ac.subword(w.cbegin() + 4, w.cend());
+      val   = 0;
+      REQUIRE(match == Match(w.begin() + 5, w.begin() + 8, val));
     }
 
   }  // namespace detail
