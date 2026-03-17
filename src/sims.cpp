@@ -33,13 +33,14 @@
 #include <memory>      // for unique_ptr, make_unique, swap
 #include <string>      // for basic_string, string, operator+
 #include <thread>      // for thread, yield
-#include <tuple>       // for _Swallow_assign, ignore
+#include <tuple>       // for ignore
 #include <utility>     // for move, swap, pair
 
 #include "libsemigroups/constants.hpp"             // for operator!=, ope...
 #include "libsemigroups/debug.hpp"                 // for LIBSEMIGROUPS_A...
 #include "libsemigroups/exception.hpp"             // for LIBSEMIGROUPS_E...
 #include "libsemigroups/froidure-pin.hpp"          // for FroidurePin
+#include "libsemigroups/knuth-bendix.hpp"          // for KnuthBendix
 #include "libsemigroups/presentation.hpp"          // for Presentation
 #include "libsemigroups/to-froidure-pin.hpp"       // for to_word_graph
 #include "libsemigroups/todd-coxeter-helpers.hpp"  // for add_generating_pair

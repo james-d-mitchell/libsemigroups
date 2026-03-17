@@ -29,19 +29,56 @@
 #include <string>         // for basic_string, operator==
 #include <unordered_map>  // for unordered_map
 
-#include "libsemigroups/debug.hpp"  // for LIBSEMIGROUPS_ASSERT
-#include "libsemigroups/order.hpp"  // for shortlex_compare
-#include "libsemigroups/types.hpp"  // for UNDEFINED
+#include "libsemigroups/config.hpp"  // for LIBSEMIGROUPS_DEBUG
+#include "libsemigroups/debug.hpp"   // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups/order.hpp"   // for shortlex_compare
+#include "libsemigroups/runner.hpp"  // for delta
+#include "libsemigroups/types.hpp"   // for u8string
 
 #include "aho-corasick-impl.hpp"  // for AhoCorasickImpl
+#include "guard.hpp"              // for Guard
 #include "multi-view.hpp"         // for MultiView
-
-// TODO(2) Add a KnuthBendixImpl pointer to the rewriter class so that overlap
-// detection can be handled by the rewriter (and therefore depend on the
-// implementation) rather than on the KB object.
+#include "report.hpp"             // for reporting_enabled
 
 namespace libsemigroups {
   namespace detail {
+
+    namespace rewriting_system {
+
+      template <typename RewritingSystem, typename Word>
+      void add_rule(RewritingSystem& rs, Word const& lhs, Word const& rhs) {
+        rs.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+      }
+
+      template <typename Thing>
+      struct is_length_decreasing : std::false_type {};
+
+      template <>
+      struct is_length_decreasing<ShortLexCompare> : std::true_type {};
+
+      template <typename Thing>
+      static constexpr bool is_length_decreasing_v
+          = is_length_decreasing<Thing>::value;
+
+      template <typename Thing>
+      struct is_terminating : std::false_type {};
+
+      template <>
+      struct is_terminating<ShortLexCompare> : std::true_type {};
+
+      template <>
+      struct is_terminating<RecursivePathCompare> : std::true_type {};
+
+      template <>
+      struct is_terminating<WtShortLexCompare> : std::true_type {};
+
+      template <>
+      struct is_terminating<WtLexCompare> : std::true_type {};
+
+      template <typename Thing>
+      static constexpr bool is_terminating_v = is_terminating<Thing>::value;
+
+    }  // namespace rewriting_system
 
     ////////////////////////////////////////////////////////////////////////
     // Rule
@@ -49,17 +86,30 @@ namespace libsemigroups {
 
     class Rule {
      public:
+#ifdef LIBSEMIGROUPS_DEBUG
+      enum class State : uint8_t { active = 0, inactive = 1, pending = 2 };
+#endif
+
       using native_word_type = std::string;
 
      private:
       native_word_type _lhs;
       native_word_type _rhs;
-      int64_t          _id;
+#ifdef LIBSEMIGROUPS_DEBUG
+      State _state;
+#endif
 
      public:
-      explicit Rule(int64_t id);
+      Rule()
+          : _lhs(),
+            _rhs()
+#ifdef LIBSEMIGROUPS_DEBUG
+            ,
+            _state(Rule::State::inactive)
+#endif
+      {
+      }
 
-      Rule()                            = delete;
       Rule& operator=(Rule const& copy) = delete;
       Rule(Rule const& copy)            = delete;
       Rule(Rule&& copy)                 = delete;
@@ -83,35 +133,24 @@ namespace libsemigroups {
         return _rhs;
       }
 
-      [[nodiscard]] bool empty() const noexcept {
-        return _lhs.empty() && _rhs.empty();
+#ifdef LIBSEMIGROUPS_DEBUG
+      [[nodiscard]] State state() const noexcept {
+        return _state;
       }
 
-      [[nodiscard]] inline bool active() const noexcept {
-        LIBSEMIGROUPS_ASSERT(_id != 0);
-        return _id > 0;
+      Rule& state(State val) {
+        _state = val;
+        return *this;
       }
-
-      void activate_no_checks() noexcept;
-      void deactivate_no_checks() noexcept;
-
-      void set_id_no_checks(int64_t id) noexcept {
-        LIBSEMIGROUPS_ASSERT(id > 0);
-        LIBSEMIGROUPS_ASSERT(!active());
-        _id = -1 * id;
-      }
-
-      [[nodiscard]] int64_t id() const noexcept {
-        LIBSEMIGROUPS_ASSERT(_id != 0);
-        return _id;
-      }
-
-      void reorder() {
-        if (shortlex_compare(_lhs, _rhs)) {
-          std::swap(_lhs, _rhs);
-        }
-      }
+#endif
     };  // class Rule
+
+    template <typename ReductionOrder>
+    void reorder(Rule* rule) {
+      if (ReductionOrder{}(rule->lhs(), rule->rhs())) {
+        std::swap(rule->lhs(), rule->rhs());
+      }
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // RuleLookup
@@ -171,56 +210,106 @@ namespace libsemigroups {
         Stats& operator=(Stats const&) noexcept = default;
         Stats& operator=(Stats&&) noexcept      = default;
 
-        size_t   max_word_length;
-        size_t   max_active_word_length;
         size_t   max_active_rules;
+        size_t   max_length_lhs_rule;
+        size_t   max_pending_rules;  // TODO(1) rename
         size_t   min_length_lhs_rule;
         uint64_t total_rules;
       };
 
       std::list<Rule*>        _active_rules;
-      std::array<iterator, 2> _cursors;
+      std::array<iterator, 2> _cursors;  // TODO(1) rm?
       std::list<Rule*>        _inactive_rules;
+      std::vector<Rule*>      _pending_rules;
       mutable Stats           _stats;
 
-     public:
-      Rules() = default;
+      // TODO(1) try maintaining pending_rules as a heap?
 
+      void init_cursors();
+
+     public:
+      ////////////////////////////////////////////////////////////////////////
+      // Constructors and initializers
+      ////////////////////////////////////////////////////////////////////////
+
+      Rules();
+      Rules& init();
+
+      // This is currently not used anywhere, because we go through the
+      // copy/move assignment operators (so no RewritingSystem calls these
+      // functions in their copy/move constructors).
       Rules(Rules const& that) : Rules() {
         *this = that;
       }
-      Rules(Rules&& that) = default;
+
+      // This is currently not used anywhere, because we go through the
+      // copy/move assignment operators (so no RewritingSystem calls these
+      // functions in their copy/move constructors).
+      Rules(Rules&& that) : Rules() {
+        *this = std::move(that);
+      }
 
       Rules& operator=(Rules const&);
       Rules& operator=(Rules&& that);
 
       ~Rules();
 
-      Rules& init();
+      ////////////////////////////////////////////////////////////////////////
+      // Adding/modifying rules
+      ////////////////////////////////////////////////////////////////////////
 
-      const_iterator begin() const noexcept {
-        return _active_rules.cbegin();
+      template <typename Iterator>
+      Rule* add_pending_rule(Iterator first1,
+                             Iterator last1,
+                             Iterator first2,
+                             Iterator last2) {
+        return add_pending_rule(new_rule(first1, last1, first2, last2));
       }
 
-      const_iterator end() const noexcept {
-        return _active_rules.cend();
+      void add_active_rule(Rule* rule);
+
+      void add_inactive_rule(Rule* rule) {
+#ifdef LIBSEMIGROUPS_DEBUG
+        rule->state(Rule::State::inactive);
+#endif
+        _inactive_rules.push_back(rule);
       }
 
-      iterator begin() noexcept {
-        return _active_rules.begin();
+      void sort_pending_rules();
+
+      [[nodiscard]] iterator make_active_rule_pending(iterator it);
+
+      ////////////////////////////////////////////////////////////////////////
+      // Getting rules
+      ////////////////////////////////////////////////////////////////////////
+
+      [[nodiscard]] std::list<Rule*> const& active_rules() const noexcept {
+        return _active_rules;
       }
 
-      iterator end() noexcept {
-        return _active_rules.end();
+      [[nodiscard]] std::list<Rule*>& active_rules() noexcept {
+        return _active_rules;
       }
 
-      const_reverse_iterator rbegin() const noexcept {
-        return _active_rules.crbegin();
+      [[nodiscard]] std::vector<Rule*> const& pending_rules() const noexcept {
+        return _pending_rules;
       }
 
-      const_reverse_iterator rend() const noexcept {
-        return _active_rules.crend();
+      [[nodiscard]] std::vector<Rule*>& pending_rules() noexcept {
+        return _pending_rules;
       }
+
+      [[nodiscard]] Rule* pop_pending_rule();
+
+      // TODO(1) remove?
+      [[nodiscard]] iterator& cursor(size_t index) {
+        LIBSEMIGROUPS_ASSERT(index < _cursors.size());
+        return _cursors[index];
+      }
+
+      ////////////////////////////////////////////////////////////////////////
+      // Numbers of rules
+      ////////////////////////////////////////////////////////////////////////
 
       [[nodiscard]] size_t number_of_active_rules() const noexcept {
         return _active_rules.size();
@@ -230,89 +319,104 @@ namespace libsemigroups {
         return _inactive_rules.size();
       }
 
-      [[nodiscard]] size_t max_active_word_length() const;
-
-      iterator& cursor(size_t index) {
-        LIBSEMIGROUPS_ASSERT(index < _cursors.size());
-        return _cursors[index];
+      [[nodiscard]] size_t number_of_pending_rules() const noexcept {
+        return _pending_rules.size();
       }
 
-      Stats const& stats() const {
+      [[nodiscard]] Stats const& stats() const {
         return _stats;
       }
 
-      void add_rule(Rule* rule);
-
-     protected:
-      template <typename Iterator>
-      [[nodiscard]] Rule* new_rule(Iterator begin_lhs,
-                                   Iterator end_lhs,
-                                   Iterator begin_rhs,
-                                   Iterator end_rhs) {
-        Rule* rule = new_rule();
-        rule->lhs().assign(begin_lhs, end_lhs);
-        rule->rhs().assign(begin_rhs, end_rhs);
-        rule->reorder();
-        return rule;
-      }
-
-      [[nodiscard]] Rule*    copy_rule(Rule const* rule);
-      [[nodiscard]] iterator erase_from_active_rules(iterator it);
-      void                   add_inactive_rule(Rule* rule) {
-        _inactive_rules.push_back(rule);
-      }
+      // TODO helper
+      [[nodiscard]] size_t max_length_lhs_active_rule() const;
 
      private:
+      Rule* add_pending_rule(Rule* rule);
+
+      [[nodiscard]] Rule* copy_rule(Rule const* rule);
       [[nodiscard]] Rule* new_rule();
+
+      template <typename Iterator>
+      [[nodiscard]] Rule* new_rule(Iterator first1,
+                                   Iterator last1,
+                                   Iterator first2,
+                                   Iterator last2);
     };  // class Rules
 
     ////////////////////////////////////////////////////////////////////////
-    // RewriteBase
+    // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteBase : public Rules {
+    class RewritingSystemBase : protected Rules {
+     private:
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
-      size_t                    _max_pending_rules;
 
      protected:
       enum class State : uint8_t {
         none,
-        adding_pending_rules,
+        adding_pending_rules,  // TODO rm this?
         reducing_pending_rules,
         checking_confluence
       };
 
-      std::vector<Rule*> _pending_rules;
-      State              _state;
-      bool               _ticker_running;
+      struct Settings {
+        size_t max_pending_rules = 512;
+      };
+
+      Settings _settings;
+      State    _state;
+      bool     _ticker_running;
 
      public:
       using native_word_type = Rule::native_word_type;
+      using rule_const_reference
+          = std::pair<native_word_type const&, native_word_type const&>;
 
       ////////////////////////////////////////////////////////////////////////
       // Constructors + inits
       ////////////////////////////////////////////////////////////////////////
 
-      RewriteBase();
-      RewriteBase& init();
-      RewriteBase(RewriteBase const& that) : RewriteBase() {
+      RewritingSystemBase();
+      RewritingSystemBase& init();
+
+      RewritingSystemBase(RewritingSystemBase const& that)
+          : RewritingSystemBase() {
         *this = that;
       }
-      RewriteBase(RewriteBase&& that);
-      RewriteBase& operator=(RewriteBase const& that);
-      RewriteBase& operator=(RewriteBase&& that);
 
-      virtual ~RewriteBase();
+      RewritingSystemBase(RewritingSystemBase&& that) : RewritingSystemBase() {
+        *this = std::move(that);
+      }
+
+      RewritingSystemBase& operator=(RewritingSystemBase const& that);
+      RewritingSystemBase& operator=(RewritingSystemBase&& that);
+
+      virtual ~RewritingSystemBase();
+
+      using Rules::stats;
 
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
       ////////////////////////////////////////////////////////////////////////
 
-      // Some rewriters require knowledge of the alphabet size, and some do not.
-      // For those that do not we provide a default implementation that does
-      // nothing.
-      RewriteBase& increase_alphabet_size_by(size_t) {
+      [[nodiscard]] size_t number_of_rules() const noexcept {
+        return Rules::number_of_pending_rules()
+               + Rules::number_of_active_rules();
+      }
+
+      [[nodiscard]] auto rules() const {
+        // TODO use stringviews rather than references
+        return chain(active_rules(), pending_rules())
+               | rx::transform([](Rule const* rule) -> rule_const_reference {
+                   return rule_const_reference(rule->lhs(), rule->rhs());
+                 });
+      }
+
+      // Some rewriters require knowledge of the alphabet size, and some do
+      // not. For those that do not we provide a default implementation that
+      // does nothing.
+      RewritingSystemBase& increase_alphabet_size_by(size_t) {
         return *this;
       }
 
@@ -324,22 +428,37 @@ namespace libsemigroups {
 
       void set_cached_confluent(tril val) const;
 
-      [[nodiscard]] bool confluence_known() const {
+      [[nodiscard]] bool confluent_known() const {
         return _confluence_known;
       }
 
-      [[nodiscard]] size_t max_pending_rules() const {
-        return _max_pending_rules;
+      template <typename Subclass>
+      [[nodiscard]] tril is_length_decreasing() const noexcept {
+        if constexpr (rewriting_system::is_length_decreasing_v<
+                          typename Subclass::reduction_order>) {
+          return tril::TRUE;
+        }
+
+        for (Rule const* rule : active_rules()) {
+          if (rule->lhs().size() <= rule->rhs().size()) {
+            return tril::FALSE;
+          }
+        }
+
+        return (number_of_pending_rules() == 0) ? tril::TRUE : tril::unknown;
       }
 
-      size_t number_of_pending_rules() const noexcept {
-        return _pending_rules.size();
+      template <typename Subclass>
+      [[nodiscard]] tril is_terminating() const noexcept {
+        if constexpr (rewriting_system::is_terminating_v<
+                          typename Subclass::reduction_order>) {
+          return tril::TRUE;
+        }
+        if (is_length_decreasing<Subclass>() == tril::TRUE) {
+          return tril::TRUE;
+        }
+        return tril::unknown;
       }
-
-      Rule* next_pending_rule();
-
-      template <typename StringLike>
-      void add_rule(StringLike const& lhs, StringLike const& rhs);
 
      protected:
       ////////////////////////////////////////////////////////////////////////
@@ -355,10 +474,8 @@ namespace libsemigroups {
         report_progress_from_thread(0, start_time);
       }
 
-      bool add_pending_rule(Rule* rule);
-
      private:
-      virtual bool confluent_impl(std::atomic_uint64_t& seen) = 0;
+      [[nodiscard]] virtual bool confluent_impl(std::atomic_uint64_t& seen) = 0;
 
       virtual void report_checking_confluence(
           std::atomic_uint64_t const&                           seen,
@@ -369,143 +486,298 @@ namespace libsemigroups {
       virtual void report_reducing_rules(
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const {}
-    };  // class RewriteBase
-
-    // RewriteBase out-of-lined mem fn template
-    template <typename StringLike>
-    void RewriteBase::add_rule(StringLike const& lhs, StringLike const& rhs) {
-      if (lhs != rhs) {
-        add_pending_rule(
-            new_rule(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()));
-      }
-    }
+    };  // class RewritingSystemBase
 
     ////////////////////////////////////////////////////////////////////////
-    // RewriteFromLeft
+    // RewritingSystemSet
     ////////////////////////////////////////////////////////////////////////
 
-    class RewriteFromLeft : public RewriteBase {
+    // TODO remove default template param
+    template <typename ReductionOrder = ShortLexCompare>
+    class RewritingSystemSet : public RewritingSystemBase {
+      ////////////////////////////////////////////////////////////////////////
+      // Private aliases
+      ////////////////////////////////////////////////////////////////////////
+      using iterator = Rules::iterator;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Private data
+      ////////////////////////////////////////////////////////////////////////
       std::set<RuleLookup> _set_rules;
 
      public:
-      using native_word_type = Rule::native_word_type;
+      ////////////////////////////////////////////////////////////////////////
+      // Public aliases
+      ////////////////////////////////////////////////////////////////////////
 
-      using RewriteBase::add_rule;
+      using native_word_type     = Rule::native_word_type;
+      using reduction_order      = ReductionOrder;
+      using rule_const_reference = RewritingSystemBase::rule_const_reference;
 
-      RewriteFromLeft() = default;
+      ////////////////////////////////////////////////////////////////////////
+      // Constructors + initializers
+      ////////////////////////////////////////////////////////////////////////
 
-      RewriteFromLeft(RewriteFromLeft const& that) : RewriteFromLeft() {
+      RewritingSystemSet() = default;
+      RewritingSystemSet& init();
+
+      RewritingSystemSet(RewritingSystemSet const& that)
+          : RewritingSystemSet() {
         *this = that;
       }
-      RewriteFromLeft(RewriteFromLeft&&) = default;
+      RewritingSystemSet(RewritingSystemSet&&) = default;
 
-      RewriteFromLeft& operator=(RewriteFromLeft const&);
-      RewriteFromLeft& operator=(RewriteFromLeft&&) = default;
+      RewritingSystemSet& operator=(RewritingSystemSet const&);
+      RewritingSystemSet& operator=(RewritingSystemSet&&) = default;
 
-      ~RewriteFromLeft();
+      ~RewritingSystemSet();
 
-      RewriteFromLeft& init();
+      ////////////////////////////////////////////////////////////////////////
+      // Public member functions --- from RewritingSystemBase
+      ////////////////////////////////////////////////////////////////////////
 
-      bool process_pending_rules();
+      using RewritingSystemBase::number_of_rules;
 
+      ////////////////////////////////////////////////////////////////////////
+      // Public member functions - alphabetical order
+      ////////////////////////////////////////////////////////////////////////
+
+      template <typename Iterator>
+      RewritingSystemSet& add_rule(Iterator first1,
+                                   Iterator last1,
+                                   Iterator first2,
+                                   Iterator last2);
+
+      [[nodiscard]] tril is_length_decreasing() const noexcept {
+        return RewritingSystemBase::is_length_decreasing<
+            RewritingSystemSet<ReductionOrder>>();
+      }
+
+      [[nodiscard]] tril is_terminating() const noexcept {
+        return RewritingSystemBase::is_terminating<
+            RewritingSystemSet<ReductionOrder>>();
+      }
+
+      // TODO nodiscard or is the return value used for anything?
+      bool reduce_system();
+
+      // TODO it'd be possible to check if we encounter a cycle in rewriting,
+      // which we could then use to say is_terminating is false
       void rewrite(native_word_type& u);
+      void rewrite2(native_word_type& u);
 
+      // TODO the next function shouldn't be necessary, i.e. make things
+      // mutable
       void rewrite(native_word_type& u) const {
-        const_cast<RewriteFromLeft*>(this)->rewrite(u);
+        const_cast<RewritingSystemSet*>(this)->rewrite(u);
       }
 
      private:
-      void rewrite(Rule* rule) const {
-        rewrite(rule->lhs());
-        rewrite(rule->rhs());
-        rule->reorder();
-      }
+      ////////////////////////////////////////////////////////////////////////
+      // Private member functions
+      ////////////////////////////////////////////////////////////////////////
 
-      void add_rule(Rule* rule);
+      void     add_active_rule(Rule* rule);
+      iterator rm_active_rule(iterator it);
 
-      iterator make_active_rule_pending(iterator);
+      void rewrite_no_reduce_system(native_word_type& u) const;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Confluence
+      ////////////////////////////////////////////////////////////////////////
+
+      [[nodiscard]] bool confluent_impl(std::atomic_uint64_t&) override;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Reporting
+      ////////////////////////////////////////////////////////////////////////
 
       void report_checking_confluence(
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const override;
+    };  // RewritingSystemSet
 
-      bool confluent_impl(std::atomic_uint64_t&) override;
+    ////////////////////////////////////////////////////////////////////////
+    // RewritingSystemTrie
+    ////////////////////////////////////////////////////////////////////////
+
+    // Adapters
+
+    template <typename Trie>
+    struct IncreaseAlphabetSize;
+
+    template <typename Trie>
+    struct Emplace;
+
+    template <typename Trie>
+    struct Erase;
+
+    template <typename Trie>
+    struct Rewrite;
+
+    // Specializations for AhoCorasickImpl
+
+    template <>
+    struct IncreaseAlphabetSize<AhoCorasickImpl<Rule*>> {
+      void operator()(AhoCorasickImpl<Rule*>& ac, size_t val) {
+        ac.increase_alphabet_size_by(val);
+      }
     };
 
-    ////////////////////////////////////////////////////////////////////////
-    // RewriteTrie
-    ////////////////////////////////////////////////////////////////////////
+    template <>
+    struct Emplace<AhoCorasickImpl<Rule*>> {
+      template <typename Iterator>
+      void operator()(AhoCorasickImpl<Rule*>& ac,
+                      Iterator                first,
+                      Iterator                last,
+                      Rule*                   val) {
+        ac.emplace_no_checks(first, last, val);
+      }
+    };
 
-    class RewriteTrie : public RewriteBase {
+    template <>
+    struct Erase<AhoCorasickImpl<Rule*>> {
+      template <typename Iterator>
+      void operator()(AhoCorasickImpl<Rule*>& ac,
+                      Iterator                first,
+                      Iterator                last) {
+        ac.erase_no_checks(first, last);
+      }
+    };
+
+    template <typename Trie>
+    struct RewritingSystemTrieTraits {
+      using IncreaseAlphabetSize = IncreaseAlphabetSize<Trie>;
+      using Emplace              = Emplace<Trie>;
+      using Erase                = Erase<Trie>;
+    };
+
+    // Possible adapters list:
+    // * IncreaseAlphabetSize
+    // * Emplace/Insert
+    // * Erase
+    // * Rewrite
+    // * Keys (possibly via begin/end)
+
+    // TODO remove first 2 default template param
+    template <typename ReductionOrder = ShortLexCompare,
+              typename Trie           = AhoCorasickImpl<Rule*>,
+              typename Traits         = RewritingSystemTrieTraits<Trie>>
+    class RewritingSystemTrie : public RewritingSystemBase {
+      ////////////////////////////////////////////////////////////////////////
+      // Private aliases
+      ////////////////////////////////////////////////////////////////////////
+
+      using iterator = Rules::iterator;
+      // TODO
+      using index_type = AhoCorasickImpl<Rule*>::index_type;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Private data
+      ////////////////////////////////////////////////////////////////////////
+
+      Trie                            _new_rule_trie;
+      Trie                            _rule_trie;
+      bool                            _ticker_running;
+      mutable std::vector<index_type> _trie_nodes_visited_indices;
+
      public:
-      using index_type       = AhoCorasickImpl::index_type;
-      using iterator         = native_word_type::iterator;
-      using rule_iterator    = std::unordered_map<index_type, Rule*>::iterator;
-      using native_word_type = Rule::native_word_type;
+      ////////////////////////////////////////////////////////////////////////
+      // Public aliases
+      ////////////////////////////////////////////////////////////////////////
 
-     private:
-      std::unordered_map<index_type, Rule*> _new_rule_map;
-      AhoCorasickImpl                       _new_rule_trie;
-      std::vector<index_type>               _rewrite_tmp_buf;
-      std::unordered_map<index_type, Rule*> _rule_map;
-      AhoCorasickImpl                       _rule_trie;
-      bool                                  _ticker_running;
+      using native_word_type     = Rule::native_word_type;
+      using rule_const_reference = RewritingSystemBase::rule_const_reference;
+      using reduction_order      = ReductionOrder;
 
-     public:
-      using Rules::stats;
+      ////////////////////////////////////////////////////////////////////////
+      // Constructors + initializers
+      ////////////////////////////////////////////////////////////////////////
 
-      using RewriteBase::add_rule;
-      using RewriteBase::cached_confluent;
+      RewritingSystemTrie();
+      RewritingSystemTrie& init();
 
-      RewriteTrie();
-
-      RewriteTrie& init();
-
-      RewriteTrie(RewriteTrie const& that) : RewriteTrie() {
+      RewritingSystemTrie(RewritingSystemTrie const& that)
+          : RewritingSystemTrie() {
         *this = that;
       }
-      RewriteTrie(RewriteTrie&& that) = default;
-      RewriteTrie& operator=(RewriteTrie const& that);
-      RewriteTrie& operator=(RewriteTrie&& that) = default;
+      RewritingSystemTrie(RewritingSystemTrie&& that) = default;
 
-      ~RewriteTrie();
+      RewritingSystemTrie& operator=(RewritingSystemTrie const& that);
+      RewritingSystemTrie& operator=(RewritingSystemTrie&& that) = default;
 
-      RewriteTrie& increase_alphabet_size_by(size_t val) {
+      ~RewritingSystemTrie();
+
+      ////////////////////////////////////////////////////////////////////////
+      // Public member functions --- from RewritingSystemBase
+      ////////////////////////////////////////////////////////////////////////
+
+      using RewritingSystemBase::number_of_rules;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Public member functions - alphabetical order
+      ////////////////////////////////////////////////////////////////////////
+
+      template <typename Iterator>
+      RewritingSystemTrie& add_rule(Iterator first1,
+                                    Iterator last1,
+                                    Iterator first2,
+                                    Iterator last2);
+
+      RewritingSystemTrie& increase_alphabet_size_by(size_t val) {
         _rule_trie.increase_alphabet_size_by(val);
         return *this;
       }
 
-      bool process_pending_rules();
+      [[nodiscard]] tril is_length_decreasing() const noexcept {
+        return RewritingSystemBase::is_length_decreasing<
+            RewritingSystemTrie<ReductionOrder>>();
+      }
+
+      [[nodiscard]] tril is_terminating() const noexcept {
+        return RewritingSystemBase::is_terminating<
+            RewritingSystemTrie<ReductionOrder>>();
+      }
+
+      // TODO nodiscard or is the return value used for anything?
+      bool reduce_system();
 
       // TODO(1) iterators
       void rewrite(native_word_type& u);
+      void rewrite2(native_word_type& u);
 
-      void rewrite(Rule* rule) const {
-        rewrite(rule->lhs());
-        rewrite(rule->rhs());
-        rule->reorder();
+      // TODO shouldn't be necessary
+      void rewrite(native_word_type& u) const {
+        const_cast<RewritingSystemTrie*>(this)->rewrite(u);
       }
 
-      void rewrite(native_word_type& u) const {
-        const_cast<RewriteTrie*>(this)->rewrite(u);
+      [[nodiscard]] AhoCorasickImpl<Rule*> const& trie() const noexcept {
+        return _rule_trie;
       }
 
      private:
-      void add_rule(Rule* rule) {
-        Rules::add_rule(rule);
-        index_type node = _rule_trie.add_word_no_checks(rule->lhs().cbegin(),
-                                                        rule->lhs().cend());
-        _rule_map.emplace(node, rule);
-        set_cached_confluent(tril::unknown);
-      }
+      ////////////////////////////////////////////////////////////////////////
+      // Private member functions
+      ////////////////////////////////////////////////////////////////////////
+
+      void     add_active_rule(Rule* new_rule);
+      iterator rm_active_rule(iterator it);
+
+      void rewrite_no_reduce_system(native_word_type& u) const;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Confluence
+      ////////////////////////////////////////////////////////////////////////
 
       [[nodiscard]] bool descendants_confluent(Rule const* rule1,
                                                index_type  current_node,
                                                size_t backtrack_depth) const;
 
-      Rules::iterator make_active_rule_pending(Rules::iterator it);
+      [[nodiscard]] bool confluent_impl(std::atomic_uint64_t&) override;
 
-      bool confluent_impl(std::atomic_uint64_t&) override;
+      ////////////////////////////////////////////////////////////////////////
+      // Reporting
+      ////////////////////////////////////////////////////////////////////////
 
       void report_checking_confluence(
           std::atomic_uint64_t const&,
@@ -515,6 +787,9 @@ namespace libsemigroups {
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const override;
     };
+
   }  // namespace detail
 }  // namespace libsemigroups
+
+#include "rewriters.tpp"
 #endif  // LIBSEMIGROUPS_DETAIL_REWRITERS_HPP_

@@ -29,6 +29,10 @@
 #include <string_view>       // for basic_string_view, string_...
 #include <vector>            // for vector
 
+#define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
+#define CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_MAIN
+
 #include "Catch2-3.8.0/catch_amalgamated.hpp"  // for Colour, Colour::Code::BrightRed, CATCH_REGISTER...
 
 #include "libsemigroups/paths.hpp"   // for paths::algorithm
@@ -59,10 +63,6 @@ CATCH_REGISTER_ENUM(libsemigroups::Runner::state,
                     libsemigroups::Runner::state::stopped_by_predicate,
                     libsemigroups::Runner::state::not_running,
                     libsemigroups::Runner::state::dead);
-
-#define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
-#define CATCH_CONFIG_FAST_COMPILE
-#define CATCH_CONFIG_MAIN
 
 namespace {
   bool find_tag(Catch::TestCaseInfo const& testInfo, std::string tag) {
