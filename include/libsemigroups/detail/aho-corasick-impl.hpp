@@ -51,10 +51,6 @@
 namespace libsemigroups {
   namespace detail {
 
-    // TODO remove once AhoCorasickImpl<Value> as a template class
-    // forward decl
-    class Rule;
-
     // An AhoCorasickImpl<Value> object represents a hash map like container
     // (implemented using a trie), where the keys in the map must be
     // words consisting of letters in the range {0, ..., n - 1} for some n.
