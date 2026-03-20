@@ -65,48 +65,48 @@ namespace libsemigroups {
 
       // This struct represents a match of the "key" [first, last) in the trie,
       // which has value "value"
-      template <typename Iterator>
-      class Match {
-       public:
-        Iterator first;
-        Iterator last;
+      // template <typename Iterator>
+      // class Match {
+      //  public:
+      //   Iterator first;
+      //   Iterator last;
 
-       private:
-        // TODO should be std::optional<Value const&>
-        std::optional<Value> const* value_ptr;
+      //  private:
+      //   // TODO should be std::optional<Value const&>
+      //   std::optional<Value> const* value_ptr;
 
-       public:
-        Match(Iterator frst, Iterator lst, std::optional<Value> const& val)
-            : first(frst), last(lst), value_ptr(&val) {}
+      //  public:
+      //   Match(Iterator frst, Iterator lst, std::optional<Value> const& val)
+      //       : first(frst), last(lst), value_ptr(&val) {}
 
-        Match& operator=(Match&& that) {
-          first     = std::move(that.first);
-          last      = std::move(that.last);
-          value_ptr = that.value_ptr;
-          return *this;
-        }
+      //   Match& operator=(Match&& that) {
+      //     first     = std::move(that.first);
+      //     last      = std::move(that.last);
+      //     value_ptr = that.value_ptr;
+      //     return *this;
+      //   }
 
-        // TODO to tpp
-        [[nodiscard]] bool operator==(Match const& that) const {
-          if (first == last) {
-            // Indicates no match, and we don't care about value in that case
-            // TODO What if the empty string is a match?
-            return that.first == that.last;
-          }
-          return first == that.first && last == that.last
-                 && value() == that.value();
-        }
+      //   // TODO to tpp
+      //   [[nodiscard]] bool operator==(Match const& that) const {
+      //     if (first == last) {
+      //       // Indicates no match, and we don't care about value in that case
+      //       // TODO What if the empty string is a match?
+      //       return that.first == that.last;
+      //     }
+      //     return first == that.first && last == that.last
+      //            && value() == that.value();
+      //   }
 
-        [[nodiscard]] std::optional<Value> const& value() const noexcept {
-          // LIBSEMIGROUPS_ASSERT(value_ptr->has_value());
-          // TODO return Value
-          return *value_ptr;
-        }
+      //   [[nodiscard]] std::optional<Value> const& value() const noexcept {
+      //     // LIBSEMIGROUPS_ASSERT(value_ptr->has_value());
+      //     // TODO return Value
+      //     return *value_ptr;
+      //   }
 
-        [[nodiscard]] operator bool() {
-          return first != last;
-        }
-      };
+      //   [[nodiscard]] operator bool() {
+      //     return first != last;
+      //   }
+      // };
 
      private:
       class Node {
@@ -393,97 +393,102 @@ namespace libsemigroups {
 
       // Returns the longest prefix of [first, last) that belongs to *this.
       // TODO to tpp
-      template <typename Iterator>
-      [[nodiscard]] Match<Iterator>
-      longest_prefix_no_checks(Iterator first, Iterator last) const {
-        index_type current = root;
-        index_type best    = root;
-        auto       best_it = first;
-        for (auto it = first; it != last; ++it) {
-          current = _children.get(current, *it);
-          if (current == UNDEFINED) {
-            break;
-          } else if (node_no_checks(current).terminal()) {
-            best    = current;
-            best_it = it + 1;
-          }
-        }
-        return Match(first, best_it, node_no_checks(best).value);
-      }
+      // template <typename Iterator>
+      // [[nodiscard]] Match<Iterator>
+      // longest_prefix_no_checks(Iterator first, Iterator last) const {
+      //   index_type current = root;
+      //   index_type best    = root;
+      //   auto       best_it = first;
+      //   for (auto it = first; it != last; ++it) {
+      //     current = _children.get(current, *it);
+      //     if (current == UNDEFINED) {
+      //       break;
+      //     } else if (node_no_checks(current).terminal()) {
+      //       best    = current;
+      //       best_it = it + 1;
+      //     }
+      //   }
+      //   return Match(first, best_it, node_no_checks(best).value);
+      // }
 
-      // Returns the longest prefix of [first, last) that belongs to *this.
-      // TODO should return iterator (which I need to implement)
-      template <typename Word>
-      [[nodiscard]] Match<typename Word::const_iterator>
-      longest_prefix_no_checks(Word const& key) const {
-        return longest_prefix_no_checks(key.begin(), key.end());
-      }
+      // // Returns the longest prefix of [first, last) that belongs to *this.
+      // // TODO should return iterator (which I need to implement)
+      // template <typename Word>
+      // [[nodiscard]] Match<typename Word::const_iterator>
+      // longest_prefix_no_checks(Word const& key) const {
+      //   return longest_prefix_no_checks(key.begin(), key.end());
+      // }
 
-      // TODO to tpp
-      template <typename Iterator>
-      [[nodiscard]]
-      Match<Iterator> longest_prefix(Iterator first, Iterator last) const {
-        throw_if_any_letter_out_of_range(first, last);
-        return longest_prefix_no_checks(first, last);
-      }
+      // // TODO to tpp
+      // template <typename Iterator>
+      // [[nodiscard]]
+      // Match<Iterator> longest_prefix(Iterator first, Iterator last) const {
+      //   throw_if_any_letter_out_of_range(first, last);
+      //   return longest_prefix_no_checks(first, last);
+      // }
 
-      template <typename Word>
-      [[nodiscard]] Match<typename Word::const_iterator>
-      longest_prefix(Word const& key) const {
-        return longest_prefix(key.begin(), key.end());
-      }
+      // template <typename Word>
+      // [[nodiscard]] Match<typename Word::const_iterator>
+      // longest_prefix(Word const& key) const {
+      //   return longest_prefix(key.begin(), key.end());
+      // }
 
-      // Finds any subword contained in both [first, last) and the keys of the
-      // trie.
-      template <typename Iterator>
-      [[nodiscard]] Match<Iterator> subword_no_checks(Iterator first,
-                                                      Iterator last) const {
-        index_type current = root;
-        for (auto it = first; it < last; ++it) {
-          current = traverse_no_checks(current, *it);
-          if (current == UNDEFINED) {
-            // No match possible, the word goes off the trie before a match is
-            // found.
-            break;
-          } else if (node_no_checks(current).terminal()) {
-            // The match is the word labelling the path from the root to
-            // current, which corresponds to the return value below
-            LIBSEMIGROUPS_ASSERT(static_cast<size_t>(std::distance(first, it))
-                                     + 1
-                                 >= height_no_checks(current));
-            return Match(it - height_no_checks(current) + 1,
-                         it + 1,
-                         node_no_checks(current).value);
-          }
-        }
-        // No match, the last parameter for Match's constructor isn't then used
-        // for anything, but it's required to be a reference so we use the only
-        // node we know always exists the "root"
-        return Match(first, first, node_no_checks(root).value);
-      }
+      // // Finds any subword contained in both [first, last) and the keys of
+      // the
+      // // trie.
+      // template <typename Iterator>
+      // [[nodiscard]] Match<Iterator> subword_no_checks(Iterator first,
+      //                                                 Iterator last) const {
+      //   index_type current = root;
+      //   for (auto it = first; it < last; ++it) {
+      //     current = traverse_no_checks(current, *it);
+      //     if (current == UNDEFINED) {
+      //       // No match possible, the word goes off the trie before a match
+      //       is
+      //       // found.
+      //       break;
+      //     } else if (node_no_checks(current).terminal()) {
+      //       // The match is the word labelling the path from the root to
+      //       // current, which corresponds to the return value below
+      //       LIBSEMIGROUPS_ASSERT(static_cast<size_t>(std::distance(first,
+      //       it))
+      //                                + 1
+      //                            >= height_no_checks(current));
+      //       return Match(it - height_no_checks(current) + 1,
+      //                    it + 1,
+      //                    node_no_checks(current).value);
+      //     }
+      //   }
+      //   // No match, the last parameter for Match's constructor isn't then
+      //   used
+      //   // for anything, but it's required to be a reference so we use the
+      //   only
+      //   // node we know always exists the "root"
+      //   return Match(first, first, node_no_checks(root).value);
+      // }
 
-      // Returns the longest prefix of [first, last) that belongs to *this.
-      // TODO should return iterator (which I need to implement)
-      template <typename Word>
-      [[nodiscard]] Match<typename Word::const_iterator>
-      subword_no_checks(Word const& key) const {
-        return subword_no_checks(key.begin(), key.end());
-      }
+      // // Returns the longest prefix of [first, last) that belongs to *this.
+      // // TODO should return iterator (which I need to implement)
+      // template <typename Word>
+      // [[nodiscard]] Match<typename Word::const_iterator>
+      // subword_no_checks(Word const& key) const {
+      //   return subword_no_checks(key.begin(), key.end());
+      // }
 
-      // TODO should return iterator (which I need to implement)
-      // TODO to tpp
-      template <typename Iterator>
-      [[nodiscard]]
-      Match<Iterator> subword(Iterator first, Iterator last) const {
-        throw_if_any_letter_out_of_range(first, last);
-        return subword_no_checks(first, last);
-      }
+      // // TODO should return iterator (which I need to implement)
+      // // TODO to tpp
+      // template <typename Iterator>
+      // [[nodiscard]]
+      // Match<Iterator> subword(Iterator first, Iterator last) const {
+      //   throw_if_any_letter_out_of_range(first, last);
+      //   return subword_no_checks(first, last);
+      // }
 
-      template <typename Word>
-      [[nodiscard]] Match<typename Word::const_iterator>
-      subword(Word const& key) const {
-        return subword(key.begin(), key.end());
-      }
+      // template <typename Word>
+      // [[nodiscard]] Match<typename Word::const_iterator>
+      // subword(Word const& key) const {
+      //   return subword(key.begin(), key.end());
+      // }
 
       ////////////////////////////////////////////////////////////////////////
       // Old API
