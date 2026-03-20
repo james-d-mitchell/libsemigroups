@@ -448,7 +448,7 @@ namespace libsemigroups::detail {
 
     auto                 start_time = std::chrono::high_resolution_clock::now();
     Ticker               ticker;
-    Guard                guard(_ticker_running);
+    ValueGuard           guard(_ticker_running);
     std::atomic_uint64_t seen = 0;
 
     Rules::sort_pending_rules();
@@ -505,7 +505,7 @@ namespace libsemigroups::detail {
       }
 
       if (rules_added_this_pass) {
-        Guard sg(_state);
+        ValueGuard sg(_state);
         _state = State::reducing_pending_rules;
 
         AhoCorasickImpl<Rule*>* new_rule_trie

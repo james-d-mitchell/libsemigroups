@@ -265,27 +265,18 @@ namespace libsemigroups {
     // RewritingSystemBase - constructors + initializers
     ////////////////////////////////////////////////////////////////////////
 
-    RewriteSystemBase::RewriteSystemBase()
+    RewritingSystemBase::RewritingSystemBase()
         : _cached_confluent(false),
           _confluence_known(false),
-          _max_pending_rules(0),
-          _pending_rules(),
           _state(State::none),
           _ticker_running(false) {}
 
     RewritingSystemBase& RewritingSystemBase::init() {
       Rules::init();
-      // Put all active rules and those rules in the stack into the
-      // inactive_rules list
-      for (Rule* rule : _pending_rules) {
-        Rules::add_inactive_rule(rule);
-      }
-      _pending_rules.clear();
-      _max_pending_rules = 0;
-      _cached_confluent  = false;
-      _confluence_known  = false;
-      _state             = State::none;
-      _ticker_running    = false;
+      _cached_confluent = false;
+      _confluence_known = false;
+      _state            = State::none;
+      _ticker_running   = false;
       return *this;
     }
 
@@ -303,10 +294,8 @@ namespace libsemigroups {
       Rules::operator=(std::move(that));
       _cached_confluent = that._cached_confluent.load();
       _confluence_known = that._confluence_known.load();
-      // Again we swap so that all rules are properly deleted
-      std::swap(_pending_rules, that._pending_rules);
-      _ticker_running = std::move(that._ticker_running);
-      _state          = that._state;
+      _ticker_running   = std::move(that._ticker_running);
+      _state            = that._state;
       return *this;
     }
 
