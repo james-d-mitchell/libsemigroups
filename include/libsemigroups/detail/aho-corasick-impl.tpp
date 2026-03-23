@@ -18,14 +18,12 @@
 // This file contains implementations of the member functions for the
 // AhoCorasickImpl<Value> class.
 
-#include "libsemigroups/detail/aho-corasick-impl.hpp"
-#include <optional>
 namespace libsemigroups {
   namespace detail {
 
     template <typename Value>
     template <typename Iterator, typename... Args>
-    typename AhoCorasickImpl<Value>::index_type
+    std::pair<typename AhoCorasickImpl<Value>::index_type, bool>
     AhoCorasickImpl<Value>::emplace_no_checks(Iterator first,
                                               Iterator last,
                                               Args&&... args) {
@@ -38,14 +36,14 @@ namespace libsemigroups {
         }
         current = next;
       }
-      _terminal_nodes_index.emplace(current);
+      bool inserted             = _terminal_nodes_index.emplace(current).second;
       _all_nodes[current].value = Value(std::forward<Args>(args)...);
 
-      return current;
+      return {current, inserted};
     }
     template <typename Value>
     template <typename Iterator, typename... Args>
-    typename AhoCorasickImpl<Value>::index_type
+    std::pair<typename AhoCorasickImpl<Value>::index_type, bool>
     AhoCorasickImpl<Value>::emplace(Iterator first,
                                     Iterator last,
                                     Args&&... args) {

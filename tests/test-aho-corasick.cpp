@@ -380,7 +380,7 @@ namespace libsemigroups {
 
       size_t val = 0;
       for (auto const& word : subwords) {
-        indexes.push_back(ac.insert(word, val++));
+        indexes.push_back(ac.insert(word, val++).first);
       }
       // REQUIRE(indexes == std::vector<index_type>({4, 6, 7, 8}));
 
@@ -444,7 +444,7 @@ namespace libsemigroups {
       std::vector<index_type> index;
 
       for (auto const& word : subwords) {
-        index.push_back(ac.insert(word, 0));
+        index.push_back(ac.insert(word, 0).first);
       }
 
       // REQUIRE(index == std::vector<index_type>({3, 6, 15, 11, 9}));
@@ -470,7 +470,7 @@ namespace libsemigroups {
       std::vector<size_t> index;
 
       for (auto const& word : subwords) {
-        index.push_back(ac.insert(word, 0));
+        index.push_back(ac.insert(word, 0).first);
       }
       // REQUIRE(index == std::vector<size_t>({6, 1, 7, 2, 8, 9, 10}));
 
