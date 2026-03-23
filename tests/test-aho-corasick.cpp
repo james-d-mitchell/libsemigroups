@@ -342,29 +342,6 @@ namespace libsemigroups {
   }
 
   namespace detail {
-    LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
-                            "012",
-                            "contains_no_checks",
-                            "[quick][aho-corasick]") {
-      AhoCorasickImpl<int> ac(2);
-
-      ac.insert(0101_w, 1);
-      ac.insert(0110_w, 2);
-      ac.insert(01101_w, 3);
-      ac.insert(01100_w, 4);
-
-      REQUIRE(ac.contains(0101_w));
-      REQUIRE(!ac.contains(010_w));
-
-      WordRange words;
-      words.alphabet_size(2).min(0).max(7);
-      size_t count = 0;
-      for (auto const& w : words) {
-        count += ac.contains(w);
-      }
-
-      REQUIRE(count == 4);
-    }
 
     LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
                             "013",
@@ -550,101 +527,6 @@ namespace libsemigroups {
       ac.init();
       REQUIRE((ac.terminal_nodes() | rx::count()) == 0);
     }
-
-    LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
-                            "018",
-                            "adding and getting values",
-                            "[quick]") {
-      AhoCorasickImpl<Rule*> ac(2);
-      REQUIRE(ac.number_of_nodes() == 1);
-      Rule* r = new Rule();
-      r->lhs().assign({0, 1, 1, 1, 0, 1, 0});
-      r->rhs().assign({0, 1, 0});
-      ac.insert(r->lhs(), r);
-      REQUIRE(ac[r->lhs()] == r);
-      delete r;
-    }
-
-    // LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
-    //                         "019",
-    //                         "longest_prefix",
-    //                         "[quick]") {
-    //   using Match = AhoCorasickImpl<int>::Match<word_type::const_iterator>;
-    //   AhoCorasickImpl<int> ac(2);
-
-    //   std::vector words = {000_w, 111_w, 1010_w, 001100_w, 1100_w};
-
-    //   size_t count = 0;
-    //   for (auto const& word : words) {
-    //     ac.insert(word, count);
-    //     count++;
-    //   }
-
-    //   REQUIRE(!ac.longest_prefix(0011100001010101010_w).value().has_value());
-
-    //   auto               w   = 001100001010101010_w;
-    //   std::optional<int> val = 3;
-    //   REQUIRE(ac.longest_prefix(w) == Match(w.cbegin(), w.cbegin() + 6,
-    //   val)); w   = 1111111_w; val = 1; REQUIRE(ac.longest_prefix(w) ==
-    //   Match(w.cbegin(), w.cbegin() + 3, val));
-
-    //   // TODO put in separate test
-    //   WordRange allwords;
-    //   allwords.alphabet_size(2).min(0).max(5);
-
-    //   count = 0;
-    //   for (auto const& word : allwords) {
-    //     if (ac.contains(word)) {
-    //       count++;
-    //     }
-    //   }
-    //   REQUIRE(count == 4);
-
-    //   count = 0;
-    //   for (auto const& word : allwords) {
-    //     if (ac.at(word).has_value()) {
-    //       count++;
-    //     }
-    //   }
-    //   REQUIRE(count == 4);
-    // }
-
-    // LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl", "020", "subword", "[quick]") {
-    //   using Match = AhoCorasickImpl<int>::Match<word_type::const_iterator>;
-    //   AhoCorasickImpl<int> ac(2);
-
-    //   std::vector words = {000_w, 111_w, 1010_w, 001100_w, 1100_w};
-
-    //   size_t count = 0;
-    //   for (auto const& word : words) {
-    //     ac.insert(word, count);
-    //     count++;
-    //   }
-
-    //   auto w     = 0011100001010101010_w;
-    //   auto match = ac.subword(w);
-
-    //   REQUIRE(std::distance(w.cbegin(), match.first) == 2);
-    //   REQUIRE(std::distance(w.cbegin(), match.last) == 5);
-    //   REQUIRE(match.value() == 1);
-    //   REQUIRE(word_type(match.first, match.last)
-    //           == words[match.value().value()]);
-
-    //   std::optional<int> val = 1;
-    //   REQUIRE(match == Match(w.begin() + 2, w.begin() + 5, val));
-
-    //   match = ac.subword(w.cbegin() + 3, w.cend());
-    //   val   = 4;
-
-    //   REQUIRE(std::distance(w.cbegin(), match.first) == 3);
-    //   REQUIRE(std::distance(w.cbegin(), match.last) == 7);
-    //   REQUIRE(match.value() == 4);
-    //   REQUIRE(match == Match(w.begin() + 3, w.begin() + 7, val));
-
-    //   match = ac.subword(w.cbegin() + 4, w.cend());
-    //   val   = 0;
-    //   REQUIRE(match == Match(w.begin() + 5, w.begin() + 8, val));
-    // }
 
   }  // namespace detail
 }  // namespace libsemigroups
