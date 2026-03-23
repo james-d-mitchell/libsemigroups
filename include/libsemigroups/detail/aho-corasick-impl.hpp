@@ -239,22 +239,6 @@ namespace libsemigroups {
         return erase(key.begin(), key.end());
       }
 
-      template <typename Iterator>
-      [[nodiscard]] std::optional<Value> const& at(Iterator first,
-                                                   Iterator last) const {
-        index_type current = root;
-        for (auto it = first; it != last; ++it) {
-          throw_if_letter_out_of_range(*it);
-          current = _children.get(current, *it);
-          if (current == UNDEFINED) {
-            // TODO this doesn't really make sense, should throw
-            // std::out_of_range
-            return node_no_checks(root).value;
-          }
-        }
-        return node_no_checks(current).value;
-      }
-
       template <typename Word>
       [[nodiscard]] std::optional<Value> const& at(Word const& key) const {
         return at(key.begin(), key.end());
