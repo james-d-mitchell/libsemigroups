@@ -523,7 +523,6 @@ namespace libsemigroups::detail {
           // rule
           bool increment = true;
           for (auto const& word : {rule->lhs(), rule->rhs()}) {
-            // TODO make better use of the new trie map setup
             auto first = begin_search_no_checks(*new_rule_trie, word);
             auto last  = end_search_no_checks(*new_rule_trie, word);
 
