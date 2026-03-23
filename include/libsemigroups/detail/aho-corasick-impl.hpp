@@ -239,51 +239,6 @@ namespace libsemigroups {
         return erase(key.begin(), key.end());
       }
 
-      template <typename Word>
-      [[nodiscard]] std::optional<Value> const& at(Word const& key) const {
-        return at(key.begin(), key.end());
-      }
-
-      // TODO to tpp
-      template <typename Word>
-      [[nodiscard]] Value const& operator[](Word const& key) const {
-        index_type current = root;
-        for (auto it = key.begin(); it != key.end(); ++it) {
-          current = _children.get(current, *it);
-        }
-        return node_no_checks(current).value.value();
-      }
-
-      // TODO to tpp
-      template <typename Iterator>
-      [[nodiscard]] bool contains_no_checks(Iterator first,
-                                            Iterator last) const {
-        index_type current = root;
-        for (auto it = first; it != last; ++it) {
-          current = _children.get(current, *it);
-          if (current == UNDEFINED) {
-            return false;
-          }
-        }
-        return node_no_checks(current).terminal();
-      }
-
-      template <typename Word>
-      [[nodiscard]] bool contains_no_checks(Word const& key) const {
-        return contains_no_checks(key.begin(), key.end());
-      }
-
-      template <typename Iterator>
-      [[nodiscard]] bool contains(Iterator first, Iterator last) const {
-        throw_if_any_letter_out_of_range(first, last);
-        return contains_no_checks(first, last);
-      }
-
-      template <typename Word>
-      [[nodiscard]] bool contains(Word const& key) const {
-        return contains(key.begin(), key.end());
-      }
-
       // TODO rename to begin and change return type to {key, val}, or whatever
       // std::unordered_map implements
       [[nodiscard]] terminal_node_const_iterator cbegin_terminal_nodes() const {
