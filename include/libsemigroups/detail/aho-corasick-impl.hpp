@@ -40,20 +40,13 @@
 #include "containers.hpp"  // DynamicArray2
 #include "print.hpp"       // for to_printable
 
-// TODO(2) is it worthwhile storing a pointer to the terminal nodes beneath
-// each node? If this can be updated quickly, it would save a lot of time in
-// overlap/confluence checking. One compromise is to have a pointer to the rules
-// any given node is contained within. This could be updated easily when adding
-// new rules, but more care would be needed when removing rules.
-// TODO(2) add something that gets a ranges element to find all terminal nodes.
-// TODO(2) change all_nodes[i] to node_no_checks(i);
-
 namespace libsemigroups {
   namespace detail {
 
     // An AhoCorasickImpl<Value> object represents a hash map like container
     // (implemented using a trie), where the keys in the map must be
     // words consisting of letters in the range {0, ..., n - 1} for some n.
+    // TODO remove Value again, and just use Rule*
     template <typename Value>
     class AhoCorasickImpl {
      public:
@@ -62,51 +55,6 @@ namespace libsemigroups {
           = std::unordered_set<index_type>::const_iterator;
 
       static constexpr const index_type root = 0;
-
-      // This struct represents a match of the "key" [first, last) in the trie,
-      // which has value "value"
-      // template <typename Iterator>
-      // class Match {
-      //  public:
-      //   Iterator first;
-      //   Iterator last;
-
-      //  private:
-      //   // TODO should be std::optional<Value const&>
-      //   std::optional<Value> const* value_ptr;
-
-      //  public:
-      //   Match(Iterator frst, Iterator lst, std::optional<Value> const& val)
-      //       : first(frst), last(lst), value_ptr(&val) {}
-
-      //   Match& operator=(Match&& that) {
-      //     first     = std::move(that.first);
-      //     last      = std::move(that.last);
-      //     value_ptr = that.value_ptr;
-      //     return *this;
-      //   }
-
-      //   // TODO to tpp
-      //   [[nodiscard]] bool operator==(Match const& that) const {
-      //     if (first == last) {
-      //       // Indicates no match, and we don't care about value in that case
-      //       // TODO What if the empty string is a match?
-      //       return that.first == that.last;
-      //     }
-      //     return first == that.first && last == that.last
-      //            && value() == that.value();
-      //   }
-
-      //   [[nodiscard]] std::optional<Value> const& value() const noexcept {
-      //     // LIBSEMIGROUPS_ASSERT(value_ptr->has_value());
-      //     // TODO return Value
-      //     return *value_ptr;
-      //   }
-
-      //   [[nodiscard]] operator bool() {
-      //     return first != last;
-      //   }
-      // };
 
      private:
       class Node {
@@ -232,10 +180,8 @@ namespace libsemigroups {
 
       AhoCorasickImpl& increase_alphabet_size_by(size_t val);
 
-      // TODO private?
       [[nodiscard]] size_t height_no_checks(index_type i) const;
 
-      // TODO private?
       [[nodiscard]] Node const& node_no_checks(index_type i) const {
         LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
         return _all_nodes[i];
@@ -245,35 +191,35 @@ namespace libsemigroups {
       // New API - somewhat similar mem fns to std::unordered_map
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO return type should be maybe a bool to indicate if insertion
-      // actually happened, i.e. somewhat the same as std::unordered_map
       template <typename Iterator, typename... Args>
-      index_type emplace_no_checks(Iterator first,
-                                   Iterator last,
-                                   Args&&... args);
+      std::pair<index_type, bool> emplace_no_checks(Iterator first,
+                                                    Iterator last,
+                                                    Args&&... args);
 
       template <typename Word>
-      index_type insert_no_checks(Word const& key, Value const& value) {
+      std::pair<index_type, bool> insert_no_checks(Word const&  key,
+                                                   Value const& value) {
         return emplace_no_checks(key.begin(), key.end(), value);
       }
 
       template <typename Word>
-      index_type insert_no_checks(Word const& key, Value&& value) {
+      std::pair<index_type, bool> insert_no_checks(Word const& key,
+                                                   Value&&     value) {
         return emplace_no_checks(key.begin(), key.end(), std::move(value));
       }
 
-      // TODO return type should be maybe a bool to indicate if insertion
-      // actually happened, i.e. somewhat the same as std::unordered_map
       template <typename Iterator, typename... Args>
-      index_type emplace(Iterator first, Iterator last, Args&&... args);
+      std::pair<index_type, bool> emplace(Iterator first,
+                                          Iterator last,
+                                          Args&&... args);
 
       template <typename Word>
-      index_type insert(Word const& key, Value const& value) {
+      std::pair<index_type, bool> insert(Word const& key, Value const& value) {
         return emplace(key.begin(), key.end(), value);
       }
 
       template <typename Word>
-      index_type insert(Word const& key, Value&& value) {
+      std::pair<index_type, bool> insert(Word const& key, Value&& value) {
         return emplace(key.begin(), key.end(), value);
       }
 
