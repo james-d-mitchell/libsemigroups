@@ -519,7 +519,6 @@ namespace libsemigroups {
 
     namespace aho_corasick_impl {
 
-      // TODO rm?
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
       traverse_word_no_checks(AhoCorasickImpl<Value> const&               ac,
@@ -534,7 +533,6 @@ namespace libsemigroups {
                     Iterator                                    first,
                     Iterator                                    last);
 
-      // TODO rm?
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
       traverse_word_no_checks(AhoCorasickImpl<Value> const& ac,
@@ -551,7 +549,6 @@ namespace libsemigroups {
         return traverse_word(ac, ac.root, first, last);
       }
 
-      // TODO rm?
       template <typename Value, typename Word>
       [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
       traverse_word_no_checks(AhoCorasickImpl<Value>& ac, Word const& w) {
