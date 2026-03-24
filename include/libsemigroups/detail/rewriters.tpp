@@ -716,7 +716,7 @@ namespace libsemigroups::detail {
          node_it != _rule_trie.cend_terminal_nodes();
          ++node_it) {
       seen++;
-      link = _rule_trie.suffix_link_no_checks(*node_it);
+      link = _rule_trie.node_no_checks(*node_it).suffix_link();
       LIBSEMIGROUPS_ASSERT(*node_it != _rule_trie.root);
       while (link != _rule_trie.root) {
         if (!descendants_confluent(
@@ -727,7 +727,7 @@ namespace libsemigroups::detail {
           report_checking_confluence(seen, start_time);
           return false;
         }
-        link = _rule_trie.suffix_link_no_checks(link);
+        link = _rule_trie.node_no_checks(link).suffix_link();
       }
     }
 
