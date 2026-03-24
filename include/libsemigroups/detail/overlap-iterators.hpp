@@ -127,7 +127,7 @@ namespace libsemigroups::detail {
 
       // Resume any partially-complete travels to the root,
       if (_suffix_index != Trie::root) {
-        _suffix_index = _trie->suffix_link_no_checks(_suffix_index);
+        _suffix_index = _trie->node_no_checks(_suffix_index).suffix_link();
         if (traverse_to_root()) {
           return *this;
         }
@@ -138,9 +138,11 @@ namespace libsemigroups::detail {
         _word_index = *_current_word_iterator;
         ++_current_word_iterator;
 
-        _overlap.lhs  = _trie->node_no_checks(_word_index).value.value();
-        _suffix_index = _trie->suffix_link_no_checks(_word_index);
-        LIBSEMIGROUPS_ASSERT(_trie->terminal(_word_index));
+        auto const& node = _trie->node_no_checks(_word_index);
+
+        _overlap.lhs  = node.value.value();
+        _suffix_index = node.suffix_link();
+        LIBSEMIGROUPS_ASSERT(node.terminal());
 
         if (traverse_to_root()) {
           return *this;
@@ -179,7 +181,7 @@ namespace libsemigroups::detail {
         if (find_next_descendent()) {
           return true;
         }
-        _suffix_index = _trie->suffix_link_no_checks(_suffix_index);
+        _suffix_index = _trie->node_no_checks(_suffix_index).suffix_link();
       }
       return false;
     }

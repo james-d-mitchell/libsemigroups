@@ -280,9 +280,10 @@ namespace libsemigroups {
                 UNDEFINED);
 
       // Set the suffix link and height of new node
-      auto&      new_node   = _all_nodes[new_node_index];
-      index_type link_index = traverse_no_checks(
-          suffix_link_no_checks(new_node.parent()), new_node.parent_letter());
+      auto&      new_node = _all_nodes[new_node_index];
+      index_type link_index
+          = traverse_no_checks(node_no_checks(new_node.parent()).suffix_link(),
+                               new_node.parent_letter());
       LIBSEMIGROUPS_ASSERT(link_index != UNDEFINED);
       new_node.suffix_link(link_index);
       new_node.height(_all_nodes[new_node.parent()].height() + 1);
@@ -489,7 +490,7 @@ namespace libsemigroups {
         // all the suffixes of _prefix by following the suffix links back to
         // the root.
         while (_suffix != _trie.root) {
-          _suffix = _trie.suffix_link_no_checks(_suffix);
+          _suffix = _trie.node_no_checks(_suffix).suffix_link();
           if (_trie.node_no_checks(_suffix).terminal()) {
             // the _suffix of the _prefix of [first, last) is a match so
             // return.
@@ -508,7 +509,7 @@ namespace libsemigroups {
             if (_trie.node_no_checks(_suffix).terminal()) {
               return *this;
             }
-            _suffix = _trie.suffix_link_no_checks(_suffix);
+            _suffix = _trie.node_no_checks(_suffix).suffix_link();
           } while (_suffix != _trie.root);
         }
         _prefix = UNDEFINED;

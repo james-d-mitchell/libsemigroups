@@ -276,26 +276,13 @@ namespace libsemigroups {
         } else if (current == root) {
           return root;
         }
-        return traverse_no_checks(suffix_link_no_checks(current), a);
+        return traverse_no_checks(node_no_checks(current).suffix_link(), a);
       }
 
       [[nodiscard]] index_type traverse(index_type  current,
                                         letter_type a) const {
         throw_if_node_index_not_active(current);
         return traverse_no_checks(current, a);
-      }
-
-      // TODO rm as above
-      [[nodiscard]] index_type suffix_link_no_checks(index_type i) const {
-        LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
-        LIBSEMIGROUPS_ASSERT(_active_nodes_index.count(i) == 1);
-        return _all_nodes[i].suffix_link();
-      }
-
-      // TODO rm as above
-      [[nodiscard]] index_type suffix_link(index_type current) const {
-        throw_if_node_index_not_active(current);
-        return suffix_link_no_checks(current);
       }
 
       // TODO could wrap this into Node (access _children from inside Node?)
