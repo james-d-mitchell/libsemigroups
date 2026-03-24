@@ -196,10 +196,20 @@ namespace libsemigroups {
                                                     Iterator last,
                                                     Args&&... args);
 
+      template <typename Iterator, typename... Args>
+      std::pair<index_type, bool> emplace(Iterator first,
+                                          Iterator last,
+                                          Args&&... args);
+
       template <typename Word>
       std::pair<index_type, bool> insert_no_checks(Word const&  key,
                                                    Value const& value) {
         return emplace_no_checks(key.begin(), key.end(), value);
+      }
+
+      template <typename Word>
+      std::pair<index_type, bool> insert(Word const& key, Value const& value) {
+        return emplace(key.begin(), key.end(), value);
       }
 
       template <typename Word>
@@ -208,36 +218,18 @@ namespace libsemigroups {
         return emplace_no_checks(key.begin(), key.end(), std::move(value));
       }
 
-      template <typename Iterator, typename... Args>
-      std::pair<index_type, bool> emplace(Iterator first,
-                                          Iterator last,
-                                          Args&&... args);
-
-      template <typename Word>
-      std::pair<index_type, bool> insert(Word const& key, Value const& value) {
-        return emplace(key.begin(), key.end(), value);
-      }
-
       template <typename Word>
       std::pair<index_type, bool> insert(Word const& key, Value&& value) {
         return emplace(key.begin(), key.end(), value);
       }
 
-      template <typename Iterator>
-      index_type erase_no_checks(Iterator first, Iterator last);
+      template <typename Word>
+      index_type erase_no_checks(Word const& key);
 
       template <typename Word>
-      index_type erase_no_checks(Word const& key) {
-        return erase_no_checks(key.begin(), key.end());
-      }
+      index_type erase(Word const& key);
 
-      template <typename Iterator>
-      index_type erase(Iterator first, Iterator last);
-
-      template <typename Word>
-      index_type erase(Word const& key) {
-        return erase(key.begin(), key.end());
-      }
+      ////////////////////////////////////////////////////////////////////////
 
       // TODO rename to begin and change return type to {key, val}, or whatever
       // std::unordered_map implements
@@ -261,16 +253,6 @@ namespace libsemigroups {
       [[nodiscard]] bool empty() const noexcept {
         return number_of_nodes() == 1;
       }
-
-      // The following are implemented for std::unordered_map and could be
-      // impled here too.
-      // TODO find
-      // TODO size()
-      // TODO clear
-      // TODO try_emplace
-      // TODO std::swap fn
-      // TODO  operator==
-      // TODO reserve? not sure how this would work
 
       ////////////////////////////////////////////////////////////////////////
       // New API - trie specific
@@ -545,6 +527,13 @@ namespace libsemigroups {
                               Iterator                                    first,
                               Iterator                                    last);
 
+      template <typename Value, typename Iterator>
+      typename AhoCorasickImpl<Value>::index_type
+      traverse_word(AhoCorasickImpl<Value> const&               ac,
+                    typename AhoCorasickImpl<Value>::index_type start,
+                    Iterator                                    first,
+                    Iterator                                    last);
+
       // TODO rm?
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
@@ -554,11 +543,25 @@ namespace libsemigroups {
         return traverse_word_no_checks(ac, ac.root, first, last);
       }
 
+      template <typename Value, typename Iterator>
+      typename AhoCorasickImpl<Value>::index_type
+      traverse_word(AhoCorasickImpl<Value> const& ac,
+                    Iterator                      first,
+                    Iterator                      last) {
+        return traverse_word(ac, ac.root, first, last);
+      }
+
       // TODO rm?
       template <typename Value, typename Word>
       [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
       traverse_word_no_checks(AhoCorasickImpl<Value>& ac, Word const& w) {
         return traverse_word_no_checks(ac, w.begin(), w.end());
+      }
+
+      template <typename Value, typename Word>
+      [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
+      traverse_word(AhoCorasickImpl<Value>& ac, Word const& w) {
+        return traverse_word(ac, w.begin(), w.end());
       }
 
       template <typename Value, typename Iterator>
