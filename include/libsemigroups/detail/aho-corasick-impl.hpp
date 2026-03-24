@@ -163,6 +163,7 @@ namespace libsemigroups {
       AhoCorasickImpl();
       AhoCorasickImpl& init();
 
+      // TODO rm replace with AhoCorasickImpl().increase_alphabet_size_by
       explicit AhoCorasickImpl(size_t num_letters);
       AhoCorasickImpl& init(size_t num_letters);
 
@@ -178,13 +179,6 @@ namespace libsemigroups {
       }
 
       AhoCorasickImpl& increase_alphabet_size_by(size_t val);
-
-      [[nodiscard]] size_t height_no_checks(index_type i) const;
-
-      [[nodiscard]] Node const& node_no_checks(index_type i) const {
-        LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
-        return _all_nodes[i];
-      }
 
       ////////////////////////////////////////////////////////////////////////
       // New API - somewhat similar mem fns to std::unordered_map
@@ -228,10 +222,8 @@ namespace libsemigroups {
       template <typename Word>
       index_type erase(Word const& key);
 
-      ////////////////////////////////////////////////////////////////////////
-
       // TODO rename to begin and change return type to {key, val}, or whatever
-      // std::unordered_map implements
+      // std::unordered_map implements, or cbegin_keys() or something?
       [[nodiscard]] terminal_node_const_iterator cbegin_terminal_nodes() const {
         return _terminal_nodes_index.cbegin();
       }
@@ -262,9 +254,18 @@ namespace libsemigroups {
         return _active_nodes_index.size();
       }
 
+      [[nodiscard]] Node const& node_no_checks(index_type i) const {
+        LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
+        return _all_nodes[i];
+      }
+
+      [[nodiscard]] Node const& node(index_type i) const {
+        throw_if_node_index_out_of_range(i);
+        return node_no_checks(i);
+      }
+
       // The following function is critical for KnuthBendix and so we leave it
       // here to be inlined possibly.
-
       [[nodiscard]] index_type traverse_no_checks(index_type  current,
                                                   letter_type a) const {
         LIBSEMIGROUPS_ASSERT(current < _all_nodes.size());
@@ -284,34 +285,38 @@ namespace libsemigroups {
         return traverse_no_checks(current, a);
       }
 
+      // TODO rm, just use node_no_checks(i).height()
+      [[nodiscard]] size_t height_no_checks(index_type i) const;
+
+      // TODO rm, just use node(i).height()
       [[nodiscard]] size_t height(index_type i) const {
         throw_if_node_index_not_active(i);
         return height_no_checks(i);
       }
 
+      // TODO rm as above
       [[nodiscard]] bool terminal_no_checks(index_type i) const;
 
+      // TODO rm as above
       [[nodiscard]] bool terminal(index_type i) const {
         throw_if_node_index_not_active(i);
         return terminal_no_checks(i);
       }
 
+      // TODO rm as above
       [[nodiscard]] index_type suffix_link_no_checks(index_type i) const {
         LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
         LIBSEMIGROUPS_ASSERT(_active_nodes_index.count(i) == 1);
         return _all_nodes[i].suffix_link();
       }
 
+      // TODO rm as above
       [[nodiscard]] index_type suffix_link(index_type current) const {
         throw_if_node_index_not_active(current);
         return suffix_link_no_checks(current);
       }
 
-      [[nodiscard]] Node const& node(index_type i) const {
-        throw_if_node_index_out_of_range(i);
-        return node_no_checks(i);
-      }
-
+      // TODO could wrap this into Node (access _children from inside Node?)
       [[nodiscard]] index_type child_no_checks(index_type  parent,
                                                letter_type letter) const {
         LIBSEMIGROUPS_ASSERT(parent < _all_nodes.size());
@@ -319,12 +324,14 @@ namespace libsemigroups {
         return _children.get(parent, letter);
       }
 
+      // TODO could wrap this into Node (access _children from inside Node?)
       [[nodiscard]] index_type child(index_type  parent,
                                      letter_type letter) const {
         throw_if_node_index_not_active(parent);
         return child_no_checks(parent, letter);
       }
 
+      // TODO could wrap this into Node (access _children from inside Node?)
       [[nodiscard]] size_t
       number_of_children_no_checks(index_type i) const noexcept {
         return _children.number_of_cols()
@@ -332,10 +339,15 @@ namespace libsemigroups {
                    _children.cbegin_row(i), _children.cend_row(i), UNDEFINED);
       }
 
+      // TODO could wrap this into Node (access _children from inside Node?)
       [[nodiscard]] size_t number_of_children(index_type i) const noexcept {
         throw_if_node_index_not_active(i);
         return number_of_children_no_checks(i);
       }
+
+      ////////////////////////////////////////////////////////////////////////
+      // Public exceptions
+      ////////////////////////////////////////////////////////////////////////
 
       void throw_if_node_index_out_of_range(index_type i) const;
       void throw_if_node_index_not_active(index_type i) const;
@@ -352,12 +364,15 @@ namespace libsemigroups {
         throw_if_any_letter_out_of_range(first, last);
         return traverse_trie_no_suffix_links_no_checks(first, last);
       }
+
       ////////////////////////////////////////////////////////////////////////
-      // Exceptions
+      // Private exceptions
       ////////////////////////////////////////////////////////////////////////
 
+      // TODO remove? only used once
       void throw_if_letter_out_of_range(index_type i) const;
 
+      // TODO remove? only used once
       template <typename Iterator>
       void throw_if_any_letter_out_of_range(Iterator first,
                                             Iterator last) const {
@@ -399,13 +414,14 @@ namespace libsemigroups {
     };  // class AhoCorasickImpl
 
     namespace aho_corasick_impl {
-
+      // TODO rm
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
       traverse_word_no_checks(AhoCorasickImpl<Value> const&               ac,
                               typename AhoCorasickImpl<Value>::index_type start,
                               Iterator                                    first,
                               Iterator                                    last);
+      // TODO rm
 
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
@@ -414,6 +430,7 @@ namespace libsemigroups {
                     Iterator                                    first,
                     Iterator                                    last);
 
+      // TODO rm
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
       traverse_word_no_checks(AhoCorasickImpl<Value> const& ac,
@@ -422,6 +439,7 @@ namespace libsemigroups {
         return traverse_word_no_checks(ac, ac.root, first, last);
       }
 
+      // TODO rm
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
       traverse_word(AhoCorasickImpl<Value> const& ac,
@@ -430,18 +448,21 @@ namespace libsemigroups {
         return traverse_word(ac, ac.root, first, last);
       }
 
+      // TODO rm
       template <typename Value, typename Word>
       [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
       traverse_word_no_checks(AhoCorasickImpl<Value>& ac, Word const& w) {
         return traverse_word_no_checks(ac, w.begin(), w.end());
       }
 
+      // TODO rm
       template <typename Value, typename Word>
       [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
       traverse_word(AhoCorasickImpl<Value>& ac, Word const& w) {
         return traverse_word(ac, w.begin(), w.end());
       }
 
+      // TODO move to tpp file
       template <typename Value, typename Iterator>
       class SearchIterator {
         using index_type = typename AhoCorasickImpl<Value>::index_type;
