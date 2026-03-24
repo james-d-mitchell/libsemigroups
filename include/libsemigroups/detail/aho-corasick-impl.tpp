@@ -144,14 +144,15 @@ namespace libsemigroups {
 
     template <typename Value>
     typename AhoCorasickImpl<Value>::Node&
-    AhoCorasickImpl<Value>::Node::init(index_type i, letter_type a) noexcept {
-      _height = i == UNDEFINED ? 0 : UNDEFINED;
+    AhoCorasickImpl<Value>::Node::init(index_type  parent,
+                                       letter_type a) noexcept {
+      _height = parent == UNDEFINED ? 0 : UNDEFINED;
       if (_parent == root || _parent == UNDEFINED) {
         _link = root;
       } else {
         _link = UNDEFINED;
       }
-      _parent        = i;
+      _parent        = parent;
       _parent_letter = a;
       _suffix_link_sources.clear();
 
@@ -364,15 +365,6 @@ namespace libsemigroups {
       if (_active_nodes_index.count(i) != 1) {
         LIBSEMIGROUPS_EXCEPTION(
             "invalid index, expected an index of an active node, found {}", i);
-      }
-    }
-
-    template <typename Value>
-    void
-    AhoCorasickImpl<Value>::throw_if_letter_out_of_range(index_type i) const {
-      if (i >= alphabet_size()) {
-        LIBSEMIGROUPS_EXCEPTION(
-            "expected a value [0, {}), found {}", alphabet_size(), i);
       }
     }
 

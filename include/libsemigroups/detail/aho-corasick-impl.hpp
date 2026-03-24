@@ -327,27 +327,17 @@ namespace libsemigroups {
       traverse_trie_no_suffix_links_no_checks(Iterator first,
                                               Iterator last) const;
 
+      // TODO to tpp
       template <typename Iterator>
       [[nodiscard]] index_type
       traverse_trie_no_suffix_links(Iterator first, Iterator last) const {
-        throw_if_any_letter_out_of_range(first, last);
-        return traverse_trie_no_suffix_links_no_checks(first, last);
-      }
-
-      ////////////////////////////////////////////////////////////////////////
-      // Private exceptions
-      ////////////////////////////////////////////////////////////////////////
-
-      // TODO remove? only used once
-      void throw_if_letter_out_of_range(index_type i) const;
-
-      // TODO remove? only used once
-      template <typename Iterator>
-      void throw_if_any_letter_out_of_range(Iterator first,
-                                            Iterator last) const {
         for (auto it = first; it != last; ++it) {
-          throw_if_letter_out_of_range(*it);
+          if (*it >= alphabet_size()) {
+            LIBSEMIGROUPS_EXCEPTION(
+                "expected a value [0, {}), found {}", alphabet_size(), *it);
+          }
         }
+        return traverse_trie_no_suffix_links_no_checks(first, last);
       }
 
       ////////////////////////////////////////////////////////////////////////
