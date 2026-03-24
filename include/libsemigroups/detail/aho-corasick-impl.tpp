@@ -66,10 +66,11 @@ namespace libsemigroups {
     }
 
     template <typename Value>
-    template <typename Iterator>
+    template <typename Word>
     typename AhoCorasickImpl<Value>::index_type
-    AhoCorasickImpl<Value>::erase_no_checks(Iterator first, Iterator last) {
-      auto last_index = traverse_trie_no_checks(first, last);
+    AhoCorasickImpl<Value>::erase_no_checks(Word const& key) {
+      // TODO what if key is empty?
+      auto last_index = aho_corasick_impl::traverse_word_no_checks(*this, key);
       auto rule_index = last_index;
       if (number_of_children_no_checks(last_index) != 0) {
         LIBSEMIGROUPS_ASSERT(_all_nodes[last_index].terminal());
@@ -81,7 +82,7 @@ namespace libsemigroups {
       _node_indices_to_update.clear();
 
       auto parent_index  = _all_nodes[last_index].parent();
-      auto parent_letter = *(last - 1);
+      auto parent_letter = key.back();
       deactivate_node_no_checks(last_index);
       while (number_of_children_no_checks(parent_index) == 1
              && !_all_nodes[parent_index].terminal() && parent_index != root) {
@@ -96,23 +97,22 @@ namespace libsemigroups {
     }
 
     template <typename Value>
-    template <typename Iterator>
+    template <typename Word>
     typename AhoCorasickImpl<Value>::index_type
-    AhoCorasickImpl<Value>::erase(Iterator first, Iterator last) {
-      auto last_index = traverse_trie(first, last);
+    AhoCorasickImpl<Value>::erase(Word const& key) {
+      auto last_index = aho_corasick_impl::traverse_word(*this, key);
       if (last_index == UNDEFINED) {
-        LIBSEMIGROUPS_EXCEPTION("cannot remove the word {} given by the "
-                                "arguments [first, last), as it does not "
-                                "correspond to a node in the trie",
-                                word_type(first, last));
+        LIBSEMIGROUPS_EXCEPTION("cannot remove the word {} (the argument) it "
+                                "does not correspond to a node in the trie",
+                                key);
       }
       if (!_all_nodes[last_index].terminal()) {
         LIBSEMIGROUPS_EXCEPTION("cannot remove the word {} given by the "
                                 "arguments [first, last), as it does not "
                                 "correspond to a terminal node in the trie",
-                                word_type(first, last));
+                                key);
       }
-      return erase_no_checks(first, last);
+      return erase_no_checks(key);
     }
 
     template <typename Value>
@@ -450,6 +450,19 @@ namespace libsemigroups {
         typename AhoCorasickImpl<Value>::index_type current = start;
         for (auto it = first; it != last; ++it) {
           current = ac.traverse_no_checks(current, *it);
+        }
+        return current;
+      }
+
+      template <typename Value, typename Iterator>
+      typename AhoCorasickImpl<Value>::index_type
+      traverse_word(AhoCorasickImpl<Value> const&               ac,
+                    typename AhoCorasickImpl<Value>::index_type start,
+                    Iterator                                    first,
+                    Iterator                                    last) {
+        typename AhoCorasickImpl<Value>::index_type current = start;
+        for (auto it = first; it != last; ++it) {
+          current = ac.traverse(current, *it);
         }
         return current;
       }
