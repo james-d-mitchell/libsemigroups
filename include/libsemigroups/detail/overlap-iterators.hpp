@@ -191,7 +191,7 @@ namespace libsemigroups::detail {
         _index_stack.pop_back();
 
         // Construct the critical pair
-        if (_trie->terminal_no_checks(_suffix_descendent_index)) {
+        if (_trie->node_no_checks(_suffix_descendent_index).terminal()) {
           _overlap.rhs
               = _trie->node_no_checks(_suffix_descendent_index).value.value();
           _overlap.length = _trie->node_no_checks(_suffix_index).height();
