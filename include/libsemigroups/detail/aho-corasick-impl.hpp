@@ -337,22 +337,21 @@ namespace libsemigroups {
         return number_of_children_no_checks(i);
       }
 
-      // TODO private?
-      template <typename Iterator>
-      [[nodiscard]] index_type traverse_trie_no_checks(Iterator first,
-                                                       Iterator last) const;
-      // TODO private?
-      template <typename Iterator>
-      [[nodiscard]] index_type traverse_trie(Iterator first,
-                                             Iterator last) const {
-        throw_if_any_letter_out_of_range(first, last);
-        return traverse_trie_no_checks(first, last);
-      }
-
       void throw_if_node_index_out_of_range(index_type i) const;
       void throw_if_node_index_not_active(index_type i) const;
 
      private:
+      template <typename Iterator>
+      [[nodiscard]] index_type
+      traverse_trie_no_suffix_links_no_checks(Iterator first,
+                                              Iterator last) const;
+
+      template <typename Iterator>
+      [[nodiscard]] index_type
+      traverse_trie_no_suffix_links(Iterator first, Iterator last) const {
+        throw_if_any_letter_out_of_range(first, last);
+        return traverse_trie_no_suffix_links_no_checks(first, last);
+      }
       ////////////////////////////////////////////////////////////////////////
       // Exceptions
       ////////////////////////////////////////////////////////////////////////

@@ -47,7 +47,7 @@ namespace libsemigroups {
     AhoCorasickImpl<Value>::emplace(Iterator first,
                                     Iterator last,
                                     Args&&... args) {
-      auto last_index = traverse_trie(first, last);
+      auto last_index = traverse_trie_no_suffix_links(first, last);
       if (last_index != UNDEFINED && _all_nodes[last_index].value.has_value()) {
         std::string word;
         if constexpr (std::is_same_v<
@@ -115,11 +115,13 @@ namespace libsemigroups {
       return erase_no_checks(key);
     }
 
+    // Private
     template <typename Value>
     template <typename Iterator>
     typename AhoCorasickImpl<Value>::index_type
-    AhoCorasickImpl<Value>::traverse_trie_no_checks(Iterator first,
-                                                    Iterator last) const {
+    AhoCorasickImpl<Value>::traverse_trie_no_suffix_links_no_checks(
+        Iterator first,
+        Iterator last) const {
       index_type current = root;
       for (auto it = first; it != last; ++it) {
         current = _children.get(current, *it);
@@ -463,6 +465,9 @@ namespace libsemigroups {
         typename AhoCorasickImpl<Value>::index_type current = start;
         for (auto it = first; it != last; ++it) {
           current = ac.traverse(current, *it);
+          if (current == UNDEFINED) {
+            return current;
+          }
         }
         return current;
       }
