@@ -406,16 +406,13 @@ namespace libsemigroups::detail {
       RewritingSystemTrie const& that) {
     init();  // TODO rm?
     RewritingSystemBase::operator=(that);
-    _rule_trie = that._rule_trie;
-    // TODO rm, as rule copying is handled by the trie
-    // for (Rule* rule : Rules::active_rules()) {
-    //   index_type node =
-    //   _rule_trie.traverse_trie_no_checks(rule->lhs().cbegin(),
-    //                                                        rule->lhs().cend());
-    //   LIBSEMIGROUPS_ASSERT(_rule_trie.terminal(node));
-    //   _rule_map.emplace(node, rule);
-    // }
-
+    // Cannot just copy the _rule_trie because the values in it are Rule* which
+    // would then point at Rule objects in "that" not "this".
+    _rule_trie.init().increase_alphabet_size_by(
+        that._rule_trie.alphabet_size());
+    for (Rule* rule : Rules::active_rules()) {
+      _rule_trie.insert_no_checks(rule->lhs(), rule);
+    }
     return *this;
   }
 

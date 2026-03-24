@@ -192,6 +192,7 @@ namespace libsemigroups {
     AhoCorasickImpl<Value>&
     AhoCorasickImpl<Value>::operator=(AhoCorasickImpl<Value> const&)
         = default;
+
     template <typename Value>
     AhoCorasickImpl<Value>&
     AhoCorasickImpl<Value>::operator=(AhoCorasickImpl<Value>&&)
