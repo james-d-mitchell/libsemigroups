@@ -30,7 +30,6 @@
 #include <unordered_set>  // for unordered_set
 #include <vector>         // for vector
 
-#include "libsemigroups/aho-corasick.hpp"
 #include "libsemigroups/constants.hpp"  // for Undefined, operator!=, UNDEFINED, operator==
 #include "libsemigroups/debug.hpp"      // for LIBSEMIGROUPS_ASSERT
 #include "libsemigroups/exception.hpp"  // for LIBSEMIGROUPS_EXCEPTION
@@ -255,10 +254,9 @@ namespace libsemigroups {
       }
 
       ////////////////////////////////////////////////////////////////////////
-      // Old API
+      // Trie API
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO private
       [[nodiscard]] size_t number_of_nodes() const noexcept {
         LIBSEMIGROUPS_ASSERT(_children.number_of_rows() == _all_nodes.size());
         return _active_nodes_index.size();
@@ -266,7 +264,7 @@ namespace libsemigroups {
 
       // The following function is critical for KnuthBendix and so we leave it
       // here to be inlined possibly.
-      // TODO private?
+
       [[nodiscard]] index_type traverse_no_checks(index_type  current,
                                                   letter_type a) const {
         LIBSEMIGROUPS_ASSERT(current < _all_nodes.size());
@@ -280,48 +278,40 @@ namespace libsemigroups {
         return traverse_no_checks(suffix_link_no_checks(current), a);
       }
 
-      // TODO private?
       [[nodiscard]] index_type traverse(index_type  current,
                                         letter_type a) const {
         throw_if_node_index_not_active(current);
         return traverse_no_checks(current, a);
       }
 
-      // TODO private?
       [[nodiscard]] size_t height(index_type i) const {
         throw_if_node_index_not_active(i);
         return height_no_checks(i);
       }
 
-      // TODO private?
       [[nodiscard]] bool terminal_no_checks(index_type i) const;
 
-      // TODO private?
       [[nodiscard]] bool terminal(index_type i) const {
         throw_if_node_index_not_active(i);
         return terminal_no_checks(i);
       }
 
-      // TODO private?
       [[nodiscard]] index_type suffix_link_no_checks(index_type i) const {
         LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
         LIBSEMIGROUPS_ASSERT(_active_nodes_index.count(i) == 1);
         return _all_nodes[i].suffix_link();
       }
 
-      // TODO private?
       [[nodiscard]] index_type suffix_link(index_type current) const {
         throw_if_node_index_not_active(current);
         return suffix_link_no_checks(current);
       }
 
-      // TODO private?
       [[nodiscard]] Node const& node(index_type i) const {
         throw_if_node_index_out_of_range(i);
         return node_no_checks(i);
       }
 
-      // TODO private?
       [[nodiscard]] index_type child_no_checks(index_type  parent,
                                                letter_type letter) const {
         LIBSEMIGROUPS_ASSERT(parent < _all_nodes.size());
@@ -329,14 +319,12 @@ namespace libsemigroups {
         return _children.get(parent, letter);
       }
 
-      // TODO private?
       [[nodiscard]] index_type child(index_type  parent,
                                      letter_type letter) const {
         throw_if_node_index_not_active(parent);
         return child_no_checks(parent, letter);
       }
 
-      // TODO private?
       [[nodiscard]] size_t
       number_of_children_no_checks(index_type i) const noexcept {
         return _children.number_of_cols()
@@ -344,7 +332,6 @@ namespace libsemigroups {
                    _children.cbegin_row(i), _children.cend_row(i), UNDEFINED);
       }
 
-      // TODO private?
       [[nodiscard]] size_t number_of_children(index_type i) const noexcept {
         throw_if_node_index_not_active(i);
         return number_of_children_no_checks(i);
@@ -362,9 +349,7 @@ namespace libsemigroups {
         return traverse_trie_no_checks(first, last);
       }
 
-      // TODO private?
       void throw_if_node_index_out_of_range(index_type i) const;
-      // TODO private?
       void throw_if_node_index_not_active(index_type i) const;
 
      private:
