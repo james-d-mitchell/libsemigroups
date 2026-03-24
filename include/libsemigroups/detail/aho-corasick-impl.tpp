@@ -446,6 +446,63 @@ namespace libsemigroups {
       }
 
       template <typename Value, typename Iterator>
+      class SearchIterator {
+        using index_type = typename AhoCorasickImpl<Value>::index_type;
+
+        Iterator                      _first;
+        Iterator                      _last;
+        index_type                    _prefix;
+        index_type                    _suffix;
+        AhoCorasickImpl<Value> const& _trie;
+
+       public:
+        using iterator_category = std::input_iterator_tag;
+        using value_type        = index_type;
+        using difference_type   = std::ptrdiff_t;
+        using pointer           = value_type const*;
+        using reference         = value_type const&;
+
+        SearchIterator(AhoCorasickImpl<Value> const& trie,
+                       Iterator                      first,
+                       Iterator                      last);
+
+        explicit SearchIterator(AhoCorasickImpl<Value> const& trie);
+
+        reference operator*() const {
+          // TODO(1) would be easy enough to return the position of the match
+          // also, I think it's just height(_prefix) - height(_suffix)
+          return _suffix;
+        }
+
+        // Pre-increment
+        SearchIterator& operator++();
+
+        // Post-increment
+        SearchIterator operator++(int) {
+          SearchIterator tmp = *this;
+          ++(*this);
+          return tmp;
+        }
+
+        friend bool operator==(SearchIterator const& a,
+                               SearchIterator const& b) {
+          // TODO(1) more?
+          return a._prefix == b._prefix && a._suffix == b._suffix;
+        }
+
+        friend bool operator!=(SearchIterator const& a,
+                               SearchIterator const& b) {
+          return !(a == b);
+        }
+      };  // class SearchIterator
+
+      // Deduction guide
+      template <typename Value, typename Iterator>
+      SearchIterator(AhoCorasickImpl<Value> const& ac,
+                     Iterator                      first,
+                     Iterator last) -> SearchIterator<Value, Iterator>;
+
+      template <typename Value, typename Iterator>
       SearchIterator<Value, Iterator>::SearchIterator(
           AhoCorasickImpl<Value> const& trie,
           Iterator                      first,
@@ -505,6 +562,35 @@ namespace libsemigroups {
         _prefix = UNDEFINED;
         _suffix = UNDEFINED;
         return *this;
+      }
+
+      template <typename Value, typename Iterator>
+      [[nodiscard]] auto
+      begin_search_no_checks(AhoCorasickImpl<Value> const& ac,
+                             Iterator                      first,
+                             Iterator                      last) {
+        return SearchIterator(ac, first, last);
+      }
+
+      template <typename Value, typename Iterator>
+      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl<Value> const& ac,
+                                              Iterator,
+                                              Iterator) {
+        return SearchIterator<Value, Iterator>(ac);
+      }
+
+      // TODO: ac should be a const&
+      template <typename Value, typename Word>
+      [[nodiscard]] auto begin_search_no_checks(AhoCorasickImpl<Value>& ac,
+                                                Word const&             w) {
+        return begin_search_no_checks(ac, w.begin(), w.end());
+      }
+
+      // TODO: ac should be a const&
+      template <typename Value, typename Word>
+      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl<Value>& ac,
+                                              Word const&             w) {
+        return end_search_no_checks(ac, w.begin(), w.end());
       }
 
     }  // namespace aho_corasick_impl
