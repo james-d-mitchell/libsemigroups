@@ -194,7 +194,7 @@ namespace libsemigroups::detail {
         if (_trie->terminal_no_checks(_suffix_descendent_index)) {
           _overlap.rhs
               = _trie->node_no_checks(_suffix_descendent_index).value.value();
-          _overlap.length = _trie->height_no_checks(_suffix_index);
+          _overlap.length = _trie->node_no_checks(_suffix_index).height();
           return true;
         }
 

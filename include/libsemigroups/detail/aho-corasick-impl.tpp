@@ -249,14 +249,6 @@ namespace libsemigroups {
     }
 
     template <typename Value>
-    [[nodiscard]] size_t
-    AhoCorasickImpl<Value>::height_no_checks(index_type i) const {
-      LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
-      LIBSEMIGROUPS_ASSERT(_active_nodes_index.count(i) == 1);
-      return _all_nodes[i].height();
-    }
-
-    template <typename Value>
     [[nodiscard]] bool
     AhoCorasickImpl<Value>::terminal_no_checks(index_type i) const {
       LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());

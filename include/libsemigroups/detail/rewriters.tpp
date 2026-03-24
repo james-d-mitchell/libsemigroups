@@ -722,7 +722,7 @@ namespace libsemigroups::detail {
         if (!descendants_confluent(
                 _rule_trie.node_no_checks(*node_it).value.value(),
                 link,
-                _rule_trie.height_no_checks(link))) {
+                _rule_trie.node_no_checks(link).height())) {
           set_cached_confluent(tril::FALSE);
           report_checking_confluence(seen, start_time);
           return false;

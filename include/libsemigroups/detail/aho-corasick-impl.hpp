@@ -285,15 +285,6 @@ namespace libsemigroups {
         return traverse_no_checks(current, a);
       }
 
-      // TODO rm, just use node_no_checks(i).height()
-      [[nodiscard]] size_t height_no_checks(index_type i) const;
-
-      // TODO rm, just use node(i).height()
-      [[nodiscard]] size_t height(index_type i) const {
-        throw_if_node_index_not_active(i);
-        return height_no_checks(i);
-      }
-
       // TODO rm as above
       [[nodiscard]] bool terminal_no_checks(index_type i) const;
 
