@@ -491,15 +491,15 @@ namespace libsemigroups {
                       1101_w,
                       1110_w,
                       1111_w}) {
-        result.push_back(aho_corasick_impl::traverse_word_no_checks(ac, w));
+        result.push_back(aho_corasick_impl::traverse_trie(ac, w));
       }
       REQUIRE(expected == result);
 
       REQUIRE(ac.number_of_nodes() == 31);
       ac.erase(0111_w);
       REQUIRE(ac.number_of_nodes() == 30);
-      REQUIRE(aho_corasick_impl::traverse_word_no_checks(ac, 0111_w)
-              == aho_corasick_impl::traverse_word_no_checks(ac, 111_w));
+      REQUIRE(aho_corasick_impl::traverse_trie(ac, 0111_w)
+              == aho_corasick_impl::traverse_trie(ac, 111_w));
     }
     LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
                             "017",

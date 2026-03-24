@@ -70,7 +70,7 @@ namespace libsemigroups {
     typename AhoCorasickImpl<Value>::index_type
     AhoCorasickImpl<Value>::erase_no_checks(Word const& key) {
       // TODO what if key is empty?
-      auto last_index = aho_corasick_impl::traverse_word_no_checks(*this, key);
+      auto last_index = aho_corasick_impl::traverse_trie_no_checks(*this, key);
       auto rule_index = last_index;
       if (number_of_children_no_checks(last_index) != 0) {
         LIBSEMIGROUPS_ASSERT(_all_nodes[last_index].terminal());
@@ -100,7 +100,7 @@ namespace libsemigroups {
     template <typename Word>
     typename AhoCorasickImpl<Value>::index_type
     AhoCorasickImpl<Value>::erase(Word const& key) {
-      auto last_index = aho_corasick_impl::traverse_word(*this, key);
+      auto last_index = aho_corasick_impl::traverse_trie(*this, key);
       if (last_index == UNDEFINED) {
         LIBSEMIGROUPS_EXCEPTION("cannot remove the word {} (the argument) it "
                                 "does not correspond to a node in the trie",
@@ -420,11 +420,10 @@ namespace libsemigroups {
 
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
-      traverse_word_no_checks(AhoCorasickImpl<Value> const&               ac,
-                              typename AhoCorasickImpl<Value>::index_type start,
-                              Iterator                                    first,
-                              Iterator last) {
-        typename AhoCorasickImpl<Value>::index_type current = start;
+      traverse_trie_no_checks(AhoCorasickImpl<Value> const& ac,
+                              Iterator                      first,
+                              Iterator                      last) {
+        auto current = ac.root;
         for (auto it = first; it != last; ++it) {
           current = ac.traverse_no_checks(current, *it);
         }
@@ -433,11 +432,10 @@ namespace libsemigroups {
 
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
-      traverse_word(AhoCorasickImpl<Value> const&               ac,
-                    typename AhoCorasickImpl<Value>::index_type start,
-                    Iterator                                    first,
-                    Iterator                                    last) {
-        typename AhoCorasickImpl<Value>::index_type current = start;
+      traverse_trie(AhoCorasickImpl<Value> const& ac,
+                    Iterator                      first,
+                    Iterator                      last) {
+        auto current = ac.root;
         for (auto it = first; it != last; ++it) {
           current = ac.traverse(current, *it);
           if (current == UNDEFINED) {
