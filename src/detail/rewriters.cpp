@@ -108,7 +108,7 @@ namespace libsemigroups {
       for (Rule const* rule : that._active_rules) {
         add_active_rule(copy_rule(rule));
       }
-      for (auto const* rule : that._pending_rules) {
+      for (Rule const* rule : that._pending_rules) {
         add_pending_rule(copy_rule(rule));
       }
       // NOTE: copy the stats after calling add_active_rule and add_pending_rule
