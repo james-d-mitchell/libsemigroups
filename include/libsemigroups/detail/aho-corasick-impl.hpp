@@ -410,13 +410,13 @@ namespace libsemigroups {
 
       // TODO: ac should be a const&
       template <typename Value, typename Word>
-      [[nodiscard]] auto begin_search_no_checks(AhoCorasickImpl<Value>& ac,
-                                                Word const&             w);
+      [[nodiscard]] auto
+      begin_search_no_checks(AhoCorasickImpl<Value> const& ac, Word const& w);
 
       // TODO: ac should be a const&
       template <typename Value, typename Word>
-      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl<Value>& ac,
-                                              Word const&             w);
+      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl<Value> const& ac,
+                                              Word const&                   w);
 
     }  // namespace aho_corasick_impl
   }  // namespace detail

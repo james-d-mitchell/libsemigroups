@@ -250,7 +250,7 @@ namespace libsemigroups {
     }
 
     template <typename Value>
-    [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
+    typename AhoCorasickImpl<Value>::index_type
     AhoCorasickImpl<Value>::new_active_node_no_checks(index_type  parent_index,
                                                       letter_type a) {
       LIBSEMIGROUPS_ASSERT(parent_index < _all_nodes.size());
@@ -565,31 +565,28 @@ namespace libsemigroups {
       }
 
       template <typename Value, typename Iterator>
-      [[nodiscard]] auto
-      begin_search_no_checks(AhoCorasickImpl<Value> const& ac,
-                             Iterator                      first,
-                             Iterator                      last) {
+      auto begin_search_no_checks(AhoCorasickImpl<Value> const& ac,
+                                  Iterator                      first,
+                                  Iterator                      last) {
         return SearchIterator(ac, first, last);
       }
 
       template <typename Value, typename Iterator>
-      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl<Value> const& ac,
-                                              Iterator,
-                                              Iterator) {
+      auto end_search_no_checks(AhoCorasickImpl<Value> const& ac,
+                                Iterator,
+                                Iterator) {
         return SearchIterator<Value, Iterator>(ac);
       }
 
-      // TODO: ac should be a const&
       template <typename Value, typename Word>
-      [[nodiscard]] auto begin_search_no_checks(AhoCorasickImpl<Value>& ac,
-                                                Word const&             w) {
+      auto begin_search_no_checks(AhoCorasickImpl<Value> const& ac,
+                                  Word const&                   w) {
         return begin_search_no_checks(ac, w.begin(), w.end());
       }
 
-      // TODO: ac should be a const&
       template <typename Value, typename Word>
-      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl<Value>& ac,
-                                              Word const&             w) {
+      auto end_search_no_checks(AhoCorasickImpl<Value> const& ac,
+                                Word const&                   w) {
         return end_search_no_checks(ac, w.begin(), w.end());
       }
 
