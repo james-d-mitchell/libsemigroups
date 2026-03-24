@@ -249,16 +249,6 @@ namespace libsemigroups {
     }
 
     template <typename Value>
-    [[nodiscard]] bool
-    AhoCorasickImpl<Value>::terminal_no_checks(index_type i) const {
-      LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
-      LIBSEMIGROUPS_ASSERT(_active_nodes_index.count(i) == 1);
-      LIBSEMIGROUPS_ASSERT(_all_nodes[i].terminal()
-                           == (_terminal_nodes_index.count(i) != 0));
-      return _all_nodes[i].terminal();
-    }
-
-    template <typename Value>
     [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
     AhoCorasickImpl<Value>::new_active_node_no_checks(index_type  parent_index,
                                                       letter_type a) {

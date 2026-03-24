@@ -286,15 +286,6 @@ namespace libsemigroups {
       }
 
       // TODO rm as above
-      [[nodiscard]] bool terminal_no_checks(index_type i) const;
-
-      // TODO rm as above
-      [[nodiscard]] bool terminal(index_type i) const {
-        throw_if_node_index_not_active(i);
-        return terminal_no_checks(i);
-      }
-
-      // TODO rm as above
       [[nodiscard]] index_type suffix_link_no_checks(index_type i) const {
         LIBSEMIGROUPS_ASSERT(i < _all_nodes.size());
         LIBSEMIGROUPS_ASSERT(_active_nodes_index.count(i) == 1);
