@@ -373,52 +373,28 @@ namespace libsemigroups {
     };  // class AhoCorasickImpl
 
     namespace aho_corasick_impl {
-      // TODO rm
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
-      traverse_word_no_checks(AhoCorasickImpl<Value> const&               ac,
-                              typename AhoCorasickImpl<Value>::index_type start,
-                              Iterator                                    first,
-                              Iterator                                    last);
-      // TODO rm
-
-      template <typename Value, typename Iterator>
-      typename AhoCorasickImpl<Value>::index_type
-      traverse_word(AhoCorasickImpl<Value> const&               ac,
-                    typename AhoCorasickImpl<Value>::index_type start,
-                    Iterator                                    first,
-                    Iterator                                    last);
-
-      // TODO rm
-      template <typename Value, typename Iterator>
-      typename AhoCorasickImpl<Value>::index_type
-      traverse_word_no_checks(AhoCorasickImpl<Value> const& ac,
+      traverse_trie_no_checks(AhoCorasickImpl<Value> const& ac,
                               Iterator                      first,
-                              Iterator                      last) {
-        return traverse_word_no_checks(ac, ac.root, first, last);
-      }
+                              Iterator                      last);
 
-      // TODO rm
       template <typename Value, typename Iterator>
       typename AhoCorasickImpl<Value>::index_type
-      traverse_word(AhoCorasickImpl<Value> const& ac,
+      traverse_trie(AhoCorasickImpl<Value> const& ac,
                     Iterator                      first,
-                    Iterator                      last) {
-        return traverse_word(ac, ac.root, first, last);
-      }
+                    Iterator                      last);
 
-      // TODO rm
       template <typename Value, typename Word>
       [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
-      traverse_word_no_checks(AhoCorasickImpl<Value>& ac, Word const& w) {
-        return traverse_word_no_checks(ac, w.begin(), w.end());
+      traverse_trie_no_checks(AhoCorasickImpl<Value>& ac, Word const& w) {
+        return traverse_trie_no_checks(ac, w.begin(), w.end());
       }
 
-      // TODO rm
       template <typename Value, typename Word>
       [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
-      traverse_word(AhoCorasickImpl<Value>& ac, Word const& w) {
-        return traverse_word(ac, w.begin(), w.end());
+      traverse_trie(AhoCorasickImpl<Value>& ac, Word const& w) {
+        return traverse_trie(ac, w.begin(), w.end());
       }
 
       // TODO move to tpp file
