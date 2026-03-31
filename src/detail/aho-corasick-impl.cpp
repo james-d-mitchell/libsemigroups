@@ -39,7 +39,12 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
 
     AhoCorasickImpl::Node::Node(index_type parent, letter_type a)
-        : _height(), _link(), _parent(), _parent_letter(), _value(nullptr) {
+        : _height(),
+          _link(),
+          _parent(),
+          _parent_letter(),
+          _suffix_link_sources(),
+          _value(nullptr) {
       init(parent, a);
     }
 
