@@ -67,6 +67,7 @@ namespace libsemigroups {
         index_type                     _parent;
         letter_type                    _parent_letter;
         std::unordered_set<index_type> _suffix_link_sources;
+        Rule const*                    _value;
 
         Node& init() noexcept {
           return init(UNDEFINED, UNDEFINED);
@@ -75,10 +76,6 @@ namespace libsemigroups {
         Node& init(index_type parent, letter_type a) noexcept;
 
        public:
-        // TODO use nullptr to indicate non-terminal
-        // TODO privatize, access via mem fns
-        Rule const* value;
-
         ////////////////////////////////////////////////////////////////////////
         // Constructors/initializers - public
         ////////////////////////////////////////////////////////////////////////
@@ -110,7 +107,7 @@ namespace libsemigroups {
         }
 
         [[nodiscard]] bool terminal() const noexcept {
-          return value != nullptr;
+          return _value != nullptr;
         }
 
         [[nodiscard]] index_type parent() const noexcept {
@@ -119,6 +116,11 @@ namespace libsemigroups {
 
         [[nodiscard]] letter_type parent_letter() const noexcept {
           return _parent_letter;
+        }
+
+        [[nodiscard]] Rule const* value() const noexcept {
+          LIBSEMIGROUPS_ASSERT(terminal());
+          return _value;
         }
 
        private:
@@ -135,6 +137,12 @@ namespace libsemigroups {
 
         Node const& suffix_link(index_type val) noexcept {
           _link = val;
+          return *this;
+        }
+
+        Node const& value(Rule const* value) {
+          LIBSEMIGROUPS_ASSERT(value != nullptr);
+          _value = value;
           return *this;
         }
 

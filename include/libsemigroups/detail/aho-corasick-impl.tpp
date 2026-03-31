@@ -38,7 +38,7 @@ namespace libsemigroups {
       }
       bool inserted = _terminal_nodes_index.emplace(current).second;
       if (inserted) {
-        _all_nodes[current].value = val;
+        _all_nodes[current].value(val);
       }
 
       return {current, inserted};
@@ -77,7 +77,7 @@ namespace libsemigroups {
       if (number_of_children_no_checks(last_index) != 0) {
         LIBSEMIGROUPS_ASSERT(_all_nodes[last_index].terminal());
         _terminal_nodes_index.erase(last_index);
-        _all_nodes[last_index].value = nullptr;
+        _all_nodes[last_index]._value = nullptr;
         return value_index;
       }
 
