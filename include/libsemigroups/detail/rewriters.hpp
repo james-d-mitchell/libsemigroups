@@ -82,44 +82,6 @@ namespace libsemigroups {
     }  // namespace rewriting_system
 
     ////////////////////////////////////////////////////////////////////////
-    // RuleLookup
-    ////////////////////////////////////////////////////////////////////////
-
-    class RuleLookup {
-     public:
-      using native_word_type = Rule::native_word_type;
-
-      RuleLookup() : _rule(nullptr) {}
-
-      explicit RuleLookup(Rule* rule)
-          : _first(rule->lhs().cbegin()),
-            _last(rule->lhs().cend()),
-            _rule(rule) {}
-
-      RuleLookup& operator()(native_word_type::iterator first,
-                             native_word_type::iterator last) {
-        _first = first;
-        _last  = last;
-        return *this;
-      }
-
-      Rule const* rule() const {
-        return _rule;
-      }
-
-      // This implements reverse lex comparison of this and that, which
-      // satisfies the requirement of std::set that equivalent items be
-      // incomparable, so, for example bcbc and abcbc are considered
-      // equivalent, but abcba and bcbc are not.
-      bool operator<(RuleLookup const& that) const;
-
-     private:
-      native_word_type::const_iterator _first;
-      native_word_type::const_iterator _last;
-      Rule const*                      _rule;
-    };  // class RuleLookup
-
-    ////////////////////////////////////////////////////////////////////////
     // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
@@ -262,6 +224,44 @@ namespace libsemigroups {
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const {}
     };  // class RewritingSystemBase
+
+    ////////////////////////////////////////////////////////////////////////
+    // RuleLookup
+    ////////////////////////////////////////////////////////////////////////
+
+    class RuleLookup {
+     public:
+      using native_word_type = Rule::native_word_type;
+
+      RuleLookup() : _rule(nullptr) {}
+
+      explicit RuleLookup(Rule* rule)
+          : _first(rule->lhs().cbegin()),
+            _last(rule->lhs().cend()),
+            _rule(rule) {}
+
+      RuleLookup& operator()(native_word_type::iterator first,
+                             native_word_type::iterator last) {
+        _first = first;
+        _last  = last;
+        return *this;
+      }
+
+      Rule const* rule() const {
+        return _rule;
+      }
+
+      // This implements reverse lex comparison of this and that, which
+      // satisfies the requirement of std::set that equivalent items be
+      // incomparable, so, for example bcbc and abcbc are considered
+      // equivalent, but abcba and bcbc are not.
+      bool operator<(RuleLookup const& that) const;
+
+     private:
+      native_word_type::const_iterator _first;
+      native_word_type::const_iterator _last;
+      Rule const*                      _rule;
+    };  // class RuleLookup
 
     ////////////////////////////////////////////////////////////////////////
     // RewritingSystemSet
