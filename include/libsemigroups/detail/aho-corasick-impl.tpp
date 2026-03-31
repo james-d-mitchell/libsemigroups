@@ -35,8 +35,10 @@ namespace libsemigroups {
         }
         current = next;
       }
-      bool inserted             = _terminal_nodes_index.emplace(current).second;
-      _all_nodes[current].value = val;
+      bool inserted = _terminal_nodes_index.emplace(current).second;
+      if (inserted) {
+        _all_nodes[current].value = val;
+      }
 
       return {current, inserted};
     }
@@ -44,8 +46,11 @@ namespace libsemigroups {
     template <typename Iterator, typename... Args>
     std::pair<typename AhoCorasickImpl::index_type, bool>
     AhoCorasickImpl::emplace(Iterator first, Iterator last, Rule const* val) {
+      // TODO check that Rule isn't nullptr, that messes up the logic in
+      // AhoCorasickImpl.
       auto last_index = traverse_trie_no_suffix_links(first, last);
-      if (last_index != UNDEFINED && _all_nodes[last_index].value.has_value()) {
+      // TODO use is_terminal in the next line
+      if (last_index != UNDEFINED && _all_nodes[last_index].value != nullptr) {
         std::string word;
         if constexpr (std::is_same_v<
                           std::decay_t<decltype(*std::declval<Iterator>())>,
@@ -71,7 +76,7 @@ namespace libsemigroups {
       if (number_of_children_no_checks(last_index) != 0) {
         LIBSEMIGROUPS_ASSERT(_all_nodes[last_index].terminal());
         _terminal_nodes_index.erase(last_index);
-        _all_nodes[last_index].value = std::nullopt;
+        _all_nodes[last_index].value = nullptr;
         return value_index;
       }
 
@@ -127,7 +132,7 @@ namespace libsemigroups {
     }
 
     template <typename Iterator>
-    [[nodiscard]] AhoCorasickImpl::index_type
+    AhoCorasickImpl::index_type
     AhoCorasickImpl::traverse_trie_no_suffix_links(Iterator first,
                                                    Iterator last) const {
       for (auto it = first; it != last; ++it) {

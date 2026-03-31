@@ -525,8 +525,7 @@ namespace libsemigroups::detail {
 
             if (std::any_of(
                     first, last, [rule, new_rule_trie](auto node_index) {
-                      return new_rule_trie->node_no_checks(node_index)
-                                 .value.value()
+                      return new_rule_trie->node_no_checks(node_index).value
                              != rule;
                     })) {
               it        = rm_active_rule(it);
@@ -679,7 +678,7 @@ namespace libsemigroups::detail {
         _trie_nodes_visited_indices.push_back(current);
         pos++;
       } else {
-        Rule const* rule = _rule_trie.node_no_checks(current).value.value();
+        Rule const* rule = _rule_trie.node_no_checks(current).value;
         size_t      diff = rule->lhs().size() - 1;
         pos -= diff;
         v.erase(v.begin() + pos, v.begin() + pos + diff + 1);
@@ -716,10 +715,9 @@ namespace libsemigroups::detail {
       link = _rule_trie.node_no_checks(*node_it).suffix_link();
       LIBSEMIGROUPS_ASSERT(*node_it != _rule_trie.root);
       while (link != _rule_trie.root) {
-        if (!descendants_confluent(
-                _rule_trie.node_no_checks(*node_it).value.value(),
-                link,
-                _rule_trie.node_no_checks(link).height())) {
+        if (!descendants_confluent(_rule_trie.node_no_checks(*node_it).value,
+                                   link,
+                                   _rule_trie.node_no_checks(link).height())) {
           set_cached_confluent(tril::FALSE);
           report_checking_confluence(seen, start_time);
           return false;
@@ -739,7 +737,7 @@ namespace libsemigroups::detail {
       size_t      overlap_length) const {
     LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::active);
     if (_rule_trie.node_no_checks(current_node).terminal()) {
-      Rule const* rule2 = _rule_trie.node_no_checks(current_node).value.value();
+      Rule const* rule2 = _rule_trie.node_no_checks(current_node).value;
       // Process overlap
       // Word looks like ABC where the LHS of rule1 corresponds to AB,
       // the LHS of rule2 corresponds to BC, and |C|=nodes.size() - 1.

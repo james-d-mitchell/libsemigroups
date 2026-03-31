@@ -343,6 +343,8 @@ namespace libsemigroups {
 
   namespace detail {
 
+    static Rule const dummy_rule;
+
     LIBSEMIGROUPS_TEST_CASE("AhoCorasickImpl",
                             "013",
                             "search",
@@ -356,7 +358,7 @@ namespace libsemigroups {
       std::vector<index_type> indexes;
 
       for (auto const& word : subwords) {
-        indexes.push_back(ac.insert(word, nullptr).first);
+        indexes.push_back(ac.insert(word, &dummy_rule).first);
       }
       // REQUIRE(indexes == std::vector<index_type>({4, 6, 7, 8}));
 
@@ -420,7 +422,7 @@ namespace libsemigroups {
       std::vector<index_type> index;
 
       for (auto const& word : subwords) {
-        index.push_back(ac.insert(word, nullptr).first);
+        index.push_back(ac.insert(word, &dummy_rule).first);
       }
 
       // REQUIRE(index == std::vector<index_type>({3, 6, 15, 11, 9}));
@@ -446,7 +448,7 @@ namespace libsemigroups {
       std::vector<size_t> index;
 
       for (auto const& word : subwords) {
-        index.push_back(ac.insert(word, nullptr).first);
+        index.push_back(ac.insert(word, &dummy_rule).first);
       }
       // REQUIRE(index == std::vector<size_t>({6, 1, 7, 2, 8, 9, 10}));
 
@@ -468,7 +470,7 @@ namespace libsemigroups {
       WordRange words;
       words.alphabet_size(2).min(4).max(5);
       for (auto const& w : words) {
-        ac.insert(w, nullptr);
+        ac.insert(w, &dummy_rule);
       }
 
       std::vector<index_type> expected
@@ -508,19 +510,19 @@ namespace libsemigroups {
       AhoCorasickImpl ac(2);
       REQUIRE((ac.terminal_nodes() | rx::count()) == 0);
 
-      ac.insert(0101_w, nullptr);
-      ac.insert(0110_w, nullptr);
-      ac.insert(01101_w, nullptr);
-      ac.insert(01100_w, nullptr);
+      ac.insert(0101_w, &dummy_rule);
+      ac.insert(0110_w, &dummy_rule);
+      ac.insert(01101_w, &dummy_rule);
+      ac.insert(01100_w, &dummy_rule);
       REQUIRE((ac.terminal_nodes() | rx::count()) == 4);
 
-      REQUIRE_THROWS_AS(ac.insert(0101_w, 0), LibsemigroupsException);
+      REQUIRE_THROWS_AS(ac.insert(0101_w, &dummy_rule), LibsemigroupsException);
       REQUIRE((ac.terminal_nodes() | rx::count()) == 4);
 
-      ac.insert(01_w, nullptr);
+      ac.insert(01_w, &dummy_rule);
       REQUIRE((ac.terminal_nodes() | rx::count()) == 5);
 
-      ac.insert(010101_w, nullptr);
+      ac.insert(010101_w, &dummy_rule);
       REQUIRE((ac.terminal_nodes() | rx::count()) == 6);
 
       ac.init();

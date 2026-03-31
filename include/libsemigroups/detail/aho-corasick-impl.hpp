@@ -76,7 +76,8 @@ namespace libsemigroups {
 
        public:
         // TODO use nullptr to indicate non-terminal
-        std::optional<Rule const*> value;
+        // TODO privatize, access via mem fns
+        Rule const* value;
 
         ////////////////////////////////////////////////////////////////////////
         // Constructors/initializers - public
@@ -109,7 +110,7 @@ namespace libsemigroups {
         }
 
         [[nodiscard]] bool terminal() const noexcept {
-          return value.has_value();
+          return value != nullptr;
         }
 
         [[nodiscard]] index_type parent() const noexcept {
