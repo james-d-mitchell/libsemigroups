@@ -164,14 +164,6 @@ namespace libsemigroups {
         return _confluence_known;
       }
 
-      // TODO private
-      bool cached_confluent() const noexcept {
-        return _cached_confluent;
-      }
-
-      // TODO private
-      void set_cached_confluent(tril val) const;
-
       // TODO to tpp
       // TODO to helper
       template <typename Subclass>
@@ -205,6 +197,15 @@ namespace libsemigroups {
       }
 
      protected:
+      template <typename RewritingSystem, typename ReductionOrder>
+      friend class KnuthBendixImpl;
+
+      bool cached_confluent() const noexcept {
+        return _cached_confluent;
+      }
+
+      void set_cached_confluent(tril val) const;
+
       ////////////////////////////////////////////////////////////////////////
       // Member functions - protected
       ////////////////////////////////////////////////////////////////////////
@@ -230,6 +231,7 @@ namespace libsemigroups {
       virtual void report_reducing_rules(
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const {}
+
     };  // class RewritingSystemBase
 
     ////////////////////////////////////////////////////////////////////////
