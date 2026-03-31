@@ -38,7 +38,8 @@
 #include "aho-corasick-impl.hpp"  // for AhoCorasickImpl
 #include "multi-view.hpp"         // for MultiView
 #include "report.hpp"             // for reporting_enabled
-#include "rules.hpp"              // for ValueGuard
+#include "rules.hpp"              // for Rules/Rule
+#include "value-guard.hpp"        // for ValueGuard
 
 namespace libsemigroups {
   namespace detail {
