@@ -607,14 +607,14 @@ namespace libsemigroups {
 
     // TODO remove Trie template param currently unusable.
     template <typename ReductionOrder = ShortLexCompare,
-              typename Trie           = AhoCorasickImpl<Rule*>>
+              typename Trie           = AhoCorasickImpl>
     class RewritingSystemTrie : public RewritingSystemBase {
       ////////////////////////////////////////////////////////////////////////
       // Private aliases
       ////////////////////////////////////////////////////////////////////////
 
       using iterator   = Rules::iterator;
-      using index_type = AhoCorasickImpl<Rule*>::index_type;
+      using index_type = AhoCorasickImpl::index_type;
 
       ////////////////////////////////////////////////////////////////////////
       // Private data
@@ -697,7 +697,7 @@ namespace libsemigroups {
         const_cast<RewritingSystemTrie*>(this)->rewrite(u);
       }
 
-      [[nodiscard]] AhoCorasickImpl<Rule*> const& trie() const noexcept {
+      [[nodiscard]] AhoCorasickImpl const& trie() const noexcept {
         return _rule_trie;
       }
 
