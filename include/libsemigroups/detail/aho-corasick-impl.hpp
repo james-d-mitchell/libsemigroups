@@ -317,18 +317,9 @@ namespace libsemigroups {
       traverse_trie_no_suffix_links_no_checks(Iterator first,
                                               Iterator last) const;
 
-      // TODO to tpp
       template <typename Iterator>
       [[nodiscard]] index_type
-      traverse_trie_no_suffix_links(Iterator first, Iterator last) const {
-        for (auto it = first; it != last; ++it) {
-          if (*it >= alphabet_size()) {
-            LIBSEMIGROUPS_EXCEPTION(
-                "expected a value [0, {}), found {}", alphabet_size(), *it);
-          }
-        }
-        return traverse_trie_no_suffix_links_no_checks(first, last);
-      }
+      traverse_trie_no_suffix_links(Iterator first, Iterator last) const;
 
       ////////////////////////////////////////////////////////////////////////
       // Activate or deactivate a node
