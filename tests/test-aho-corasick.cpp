@@ -527,6 +527,8 @@ namespace libsemigroups {
 
       ac.init();
       REQUIRE((ac.terminal_nodes() | rx::count()) == 0);
+      ac.insert(""_w, &dummy_rule);
+      REQUIRE((ac.terminal_nodes() | rx::count()) == 1);
     }
 
   }  // namespace detail

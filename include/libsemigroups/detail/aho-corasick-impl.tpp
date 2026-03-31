@@ -71,7 +71,6 @@ namespace libsemigroups {
     template <typename Word>
     typename AhoCorasickImpl::index_type
     AhoCorasickImpl::erase_no_checks(Word const& key) {
-      // TODO what if key is empty?
       auto last_index  = aho_corasick_impl::traverse_trie_no_checks(*this, key);
       auto value_index = last_index;
       if (number_of_children_no_checks(last_index) != 0) {
