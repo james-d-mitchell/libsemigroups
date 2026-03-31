@@ -19,17 +19,17 @@
 // This file contains the implementation of the AhoCorasickImpl class.
 #include "libsemigroups/detail/aho-corasick-impl.hpp"
 
-#include <algorithm>    // for max, copy, reverse
-#include <array>        // for array
-#include <string>       // for basic_string, string, to_string
-#include <string_view>  // for basic_string_view, string_view
+#include <algorithm>   // for fill, sort, copy_if
+#include <functional>  // for greater
+#include <numeric>     // for iota
+#include <string>      // for basic_string
 
-#include "libsemigroups/constants.hpp"   // for Undefined, UNDEFINED, operator==
-#include "libsemigroups/debug.hpp"       // for LIBSEMIGROUPS_ASSERT
-#include "libsemigroups/detail/fmt.hpp"  // for format
-#include "libsemigroups/dot.hpp"         // for Dot, Dot::Edge, Dot::Node
-#include "libsemigroups/exception.hpp"   // for LIBSEMIGROUPS_EXCEPTION
-#include "libsemigroups/types.hpp"       // for word_type, letter_type
+#include "libsemigroups/constants.hpp"  // for Undefined, UNDEFINED, operator==
+#include "libsemigroups/debug.hpp"      // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups/exception.hpp"  // for LIBSEMIGROUPS_EXCEPTION
+#include "libsemigroups/types.hpp"      // for word_type, letter_type
+
+#include "libsemigroups/detail/containers.hpp"  // for DynamicArray2
 
 namespace libsemigroups {
   namespace detail {
