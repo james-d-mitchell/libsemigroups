@@ -348,12 +348,6 @@ namespace libsemigroups {
 
       void rewrite(native_word_type& u);
 
-      // TODO the next function shouldn't be necessary, i.e. make things
-      // mutable
-      void rewrite(native_word_type& u) const {
-        const_cast<RewritingSystemSet*>(this)->rewrite(u);
-      }
-
      private:
       ////////////////////////////////////////////////////////////////////////
       // Private member functions
@@ -451,11 +445,13 @@ namespace libsemigroups {
         return *this;
       }
 
+      // TODO to helper
       [[nodiscard]] tril is_length_decreasing() const noexcept {
         return RewritingSystemBase::is_length_decreasing<
             RewritingSystemTrie<ReductionOrder>>();
       }
 
+      // TODO to helper
       [[nodiscard]] tril is_terminating() const noexcept {
         return RewritingSystemBase::is_terminating<
             RewritingSystemTrie<ReductionOrder>>();
@@ -466,11 +462,6 @@ namespace libsemigroups {
 
       // TODO(1) iterators
       void rewrite(native_word_type& u);
-
-      // TODO shouldn't be necessary
-      void rewrite(native_word_type& u) const {
-        const_cast<RewritingSystemTrie*>(this)->rewrite(u);
-      }
 
       [[nodiscard]] AhoCorasickImpl const& trie() const noexcept {
         return _rule_trie;
