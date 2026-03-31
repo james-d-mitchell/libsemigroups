@@ -22,7 +22,14 @@
 #ifndef LIBSEMIGROUPS_DETAIL_RULES_HPP_
 #define LIBSEMIGROUPS_DETAIL_RULES_HPP_
 
-#include <string>
+#include <array>    // for array
+#include <cstddef>  // for size_t
+#include <cstdint>  // for uint64_t
+#include <list>     // for list
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "libsemigroups/debug.hpp"  // for LIBSEMIGROUPS_ASSERT
 
 namespace libsemigroups {
   namespace detail {
@@ -255,3 +262,4 @@ namespace libsemigroups {
 
   }  // namespace detail
 }  // namespace libsemigroups
+#endif

@@ -18,14 +18,10 @@
 
 #include "libsemigroups/detail/rules.hpp"
 
-#include <algorithm>
-#include <atomic>
-#include <chrono>
-
-#include "libsemigroups/runner.hpp"  // for Ticker
-
-#include "libsemigroups/detail/report.hpp"       // for report_default
-#include "libsemigroups/detail/value-guard.hpp"  // for ValueGuard
+#include <algorithm>  // for max, min, sort
+#include <limits>     // for numeric_limits
+#include <list>       // for list
+#include <vector>     // for swap
 
 namespace libsemigroups {
   namespace detail {
