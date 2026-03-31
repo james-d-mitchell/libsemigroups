@@ -126,6 +126,19 @@ namespace libsemigroups {
       return current;
     }
 
+    template <typename Iterator>
+    [[nodiscard]] AhoCorasickImpl::index_type
+    AhoCorasickImpl::traverse_trie_no_suffix_links(Iterator first,
+                                                   Iterator last) const {
+      for (auto it = first; it != last; ++it) {
+        if (*it >= alphabet_size()) {
+          LIBSEMIGROUPS_EXCEPTION(
+              "expected a value [0, {}), found {}", alphabet_size(), *it);
+        }
+      }
+      return traverse_trie_no_suffix_links_no_checks(first, last);
+    }
+
     namespace aho_corasick_impl {
 
       template <typename Iterator>
