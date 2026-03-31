@@ -98,6 +98,8 @@ namespace libsemigroups {
       };
 
       struct Settings {
+        // TODO there's a max_pending_rules in Rules, RewritingSystemBase and
+        // KnuthBendixImpl, simplify and/or rename
         size_t max_pending_rules = 512;
       };
 
@@ -143,7 +145,6 @@ namespace libsemigroups {
       }
 
       [[nodiscard]] auto rules() const {
-        // TODO use stringviews rather than references
         return chain(active_rules(), pending_rules())
                | rx::transform([](Rule const* rule) -> rule_const_reference {
                    return rule_const_reference(rule->lhs(), rule->rhs());
@@ -159,16 +160,20 @@ namespace libsemigroups {
 
       [[nodiscard]] bool confluent();
 
-      bool cached_confluent() const noexcept {
-        return _cached_confluent;
-      }
-
-      void set_cached_confluent(tril val) const;
-
       [[nodiscard]] bool confluent_known() const {
         return _confluence_known;
       }
 
+      // TODO private
+      bool cached_confluent() const noexcept {
+        return _cached_confluent;
+      }
+
+      // TODO private
+      void set_cached_confluent(tril val) const;
+
+      // TODO to tpp
+      // TODO to helper
       template <typename Subclass>
       [[nodiscard]] tril is_length_decreasing() const noexcept {
         if constexpr (rewriting_system::is_length_decreasing_v<
@@ -185,6 +190,8 @@ namespace libsemigroups {
         return (number_of_pending_rules() == 0) ? tril::TRUE : tril::unknown;
       }
 
+      // TODO to tpp
+      // TODO to helper
       template <typename Subclass>
       [[nodiscard]] tril is_terminating() const noexcept {
         if constexpr (rewriting_system::is_terminating_v<
@@ -328,8 +335,9 @@ namespace libsemigroups {
             RewritingSystemSet<ReductionOrder>>();
       }
 
-      // TODO it'd be possible to check if we encounter a cycle in rewriting,
+      // TODO(1) it'd be possible to check if we encounter a cycle in rewriting,
       // which we could then use to say is_terminating is false
+      // TODO to helper
       [[nodiscard]] tril is_terminating() const noexcept {
         return RewritingSystemBase::is_terminating<
             RewritingSystemSet<ReductionOrder>>();
@@ -339,9 +347,6 @@ namespace libsemigroups {
       bool reduce_system();
 
       void rewrite(native_word_type& u);
-
-      // TODO rm
-      void rewrite2(native_word_type& u);
 
       // TODO the next function shouldn't be necessary, i.e. make things
       // mutable
@@ -461,9 +466,6 @@ namespace libsemigroups {
 
       // TODO(1) iterators
       void rewrite(native_word_type& u);
-
-      // TODO rm
-      void rewrite2(native_word_type& u);
 
       // TODO shouldn't be necessary
       void rewrite(native_word_type& u) const {

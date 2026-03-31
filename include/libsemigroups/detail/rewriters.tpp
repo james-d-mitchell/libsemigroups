@@ -146,49 +146,6 @@ namespace libsemigroups::detail {
     return rules_added;
   }
 
-  // REWRITE_FROM_LEFT from Sims, p67
-  // Caution: this uses the assumption that rules are length reducing, if they
-  // are not, then u might not have sufficient space!
-  template <typename ReductionOrder>
-  void RewritingSystemSet<ReductionOrder>::rewrite2(native_word_type& u) {
-    if (u.size() < Rules::stats().min_length_lhs_rule) {
-      return;
-    }
-
-    auto v_begin = u.begin();  // 0
-    auto v_end   = u.begin() + Rules::stats().min_length_lhs_rule - 1;
-    auto w_begin = v_end;
-    auto w_end   = u.end();  // u.size()
-
-    RuleLookup lookup;
-
-    while (w_begin != w_end) {
-      *v_end = *w_begin;
-      ++v_end;
-      ++w_begin;
-
-      auto it = _set_rules.find(lookup(v_begin, v_end));
-      if (it != _set_rules.end()) {
-        Rule const* rule = (*it).rule();
-        if (rule->lhs().size() <= static_cast<size_t>(v_end - v_begin)) {
-          LIBSEMIGROUPS_ASSERT(is_suffix(
-              v_begin, v_end, rule->lhs().cbegin(), rule->lhs().cend()));
-          v_end -= rule->lhs().size();
-          w_begin -= rule->rhs().size();
-          std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
-        }
-      }
-      while (w_begin != w_end
-             && Rules::stats().min_length_lhs_rule - 1
-                    > static_cast<size_t>((v_end - v_begin))) {
-        *v_end = *w_begin;
-        ++v_end;
-        ++w_begin;
-      }
-    }
-    u.erase(v_end - u.cbegin());
-  }
-
   template <typename ReductionOrder>
   void RewritingSystemSet<ReductionOrder>::rewrite(native_word_type& v) {
     reduce_system();
@@ -274,7 +231,7 @@ namespace libsemigroups::detail {
           // if k = n - v.size() - 1
           // w = (w.rend() - 1, ..., w.rbegin() + k - 1, ..., w.rbegin())
           //   = (w.begin(), ..., w.end() - k, ..., w.end() - 1)
-          size_t k = n - v.size() - 1;
+          size_t const k = n - v.size() - 1;
           v.append(w.rbegin(), w.rbegin() + k);
           w.erase(w.end() - k, w.end());
         }
@@ -548,62 +505,6 @@ namespace libsemigroups::detail {
     }
 
     return rules_added;
-  }
-
-  template <typename ReductionOrder, typename Trie>
-  // As with RewritingSystemSet<ReductionOrder,Trie>::rewrite, this assumes that
-  // all rules are length reducing.
-  void
-  RewritingSystemTrie<ReductionOrder, Trie>::rewrite2(native_word_type& u) {
-    using iterator = native_word_type::iterator;
-    // Check if u is rewriteable
-    if (u.size() < Rules::stats().min_length_lhs_rule) {
-      return;
-    }
-
-    _trie_nodes_visited_indices.clear();
-    index_type current = _rule_trie.root;
-    _trie_nodes_visited_indices.push_back(current);
-
-#ifdef LIBSEMIGROUPS_DEBUG
-    iterator v_begin = u.begin();
-#endif
-    iterator v_end   = u.begin();
-    iterator w_begin = v_end;
-    iterator w_end   = u.end();
-
-    while (w_begin != w_end) {
-      // Read first letter of w and traverse trie
-      auto x = *w_begin;
-      ++w_begin;
-      current
-          = _rule_trie.traverse_no_checks(current, static_cast<letter_type>(x));
-
-      if (!_rule_trie.node_no_checks(current).terminal()) {
-        _trie_nodes_visited_indices.push_back(current);
-        *v_end = x;
-        ++v_end;
-      } else {
-        // Find rule that corresponds to terminal node
-        Rule const* rule     = _rule_trie.node_no_checks(current).value();
-        auto        lhs_size = rule->lhs().size();
-        LIBSEMIGROUPS_ASSERT(lhs_size != 0);
-
-        // Check the lhs is smaller than the portion of the word that has
-        // been read
-        LIBSEMIGROUPS_ASSERT(lhs_size
-                             <= static_cast<size_t>(v_end - v_begin) + 1);
-        v_end -= lhs_size - 1;
-        w_begin -= rule->rhs().size();
-        // Replace lhs with rhs in-place
-        std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
-        _trie_nodes_visited_indices.erase(_trie_nodes_visited_indices.end()
-                                              - lhs_size + 1,
-                                          _trie_nodes_visited_indices.end());
-        current = _trie_nodes_visited_indices.back();
-      }
-    }
-    u.erase(v_end - u.cbegin());
   }
 
   template <typename ReductionOrder, typename Trie>
