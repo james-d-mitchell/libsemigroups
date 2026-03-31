@@ -33,7 +33,6 @@ namespace libsemigroups::detail {
   ////////////////////////////////////////////////////////////////////////
   // Overlap
   ////////////////////////////////////////////////////////////////////////
-  // TODO make this a template rather than only Rule*?
   struct Overlap {
     Rule const* lhs;
     Rule const* rhs;
@@ -48,7 +47,8 @@ namespace libsemigroups::detail {
   // OverlapIteratorTrie
   ////////////////////////////////////////////////////////////////////////
 
-  // TODO rm default param
+  // TODO rm template param
+  // TODO out of line all functions
   template <typename Trie = AhoCorasickImpl>
   class OverlapIteratorTrie {
     template <typename OtherTrie>
