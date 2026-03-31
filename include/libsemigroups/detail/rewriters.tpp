@@ -505,7 +505,7 @@ namespace libsemigroups::detail {
         ValueGuard sg(_state);
         _state = State::reducing_pending_rules;
 
-        AhoCorasickImpl<Rule*>* new_rule_trie
+        AhoCorasickImpl* new_rule_trie
             = use_separate_trie ? &_new_rule_trie : &_rule_trie;
         // TODO rm
         // decltype(_rule_map)* rule_map

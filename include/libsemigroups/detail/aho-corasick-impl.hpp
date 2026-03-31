@@ -42,11 +42,11 @@
 namespace libsemigroups {
   namespace detail {
 
+    class Rule;  // forward decl
+
     // An AhoCorasickImpl<Value> object represents a hash map like container
     // (implemented using a trie), where the keys in the map must be
     // words consisting of letters in the range {0, ..., n - 1} for some n.
-    // TODO remove Value again, and just use Rule*
-    template <typename Value>
     class AhoCorasickImpl {
      public:
       using index_type = uint32_t;
@@ -75,7 +75,8 @@ namespace libsemigroups {
         Node& init(index_type parent, letter_type a) noexcept;
 
        public:
-        std::optional<Value> value;
+        // TODO use nullptr to indicate non-terminal
+        std::optional<Rule const*> value;
 
         ////////////////////////////////////////////////////////////////////////
         // Constructors/initializers - public
@@ -187,32 +188,21 @@ namespace libsemigroups {
       template <typename Iterator, typename... Args>
       std::pair<index_type, bool> emplace_no_checks(Iterator first,
                                                     Iterator last,
-                                                    Args&&... args);
+                                                    Rule const*);
 
       template <typename Iterator, typename... Args>
       std::pair<index_type, bool> emplace(Iterator first,
                                           Iterator last,
-                                          Args&&... args);
+                                          Rule const*);
 
       template <typename Word>
-      std::pair<index_type, bool> insert_no_checks(Word const&  key,
-                                                   Value const& value) {
+      std::pair<index_type, bool> insert_no_checks(Word const& key,
+                                                   Rule const* value) {
         return emplace_no_checks(key.begin(), key.end(), value);
       }
 
       template <typename Word>
-      std::pair<index_type, bool> insert(Word const& key, Value const& value) {
-        return emplace(key.begin(), key.end(), value);
-      }
-
-      template <typename Word>
-      std::pair<index_type, bool> insert_no_checks(Word const& key,
-                                                   Value&&     value) {
-        return emplace_no_checks(key.begin(), key.end(), std::move(value));
-      }
-
-      template <typename Word>
-      std::pair<index_type, bool> insert(Word const& key, Value&& value) {
+      std::pair<index_type, bool> insert(Word const& key, Rule const* value) {
         return emplace(key.begin(), key.end(), value);
       }
 
@@ -373,50 +363,45 @@ namespace libsemigroups {
     };  // class AhoCorasickImpl
 
     namespace aho_corasick_impl {
-      template <typename Value, typename Iterator>
-      typename AhoCorasickImpl<Value>::index_type
-      traverse_trie_no_checks(AhoCorasickImpl<Value> const& ac,
-                              Iterator                      first,
-                              Iterator                      last);
+      template <typename Iterator>
+      typename AhoCorasickImpl::index_type
+      traverse_trie_no_checks(AhoCorasickImpl const& ac,
+                              Iterator               first,
+                              Iterator               last);
 
-      template <typename Value, typename Iterator>
-      typename AhoCorasickImpl<Value>::index_type
-      traverse_trie(AhoCorasickImpl<Value> const& ac,
-                    Iterator                      first,
-                    Iterator                      last);
+      template <typename Iterator>
+      typename AhoCorasickImpl::index_type
+      traverse_trie(AhoCorasickImpl const& ac, Iterator first, Iterator last);
 
-      template <typename Value, typename Word>
-      [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
-      traverse_trie_no_checks(AhoCorasickImpl<Value>& ac, Word const& w) {
+      template <typename Word>
+      [[nodiscard]] typename AhoCorasickImpl::index_type
+      traverse_trie_no_checks(AhoCorasickImpl& ac, Word const& w) {
         return traverse_trie_no_checks(ac, w.begin(), w.end());
       }
 
-      template <typename Value, typename Word>
-      [[nodiscard]] typename AhoCorasickImpl<Value>::index_type
-      traverse_trie(AhoCorasickImpl<Value>& ac, Word const& w) {
+      template <typename Word>
+      [[nodiscard]] typename AhoCorasickImpl::index_type
+      traverse_trie(AhoCorasickImpl& ac, Word const& w) {
         return traverse_trie(ac, w.begin(), w.end());
       }
 
-      template <typename Value, typename Iterator>
-      [[nodiscard]] auto
-      begin_search_no_checks(AhoCorasickImpl<Value> const& ac,
-                             Iterator                      first,
-                             Iterator                      last);
+      template <typename Iterator>
+      [[nodiscard]] auto begin_search_no_checks(AhoCorasickImpl const& ac,
+                                                Iterator               first,
+                                                Iterator               last);
 
-      template <typename Value, typename Iterator>
-      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl<Value> const& ac,
+      template <typename Iterator>
+      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl const& ac,
                                               Iterator,
                                               Iterator);
 
-      // TODO: ac should be a const&
-      template <typename Value, typename Word>
-      [[nodiscard]] auto
-      begin_search_no_checks(AhoCorasickImpl<Value> const& ac, Word const& w);
+      template <typename Word>
+      [[nodiscard]] auto begin_search_no_checks(AhoCorasickImpl const& ac,
+                                                Word const&            w);
 
-      // TODO: ac should be a const&
-      template <typename Value, typename Word>
-      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl<Value> const& ac,
-                                              Word const&                   w);
+      template <typename Word>
+      [[nodiscard]] auto end_search_no_checks(AhoCorasickImpl const& ac,
+                                              Word const&            w);
 
     }  // namespace aho_corasick_impl
   }  // namespace detail
