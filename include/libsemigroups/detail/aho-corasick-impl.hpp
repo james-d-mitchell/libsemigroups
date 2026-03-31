@@ -221,20 +221,20 @@ namespace libsemigroups {
       template <typename Word>
       index_type erase(Word const& key);
 
-      // TODO rename to begin and change return type to {key, val}, or whatever
-      // std::unordered_map implements, or cbegin_keys() or something?
+      // TODO(1) rename to begin and change return type to {key, val}, or
+      // whatever std::unordered_map implements, or cbegin_keys() or something?
       [[nodiscard]] terminal_node_const_iterator cbegin_terminal_nodes() const {
         return _terminal_nodes_index.cbegin();
       }
 
-      // TODO rename to end and change return type to {key, val}, or whatever
+      // TODO(1) rename to end and change return type to {key, val}, or whatever
       // std::unordered_map implements
       [[nodiscard]] terminal_node_const_iterator cend_terminal_nodes() const {
         return _terminal_nodes_index.cend();
       }
 
-      // TODO rename to items and change return type to {key, val}, or whatever
-      // std::unordered_map implements
+      // TODO(1) rename to items and change return type to {key, val}, or
+      // whatever std::unordered_map implements
       [[nodiscard]] auto terminal_nodes() const {
         return rx::iterator_range(cbegin_terminal_nodes(),
                                   cend_terminal_nodes());
@@ -284,7 +284,7 @@ namespace libsemigroups {
         return traverse_no_checks(current, a);
       }
 
-      // TODO could wrap this into Node (access _children from inside Node?)
+      // TODO(1) could wrap this into Node (access _children from inside Node?)
       [[nodiscard]] index_type child_no_checks(index_type  parent,
                                                letter_type letter) const {
         LIBSEMIGROUPS_ASSERT(parent < _all_nodes.size());
@@ -292,14 +292,14 @@ namespace libsemigroups {
         return _children.get(parent, letter);
       }
 
-      // TODO could wrap this into Node (access _children from inside Node?)
+      // TODO(1) could wrap this into Node (access _children from inside Node?)
       [[nodiscard]] index_type child(index_type  parent,
                                      letter_type letter) const {
         throw_if_node_index_not_active(parent);
         return child_no_checks(parent, letter);
       }
 
-      // TODO could wrap this into Node (access _children from inside Node?)
+      // TODO(1) could wrap this into Node (access _children from inside Node?)
       [[nodiscard]] size_t
       number_of_children_no_checks(index_type i) const noexcept {
         return _children.number_of_cols()
@@ -307,7 +307,7 @@ namespace libsemigroups {
                    _children.cbegin_row(i), _children.cend_row(i), UNDEFINED);
       }
 
-      // TODO could wrap this into Node (access _children from inside Node?)
+      // TODO(1) could wrap this into Node (access _children from inside Node?)
       [[nodiscard]] size_t number_of_children(index_type i) const noexcept {
         throw_if_node_index_not_active(i);
         return number_of_children_no_checks(i);
