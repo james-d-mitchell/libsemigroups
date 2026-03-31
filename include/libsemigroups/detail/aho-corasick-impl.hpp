@@ -22,12 +22,14 @@
 #ifndef LIBSEMIGROUPS_DETAIL_AHO_CORASICK_IMPL_HPP_
 #define LIBSEMIGROUPS_DETAIL_AHO_CORASICK_IMPL_HPP_
 
-#include <cstddef>        // for size_t
-#include <memory>         // for allocator_traits<>::value_type
-#include <set>            // for set
-#include <stack>          // for stack
-#include <string>         // for string
+#include <algorithm>      // for count
+#include <cstddef>        // for size_t, ptrdiff_t
+#include <cstdint>        // for uint32_t
+#include <iterator>       // for input_iterator_tag
+#include <string>         // for basic_string, string
+#include <type_traits>    // for decay_t, is_same_v
 #include <unordered_set>  // for unordered_set
+#include <utility>        // for pair
 #include <vector>         // for vector
 
 #include "libsemigroups/constants.hpp"  // for Undefined, operator!=, UNDEFINED, operator==
@@ -37,6 +39,7 @@
 #include "libsemigroups/types.hpp"      // for letter_type, word_type
 
 #include "containers.hpp"  // DynamicArray2
+#include "fmt.hpp"         // for format
 #include "print.hpp"       // for to_printable
 
 namespace libsemigroups {
