@@ -131,8 +131,7 @@ namespace libsemigroups {
      protected:
       enum class State : uint8_t {
         none,
-        adding_pending_rules,  // TODO rm this?
-        reducing_pending_rules,
+        reducing_pending_rules,  // TODO is this name good?
         checking_confluence
       };
 

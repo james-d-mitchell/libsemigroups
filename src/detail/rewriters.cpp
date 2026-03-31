@@ -130,7 +130,7 @@ namespace libsemigroups {
     void RewritingSystemBase::report_progress_from_thread(
         std::atomic_uint64_t const&                           seen,
         std::chrono::high_resolution_clock::time_point const& start_time) {
-      if (_state == State::none || _state == State::adding_pending_rules) {
+      if (_state == State::none) {
         using detail::string_time;
         auto gd       = detail::group_digits;
         auto active   = gd(Rules::number_of_active_rules());
