@@ -26,6 +26,7 @@ namespace libsemigroups {
     AhoCorasickImpl::emplace_no_checks(Iterator    first,
                                        Iterator    last,
                                        Rule const* val) {
+      LIBSEMIGROUPS_ASSERT(val != nullptr);
       index_type current = root;
       for (auto it = first; it != last; ++it) {
         index_type next = _children.get(current, *it);
@@ -46,11 +47,8 @@ namespace libsemigroups {
     template <typename Iterator, typename... Args>
     std::pair<typename AhoCorasickImpl::index_type, bool>
     AhoCorasickImpl::emplace(Iterator first, Iterator last, Rule const* val) {
-      // TODO check that Rule isn't nullptr, that messes up the logic in
-      // AhoCorasickImpl.
       auto last_index = traverse_trie_no_suffix_links(first, last);
-      // TODO use is_terminal in the next line
-      if (last_index != UNDEFINED && _all_nodes[last_index].value != nullptr) {
+      if (last_index != UNDEFINED && _all_nodes[last_index].terminal()) {
         std::string word;
         if constexpr (std::is_same_v<
                           std::decay_t<decltype(*std::declval<Iterator>())>,
@@ -63,6 +61,9 @@ namespace libsemigroups {
             "the word {} given by the arguments [first, last) already belongs "
             "to the trie, and cannot be added again",
             word);
+      } else if (val == nullptr) {
+        LIBSEMIGROUPS_EXCEPTION(
+            "the emplaced value (Rule const*) must not be the nullptr");
       }
       return emplace_no_checks(first, last, val);
     }
