@@ -533,8 +533,6 @@ namespace libsemigroups::detail {
     // position of the start of the unread suffix of the input word
     size_t pos = 0;
 
-    // TODO pos != v.size() - n \pm 1, because once we have fewer than n
-    // characters left to process we can't rewrite any more
     while (pos != v.size()) {
       // Read first letter of the unread suffix and traverse trie
       current = _rule_trie.traverse_no_checks(current,
@@ -544,6 +542,8 @@ namespace libsemigroups::detail {
         _trie_nodes_visited_indices.push_back(current);
         pos++;
       } else {
+        // Everything here is off by one because we read everything up to and
+        // including the pos-th character in "v"
         Rule const* rule = _rule_trie.node_no_checks(current).value();
         size_t      diff = rule->lhs().size() - 1;
         pos -= diff;
