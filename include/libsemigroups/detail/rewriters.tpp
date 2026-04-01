@@ -197,9 +197,9 @@ namespace libsemigroups::detail {
     }
 
     size_t const n = Rules::stats().min_length_lhs_rule;
-    // TODO we could try to modify rewrite2 to work with indices rather
-    // than allocating w here every time (indices not iterators because
-    // indices are independent of memory allocation)
+    // TODO we could try to modify rewrite2 (the old version of rewrite) to work
+    // with indices rather than allocating w here every time (indices not
+    // iterators because indices are independent of memory allocation)
     // TODO we could also, make w a data member like in RewritingSystemTrie
     std::string w(v.rbegin(), v.rbegin() + v.size() - n + 1);
     v.erase(v.begin() + n - 1, v.end());
@@ -361,7 +361,7 @@ namespace libsemigroups::detail {
   RewritingSystemTrie<ReductionOrder>&
   RewritingSystemTrie<ReductionOrder>::operator=(
       RewritingSystemTrie const& that) {
-    init();  // TODO rm?
+    init();
     RewritingSystemBase::operator=(that);
     // Cannot just copy the _rule_trie because the values in it are Rule* which
     // would then point at Rule objects in "that" not "this".
@@ -416,8 +416,6 @@ namespace libsemigroups::detail {
     while (Rules::number_of_pending_rules() != 0) {
       if (use_separate_trie) {
         _new_rule_trie.init(_rule_trie.alphabet_size());
-        // TODO rm
-        // _new_rule_map.clear();
       }
       bool rules_added_this_pass = false;
       while (Rules::number_of_pending_rules() != 0) {
@@ -463,9 +461,6 @@ namespace libsemigroups::detail {
         _state = State::reducing_pending_rules;
 
         Trie* new_rule_trie = use_separate_trie ? &_new_rule_trie : &_rule_trie;
-        // TODO rm
-        // decltype(_rule_map)* rule_map
-        //     = use_separate_trie ? &_new_rule_map : &_rule_map;
 
         auto const first = Rules::active_rules().begin();
         auto const last  = Rules::active_rules().end();
