@@ -127,13 +127,6 @@ namespace libsemigroups {
         return _confluence_known;
       }
 
-      [[nodiscard]] bool is_reduced() const noexcept {
-        // TODO correct? not really, it might be that none of the pending rules
-        // are added to the system, so really we'd need to run reduce to
-        // know if something gets added or not.
-        return Rules::number_of_pending_rules() == 0;
-      }
-
      protected:
       template <typename RewritingSystem, typename ReductionOrder>
       friend class KnuthBendixImpl;
@@ -272,6 +265,8 @@ namespace libsemigroups {
       // Returns true if the system changes as a result of this call (i.e. it
       // wasn't reduced before but now it is)
       bool reduce();
+
+      [[nodiscard]] bool is_reduced() const noexcept;
 
       void rewrite(native_word_type& u);
 
