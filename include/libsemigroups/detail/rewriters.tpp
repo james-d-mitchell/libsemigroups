@@ -413,18 +413,16 @@ namespace libsemigroups::detail {
           reorder<ReductionOrder>(rule);
           add_active_rule(rule);
           if (use_separate_trie) {
-            _new_rule_trie.emplace_no_checks(
-                rule->lhs().cbegin(), rule->lhs().cend(), rule);
-            // TODO replace with new assertion
-            // #ifdef LIBSEMIGROUPS_DEBUG
-            // auto [it, inserted] =
-            // #endif
-            // _new_rule_map.emplace(node, rule);
-            // LIBSEMIGROUPS_ASSERT(inserted);
+#ifdef LIBSEMIGROUPS_DEBUG
+            auto [_, inserted] =
+#endif
+                _new_rule_trie.emplace_no_checks(
+                    rule->lhs().cbegin(), rule->lhs().cend(), rule);
+            LIBSEMIGROUPS_ASSERT(inserted);
 
-            // Shouldn't be possible for 2 rules with equal left-hand
-            // sides to exist, since the later added one will be rewritten
-            // using the first.
+            // Shouldn't be possible for 2 rules with equal left-hand sides to
+            // exist, since the later added one will be rewritten using the
+            // first.
           }
           rules_added           = true;
           rules_added_this_pass = true;
