@@ -20,6 +20,7 @@
 // classes that can be used to rewrite strings relative to a collection of
 // rules.
 
+#include "libsemigroups/detail/rewriters.hpp"
 namespace libsemigroups::detail {
 
   ////////////////////////////////////////////////////////////////////////
@@ -130,6 +131,13 @@ namespace libsemigroups::detail {
   }
 
   template <typename ReductionOrder>
+  bool RewritingSystemSet<ReductionOrder>::is_reduced() const noexcept {
+    if (Rules::number_of_pending_rules() == 0) {
+      return true;
+    }
+  }
+
+  template <typename ReductionOrder>
   void RewritingSystemSet<ReductionOrder>::rewrite(native_word_type& v) {
     reduce();
     rewrite_no_reduce(v);
@@ -147,7 +155,7 @@ namespace libsemigroups::detail {
     // require the rules in _set_rules to be reduced. If we add a new_rule
     // e.g. aba -> a and there is a currently active rule of the form abab ->
     // aba, then we must make abab -> aba pending before adding aba -> a.
-    LIBSEMIGROUPS_ASSERT(ReductionOrder{}(new_rule->rhs(), new_rule->lhs()));
+    LIBSEMIGROUPS_ASSERT(!ReductionOrder{}(new_rule->lhs(), new_rule->rhs()));
 
     Rules::add_active_rule(new_rule);
 #ifdef LIBSEMIGROUPS_DEBUG
