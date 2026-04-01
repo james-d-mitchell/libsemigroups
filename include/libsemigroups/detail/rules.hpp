@@ -260,6 +260,17 @@ namespace libsemigroups {
                                    Iterator last2);
     };  // class Rules
 
+    template <typename Iterator>
+    [[nodiscard]] Rule* Rules::new_rule(Iterator first1,
+                                        Iterator last1,
+                                        Iterator first2,
+                                        Iterator last2) {
+      Rule* rule = new_rule();
+      rule->lhs().assign(first1, last1);
+      rule->rhs().assign(first2, last2);
+      return rule;
+    }
+
   }  // namespace detail
 }  // namespace libsemigroups
 #endif
