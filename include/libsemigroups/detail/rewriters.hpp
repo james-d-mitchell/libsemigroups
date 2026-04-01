@@ -44,48 +44,11 @@
 namespace libsemigroups {
   namespace detail {
 
-    namespace rewriting_system {
-
-      template <typename RewritingSystem, typename Word>
-      void add_rule(RewritingSystem& rs, Word const& lhs, Word const& rhs) {
-        rs.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
-      }
-
-      template <typename Thing>
-      struct is_length_decreasing : std::false_type {};
-
-      template <>
-      struct is_length_decreasing<ShortLexCompare> : std::true_type {};
-
-      template <typename Thing>
-      static constexpr bool is_length_decreasing_v
-          = is_length_decreasing<Thing>::value;
-
-      template <typename Thing>
-      struct is_terminating : std::false_type {};
-
-      template <>
-      struct is_terminating<ShortLexCompare> : std::true_type {};
-
-      template <>
-      struct is_terminating<RecursivePathCompare> : std::true_type {};
-
-      template <>
-      struct is_terminating<WtShortLexCompare> : std::true_type {};
-
-      template <>
-      struct is_terminating<WtLexCompare> : std::true_type {};
-
-      template <typename Thing>
-      static constexpr bool is_terminating_v = is_terminating<Thing>::value;
-
-    }  // namespace rewriting_system
-
     ////////////////////////////////////////////////////////////////////////
     // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
-    class RewritingSystemBase : protected Rules {
+    class RewritingSystemBase : public Rules {
      private:
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
@@ -162,38 +125,6 @@ namespace libsemigroups {
 
       [[nodiscard]] bool confluent_known() const {
         return _confluence_known;
-      }
-
-      // TODO to tpp
-      // TODO to helper
-      template <typename Subclass>
-      [[nodiscard]] tril is_length_decreasing() const noexcept {
-        if constexpr (rewriting_system::is_length_decreasing_v<
-                          typename Subclass::reduction_order>) {
-          return tril::TRUE;
-        }
-
-        for (Rule const* rule : active_rules()) {
-          if (rule->lhs().size() <= rule->rhs().size()) {
-            return tril::FALSE;
-          }
-        }
-
-        return (number_of_pending_rules() == 0) ? tril::TRUE : tril::unknown;
-      }
-
-      // TODO to tpp
-      // TODO to helper
-      template <typename Subclass>
-      [[nodiscard]] tril is_terminating() const noexcept {
-        if constexpr (rewriting_system::is_terminating_v<
-                          typename Subclass::reduction_order>) {
-          return tril::TRUE;
-        }
-        if (is_length_decreasing<Subclass>() == tril::TRUE) {
-          return tril::TRUE;
-        }
-        return tril::unknown;
       }
 
      protected:
@@ -332,19 +263,6 @@ namespace libsemigroups {
                                    Iterator first2,
                                    Iterator last2);
 
-      [[nodiscard]] tril is_length_decreasing() const noexcept {
-        return RewritingSystemBase::is_length_decreasing<
-            RewritingSystemSet<ReductionOrder>>();
-      }
-
-      // TODO(1) it'd be possible to check if we encounter a cycle in rewriting,
-      // which we could then use to say is_terminating is false
-      // TODO to helper
-      [[nodiscard]] tril is_terminating() const noexcept {
-        return RewritingSystemBase::is_terminating<
-            RewritingSystemSet<ReductionOrder>>();
-      }
-
       // TODO nodiscard or is the return value used for anything?
       bool reduce_system();
 
@@ -447,18 +365,6 @@ namespace libsemigroups {
         return *this;
       }
 
-      // TODO to helper
-      [[nodiscard]] tril is_length_decreasing() const noexcept {
-        return RewritingSystemBase::is_length_decreasing<
-            RewritingSystemTrie<ReductionOrder>>();
-      }
-
-      // TODO to helper
-      [[nodiscard]] tril is_terminating() const noexcept {
-        return RewritingSystemBase::is_terminating<
-            RewritingSystemTrie<ReductionOrder>>();
-      }
-
       // TODO nodiscard or is the return value used for anything?
       bool reduce_system();
 
@@ -501,6 +407,48 @@ namespace libsemigroups {
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const override;
     };
+
+    namespace rewriting_system {
+
+      template <typename RewritingSystem, typename Word>
+      void add_rule(RewritingSystem& rs, Word const& lhs, Word const& rhs) {
+        rs.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+      }
+
+      // TODO to tpp
+      // TODO could do a non-const version that reduces the system first
+      template <typename RewritingSystem>
+      [[nodiscard]] tril
+      is_length_decreasing(RewritingSystem const& rws) noexcept {
+        if constexpr (order::is_length_decreasing_v<
+                          typename RewritingSystem::reduction_order>) {
+          return tril::TRUE;
+        }
+
+        for (Rule const* rule : rws.active_rules()) {
+          if (rule->lhs().size() <= rule->rhs().size()) {
+            return tril::FALSE;
+          }
+        }
+
+        return (rws.number_of_pending_rules() == 0) ? tril::TRUE
+                                                    : tril::unknown;
+      }
+
+      // TODO to tpp
+      template <typename RewritingSystem>
+      [[nodiscard]] tril is_terminating(RewritingSystem const& rws) noexcept {
+        if constexpr (order::is_terminating_v<
+                          typename RewritingSystem::reduction_order>) {
+          return tril::TRUE;
+        }
+        if (is_length_decreasing(rws) == tril::TRUE) {
+          return tril::TRUE;
+        }
+        return tril::unknown;
+      }
+
+    }  // namespace rewriting_system
 
   }  // namespace detail
 }  // namespace libsemigroups

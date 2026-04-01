@@ -326,8 +326,8 @@ namespace libsemigroups {
                                          {{0}, {0, 2}},
                                          {{1, 2}, {1}},
                                          {{1, 2}, {2}}}));
-      REQUIRE(rws.is_length_decreasing() == tril::unknown);
-      REQUIRE(rws.is_terminating() == tril::unknown);
+      REQUIRE(rewriting_system::is_length_decreasing(rws) == tril::unknown);
+      REQUIRE(rewriting_system::is_terminating(rws) == tril::unknown);
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ReturnFalse>",
@@ -355,13 +355,13 @@ namespace libsemigroups {
                   {{{0, 0}, {2, 2, 2}}, {{1, 1, 1}, {2, 2, 2}}}));
       REQUIRE(!rws.confluent());
 
-      REQUIRE(rws.is_length_decreasing() == tril::FALSE);
-      REQUIRE(rws.is_terminating() == tril::unknown);
+      REQUIRE(rewriting_system::is_length_decreasing(rws) == tril::FALSE);
+      REQUIRE(rewriting_system::is_terminating(rws) == tril::unknown);
 
       std::string w({0, 0});
       rws.rewrite(w);
       REQUIRE(w == std::string({2, 2, 2}));
-      REQUIRE(rws.is_terminating() == tril::unknown);
+      REQUIRE(rewriting_system::is_terminating(rws) == tril::unknown);
     }
 
     LIBSEMIGROUPS_TEST_CASE("Rules", "013", "constructors/init", "[quick]") {
@@ -390,8 +390,8 @@ namespace libsemigroups {
       rws.init();
       REQUIRE(rws.number_of_rules() == 0);
       REQUIRE(rws.trie().number_of_nodes() == 1);
-      REQUIRE(rws.is_length_decreasing() == tril::TRUE);
-      REQUIRE(rws.is_terminating() == tril::TRUE);
+      REQUIRE(rewriting_system::is_length_decreasing(rws) == tril::TRUE);
+      REQUIRE(rewriting_system::is_terminating(rws) == tril::TRUE);
 
       rws.increase_alphabet_size_by(3);
       rewriting_system::add_rule(rws, "aaa"_w, "c"_w);
@@ -445,9 +445,9 @@ namespace libsemigroups {
       rws.increase_alphabet_size_by(3);
       rewriting_system::add_rule(rws, "bbb"_w, "aa"_w);
       rewriting_system::add_rule(rws, "bbb"_w, "ccc"_w);
-      REQUIRE(rws.is_terminating() == tril::unknown);
+      REQUIRE(rewriting_system::is_terminating(rws) == tril::unknown);
       rws.reduce_system();
-      REQUIRE(rws.is_terminating() == tril::TRUE);
+      REQUIRE(rewriting_system::is_terminating(rws) == tril::TRUE);
     }
 
     LIBSEMIGROUPS_TEST_CASE("OverlapIteratorTrie",
