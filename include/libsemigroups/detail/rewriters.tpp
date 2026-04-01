@@ -173,52 +173,40 @@ namespace libsemigroups::detail {
     return Rules::make_active_rule_pending(it);
   }
 
+  // REWRITE_FROM_LEFT from Sims, p67
   template <typename ReductionOrder>
   void RewritingSystemSet<ReductionOrder>::rewrite_no_reduce(
       native_word_type& v) const {
-    if (v.size() < stats().min_length_lhs_rule) {
+    size_t const n = Rules::stats().min_length_lhs_rule;
+
+    if (v.size() < n) {
       return;
     }
 
-    size_t const n = Rules::stats().min_length_lhs_rule;
-    // TODO we could try to modify rewrite2 (the old version of rewrite) to work
-    // with indices rather than allocating w here every time (indices not
-    // iterators because indices are independent of memory allocation)
-    // TODO we could also, make w a data member like in RewritingSystemTrie
-    std::string w(v.rbegin(), v.rbegin() + v.size() - n + 1);
-    v.erase(v.begin() + n - 1, v.end());
+    // position of the start of the unread suffix of the input word
+    size_t pos = n - 1;
 
     RuleLookup lookup;
 
-    while (!w.empty()) {
-      v.push_back(w.back());
-      w.pop_back();
-
-      auto it = _set_rules.find(lookup(v.begin(), v.end()));
-      if (it != _set_rules.end()) {
+    while (pos < v.size()) {
+      LIBSEMIGROUPS_ASSERT(pos >= n - 1);
+      ++pos;
+      auto it = _set_rules.find(lookup(v.begin(), v.begin() + pos));
+      if (it != _set_rules.end() && it->rule()->lhs().size() <= pos) {
+        // Unlike in RewritingSystemTrie::rewrite just because we found the
+        // lookup in _set_rules doesn't necessarily mean that we have found a
+        // rule whose lhs is contained in [v.begin(), v.begin() + pos), that's
+        // why we do the second check in the if-condition above.
         Rule const* rule = (*it).rule();
-        if (rule->lhs().size() <= static_cast<size_t>(v.size())) {
-          LIBSEMIGROUPS_ASSERT(is_suffix(
-              v.begin(), v.end(), rule->lhs().cbegin(), rule->lhs().cend()));
-          v.erase(v.end() - rule->lhs().size(), v.end());
-          w.append(rule->rhs().rbegin(), rule->rhs().rend());
-        }
-      }
-
-      if (!w.empty() && n > v.size() + 1) {
-        if (w.size() < n - v.size()) {
-          // w = (w.begin(), w.begin() + 1, ..., w.end() - 1)
-          //   = (w.rend() - 1, w.rend() - 2, ..., w.rbegin())
-          v.append(w.rbegin(), w.rend() - 1);
-          w.erase(w.begin() + 1, w.end());
-        } else {
-          // if k = n - v.size() - 1
-          // w = (w.rend() - 1, ..., w.rbegin() + k - 1, ..., w.rbegin())
-          //   = (w.begin(), ..., w.end() - k, ..., w.end() - 1)
-          size_t const k = n - v.size() - 1;
-          v.append(w.rbegin(), w.rbegin() + k);
-          w.erase(w.end() - k, w.end());
-        }
+        LIBSEMIGROUPS_ASSERT(is_suffix(v.begin(),
+                                       v.begin() + pos,
+                                       rule->lhs().cbegin(),
+                                       rule->lhs().cend()));
+        size_t diff = rule->lhs().size();
+        pos -= diff;
+        v.erase(v.begin() + pos, v.begin() + pos + diff);
+        v.insert(v.begin() + pos, rule->rhs().begin(), rule->rhs().end());
+        pos = pos < n - 1 ? n - 1 : pos;
       }
     }
   }
@@ -545,6 +533,8 @@ namespace libsemigroups::detail {
     // position of the start of the unread suffix of the input word
     size_t pos = 0;
 
+    // TODO pos != v.size() - n \pm 1, because once we have fewer than n
+    // characters left to process we can't rewrite any more
     while (pos != v.size()) {
       // Read first letter of the unread suffix and traverse trie
       current = _rule_trie.traverse_no_checks(current,
