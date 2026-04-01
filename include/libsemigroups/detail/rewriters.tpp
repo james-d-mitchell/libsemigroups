@@ -64,7 +64,6 @@ namespace libsemigroups::detail {
                                                Iterator last1,
                                                Iterator first2,
                                                Iterator last2) {
-    // TODO what if first1 == last1, will rewriting etc work???
     if (!std::equal(first1, last1, first2, last2)) {
       set_cached_confluent(tril::unknown);
       Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
