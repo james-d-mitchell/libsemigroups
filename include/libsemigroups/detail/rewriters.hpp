@@ -283,8 +283,7 @@ namespace libsemigroups {
 
       void add_active_rule(Rule* rule);
 
-      // TODO rename make_active_rule_pending
-      iterator rm_active_rule(iterator it);
+      iterator make_active_rule_pending(iterator it);
 
       void rewrite_no_reduce_system(native_word_type& u) const;
 
@@ -391,7 +390,7 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
 
       void     add_active_rule(Rule* new_rule);
-      iterator rm_active_rule(iterator it);
+      iterator make_active_rule_pending(iterator it);
 
       void rewrite_no_reduce_system(native_word_type& u) const;
 

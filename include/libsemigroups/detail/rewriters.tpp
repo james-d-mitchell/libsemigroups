@@ -124,7 +124,7 @@ namespace libsemigroups::detail {
           if (rule2->lhs().find(lhs) != native_word_type::npos
               || rule2->rhs().find(lhs) != native_word_type::npos) {
             // If it is, rule2 must be deactivated and re-processed
-            it = rm_active_rule(it);
+            it = make_active_rule_pending(it);
           } else {
             ++it;
           }
@@ -178,7 +178,7 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder>
   typename RewritingSystemSet<ReductionOrder>::iterator
-  RewritingSystemSet<ReductionOrder>::rm_active_rule(iterator it) {
+  RewritingSystemSet<ReductionOrder>::make_active_rule_pending(iterator it) {
 #ifdef LIBSEMIGROUPS_DEBUG
     LIBSEMIGROUPS_ASSERT(_set_rules.erase(RuleLookup(*it)));
 #else
@@ -485,7 +485,7 @@ namespace libsemigroups::detail {
                       return new_rule_trie->node_no_checks(node_index).value()
                              != rule;
                     })) {
-              it        = rm_active_rule(it);
+              it        = make_active_rule_pending(it);
               increment = false;
               break;
             }
@@ -530,7 +530,8 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder, typename Trie>
   typename RewritingSystemTrie<ReductionOrder, Trie>::iterator
-  RewritingSystemTrie<ReductionOrder, Trie>::rm_active_rule(iterator it) {
+  RewritingSystemTrie<ReductionOrder, Trie>::make_active_rule_pending(
+      iterator it) {
     _rule_trie.erase_no_checks((*it)->lhs());
     return Rules::make_active_rule_pending(it);
   }
