@@ -61,12 +61,11 @@ namespace libsemigroups {
   congruence_kind constexpr twosided = congruence_kind::twosided;
 
   using namespace rx;
-  using literals::operator""_w;
 
   struct LibsemigroupsException;
 
-  using Trie = detail::RewritingSystemTrie<>;
-  using Set  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<ShortLexCompare>;
+  using Set  = detail::RewritingSystemSet<ShortLexCompare>;
 
 #define REWRITING_SYSTEM_TYPES Trie, Set
 

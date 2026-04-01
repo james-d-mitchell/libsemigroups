@@ -37,6 +37,7 @@
 #include <vector>   // for vector
 
 #include "Catch2-3.8.0/catch_amalgamated.hpp"  // for operator""_catch_sr
+#include "libsemigroups/order.hpp"
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEMPLATE_TEST_CASE
 
 #include "libsemigroups/constants.hpp"     // for operator==, Max, POSIT...
@@ -55,8 +56,8 @@ namespace libsemigroups {
 
   using literals::operator""_w;
 
-  using Trie = detail::RewritingSystemTrie<>;
-  using Set  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<ShortLexCompare>;
+  using Set  = detail::RewritingSystemSet<ShortLexCompare>;
 
 #define REWRITING_SYSTEM_TYPES Trie, Set
 
@@ -358,7 +359,7 @@ namespace libsemigroups {
                                    "[quick][knuth-bendix]",
                                    REWRITING_SYSTEM_TYPES) {
     using literals::operator""_w;
-    auto            rg = ReportGuard(false);
+    auto rg = ReportGuard(false);
 
     Presentation<word_type> p1;
     p1.contains_empty_word(true);

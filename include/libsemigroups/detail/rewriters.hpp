@@ -214,8 +214,7 @@ namespace libsemigroups {
     // RewritingSystemSet
     ////////////////////////////////////////////////////////////////////////
 
-    // TODO remove default template param
-    template <typename ReductionOrder = ShortLexCompare>
+    template <typename ReductionOrder>
     class RewritingSystemSet : public RewritingSystemBase {
       ////////////////////////////////////////////////////////////////////////
       // Private aliases
@@ -306,7 +305,7 @@ namespace libsemigroups {
     // RewritingSystemTrie
     ////////////////////////////////////////////////////////////////////////
 
-    template <typename ReductionOrder = ShortLexCompare>
+    template <typename ReductionOrder>
     class RewritingSystemTrie : public RewritingSystemBase {
       ////////////////////////////////////////////////////////////////////////
       // Private aliases
