@@ -43,18 +43,19 @@
 #include <utility>        // for move, make_pair
 #include <vector>         // for vector
 
-#include "libsemigroups/adapters.hpp"            // for Hash
-#include "libsemigroups/constants.hpp"           // for POSITIVE_INFINITY
-#include "libsemigroups/debug.hpp"               // for LIBSEMIGROUPS_...
-#include "libsemigroups/obvinf.hpp"              // for is_obviously_infinite
-#include "libsemigroups/order.hpp"               // for ShortLexCompare
-#include "libsemigroups/paths-count.hpp"         // for paths::count
-#include "libsemigroups/presentation.hpp"        // for operator!=
-#include "libsemigroups/ranges.hpp"              // for count, iterato...
-#include "libsemigroups/types.hpp"               // for congruence_kind
-#include "libsemigroups/word-graph-helpers.hpp"  // for word_graph
-#include "libsemigroups/word-graph.hpp"          // for WordGraph, to_...
-#include "libsemigroups/word-range.hpp"          // for to_human_reada...
+#include "libsemigroups/adapters.hpp"              // for Hash
+#include "libsemigroups/constants.hpp"             // for POSITIVE_INFINITY
+#include "libsemigroups/debug.hpp"                 // for LIBSEMIGROUPS_...
+#include "libsemigroups/is_specialization_of.hpp"  // for is_specialization_of_v
+#include "libsemigroups/obvinf.hpp"                // for is_obviously_infinite
+#include "libsemigroups/order.hpp"                 // for ShortLexCompare
+#include "libsemigroups/paths-count.hpp"           // for paths::count
+#include "libsemigroups/presentation.hpp"          // for operator!=
+#include "libsemigroups/ranges.hpp"                // for count, iterato...
+#include "libsemigroups/types.hpp"                 // for congruence_kind
+#include "libsemigroups/word-graph-helpers.hpp"    // for word_graph
+#include "libsemigroups/word-graph.hpp"            // for WordGraph, to_...
+#include "libsemigroups/word-range.hpp"            // for to_human_reada...
 
 #include "cong-common-class.hpp"  // for CongruenceInte...
 #include "fmt.hpp"                // for format, print

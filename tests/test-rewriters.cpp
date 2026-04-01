@@ -24,7 +24,7 @@
 
 #include "libsemigroups/detail/overlap-iterators.hpp"  // for OverlapIteratorTrie
 #include "libsemigroups/detail/report.hpp"             // for ReportGuard
-#include "libsemigroups/detail/rewriters.hpp"  // for RewritingSystemTrie<>
+#include "libsemigroups/detail/rewriters.hpp"  // for RewritingSystemTrie<ShortLexCompare>
 
 namespace std {
   std::ostream& operator<<(std::ostream& os, std::string const& value) {
@@ -43,27 +43,29 @@ namespace libsemigroups {
   using literals::operator""_w;
 
   namespace detail {
-    using string_type = RewritingSystemTrie<>::native_word_type;
+
+    using string_type = RewritingSystemTrie<ShortLexCompare>::native_word_type;
+
     using namespace std::literals;
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "000",
                             "initial test",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
       REQUIRE(rt.number_of_rules() == 0);
       rt.increase_alphabet_size_by(2);
       rewriting_system::add_rule(rt, "ba"_w, "a"_w);
       REQUIRE(rt.number_of_rules() == 1);
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "001",
                             "simple test",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
 
       rt.increase_alphabet_size_by(3);
       rewriting_system::add_rule(rt, "ac"_w, "ca"_w);
@@ -102,7 +104,7 @@ namespace libsemigroups {
       REQUIRE(w5 == string_type({0}));
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemSet<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemSet<ShortLexCompare>",
                             "010",
                             "simple test",
                             "[quick]") {
@@ -110,7 +112,7 @@ namespace libsemigroups {
 
       auto rg = ReportGuard(false);
 
-      RewritingSystemSet<> rws;
+      RewritingSystemSet<ShortLexCompare> rws;
 
       rws.increase_alphabet_size_by(3);
       rewriting_system::add_rule(rws, "ac"_w, "ca"_w);
@@ -155,13 +157,13 @@ namespace libsemigroups {
       REQUIRE(w5 == string_type({0}));
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "002",
                             "confluent",
                             "[quick]") {
-      using rule_type          = std::pair<std::string, std::string>;
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rws;
+      using rule_type = std::pair<std::string, std::string>;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rws;
       rws.increase_alphabet_size_by(3);
 
       rewriting_system::add_rule(rws, "ab"_w, "ba"_w);
@@ -188,12 +190,12 @@ namespace libsemigroups {
                   {{{0, 0}, {0}}, {{0, 2}, {0}}, {{1}, {0}}, {{2, 0}, {0}}}));
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "003",
                             "non-confluent",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
       rt.increase_alphabet_size_by(2);
       rewriting_system::add_rule(rt, "aaa"_w, ""_w);
       rewriting_system::add_rule(rt, "bbb"_w, ""_w);
@@ -201,12 +203,12 @@ namespace libsemigroups {
       REQUIRE(!rt.confluent());
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "004",
                             "Example 5.1 in Sims (infinite)",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
       rt.increase_alphabet_size_by(4);
       rewriting_system::add_rule(rt, "ab"_w, ""_w);
       rewriting_system::add_rule(rt, "ba"_w, ""_w);
@@ -217,12 +219,12 @@ namespace libsemigroups {
       REQUIRE(!rt.confluent());
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "005",
                             "non-confluent",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
 
       rt.increase_alphabet_size_by(4);
       rewriting_system::add_rule(rt, "ca"_w, ""_w);
@@ -234,12 +236,12 @@ namespace libsemigroups {
       REQUIRE(!rt.confluent());
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "006",
                             "Example 5.3 in Sims",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
       rt.increase_alphabet_size_by(2);
       rewriting_system::add_rule(rt, "aa"_w, ""_w);
       rewriting_system::add_rule(rt, "bbb"_w, ""_w);
@@ -248,12 +250,12 @@ namespace libsemigroups {
       REQUIRE(!rt.confluent());
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "007",
                             "Example 5.4 in Sims",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
       rt.increase_alphabet_size_by(3);
 
       rewriting_system::add_rule(rt, "aa"_w, ""_w);
@@ -264,12 +266,12 @@ namespace libsemigroups {
       REQUIRE(!rt.confluent());
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "008",
                             "Example 6.4 in Sims (size 168)",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
       rt.increase_alphabet_size_by(3);
 
       rewriting_system::add_rule(rt, "aa"_w, ""_w);
@@ -281,12 +283,12 @@ namespace libsemigroups {
       REQUIRE(!rt.confluent());
     }
 
-    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<>",
+    LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
                             "009",
                             "random example",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
 
       rt.increase_alphabet_size_by(3);
       rewriting_system::add_rule(rt, "aaa"_w, "c"_w);
@@ -456,8 +458,8 @@ namespace libsemigroups {
                             "016",
                             "basic overlaps",
                             "[quick]") {
-      auto                  rg = ReportGuard(false);
-      RewritingSystemTrie<> rt;
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
       rt.increase_alphabet_size_by(2);
       rewriting_system::add_rule(rt, "abba"_w, "aaa"_w);
       rewriting_system::add_rule(rt, "abab"_w, "bbb"_w);

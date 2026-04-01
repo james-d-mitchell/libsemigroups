@@ -75,8 +75,8 @@ namespace libsemigroups {
   using knuth_bendix::reduce;
   using knuth_bendix::reduce_no_run;
 
-  using Trie = detail::RewritingSystemTrie<>;
-  using Set  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<ShortLexCompare>;
+  using Set  = detail::RewritingSystemSet<ShortLexCompare>;
 
   // TODO uncomment
   // using RewritingSystemTrieRPC     =
@@ -272,11 +272,10 @@ namespace libsemigroups {
     auto ntc = (iterator_range(pp.begin(), pp.end())
                 | filter([](auto const& val) { return val.size() > 1; })
                 | transform([](auto& val) {
-                    std::for_each(
-                        val.begin(), val.end(), [](auto& w) -> auto& {
-                          w.erase(w.begin());
-                          return w;
-                        });
+                    std::for_each(val.begin(), val.end(), [](auto& w) -> auto& {
+                      w.erase(w.begin());
+                      return w;
+                    });
                     return val;
                   }));
 

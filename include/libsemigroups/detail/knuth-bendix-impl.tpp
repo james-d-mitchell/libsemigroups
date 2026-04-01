@@ -539,8 +539,8 @@ namespace libsemigroups {
     template <typename RewritingSystem, typename ReductionOrder>
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::run_real() {
       while (!_rewriter.confluent()) {
-        if constexpr (std::is_same_v<RewritingSystem,
-                                     detail::RewritingSystemTrie<>>) {
+        if constexpr (is_specialization_of_v<RewritingSystem,
+                                             detail::RewritingSystemTrie>) {
           OverlapIteratorTrie start = OverlapIteratorTrie(_rewriter.trie());
 
           OverlapIteratorTrie end = OverlapIteratorTrie();

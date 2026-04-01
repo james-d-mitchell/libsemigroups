@@ -66,8 +66,8 @@ namespace libsemigroups {
 
   using namespace rx;
 
-  using Trie = detail::RewritingSystemTrie<>;
-  using Set  = detail::RewritingSystemSet<>;
+  using Trie = detail::RewritingSystemTrie<ShortLexCompare>;
+  using Set  = detail::RewritingSystemSet<ShortLexCompare>;
 
 #define REWRITING_SYSTEM_TYPES Trie, Set
 
