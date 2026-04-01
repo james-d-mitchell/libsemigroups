@@ -74,7 +74,7 @@ namespace libsemigroups::detail {
   }
 
   template <typename ReductionOrder>
-  bool RewritingSystemSet<ReductionOrder>::reduce_system() {
+  bool RewritingSystemSet<ReductionOrder>::reduce() {
     Rules::sort_pending_rules();
 
     auto   start_time = std::chrono::high_resolution_clock::now();
@@ -88,8 +88,8 @@ namespace libsemigroups::detail {
       LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::pending);
       LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
 
-      rewrite_no_reduce_system(rule1->lhs());
-      rewrite_no_reduce_system(rule1->rhs());
+      rewrite_no_reduce(rule1->lhs());
+      rewrite_no_reduce(rule1->rhs());
 
       // Check rule is non-trivial
       if (rule1->lhs() != rule1->rhs()) {
@@ -132,8 +132,8 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder>
   void RewritingSystemSet<ReductionOrder>::rewrite(native_word_type& v) {
-    reduce_system();
-    rewrite_no_reduce_system(v);
+    reduce();
+    rewrite_no_reduce(v);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ namespace libsemigroups::detail {
   template <typename ReductionOrder>
   void RewritingSystemSet<ReductionOrder>::add_active_rule(Rule* new_rule) {
     // NOTE: unlike add_active_rule in RewritingSystemTrie, we do not reorder
-    // new_rule, but in reduce_system, because we need it ordered correctly
+    // new_rule, but in reduce, because we need it ordered correctly
     // before we can add it here. This is because in RewritingSystemSet we
     // require the rules in _set_rules to be reduced. If we add a new_rule
     // e.g. aba -> a and there is a currently active rule of the form abab ->
@@ -174,7 +174,7 @@ namespace libsemigroups::detail {
   }
 
   template <typename ReductionOrder>
-  void RewritingSystemSet<ReductionOrder>::rewrite_no_reduce_system(
+  void RewritingSystemSet<ReductionOrder>::rewrite_no_reduce(
       native_word_type& v) const {
     if (v.size() < stats().min_length_lhs_rule) {
       return;
@@ -233,7 +233,7 @@ namespace libsemigroups::detail {
     using std::chrono::time_point;
     time_point start_time = std::chrono::high_resolution_clock::now();
 
-    reduce_system();
+    reduce();
     set_cached_confluent(tril::TRUE);
     native_word_type word1;
     native_word_type word2;
@@ -271,8 +271,8 @@ namespace libsemigroups::detail {
                          rule2->lhs().cend());  // E
 
             if (word1 != word2) {
-              rewrite_no_reduce_system(word1);
-              rewrite_no_reduce_system(word2);
+              rewrite_no_reduce(word1);
+              rewrite_no_reduce(word2);
               if (word1 != word2) {
                 set_cached_confluent(tril::FALSE);
                 if (reporting_enabled()) {
@@ -380,7 +380,7 @@ namespace libsemigroups::detail {
   }
 
   template <typename ReductionOrder>
-  bool RewritingSystemTrie<ReductionOrder>::reduce_system() {
+  bool RewritingSystemTrie<ReductionOrder>::reduce() {
     using aho_corasick_impl::begin_search_no_checks;
     using aho_corasick_impl::end_search_no_checks;
 
@@ -406,8 +406,8 @@ namespace libsemigroups::detail {
         Rule* rule = Rules::pop_pending_rule();
         LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::pending);
         LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
-        rewrite_no_reduce_system(rule->lhs());
-        rewrite_no_reduce_system(rule->rhs());
+        rewrite_no_reduce(rule->lhs());
+        rewrite_no_reduce(rule->rhs());
 
         if (rule->lhs() != rule->rhs()) {
           reorder<ReductionOrder>(rule);
@@ -485,8 +485,8 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder>
   void RewritingSystemTrie<ReductionOrder>::rewrite(native_word_type& v) {
-    reduce_system();
-    rewrite_no_reduce_system(v);
+    reduce();
+    rewrite_no_reduce(v);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -511,7 +511,7 @@ namespace libsemigroups::detail {
   }
 
   template <typename ReductionOrder>
-  void RewritingSystemTrie<ReductionOrder>::rewrite_no_reduce_system(
+  void RewritingSystemTrie<ReductionOrder>::rewrite_no_reduce(
       native_word_type& v) const {
     // Check if v is rewriteable
     if (v.size() < Rules::stats().min_length_lhs_rule) {
@@ -577,7 +577,7 @@ namespace libsemigroups::detail {
     using std::chrono::time_point;
     time_point start_time = std::chrono::high_resolution_clock::now();
 
-    reduce_system();
+    reduce();
 
     index_type link;
     set_cached_confluent(tril::TRUE);
@@ -633,8 +633,8 @@ namespace libsemigroups::detail {
       word2.append(rule2->rhs());                          // Y
 
       if (word1 != word2) {
-        rewrite_no_reduce_system(word1);
-        rewrite_no_reduce_system(word2);
+        rewrite_no_reduce(word1);
+        rewrite_no_reduce(word2);
         if (word1 != word2) {
           set_cached_confluent(tril::FALSE);
           return false;
@@ -736,7 +736,7 @@ namespace libsemigroups::detail {
         return true;
       }
 
-      rws.reduce_system();
+      rws.reduce();
       return is_length_decreasing_no_reduce(rws) == tril::TRUE;
     }
 
