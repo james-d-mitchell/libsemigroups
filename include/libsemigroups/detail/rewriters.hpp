@@ -438,7 +438,7 @@ namespace libsemigroups {
       // TODO to tpp
       template <typename RewritingSystem>
       [[nodiscard]] tril is_terminating(RewritingSystem const& rws) noexcept {
-        if constexpr (order::is_terminating_v<
+        if constexpr (order::is_well_founded_v<
                           typename RewritingSystem::reduction_order>) {
           return tril::TRUE;
         }
