@@ -93,8 +93,8 @@ namespace libsemigroups {
     }
   }  // namespace
 
-  using LenLexTrie = detail::RewritingSystemTrie<>;
-  using LenLexSet  = detail::RewritingSystemSet<>;
+  using LenLexTrie = detail::RewritingSystemTrie<ShortLexCompare>;
+  using LenLexSet  = detail::RewritingSystemSet<ShortLexCompare>;
 
   using RPOTrie = detail::RewritingSystemTrie<RecursivePathCompare>;
   using RPOSet  = detail::RewritingSystemSet<RecursivePathCompare>;
