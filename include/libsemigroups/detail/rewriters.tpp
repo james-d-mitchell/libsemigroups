@@ -131,13 +131,6 @@ namespace libsemigroups::detail {
   }
 
   template <typename ReductionOrder>
-  bool RewritingSystemSet<ReductionOrder>::is_reduced() const noexcept {
-    if (Rules::number_of_pending_rules() == 0) {
-      return true;
-    }
-  }
-
-  template <typename ReductionOrder>
   void RewritingSystemSet<ReductionOrder>::rewrite(native_word_type& v) {
     reduce();
     rewrite_no_reduce(v);
@@ -723,7 +716,7 @@ namespace libsemigroups::detail {
         return tril::TRUE;
       }
 
-      if (!rws.is_reduced()) {
+      if (rws.is_reduced() != tril::TRUE) {
         return tril::unknown;
       }
 

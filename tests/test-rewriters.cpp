@@ -453,9 +453,9 @@ namespace libsemigroups {
       rewriting_system::add_rule(rws, "bbb"_w, "aa"_w);
       rewriting_system::add_rule(rws, "bbb"_w, "ccc"_w);
       REQUIRE(rewriting_system::is_terminating_no_reduce(rws) == tril::unknown);
-      REQUIRE(!rws.is_reduced());
+      REQUIRE(rws.is_reduced() == tril::unknown);
       REQUIRE(rewriting_system::is_terminating(rws) == tril::TRUE);
-      REQUIRE(rws.is_reduced());
+      REQUIRE(rws.is_reduced() == tril::TRUE);
     }
 
     LIBSEMIGROUPS_TEST_CASE("OverlapIteratorTrie",

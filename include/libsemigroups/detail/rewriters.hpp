@@ -127,6 +127,16 @@ namespace libsemigroups {
         return _confluence_known;
       }
 
+      // If there are no pending_rules, then the system is reduced. If there
+      // are pending rules the system may be reduced or not depending on the
+      // pending rules. There doesn't seem to be an easier way of checking if
+      // they are reduced than just calling "reduce", so we opted to return a
+      // tril here instead of bool.
+      [[nodiscard]] tril is_reduced() const noexcept {
+        return Rules::number_of_pending_rules() == 0 ? tril::TRUE
+                                                     : tril::unknown;
+      }
+
      protected:
       template <typename RewritingSystem, typename ReductionOrder>
       friend class KnuthBendixImpl;
@@ -265,8 +275,6 @@ namespace libsemigroups {
       // Returns true if the system changes as a result of this call (i.e. it
       // wasn't reduced before but now it is)
       bool reduce();
-
-      [[nodiscard]] bool is_reduced() const noexcept;
 
       void rewrite(native_word_type& u);
 
