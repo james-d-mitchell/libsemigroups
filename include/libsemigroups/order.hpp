@@ -1599,6 +1599,47 @@ namespace libsemigroups {
   // end orders_group
   //! @}
 
+  namespace order {
+    // TODO doc
+    template <typename Thing>
+    struct is_length_decreasing : std::false_type {};
+
+    // TODO doc
+    template <>
+    struct is_length_decreasing<ShortLexCompare> : std::true_type {};
+
+    // TODO doc
+    template <typename Thing>
+    static constexpr bool is_length_decreasing_v
+        = is_length_decreasing<Thing>::value;
+
+    // TODO doc
+    template <typename Thing>
+    struct is_terminating : std::false_type {};
+
+    // TODO doc
+    // TODO maybe rename this to is_well_founded?
+    template <>
+    struct is_terminating<ShortLexCompare> : std::true_type {};
+
+    // TODO doc
+    template <>
+    struct is_terminating<RecursivePathCompare> : std::true_type {};
+
+    // TODO doc
+    template <>
+    struct is_terminating<WtShortLexCompare> : std::true_type {};
+
+    // TODO doc
+    template <>
+    struct is_terminating<WtLexCompare> : std::true_type {};
+
+    // TODO doc
+    template <typename Thing>
+    static constexpr bool is_terminating_v = is_terminating<Thing>::value;
+
+  }  // namespace order
+
 }  // namespace libsemigroups
 
 #include "order.tpp"
