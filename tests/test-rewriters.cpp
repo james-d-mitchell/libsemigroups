@@ -350,7 +350,7 @@ namespace libsemigroups {
                | rx::sort() | rx::to_vector())
               == std::vector<rule_type>(
                   {{{0, 0}, {1, 1, 1}}, {{1, 1, 1}, {2, 2, 2}}}));
-      rws.reduce_system();
+      rws.reduce();
       REQUIRE((rws.rules()
                | rx::transform([](auto const& pair) { return rule_type(pair); })
                | rx::sort() | rx::to_vector())
@@ -463,7 +463,7 @@ namespace libsemigroups {
       rt.increase_alphabet_size_by(2);
       rewriting_system::add_rule(rt, "abba"_w, "aaa"_w);
       rewriting_system::add_rule(rt, "abab"_w, "bbb"_w);
-      rt.reduce_system();
+      rt.reduce();
 
       auto const& trie = rt.trie();
 

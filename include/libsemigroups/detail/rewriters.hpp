@@ -129,7 +129,7 @@ namespace libsemigroups {
 
       [[nodiscard]] bool is_reduced() const noexcept {
         // TODO correct? not really, it might be that none of the pending rules
-        // are added to the system, so really we'd need to run reduce_system to
+        // are added to the system, so really we'd need to run reduce to
         // know if something gets added or not.
         return Rules::number_of_pending_rules() == 0;
       }
@@ -271,7 +271,7 @@ namespace libsemigroups {
 
       // Returns true if the system changes as a result of this call (i.e. it
       // wasn't reduced before but now it is)
-      bool reduce_system();
+      bool reduce();
 
       void rewrite(native_word_type& u);
 
@@ -284,7 +284,7 @@ namespace libsemigroups {
 
       iterator make_active_rule_pending(iterator it);
 
-      void rewrite_no_reduce_system(native_word_type& u) const;
+      void rewrite_no_reduce(native_word_type& u) const;
 
       ////////////////////////////////////////////////////////////////////////
       // Confluence
@@ -375,7 +375,7 @@ namespace libsemigroups {
 
       // Returns true if the system changes as a result of this call (i.e. it
       // wasn't reduced before but now it is)
-      bool reduce_system();
+      bool reduce();
 
       void rewrite(native_word_type& u);
 
@@ -391,7 +391,7 @@ namespace libsemigroups {
       void     add_active_rule(Rule* new_rule);
       iterator make_active_rule_pending(iterator it);
 
-      void rewrite_no_reduce_system(native_word_type& u) const;
+      void rewrite_no_reduce(native_word_type& u) const;
 
       ////////////////////////////////////////////////////////////////////////
       // Confluence
@@ -427,7 +427,7 @@ namespace libsemigroups {
         rs.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
       }
 
-      // Might never terminate if rws.reduce_system() doesn't terminate
+      // Might never terminate if rws.reduce() doesn't terminate
       template <typename RewritingSystem>
       [[nodiscard]] bool is_length_decreasing(RewritingSystem& rws) noexcept;
 
