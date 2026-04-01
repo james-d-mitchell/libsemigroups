@@ -1614,29 +1614,30 @@ namespace libsemigroups {
         = is_length_decreasing<Thing>::value;
 
     // TODO doc
+    // An ordering is *well-founded* if it contains no infinite descending
+    // chains.
     template <typename Thing>
-    struct is_terminating : std::false_type {};
-
-    // TODO doc
-    // TODO maybe rename this to is_well_founded?
-    template <>
-    struct is_terminating<ShortLexCompare> : std::true_type {};
+    struct is_well_founded : std::false_type {};
 
     // TODO doc
     template <>
-    struct is_terminating<RecursivePathCompare> : std::true_type {};
+    struct is_well_founded<ShortLexCompare> : std::true_type {};
 
     // TODO doc
     template <>
-    struct is_terminating<WtShortLexCompare> : std::true_type {};
+    struct is_well_founded<RecursivePathCompare> : std::true_type {};
 
     // TODO doc
     template <>
-    struct is_terminating<WtLexCompare> : std::true_type {};
+    struct is_well_founded<WtShortLexCompare> : std::true_type {};
+
+    // TODO doc
+    template <>
+    struct is_well_founded<WtLexCompare> : std::true_type {};
 
     // TODO doc
     template <typename Thing>
-    static constexpr bool is_terminating_v = is_terminating<Thing>::value;
+    static constexpr bool is_well_founded_v = is_well_founded<Thing>::value;
 
   }  // namespace order
 
