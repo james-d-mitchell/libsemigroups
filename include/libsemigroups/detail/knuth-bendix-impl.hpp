@@ -133,9 +133,17 @@ namespace libsemigroups {
     //! Those functions with the prefix `current_` do not perform any
     //! further enumeration.
 
-    template <typename RewritingSystem = detail::RewritingSystemTrie<>,
-              typename ReductionOrder  = ShortLexCompare>
+    // TODO(v4) 2nd template parameter no longer used, remove
+    template <
+        typename RewritingSystem = detail::RewritingSystemTrie<ShortLexCompare>,
+        typename ReductionOrder  = typename RewritingSystem::reduction_order>
     class KnuthBendixImpl : public CongruenceCommon {
+      // Since the 2nd template parameter is now unnecessary, but not removed
+      // for backwards compatibility, we assert that it is the order of the
+      // rewriting system.
+      static_assert(std::is_same_v<ReductionOrder,
+                                   typename RewritingSystem::reduction_order>);
+
      public:
       ////////////////////////////////////////////////////////////////////////
       // Aliases
