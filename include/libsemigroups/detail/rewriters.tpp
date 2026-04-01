@@ -23,21 +23,6 @@
 namespace libsemigroups::detail {
 
   ////////////////////////////////////////////////////////////////////////
-  // Rules
-  ////////////////////////////////////////////////////////////////////////
-
-  template <typename Iterator>
-  [[nodiscard]] Rule* Rules::new_rule(Iterator first1,
-                                      Iterator last1,
-                                      Iterator first2,
-                                      Iterator last2) {
-    Rule* rule = new_rule();
-    rule->lhs().assign(first1, last1);
-    rule->rhs().assign(first2, last2);
-    return rule;
-  }
-
-  ////////////////////////////////////////////////////////////////////////
   // RewritingSystemSet --- Constructors + initializers
   ////////////////////////////////////////////////////////////////////////
 
@@ -58,7 +43,6 @@ namespace libsemigroups::detail {
       RewritingSystemSet const& that) {
     init();
     RewritingSystemBase::operator=(that);
-    // TODO copy pending rules also (unless already done in RewritingSystemBase)
     for (auto* rule : Rules::active_rules()) {
 #ifdef LIBSEMIGROUPS_DEBUG
       LIBSEMIGROUPS_ASSERT(_set_rules.emplace(RuleLookup(rule)).second);
