@@ -374,10 +374,10 @@ namespace libsemigroups {
         return *this;
       }
 
-      // TODO nodiscard or is the return value used for anything?
+      // Returns true if the system changes as a result of this call (i.e. it
+      // wasn't reduced before but now it is)
       bool reduce_system();
 
-      // TODO(1) iterators
       void rewrite(native_word_type& u);
 
       [[nodiscard]] AhoCorasickImpl const& trie() const noexcept {
