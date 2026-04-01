@@ -128,7 +128,9 @@ namespace libsemigroups {
       }
 
       [[nodiscard]] bool is_reduced() const noexcept {
-        // TODO correct?
+        // TODO correct? not really, it might be that none of the pending rules
+        // are added to the system, so really we'd need to run reduce_system to
+        // know if something gets added or not.
         return Rules::number_of_pending_rules() == 0;
       }
 
@@ -268,7 +270,8 @@ namespace libsemigroups {
                                    Iterator first2,
                                    Iterator last2);
 
-      // TODO nodiscard or is the return value used for anything?
+      // Returns true if the system changes as a result of this call (i.e. it
+      // wasn't reduced before but now it is)
       bool reduce_system();
 
       void rewrite(native_word_type& u);
@@ -278,7 +281,9 @@ namespace libsemigroups {
       // Private member functions
       ////////////////////////////////////////////////////////////////////////
 
-      void     add_active_rule(Rule* rule);
+      void add_active_rule(Rule* rule);
+
+      // TODO rename make_active_rule_pending
       iterator rm_active_rule(iterator it);
 
       void rewrite_no_reduce_system(native_word_type& u) const;

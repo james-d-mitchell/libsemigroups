@@ -129,7 +129,7 @@ namespace libsemigroups::detail {
             ++it;
           }
         }
-        add_active_rule(rule1);
+        RewritingSystemSet::add_active_rule(rule1);
         rules_added = true;
       } else {
         Rules::add_inactive_rule(rule1);
