@@ -48,7 +48,7 @@ namespace libsemigroups {
     // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
-    class RewritingSystemBase : public Rules {
+    class RewritingSystemBase : protected Rules {
      private:
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
@@ -125,6 +125,11 @@ namespace libsemigroups {
 
       [[nodiscard]] bool confluent_known() const {
         return _confluence_known;
+      }
+
+      [[nodiscard]] bool is_reduced() const noexcept {
+        // TODO correct?
+        return Rules::number_of_pending_rules() == 0;
       }
 
      protected:
@@ -408,6 +413,10 @@ namespace libsemigroups {
           std::chrono::high_resolution_clock::time_point const&) const override;
     };
 
+    ////////////////////////////////////////////////////////////////////////
+    // Helpers
+    ////////////////////////////////////////////////////////////////////////
+
     namespace rewriting_system {
 
       template <typename RewritingSystem, typename Word>
@@ -415,38 +424,20 @@ namespace libsemigroups {
         rs.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
       }
 
-      // TODO to tpp
-      // TODO could do a non-const version that reduces the system first
+      // Might never terminate if rws.reduce_system() doesn't terminate
+      template <typename RewritingSystem>
+      [[nodiscard]] bool is_length_decreasing(RewritingSystem& rws) noexcept;
+
       template <typename RewritingSystem>
       [[nodiscard]] tril
-      is_length_decreasing(RewritingSystem const& rws) noexcept {
-        if constexpr (order::is_length_decreasing_v<
-                          typename RewritingSystem::reduction_order>) {
-          return tril::TRUE;
-        }
+      is_length_decreasing_no_reduce(RewritingSystem const& rws) noexcept;
 
-        for (Rule const* rule : rws.active_rules()) {
-          if (rule->lhs().size() <= rule->rhs().size()) {
-            return tril::FALSE;
-          }
-        }
-
-        return (rws.number_of_pending_rules() == 0) ? tril::TRUE
-                                                    : tril::unknown;
-      }
-
-      // TODO to tpp
       template <typename RewritingSystem>
-      [[nodiscard]] tril is_terminating(RewritingSystem const& rws) noexcept {
-        if constexpr (order::is_well_founded_v<
-                          typename RewritingSystem::reduction_order>) {
-          return tril::TRUE;
-        }
-        if (is_length_decreasing(rws) == tril::TRUE) {
-          return tril::TRUE;
-        }
-        return tril::unknown;
-      }
+      [[nodiscard]] tril is_terminating(RewritingSystem& rws) noexcept;
+
+      template <typename RewritingSystem>
+      [[nodiscard]] tril
+      is_terminating_no_reduce(RewritingSystem const& rws) noexcept;
 
     }  // namespace rewriting_system
 
