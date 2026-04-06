@@ -222,7 +222,10 @@ namespace libsemigroups {
         rule = _inactive_rules.front();
         _inactive_rules.erase(_inactive_rules.begin());
       } else {
-        // TODO could add x2 new Rules
+        // NOTE: JDM tried adding more than one new inactive rule here,
+        // by adding the sum of the number of active rules and the number of
+        // pending rules, but found no examples where this was faster or slower,
+        // so opted to keep this as is.
         rule = new Rule();
       }
       LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::inactive);

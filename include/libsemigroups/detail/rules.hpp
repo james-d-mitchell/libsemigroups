@@ -136,7 +136,7 @@ namespace libsemigroups {
 
       std::list<Rule*>        _active_rules;
       std::array<iterator, 2> _cursors;
-      std::list<Rule*>        _inactive_rules;
+      std::vector<Rule*>      _inactive_rules;
       std::vector<Rule*>      _pending_rules;
       mutable Stats           _stats;
 
