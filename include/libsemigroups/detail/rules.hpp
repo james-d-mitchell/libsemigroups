@@ -234,9 +234,6 @@ namespace libsemigroups {
         return _stats;
       }
 
-      // TODO helper
-      [[nodiscard]] size_t max_length_lhs_active_rule() const;
-
      private:
       Rule* add_pending_rule(Rule* rule);
 
