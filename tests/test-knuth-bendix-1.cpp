@@ -190,7 +190,6 @@ namespace libsemigroups {
     KnuthBendix<std::string, TestType> kb(twosided, p);
 
     REQUIRE(kb.rewriting_system().number_of_rules() == 10);
-    //     REQUIRE(kb.number_of_pending_rules() == 10);
     REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.rewriting_system().number_of_rules() == 4);
     REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);

@@ -226,18 +226,8 @@ namespace libsemigroups {
       // Numbers of rules
       ////////////////////////////////////////////////////////////////////////
 
-      // TODO rm? just use active_rules().size()
-      [[nodiscard]] size_t number_of_active_rules() const noexcept {
-        return _active_rules.size();
-      }
-
       [[nodiscard]] size_t number_of_inactive_rules() const noexcept {
         return _inactive_rules.size();
-      }
-
-      // TODO rm? just use pending_rules().size()
-      [[nodiscard]] size_t number_of_pending_rules() const noexcept {
-        return _pending_rules.size();
       }
 
       [[nodiscard]] Stats const& stats() const {

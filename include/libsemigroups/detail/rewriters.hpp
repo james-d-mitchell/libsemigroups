@@ -103,8 +103,7 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
 
       [[nodiscard]] size_t number_of_rules() const noexcept {
-        return Rules::number_of_pending_rules()
-               + Rules::number_of_active_rules();
+        return Rules::pending_rules().size() + Rules::active_rules().size();
       }
 
       [[nodiscard]] auto rules() const {
@@ -133,8 +132,7 @@ namespace libsemigroups {
       // they are reduced than just calling "reduce", so we opted to return a
       // tril here instead of bool.
       [[nodiscard]] tril is_reduced() const noexcept {
-        return Rules::number_of_pending_rules() == 0 ? tril::TRUE
-                                                     : tril::unknown;
+        return Rules::pending_rules().empty() ? tril::TRUE : tril::unknown;
       }
 
      protected:

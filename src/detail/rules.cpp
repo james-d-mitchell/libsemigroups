@@ -139,7 +139,7 @@ namespace libsemigroups {
       _stats.max_length_lhs_rule
           = std::max(_stats.max_length_lhs_rule, rule->lhs().size());
       _stats.max_active_rules
-          = std::max(_stats.max_active_rules, number_of_active_rules());
+          = std::max(_stats.max_active_rules, active_rules().size());
       _stats.min_length_lhs_rule
           = std::min(_stats.min_length_lhs_rule, rule->lhs().size());
 

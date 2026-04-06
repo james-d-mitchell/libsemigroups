@@ -459,7 +459,6 @@ namespace libsemigroups {
     }
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    //     REQUIRE(kb.number_of_pending_rules() == wr.count());
     // kb.process_pending_rules(); TODO reinstate
     REQUIRE(kb.rewriting_system().number_of_rules() == wr.count());
   }
@@ -503,7 +502,6 @@ namespace libsemigroups {
     REQUIRE(presentation::length(p) == 192'937'984);
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    //     REQUIRE(kb.number_of_pending_rules() == wr.count());
     // kb.process_pending_rules(); TODO reinstate
     REQUIRE(kb.rewriting_system().number_of_rules() == wr.count());
   }

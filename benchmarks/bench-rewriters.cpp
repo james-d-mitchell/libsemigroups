@@ -289,7 +289,7 @@ namespace libsemigroups {
             fmt::format(
                 "RewriteTrie, {}-rules, rule length = [{}, {}], word length = "
                 "[{}, {}), for {} rewrites",
-                rt.number_of_active_rules(),
+                rt.active_rules().size(),
                 rule_min,
                 rule_max,
                 sample_min,
@@ -310,7 +310,7 @@ namespace libsemigroups {
         BENCHMARK(fmt::format("RewriteFromLeft, {}-rules, rule length = [{}, "
                               "{}], word length = "
                               "[{}, {}), for {} rewrites",
-                              rfl.number_of_active_rules(),
+                              rfl.active_rules().size(),
                               rule_min,
                               rule_max,
                               sample_min,

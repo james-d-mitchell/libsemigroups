@@ -83,7 +83,7 @@ namespace libsemigroups::detail {
 
     bool rules_added = false;
 
-    while (Rules::number_of_pending_rules() != 0) {
+    while (!Rules::pending_rules().empty()) {
       Rule* rule1 = Rules::pop_pending_rule();
       LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::pending);
       LIBSEMIGROUPS_ASSERT(rule1->lhs() != rule1->rhs());
@@ -156,7 +156,7 @@ namespace libsemigroups::detail {
 #else
     _set_rules.emplace(RuleLookup(new_rule));
 #endif
-    LIBSEMIGROUPS_ASSERT(_set_rules.size() == Rules::number_of_active_rules());
+    LIBSEMIGROUPS_ASSERT(_set_rules.size() == Rules::active_rules().size());
     set_cached_confluent(tril::unknown);
   }
 
@@ -168,8 +168,7 @@ namespace libsemigroups::detail {
 #else
     _set_rules.erase(RuleLookup(*it));
 #endif
-    LIBSEMIGROUPS_ASSERT(_set_rules.size()
-                         == Rules::number_of_active_rules() - 1);
+    LIBSEMIGROUPS_ASSERT(_set_rules.size() == Rules::active_rules().size() - 1);
     return Rules::make_active_rule_pending(it);
   }
 
@@ -288,7 +287,8 @@ namespace libsemigroups::detail {
       std::atomic_uint64_t const&                           seen,
       std::chrono::high_resolution_clock::time_point const& start_time) const {
     if (reporting_enabled()) {
-      auto total_pairs = std::pow(Rules::number_of_active_rules(), 2);
+      auto total_pairs
+          = Rules::active_rules().size() * Rules::active_rules().size();
 
       auto total_pairs_s = group_digits(total_pairs);
       auto now           = std::chrono::high_resolution_clock::now();
@@ -381,16 +381,16 @@ namespace libsemigroups::detail {
 
     bool rules_added = false;
     // TODO(1) could make this a setting, or use a different condition (such
-    // as Rules::number_of_active_rules / 2 or something)
+    // as Rules::active_rules().size() / 2 or something)
     bool use_separate_trie
-        = Rules::number_of_pending_rules() < Rules::number_of_active_rules();
+        = Rules::pending_rules().size() < Rules::active_rules().size();
 
-    while (Rules::number_of_pending_rules() != 0) {
+    while (!Rules::pending_rules().empty()) {
       if (use_separate_trie) {
         _new_rule_trie.init(_rule_trie.alphabet_size());
       }
       bool rules_added_this_pass = false;
-      while (Rules::number_of_pending_rules() != 0) {
+      while (!Rules::pending_rules().empty()) {
         Rule* rule = Rules::pop_pending_rule();
         LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::pending);
         LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
@@ -654,7 +654,7 @@ namespace libsemigroups::detail {
       std::atomic_uint64_t const&                           seen,
       std::chrono::high_resolution_clock::time_point const& start_time) const {
     if (reporting_enabled()) {
-      auto total_rules   = Rules::number_of_active_rules();
+      auto total_rules   = Rules::active_rules().size();
       auto total_rules_s = group_digits(total_rules);
       auto now           = std::chrono::high_resolution_clock::now();
       auto time
@@ -680,7 +680,7 @@ namespace libsemigroups::detail {
     if (reporting_enabled()) {
       // TODO(1) This could maybe be better, more like the formatting in
       // "report_progress_from_thread"
-      auto total_rules = Rules::number_of_active_rules();
+      auto total_rules = Rules::active_rules().size();
       report_default("KnuthBendix: reducing rules: {0:>{width}} / "
                      "{1:>{width}} ({2:>4.1f}%) ({3})\n",
                      gd(seen),

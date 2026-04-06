@@ -133,9 +133,9 @@ namespace libsemigroups {
       if (_state == State::none) {
         using detail::string_time;
         auto gd       = detail::group_digits;
-        auto active   = gd(Rules::number_of_active_rules());
+        auto active   = gd(Rules::active_rules().size());
         auto inactive = gd(Rules::number_of_inactive_rules());
-        auto pending  = gd(Rules::number_of_pending_rules());
+        auto pending  = gd(Rules::pending_rules().size());
         auto defined  = gd(Rules::stats().total_rules);
 
         report_default("KnuthBendix: rules {} (active) | {} (inactive) | {} "
