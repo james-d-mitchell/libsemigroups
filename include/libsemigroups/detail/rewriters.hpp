@@ -60,15 +60,8 @@ namespace libsemigroups {
         checking_confluence
       };
 
-      struct Settings {
-        // TODO there's a max_pending_rules in Rules, RewritingSystemBase and
-        // KnuthBendixImpl, simplify and/or rename
-        size_t max_pending_rules = 512;
-      };
-
-      Settings _settings;
-      State    _state;
-      bool     _ticker_running;
+      State _state;
+      bool  _ticker_running;
 
      public:
       using native_word_type = Rule::native_word_type;

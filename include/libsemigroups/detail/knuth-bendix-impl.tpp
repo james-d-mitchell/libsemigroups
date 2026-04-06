@@ -89,7 +89,7 @@ namespace libsemigroups {
     KnuthBendixImpl<RewritingSystem,
                     ReductionOrder>::Settings::init() noexcept {
       // TODO(1) experiment with starting size to optimise speed.
-      max_pending_rules         = 128;
+      max_pending_rules         = 128;  // TODO rm this isn't used currently
       check_confluence_interval = 4'096;
       max_overlap               = POSITIVE_INFINITY;
       max_rules                 = POSITIVE_INFINITY;
