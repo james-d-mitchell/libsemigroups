@@ -1088,6 +1088,7 @@ libsemigroups_la_SOURCES += src/detail/cong-common-class.cpp
 libsemigroups_la_SOURCES += src/detail/felsch-tree.cpp
 libsemigroups_la_SOURCES += src/detail/ke.cpp
 libsemigroups_la_SOURCES += src/detail/knuth-bendix-impl.cpp
+libsemigroups_la_SOURCES += src/detail/overlap-iterators.cpp
 libsemigroups_la_SOURCES += src/detail/print.cpp
 libsemigroups_la_SOURCES += src/detail/race.cpp
 libsemigroups_la_SOURCES += src/detail/report.cpp

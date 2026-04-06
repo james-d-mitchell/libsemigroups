@@ -33,6 +33,8 @@ namespace libsemigroups::detail {
   ////////////////////////////////////////////////////////////////////////
   // Overlap
   ////////////////////////////////////////////////////////////////////////
+
+  // TODO move definition to cpp
   struct Overlap {
     Rule const* lhs;
     Rule const* rhs;
@@ -47,13 +49,8 @@ namespace libsemigroups::detail {
   // OverlapIteratorTrie
   ////////////////////////////////////////////////////////////////////////
 
-  // TODO rm template param
   // TODO out of line all functions
-  template <typename Trie = AhoCorasickImpl>
   class OverlapIteratorTrie {
-    template <typename OtherTrie>
-    friend class OverlapIteratorTrie;
-
    public:
     using iterator_category = std::input_iterator_tag;
     using value_type        = Overlap;
@@ -62,6 +59,7 @@ namespace libsemigroups::detail {
     using reference         = value_type const&;
 
    private:
+    using Trie                 = AhoCorasickImpl;
     using index_type           = typename Trie::index_type;
     using index_const_iterator = typename Trie::terminal_node_const_iterator;
 
@@ -161,15 +159,13 @@ namespace libsemigroups::detail {
       return tmp;
     }
 
-    template <typename OtherRange>
     // TODO: This is definitely insufficient for proper comparison, but is
     // enough to tell whether or not we are at the end.
-    bool operator==(OverlapIteratorTrie<OtherRange> const& that) const {
+    bool operator==(OverlapIteratorTrie const& that) const {
       return _word_index == that._word_index;
     }
 
-    template <typename OtherRange>
-    bool operator!=(OverlapIteratorTrie<OtherRange> const& that) const {
+    bool operator!=(OverlapIteratorTrie const& that) const {
       return !(*this == that);
     }
 
