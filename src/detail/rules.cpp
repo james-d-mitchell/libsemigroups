@@ -43,6 +43,14 @@ namespace libsemigroups {
       return *this;
     }
 
+    void Rules::Stats::update_after_active_rule_added(Rules const& rules) {
+      Rule const* rule    = rules.active_rules().back();
+      max_length_lhs_rule = std::max(max_length_lhs_rule, rule->lhs().size());
+      min_length_lhs_rule = std::min(min_length_lhs_rule, rule->lhs().size());
+      max_active_rules
+          = std::max(max_active_rules, rules.active_rules().size());
+    }
+
     ////////////////////////////////////////////////////////////////////////
     // Rules - private
     ////////////////////////////////////////////////////////////////////////
@@ -134,19 +142,11 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
       // Don't assert that rule isn't active, because it could be if we are
       // calling this in one of the copy constructors.
-
-      // TODO next 6 lines -> Stats
-      _stats.max_length_lhs_rule
-          = std::max(_stats.max_length_lhs_rule, rule->lhs().size());
-      _stats.max_active_rules
-          = std::max(_stats.max_active_rules, active_rules().size());
-      _stats.min_length_lhs_rule
-          = std::min(_stats.min_length_lhs_rule, rule->lhs().size());
-
 #ifdef LIBSEMIGROUPS_DEBUG
       rule->state(Rule::State::active);
 #endif
       _active_rules.push_back(rule);
+      _stats.update_after_active_rule_added(*this);
       for (auto& it : _cursors) {
         if (it == _active_rules.end()) {
           --it;
