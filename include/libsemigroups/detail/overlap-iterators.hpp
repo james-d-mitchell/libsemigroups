@@ -67,7 +67,11 @@ namespace libsemigroups::detail {
 
    public:
     OverlapIteratorTrie();
-    // TODO rule of five
+
+    OverlapIteratorTrie(OverlapIteratorTrie const&)            = default;
+    OverlapIteratorTrie(OverlapIteratorTrie&&)                 = default;
+    OverlapIteratorTrie& operator=(OverlapIteratorTrie const&) = default;
+    OverlapIteratorTrie& operator=(OverlapIteratorTrie&&)      = default;
 
     // TODO(1) init?
 
@@ -93,7 +97,7 @@ namespace libsemigroups::detail {
       return tmp;
     }
 
-    // TODO: This is definitely insufficient for proper comparison, but is
+    // TODO(1) This is definitely insufficient for proper comparison, but is
     // enough to tell whether or not we are at the end.
     bool operator==(OverlapIteratorTrie const& that) const {
       return _word_index == that._word_index;
@@ -104,7 +108,7 @@ namespace libsemigroups::detail {
     }
 
    private:
-    // TODO better name
+    // TODO(1) better name
     [[nodiscard]] bool traverse_to_root();
 
     // Returns true if any descendent, and hence critical pair, is found.
