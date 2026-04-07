@@ -427,18 +427,12 @@ namespace libsemigroups {
         if (finished()) {
           using detail::group_digits;
           detail::ReportCell<2> rc;
-          rc.min_width(12);  // .divider("{:-<95}\n");
+          rc.min_width(12);
           rc("KnuthBendix: RUN STATISTICS\n");
-          // rc.divider();
           rc("KnuthBendix: max number of pending rules {}\n",
              group_digits(_rewriter.stats().max_pending_rules));
           rc("KnuthBendix: max length lhs rule         {}\n",
              group_digits(_rewriter.stats().max_length_lhs_rule));
-          // TODO uncomment max_length_lhs_rule
-          // rc("KnuthBendix: max length lhs active rule  {}\n",
-          //   group_digits(_rewriter.stats().max_length_lhs_rule));
-          // rc("KnuthBendix: number of unique lhs   {}\n",
-          //    group_digits(_stats.unique_lhs_rules.size()));
         }
 
         report_no_prefix("{:-<95}\n", "");
