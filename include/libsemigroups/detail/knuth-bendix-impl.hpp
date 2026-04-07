@@ -781,12 +781,8 @@ namespace libsemigroups {
       void add_octo(native_word_type& w) const;
       void rm_octo(native_word_type& w) const;
 
+      // TODO move to RewritingSystemSet
       void overlap(rule_const_reference u, rule_const_reference v);
-
-      // TODO rm
-      // [[nodiscard]] size_t max_active_word_length() const {
-      //   return _rewriter.max_active_word_length();
-      // }
 
       void               run_real();
       [[nodiscard]] bool stop_running() const;

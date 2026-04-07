@@ -535,18 +535,16 @@ namespace libsemigroups {
       while (!_rewriter.confluent()) {
         if constexpr (is_specialization_of_v<RewritingSystem,
                                              detail::RewritingSystemTrie>) {
-          OverlapIteratorTrie start = OverlapIteratorTrie(_rewriter.trie());
+          OverlapIteratorTrie       first(_rewriter.trie());
+          OverlapIteratorTrie const last;
 
-          OverlapIteratorTrie end = OverlapIteratorTrie();
-
-          while (start != end) {
+          while (first != last) {
             if (stop_running()) {
               return;
             }
-
-            Rule const* rule1          = start->lhs;
-            Rule const* rule2          = start->rhs;
-            size_t      overlap_length = start->length;
+            Rule const* rule1          = first->lhs;
+            Rule const* rule2          = first->rhs;
+            size_t      overlap_length = first->length;
 
             MultiView u(rule1->rhs());
             u.append(rule2->lhs().cbegin() + overlap_length,
@@ -557,7 +555,7 @@ namespace libsemigroups {
             v.append(rule2->rhs().cbegin(), rule2->rhs().cend());
 
             _rewriter.add_rule(u.begin(), u.end(), v.begin(), v.end());
-            ++start;
+            ++first;
           }
         } else {
           // _rewriter.rules() calls process_pending_rules, so can't call it
@@ -751,6 +749,7 @@ namespace libsemigroups {
     }
 
     // OVERLAP_2 from Sims, p77
+    // TODO move to RewritingSystemSet
     template <typename RewritingSystem, typename ReductionOrder>
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::overlap(
         rule_const_reference u,
