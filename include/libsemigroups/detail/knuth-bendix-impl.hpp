@@ -782,7 +782,7 @@ namespace libsemigroups {
       void rm_octo(native_word_type& w) const;
 
       // TODO move to RewritingSystemSet
-      void overlap(rule_const_reference u, rule_const_reference v);
+      void overlap(Rule const* u, Rule const* v);
 
       void               run_real();
       [[nodiscard]] bool stop_running() const;

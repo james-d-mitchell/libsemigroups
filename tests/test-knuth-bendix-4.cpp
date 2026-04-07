@@ -81,7 +81,7 @@ namespace libsemigroups {
                                    "Sims Ex. 6.6 (limited overlap lengths)",
                                    "[standard][knuth-bendix]",
                                    REWRITING_SYSTEM_TYPES) {
-    auto rg = ReportGuard(false);
+    auto rg = ReportGuard(true);
 
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -105,8 +105,8 @@ namespace libsemigroups {
 
     kb.run();
     REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
-    // REQUIRE(kb.rewriting_system().confluent());
-    // REQUIRE(kb.number_of_classes() == 10752);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.number_of_classes() == 10'752);
   }
 
   // Takes approx. 2s

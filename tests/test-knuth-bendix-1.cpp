@@ -254,7 +254,6 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "004",
                                    "Example 5.1 in Sims (infinite)",
-
                                    "[quick][knuth-bendix]",
                                    REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(false);
@@ -1476,6 +1475,7 @@ namespace libsemigroups {
                                    "932",
                                    "kbmag/heinnilp",
                                    "[extreme][knuth-bendix][kbmag][recursive]",
+                                   RPOSet,
                                    RPOTrie) {
     auto rg = ReportGuard(true);
 
@@ -1492,7 +1492,7 @@ namespace libsemigroups {
     presentation::add_rule(p, "cBACab", "abcBAC");
     presentation::add_rule(p, "BabABBAbab", "aabABBAb");
 
-    KnuthBendix<std::string, TestType, RecursivePathCompare> kb(twosided, p);
+    KnuthBendix<std::string, TestType> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
     knuth_bendix::by_overlap_length(kb);
     kb.run();
