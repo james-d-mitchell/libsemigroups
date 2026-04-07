@@ -726,39 +726,6 @@ namespace libsemigroups {
         return w;
       }
 
-      // Reduce existing active rules wrt new_rule
-
-      // TODO rm
-      // void reduce_active_rules() {
-      //   if constexpr (RewritingSystem::always_reduced) {
-      //     return;
-      //   } else {
-      //     auto const first = _rewriter.active_rules().begin();
-      //     auto const last  = _rewriter.active_rules().end();
-
-      //     // For every lhs and rhs (<word>) of every active rule (<rule>),
-      //     find
-      //     // every rule (<match>) whose lhs is a subword of <word>. If such a
-      //     // <match> exists, and it is not equal to <rule>, then the system
-      //     is
-      //     // not reduced, so we make <rule> pending.
-      //     for (auto it = first; it != last; ++it) {
-      //       Rule* rule = *it;
-      //       for (auto const& word : {rule->lhs(), rule->rhs()}) {
-      //         auto range = _rewriter.lhs_search_no_checks(word);
-
-      //         if (range
-      //             | rx::any_of([rule](Rule* match) { return match != rule;
-      //             })) {
-      //           _rewriter.rm_rule(*it);
-      //           it = --_rewriter.make_active_rule_pending(it);
-      //           break;
-      //         }
-      //       }
-      //     }
-      //   }
-      // }
-
      public:
       //////////////////////////////////////////////////////////////////////////
       // KnuthBendixImpl - main member functions - public
