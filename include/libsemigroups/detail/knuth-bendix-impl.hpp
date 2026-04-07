@@ -151,8 +151,7 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
 
       using native_word_type = typename RewritingSystem::native_word_type;
-      // TODO rule_type should be RewritingSystem::rule_value_type
-      using rule_type = std::pair<native_word_type, native_word_type>;
+      using rule_type        = std::pair<native_word_type, native_word_type>;
       using rule_const_reference =
           typename RewritingSystem::rule_const_reference;
       using rewriter_type = RewritingSystem;
