@@ -500,5 +500,74 @@ namespace libsemigroups {
       ++start;
       REQUIRE(start == end);
     }
+
+    LIBSEMIGROUPS_TEST_CASE("OverlapIteratorTrie",
+                            "017",
+                            "different generations",
+                            "[quick]") {
+      auto                                 rg = ReportGuard(false);
+      RewritingSystemTrie<ShortLexCompare> rt;
+      rt.increase_alphabet_size_by(2);
+
+      // Words added in generation 0
+      rewriting_system::add_rule(rt, "abba"_w, "aaa"_w);
+      rewriting_system::add_rule(rt, "abab"_w, "bbb"_w);
+      rt.reduce();
+
+      // Word added in generation 1
+      rt.trie().increment_generation();
+      rewriting_system::add_rule(rt, "baa"_w, "a"_w);
+      rt.reduce();
+
+      {
+        auto const& trie = rt.trie();
+
+        // Should only find the overlaps between
+        auto start = OverlapIteratorTrie(trie);
+        auto end   = OverlapIteratorTrie();
+
+        v4::ToWord toword(std::string({0, 1}));
+
+        REQUIRE(toword(start->lhs->lhs()) == "baa"_w);
+        REQUIRE(toword(start->lhs->rhs()) == "a"_w);
+        REQUIRE(toword(start->rhs->lhs()) == "abba"_w);
+        REQUIRE(toword(start->rhs->rhs()) == "aaa"_w);
+        REQUIRE(start->length == 1);
+
+        ++start;
+        REQUIRE(toword(start->lhs->lhs()) == "baa"_w);
+        REQUIRE(toword(start->lhs->rhs()) == "a"_w);
+        REQUIRE(toword(start->rhs->lhs()) == "abab"_w);
+        REQUIRE(toword(start->rhs->rhs()) == "bbb"_w);
+        REQUIRE(start->length == 1);
+
+        ++start;
+        REQUIRE(toword(start->lhs->lhs()) == "abba"_w);
+        REQUIRE(toword(start->lhs->rhs()) == "aaa"_w);
+        REQUIRE(toword(start->rhs->lhs()) == "baa"_w);
+        REQUIRE(toword(start->rhs->rhs()) == "a"_w);
+        REQUIRE(start->length == 2);
+
+        ++start;
+        REQUIRE(toword(start->lhs->lhs()) == "abab"_w);
+        REQUIRE(toword(start->lhs->rhs()) == "bbb"_w);
+        REQUIRE(toword(start->rhs->lhs()) == "baa"_w);
+        REQUIRE(toword(start->rhs->rhs()) == "a"_w);
+        REQUIRE(start->length == 1);
+
+        ++start;
+        REQUIRE(start == end);
+      }
+
+      rt.increase_alphabet_size_by(1);
+
+      // Word added in generation 2
+      rt.trie().increment_generation();
+      rewriting_system::add_rule(rt, "c"_w, "b"_w);
+      rt.reduce();
+
+      // No overlaps where at least one word is in generation 2
+      REQUIRE(OverlapIteratorTrie(rt.trie()) == OverlapIteratorTrie());
+    }
   }  // namespace detail
 }  // namespace libsemigroups
