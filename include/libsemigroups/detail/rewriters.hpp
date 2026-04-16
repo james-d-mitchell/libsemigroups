@@ -386,6 +386,10 @@ namespace libsemigroups {
         return _rule_trie;
       }
 
+      [[nodiscard]] Trie& trie() noexcept {
+        return _rule_trie;
+      }
+
      private:
       ////////////////////////////////////////////////////////////////////////
       // Private member functions
