@@ -172,7 +172,6 @@ namespace libsemigroups {
       virtual void report_reducing_rules(
           std::atomic_uint64_t const&,
           std::chrono::high_resolution_clock::time_point const&) const {}
-
     };  // class RewritingSystemBase
 
     ////////////////////////////////////////////////////////////////////////

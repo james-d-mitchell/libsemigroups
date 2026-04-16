@@ -130,8 +130,9 @@ namespace libsemigroups {
   //! `Presentation<WordOut>` for some type `WordOut`.
   //! \tparam WordIn the type of the rules in the presentation of the
   //! \ref_knuth_bendix object \p kb.
-  //! \tparam RewritingSystem the second template parameter for \ref_knuth_bendix.
-  //! \tparam ReductionOrder the third template parameter for \ref_knuth_bendix.
+  //! \tparam RewritingSystem the second template parameter for
+  //! \ref_knuth_bendix. \tparam ReductionOrder the third template parameter for
+  //! \ref_knuth_bendix.
   //!
   //! \param kb the \ref_knuth_bendix object from which to obtain the rules.
   //!

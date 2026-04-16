@@ -87,10 +87,10 @@ namespace libsemigroups::detail {
           _suffix_descendent_index(),
           _overlap(),
           _trie(nullptr),
-          _index_stack(){};
+          _index_stack() {}
 
     // TODO: Use an init rather than setting default values?
-    OverlapIteratorTrie(Trie const& trie)
+    explicit OverlapIteratorTrie(Trie const& trie)
         : _current_word_iterator(trie.cbegin_terminal_nodes()),
           _last_word_iterator(trie.cend_terminal_nodes()),
           _word_index(Trie::root),
@@ -225,4 +225,4 @@ namespace libsemigroups::detail {
   };  // class OverlapIteratorTrie
 }  // namespace libsemigroups::detail
 
-#endif
+#endif  // LIBSEMIGROUPS_DETAIL_OVERLAP_ITERATORS_HPP_

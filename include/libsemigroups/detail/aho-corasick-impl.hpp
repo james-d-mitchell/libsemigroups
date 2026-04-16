@@ -163,7 +163,6 @@ namespace libsemigroups {
           _value = value;
           return *this;
         }
-
       };  // class Node
 
       // TODO(1) if we store pointers here instead of Nodes, then inside the

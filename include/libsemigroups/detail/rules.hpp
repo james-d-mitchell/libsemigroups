@@ -274,4 +274,4 @@ namespace libsemigroups {
 
   }  // namespace detail
 }  // namespace libsemigroups
-#endif
+#endif  // LIBSEMIGROUPS_DETAIL_RULES_HPP_

@@ -64,9 +64,9 @@ namespace libsemigroups {
     //! This function triggers a full enumeration of \p kb.
     //!
     //! \tparam Word the type of the words contained in the output range.
-    //! \tparam RewritingSystem the first template parameter for \ref_knuth_bendix.
-    //! \tparam ReductionOrder the second template parameter for
-    //! \ref_knuth_bendix.
+    //! \tparam RewritingSystem the first template parameter for
+    //! \ref_knuth_bendix. \tparam ReductionOrder the second template parameter
+    //! for \ref_knuth_bendix.
     //!
     //! \param kb the \ref_knuth_bendix instance.
     //!
@@ -79,8 +79,8 @@ namespace libsemigroups {
     template <typename Word, typename RewritingSystem, typename ReductionOrder>
     [[nodiscard]] auto
     normal_forms(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb) {
-      return detail::KnuthBendixNormalFormRange<Word, RewritingSystem, ReductionOrder>(
-          kb);
+      return detail::
+          KnuthBendixNormalFormRange<Word, RewritingSystem, ReductionOrder>(kb);
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -106,9 +106,9 @@ namespace libsemigroups {
     //!
     //! \tparam Word the type of the words contained in the output range
     //! (default: std::string).
-    //! \tparam RewritingSystem the first template parameter for \ref_knuth_bendix.
-    //! \tparam ReductionOrder the second template parameter for
-    //! \ref_knuth_bendix.
+    //! \tparam RewritingSystem the first template parameter for
+    //! \ref_knuth_bendix. \tparam ReductionOrder the second template parameter
+    //! for \ref_knuth_bendix.
     //!
     //! \param kb1 the first \ref_knuth_bendix instance.
     //! \param kb2 the second \ref_knuth_bendix instance.
@@ -128,9 +128,9 @@ namespace libsemigroups {
     //!
     //! \cong_common_warn_undecidable{Knuth-Bendix}.
     template <typename Word, typename RewritingSystem, typename ReductionOrder>
-    [[nodiscard]] std::vector<std::vector<Word>>
-    non_trivial_classes(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb1,
-                        KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb2);
+    [[nodiscard]] std::vector<std::vector<Word>> non_trivial_classes(
+        KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb1,
+        KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb2);
 
   }  // namespace congruence_common
 
@@ -174,9 +174,9 @@ namespace libsemigroups {
     //!
     //! \tparam Word the type of the words in the
     //! \ref KnuthBendix::presentation.
-    //! \tparam RewritingSystem the first template parameter for \ref_knuth_bendix.
-    //! \tparam ReductionOrder the second template parameter for
-    //! \ref_knuth_bendix.
+    //! \tparam RewritingSystem the first template parameter for
+    //! \ref_knuth_bendix. \tparam ReductionOrder the second template parameter
+    //! for \ref_knuth_bendix.
     //!
     //! \param kb the \ref_knuth_bendix instance.
     //!
@@ -188,7 +188,8 @@ namespace libsemigroups {
     //!
     //! \sa KnuthBendix::run.
     template <typename Word, typename RewritingSystem, typename ReductionOrder>
-    void by_overlap_length(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb);
+    void
+    by_overlap_length(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb);
 
     //! \ingroup knuth_bendix_helpers_group
     //!
@@ -198,9 +199,9 @@ namespace libsemigroups {
     //!
     //! \tparam Word the type of the words in the
     //! \ref KnuthBendix::presentation.
-    //! \tparam RewritingSystem the first template parameter for \ref_knuth_bendix.
-    //! \tparam ReductionOrder the second template parameter for
-    //! \ref_knuth_bendix.
+    //! \tparam RewritingSystem the first template parameter for
+    //! \ref_knuth_bendix. \tparam ReductionOrder the second template parameter
+    //! for \ref_knuth_bendix.
     //!
     //! \param kb the \ref_knuth_bendix instance defining the rules that are to
     //! be checked for being reduced.

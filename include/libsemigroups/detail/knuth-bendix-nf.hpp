@@ -39,7 +39,7 @@ namespace libsemigroups {
     class KnuthBendixNormalFormRange : public Paths<uint32_t> {
       using Paths_ = Paths<uint32_t>;
 
-      mutable Word                                 _current;
+      mutable Word                                        _current;
       KnuthBendix<Word, RewritingSystem, ReductionOrder>* _kb;
 
      public:
@@ -113,14 +113,14 @@ namespace libsemigroups {
 
     template <typename Word, typename RewritingSystem, typename ReductionOrder>
     KnuthBendixNormalFormRange<Word, RewritingSystem, ReductionOrder>&
-    KnuthBendixNormalFormRange<Word, RewritingSystem, ReductionOrder>::operator=(
-        KnuthBendixNormalFormRange const&)
+    KnuthBendixNormalFormRange<Word, RewritingSystem, ReductionOrder>::
+    operator=(KnuthBendixNormalFormRange const&)
         = default;
 
     template <typename Word, typename RewritingSystem, typename ReductionOrder>
     KnuthBendixNormalFormRange<Word, RewritingSystem, ReductionOrder>&
-    KnuthBendixNormalFormRange<Word, RewritingSystem, ReductionOrder>::operator=(
-        KnuthBendixNormalFormRange&&)
+    KnuthBendixNormalFormRange<Word, RewritingSystem, ReductionOrder>::
+    operator=(KnuthBendixNormalFormRange&&)
         = default;
 
     template <typename Word, typename RewritingSystem, typename ReductionOrder>
