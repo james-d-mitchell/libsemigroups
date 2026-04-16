@@ -26,6 +26,7 @@
 #include <cstddef>  // for size_t
 #include <cstdint>  // for uint64_t
 #include <list>     // for list
+#include <string>   // for std::string
 #include <utility>  // for move
 #include <vector>   // for vector
 
