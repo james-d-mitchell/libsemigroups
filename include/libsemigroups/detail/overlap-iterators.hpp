@@ -87,7 +87,7 @@ namespace libsemigroups::detail {
           _suffix_descendent_index(),
           _overlap(),
           _trie(nullptr),
-          _index_stack() {};
+          _index_stack(){};
 
     // TODO: Use an init rather than setting default values?
     OverlapIteratorTrie(Trie const& trie)
@@ -177,9 +177,11 @@ namespace libsemigroups::detail {
     // TODO better name
     bool traverse_to_root() {
       while (_suffix_index != Trie::root) {
-        _index_stack.emplace_back(_suffix_index);
-        if (find_next_descendent()) {
-          return true;
+        if (should_check_descendants(_suffix_index)) {
+          _index_stack.emplace_back(_suffix_index);
+          if (find_next_descendent()) {
+            return true;
+          }
         }
         _suffix_index = _trie->node_no_checks(_suffix_index).suffix_link();
       }
@@ -204,12 +206,21 @@ namespace libsemigroups::detail {
         for (letter_type x = 0; x < _trie->alphabet_size(); ++x) {
           index_type child_index
               = _trie->child_no_checks(_suffix_descendent_index, x);
-          if (child_index != UNDEFINED) {
+          if (child_index != UNDEFINED
+              && should_check_descendants(child_index)) {
             _index_stack.emplace_back(child_index);
           }
         }
       }
       return false;
+    }
+
+    // The <generation> of a trie represents which iteration
+    bool should_check_descendants(size_t index) {
+      return _trie->node_no_checks(_word_index).last_checked()
+                 == _trie->generation()
+             || _trie->node_no_checks(index).last_checked()
+                    == _trie->generation();
     }
   };  // class OverlapIteratorTrie
 }  // namespace libsemigroups::detail

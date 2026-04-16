@@ -565,6 +565,7 @@ namespace libsemigroups {
             _rewriter.add_rule(u.begin(), u.end(), v.begin(), v.end());
             ++start;
           }
+          _rewriter.trie().increment_generation();
         } else {
           // _rewriter.rules() calls process_pending_rules, so can't call it
           // inside the rule1 loop below.
