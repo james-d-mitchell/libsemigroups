@@ -116,4 +116,4 @@ namespace libsemigroups::detail {
   };  // class OverlapIteratorTrie
 }  // namespace libsemigroups::detail
 
-#endif
+#endif  // LIBSEMIGROUPS_DETAIL_OVERLAP_ITERATORS_HPP_

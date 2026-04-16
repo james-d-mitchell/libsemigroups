@@ -812,7 +812,7 @@ namespace libsemigroups {
 
       bool finished_impl() const override;
     };  // class KnuthBendixImpl
-  }  // namespace detail
+  }     // namespace detail
 
   ////////////////////////////////////////////////////////////////////////
   // global functions - to_human_readable_repr

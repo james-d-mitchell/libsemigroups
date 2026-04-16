@@ -103,7 +103,7 @@ namespace libsemigroups {
           _inactive_nodes_index(),
           _node_indices_to_update(),
           _terminal_nodes_index(),
-          _generation(0){};
+          _generation(0) {}
 
     AhoCorasickImpl& AhoCorasickImpl::init(size_t num_letters) {
       LIBSEMIGROUPS_ASSERT(!_all_nodes.empty());

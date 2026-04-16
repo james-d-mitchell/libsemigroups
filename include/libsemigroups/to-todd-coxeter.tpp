@@ -54,7 +54,8 @@ namespace libsemigroups {
             typename Word,
             typename RewritingSystem,
             typename ReductionOrder>
-  auto to(congruence_kind knd, KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb)
+  auto to(congruence_kind                                     knd,
+          KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb)
       -> std::enable_if_t<std::is_same_v<ToddCoxeter<Word>, Thing<Word>>,
                           ToddCoxeter<Word>> {
     if (kb.number_of_classes() == POSITIVE_INFINITY) {

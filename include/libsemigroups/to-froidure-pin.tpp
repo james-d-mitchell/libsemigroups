@@ -27,7 +27,8 @@ namespace libsemigroups {
 
   template <typename Word, typename RewritingSystem, typename ReductionOrder>
   FroidurePin(KnuthBendix<Word, RewritingSystem, ReductionOrder> const&)
-      -> FroidurePin<detail::KBE<KnuthBendix<Word, RewritingSystem, ReductionOrder>>>;
+      -> FroidurePin<
+          detail::KBE<KnuthBendix<Word, RewritingSystem, ReductionOrder>>>;
 
   FroidurePin(detail::ToddCoxeterImpl const&)->FroidurePin<detail::TCE>;
 
@@ -89,9 +90,11 @@ namespace libsemigroups {
             typename Word,
             typename RewritingSystem,
             typename ReductionOrder>
-  auto to(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb) -> std::enable_if_t<
-      std::is_same_v<Thing<int>, FroidurePin<int>>,
-      FroidurePin<detail::KBE<KnuthBendix<Word, RewritingSystem, ReductionOrder>>>> {
+  auto to(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb)
+      -> std::enable_if_t<
+          std::is_same_v<Thing<int>, FroidurePin<int>>,
+          FroidurePin<detail::KBE<
+              KnuthBendix<Word, RewritingSystem, ReductionOrder>>>> {
     size_t const n = kb.presentation().alphabet().size();
 
     if (n == 0) {
