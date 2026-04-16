@@ -65,6 +65,7 @@ namespace libsemigroups {
         // Private data
         ////////////////////////////////////////////////////////////////////////
        private:
+        mutable size_t                 _last_checked;
         uint32_t                       _height;
         index_type                     _link;
         index_type                     _parent;
@@ -97,6 +98,10 @@ namespace libsemigroups {
         // Getters - public
         ////////////////////////////////////////////////////////////////////////
 
+        [[nodiscard]] size_t last_checked() const noexcept {
+          return _last_checked;
+        }
+
         [[nodiscard]] size_t height() const noexcept {
           return _height;
         }
@@ -126,12 +131,22 @@ namespace libsemigroups {
           return _value;
         }
 
+        ////////////////////////////////////////////////////////////////////////
+        // Setters - public
+        ////////////////////////////////////////////////////////////////////////
+
+        Node const& last_checked(size_t val) const noexcept {
+          _last_checked = val;
+          return *this;
+        }
+
        private:
         ////////////////////////////////////////////////////////////////////////
         // Setters - private
         ////////////////////////////////////////////////////////////////////////
 
-        // All setters are private to avoid corrupting the objects.
+        // All setters of non-mutable members are private to avoid corrupting
+        // the objects.
 
         Node const& height(size_t val) noexcept {
           _height = val;
@@ -162,6 +177,7 @@ namespace libsemigroups {
       std::vector<index_type>           _inactive_nodes_index;
       std::vector<index_type>           _node_indices_to_update;
       std::unordered_set<index_type>    _terminal_nodes_index;
+      mutable size_t                    _generation;
 
       // TODO(1): it seems likely that the positions of the active nodes in
       // _all_nodes will become scattered and disordered over time, and so it'd
@@ -185,6 +201,14 @@ namespace libsemigroups {
       AhoCorasickImpl& operator=(AhoCorasickImpl&&);
 
       ~AhoCorasickImpl();
+
+      void increment_generation() const noexcept {
+        ++_generation;
+      }
+
+      size_t generation() const noexcept {
+        return _generation;
+      }
 
       size_t alphabet_size() const noexcept {
         return _children.number_of_cols();
@@ -406,7 +430,7 @@ namespace libsemigroups {
                                               Word const&            w);
 
     }  // namespace aho_corasick_impl
-  }  // namespace detail
+  }    // namespace detail
 }  // namespace libsemigroups
 
 #include "aho-corasick-impl.tpp"
