@@ -528,44 +528,27 @@ namespace libsemigroups {
 
     template <typename RewritingSystem, typename ReductionOrder>
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::run_real() {
-      while (!_rewriter.confluent()) {
-        if constexpr (is_specialization_of_v<RewritingSystem,
-                                             RewritingSystemTrie>) {
-          OverlapIteratorTrie       first(_rewriter.trie());
-          OverlapIteratorTrie const last;
+      // TODO re-add overlap iterator stuff
+      _rewriter.reduce();
 
-          while (first != last) {
-            if (stop_running()) {
-              return;
-            }
-            Rule const*  rule1          = first->lhs;
-            Rule const*  rule2          = first->rhs;
-            size_t const overlap_length = first->length;
+      do {
+        auto& first  = _rewriter.cursor(0);
+        auto& second = _rewriter.cursor(1);
+        first        = _rewriter.active_rules().begin();
+        overlap(*first, *first);
+        ++first;
 
-            MultiView u(rule1->rhs());
-            u.append(rule2->lhs().cbegin() + overlap_length,
-                     rule2->lhs().cend());
-
-            MultiView v(rule1->lhs().cbegin(),
-                        rule1->lhs().cend() - overlap_length);
-            v.append(rule2->rhs().cbegin(), rule2->rhs().cend());
-
-            _rewriter.add_rule(u.begin(), u.end(), v.begin(), v.end());
-            ++first;
-          }
-        } else {
-          _rewriter.reduce();
-
-          for (Rule const* rule1 : _rewriter.active_rules()) {
-            if (stop_running()) {
-              return;
-            }
-            for (Rule const* rule2 : _rewriter.active_rules()) {
-              overlap(rule1, rule2);
-            }
-          }
+        for (; first != _rewriter.active_rules().end() && !stop_running();
+             ++first) {
+          overlap(*first, *first);
+          second = first;
+          do {
+            --second;
+            overlap(*first, *second);
+            overlap(*second, *first);
+          } while (second != _rewriter.active_rules().begin());
         }
-      }
+      } while (_rewriter.reduce());
 
       if (_settings.max_overlap == POSITIVE_INFINITY
           && _settings.max_rules == POSITIVE_INFINITY && !stop_running()) {
@@ -735,6 +718,9 @@ namespace libsemigroups {
     void
     KnuthBendixImpl<RewritingSystem, ReductionOrder>::overlap(Rule const* u,
                                                               Rule const* v) {
+      LIBSEMIGROUPS_ASSERT(u->state() == Rule::State::active);
+      LIBSEMIGROUPS_ASSERT(v->state() == Rule::State::active);
+
       native_word_type const& ulhs = u->lhs();
       native_word_type const& vlhs = v->lhs();
       native_word_type const& urhs = u->rhs();
@@ -745,9 +731,11 @@ namespace libsemigroups {
       for (auto it = ulhs.cend() - 1;
            it > lower_limit && it < ulhs.cend() && !stop_running();
            --it) {
+        // TODO uncomment or delete the next lines of code
         //           && (_settings.max_overlap == POSITIVE_INFINITY
         //               || (*_overlap_measure)(u, v, it) <=
         //               _settings.max_overlap);
+
         // Check if B = [it, ulhs.cend()) is a prefix of v.first
         if (is_prefix(vlhs.cbegin(), vlhs.cend(), it, ulhs.cend())) {
           // u = P_i = AB -> Q_i and v = P_j = BC -> Q_j This version of
