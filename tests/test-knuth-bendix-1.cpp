@@ -1483,7 +1483,9 @@ namespace libsemigroups {
   // maximal nilpotent quotient, and then introducing new generators for
   // the PCP generators.
   // TODO this test case is adversely impacted by the changes to run_real in
-  // KnuthBendixImpl
+  // KnuthBendixImpl. I can't get this to terminate after running for 10
+  // minutes, not sure if it ever ran, have to do a bisect on the presquash
+  // branch.
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "932",
                                    "kbmag/heinnilp",
