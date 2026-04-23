@@ -154,8 +154,7 @@ namespace libsemigroups {
       using rule_type        = std::pair<native_word_type, native_word_type>;
       using rule_const_reference =
           typename RewritingSystem::rule_const_reference;
-      // TODO rename rewriting_system_type
-      using rewriter_type = RewritingSystem;
+      using rewriting_system_type = RewritingSystem;
 
       //////////////////////////////////////////////////////////////////////////
       // Nested classes - public

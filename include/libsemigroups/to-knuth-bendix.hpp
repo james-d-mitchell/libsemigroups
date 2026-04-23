@@ -79,11 +79,11 @@ namespace libsemigroups {
   template <typename Result>
   auto to(congruence_kind knd, FroidurePinBase& fpb) -> std::enable_if_t<
       std::is_same_v<KnuthBendix<typename Result::native_word_type,
-                                 typename Result::rewriter_type>,
+                                 typename Result::rewriting_system_type>,
                      Result>,
       Result> {
     using Word            = typename Result::native_word_type;
-    using RewritingSystem = typename Result::rewriter_type;
+    using RewritingSystem = typename Result::rewriting_system_type;
     return KnuthBendix<Word, RewritingSystem>(knd, to<Presentation<Word>>(fpb));
   }
 
@@ -154,11 +154,11 @@ namespace libsemigroups {
           ToddCoxeter<typename Result::native_word_type>& tc)
       -> std::enable_if_t<
           std::is_same_v<KnuthBendix<typename Result::native_word_type,
-                                     typename Result::rewriter_type>,
+                                     typename Result::rewriting_system_type>,
                          Result>,
           Result> {
     using Word            = typename Result::native_word_type;
-    using RewritingSystem = typename Result::rewriter_type;
+    using RewritingSystem = typename Result::rewriting_system_type;
     return KnuthBendix<Word, RewritingSystem>(knd, tc.presentation());
   }
 
