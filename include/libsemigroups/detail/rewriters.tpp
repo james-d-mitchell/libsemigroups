@@ -68,7 +68,8 @@ namespace libsemigroups::detail {
       set_cached_confluent(tril::unknown);
       Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
       reorder<ReductionOrder>(rule);
-      if (pending_rules().size() > _settings.max_pending_rules) {
+      if (!active_rules().empty()
+          && pending_rules().size() > _settings.max_pending_rules) {
         reduce();
       }
     }
@@ -366,7 +367,10 @@ namespace libsemigroups::detail {
       Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
       reorder<ReductionOrder>(rule);
       set_cached_confluent(tril::unknown);
-      if (pending_rules().size() > _settings.max_pending_rules) {
+      if (!active_rules().empty()
+          && pending_rules().size() > _settings.max_pending_rules) {
+        // If active_rules().empty(), then we don't process pending rules, to
+        // allow construction of RewritingSystems to still be fast.
         reduce();
       }
     }
