@@ -1214,23 +1214,6 @@ namespace libsemigroups {
   }
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
-                                   "048",
-                                   "confluence_interval",
-                                   "[quick][knuth-bendix]",
-                                   REWRITING_SYSTEM_TYPES) {
-    Presentation<std::string> p;
-    p.contains_empty_word(true);
-    p.alphabet("Bab");
-    presentation::add_rule(p, "aa", "");
-    presentation::add_rule(p, "bB", "");
-    presentation::add_rule(p, "bbb", "");
-    presentation::add_rule(p, "ababab", "");
-    KnuthBendix<std::string, TestType> kb(twosided, p);
-    kb.check_confluence_interval(LIMIT_MAX);
-    kb.check_confluence_interval(10);
-  }
-
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "049",
                                    "max_overlap",
                                    "[quick][knuth-bendix]",

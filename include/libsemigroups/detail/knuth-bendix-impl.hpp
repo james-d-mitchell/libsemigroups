@@ -193,8 +193,6 @@ namespace libsemigroups {
         Settings& operator=(Settings const&) noexcept = default;
         Settings& operator=(Settings&&) noexcept      = default;
 
-        // TODO rm check_confluence_interval
-        size_t                    check_confluence_interval;
         size_t                    max_overlap;
         size_t                    max_rules;
         typename options::overlap overlap_policy;
@@ -539,8 +537,11 @@ namespace libsemigroups {
       //! Constant.
       //!
       //! \sa \ref run.
-      KnuthBendixImpl& check_confluence_interval(size_t val) {
-        _settings.check_confluence_interval = val;
+      //!
+      //! \deprecated_warning{function}. This has been removed and has no
+      //! effect.
+      [[deprecated]] KnuthBendixImpl& check_confluence_interval(size_t val) {
+        (void) val;
         return *this;
       }
 
@@ -563,8 +564,12 @@ namespace libsemigroups {
       //! Constant.
       //!
       //! \sa \ref run.
-      [[nodiscard]] size_t check_confluence_interval() const noexcept {
-        return _settings.check_confluence_interval;
+      //!
+      //! \deprecated_warning{function}. This has been removed and always
+      //! returns \c 0.
+      [[deprecated]] [[nodiscard]] size_t
+      check_confluence_interval() const noexcept {
+        return 0;
       }
 
       //! \ingroup knuth_bendix_class_settings_group

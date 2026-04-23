@@ -264,17 +264,14 @@ namespace libsemigroups {
     template <typename Word, typename RewritingSystem, typename ReductionOrder>
     void
     by_overlap_length(KnuthBendix<Word, RewritingSystem, ReductionOrder>& kb) {
-      size_t prev_max_overlap               = kb.max_overlap();
-      size_t prev_check_confluence_interval = kb.check_confluence_interval();
+      size_t prev_max_overlap = kb.max_overlap();
       kb.max_overlap(1);
-      kb.check_confluence_interval(POSITIVE_INFINITY);
 
       while (!kb.rewriting_system().confluent()) {
         kb.run();
         kb.max_overlap(kb.max_overlap() + 1);
       }
       kb.max_overlap(prev_max_overlap);
-      kb.check_confluence_interval(prev_check_confluence_interval);
     }
 
     // TODO(1) deprecate and make this RewritingSystem mem fn
