@@ -30,9 +30,10 @@ namespace libsemigroups {
     template <typename RewritingSystem, typename ReductionOrder>
     struct KnuthBendixImpl<RewritingSystem, ReductionOrder>::ABC
         : KnuthBendixImpl<RewritingSystem, ReductionOrder>::OverlapMeasure {
-      size_t operator()(Rule const*                                      AB,
-                        Rule const*                                      BC,
-                        typename native_word_type::const_iterator const& it) {
+      size_t
+      operator()(Rule const*                                      AB,
+                 Rule const*                                      BC,
+                 typename native_word_type::const_iterator const& it) override {
         LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
                              && BC->state() == Rule::State::active);
         LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
@@ -45,9 +46,10 @@ namespace libsemigroups {
     template <typename RewritingSystem, typename ReductionOrder>
     struct KnuthBendixImpl<RewritingSystem, ReductionOrder>::AB_BC
         : KnuthBendixImpl<RewritingSystem, ReductionOrder>::OverlapMeasure {
-      size_t operator()(Rule const*                                      AB,
-                        Rule const*                                      BC,
-                        typename native_word_type::const_iterator const& it) {
+      size_t
+      operator()(Rule const*                                      AB,
+                 Rule const*                                      BC,
+                 typename native_word_type::const_iterator const& it) override {
         LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
                              && BC->state() == Rule::State::active);
         LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
@@ -61,9 +63,10 @@ namespace libsemigroups {
     template <typename RewritingSystem, typename ReductionOrder>
     struct KnuthBendixImpl<RewritingSystem, ReductionOrder>::MAX_AB_BC
         : KnuthBendixImpl<RewritingSystem, ReductionOrder>::OverlapMeasure {
-      size_t operator()(Rule const*                                      AB,
-                        Rule const*                                      BC,
-                        typename native_word_type::const_iterator const& it) {
+      size_t
+      operator()(Rule const*                                      AB,
+                 Rule const*                                      BC,
+                 typename native_word_type::const_iterator const& it) override {
         LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
                              && BC->state() == Rule::State::active);
         LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);

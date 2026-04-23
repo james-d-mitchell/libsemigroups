@@ -134,6 +134,7 @@ namespace libsemigroups {
     //! Those functions with the prefix `current_` do not perform any
     //! further enumeration.
 
+    // TODO Make overlap measure a template param?
     // TODO(v4) 2nd template parameter no longer used, remove
     template <
         typename RewritingSystem = detail::RewritingSystemTrie<ShortLexCompare>,
@@ -170,7 +171,6 @@ namespace libsemigroups {
       // Nested classes - private
       ////////////////////////////////////////////////////////////////////////
 
-      // Overlap measures
       struct OverlapMeasure {
         virtual size_t
         operator()(detail::Rule const*,
