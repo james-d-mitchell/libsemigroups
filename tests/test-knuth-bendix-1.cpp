@@ -1372,7 +1372,9 @@ namespace libsemigroups {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
-    p.alphabet("yYdDcCbBaA");
+    p.alphabet("yYdDcCbBaA").contains_empty_word(true);
+
+    presentation::add_inverse_rules(p, "YyDdCcBbAa");
     // TODO add inverse rules
     presentation::add_rule(p, "BAba", "c");
     presentation::add_rule(p, "CAca", "d");
@@ -1384,10 +1386,10 @@ namespace libsemigroups {
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
 
-    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(!kb.rewriting_system().confluent());
     kb.run();
     REQUIRE(kb.rewriting_system().confluent());
-    REQUIRE(kb.rewriting_system().number_of_rules() == 7);
+    REQUIRE(kb.rewriting_system().number_of_rules() == 50);
 
     REQUIRE(knuth_bendix::contains(kb, "BAba", "c"));
     REQUIRE(knuth_bendix::contains(kb, "CAca", "d"));

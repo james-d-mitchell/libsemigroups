@@ -526,11 +526,13 @@ namespace libsemigroups {
       }
     }
 
+    // TODO make this more similar to ToddCoxeterImpl::run_impl
     template <typename RewritingSystem, typename ReductionOrder>
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::run_real() {
       // TODO re-add overlap iterator stuff
       _rewriter.reduce();
 
+      // TODO write comment about what is going on here
       do {
         auto& first  = _rewriter.cursor(0);
         auto& second = _rewriter.cursor(1);
@@ -710,7 +712,7 @@ namespace libsemigroups {
     }
 
     // OVERLAP_2 from Sims, p77
-    // TODO move to RewritingSystemSet
+    // TODO move to RewritingSystemSet as an iterator??
     template <typename RewritingSystem, typename ReductionOrder>
     void
     KnuthBendixImpl<RewritingSystem, ReductionOrder>::overlap(Rule const* u,
