@@ -161,6 +161,7 @@ namespace libsemigroups {
       //////////////////////////////////////////////////////////////////////////
 
       struct options {
+        // TODO -> overlap_policy
         enum class overlap { ABC = 0, AB_BC = 1, MAX_AB_BC = 2 };
       };
 
@@ -192,6 +193,7 @@ namespace libsemigroups {
         Settings& operator=(Settings const&) noexcept = default;
         Settings& operator=(Settings&&) noexcept      = default;
 
+        // TODO rm check_confluence_interval
         size_t                    check_confluence_interval;
         size_t                    max_overlap;
         size_t                    max_rules;

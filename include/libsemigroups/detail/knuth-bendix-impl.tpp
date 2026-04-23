@@ -167,7 +167,7 @@ namespace libsemigroups {
       _gen_pairs_initted = false;
       _gilman_graph.init(0, 0);
       _gilman_graph_node_labels.clear();
-      _overlap_measure = nullptr;  // TODO don't we leak here?
+      _overlap_measure = nullptr;
       _presentation.init();
       _rewriting_system.init();
       _settings.init();
@@ -187,7 +187,7 @@ namespace libsemigroups {
       _gen_pairs_initted        = that._gen_pairs_initted;
       _gilman_graph             = that._gilman_graph;
       _gilman_graph_node_labels = that._gilman_graph_node_labels;
-      _overlap_measure          = nullptr;  // TODO don't we leak here
+      _overlap_measure          = nullptr;
       _presentation             = that._presentation;
       _rewriting_system         = that._rewriting_system;
       _settings                 = that._settings;
