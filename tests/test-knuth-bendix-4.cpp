@@ -791,8 +791,13 @@ namespace libsemigroups {
     p.rules    = rules | rx::to_vector();
     presentation::add_rule(p, "aaaabbbb", "aabb");
     KnuthBendix<std::string, TestType> k(twosided, p);
-    // k.process_pending_rules(); TODO uncomment
-    // TODO checking local confluence seems to be extremely slow here
+    REQUIRE(k.rewriting_system().number_of_rules() == 8'388'609);
+    k.rewriting_system().reduce();
+    REQUIRE(k.rewriting_system().number_of_rules() == 8'158'817);
+    REQUIRE(!k.rewriting_system().confluent());
+
+    // FIXME the reporting is broken, % exceeds 100
+    // #1: KnuthBendix: reducing rules: 8,399,310 / 8,188,053 (102.6%) (14.048s)
   }
 
 }  // namespace libsemigroups
