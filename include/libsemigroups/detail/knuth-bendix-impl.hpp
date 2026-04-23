@@ -712,16 +712,23 @@ namespace libsemigroups {
         return _presentation;
       }
 
-      // TODO doc
+      //! \ingroup knuth_bendix_class_accessors_group
+      //!
+      //! \brief Return the rewriting system.
+      //!
+      //! This function returns a const reference to the rewriting system that
+      //! a KnuthBendix instance is operating on.
+      //!
+      //! \returns A const reference to a \ref RewritingSystem.
       RewritingSystem& rewriting_system() noexcept {
         return _rewriting_system;
       }
 
      private:
-      // TODO(1) remove this ...
+      // TODO remove this or what?
       void rewrite_inplace(native_word_type& w);
 
-      // TODO(1) remove this ...
+      // TODO remove this or what?
       [[nodiscard]] native_word_type rewrite(native_word_type w) {
         rewrite_inplace(w);
         return w;
@@ -742,7 +749,7 @@ namespace libsemigroups {
       //! the initial node (corresponding to the empty word) correspond to the
       //! shortlex normal forms of the semigroup elements.
       //!
-      //! The semigroup is finite if the graph is cyclic, and infinite
+      //! The semigroup is finite if the graph is acyclic, and infinite
       //! otherwise.
       //!
       //! \returns A const reference to a \ref WordGraph.
