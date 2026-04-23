@@ -192,7 +192,6 @@ namespace libsemigroups {
         Settings& operator=(Settings const&) noexcept = default;
         Settings& operator=(Settings&&) noexcept      = default;
 
-        size_t                    max_pending_rules;
         size_t                    check_confluence_interval;
         size_t                    max_overlap;
         size_t                    max_rules;
@@ -482,8 +481,11 @@ namespace libsemigroups {
       //!
       //! \complexity
       //! Constant.
-      KnuthBendixImpl& max_pending_rules(size_t val) {
-        _settings.max_pending_rules = val;
+      //!
+      //! \deprecated_warning{function} Use
+      //! `rewriting_system().settings().reduction_threshold = val` instead.
+      [[deprecated]] KnuthBendixImpl& max_pending_rules(size_t val) {
+        rewriting_system().settings().reduction_threshold = val;
         return *this;
       }
 
@@ -506,8 +508,11 @@ namespace libsemigroups {
       //!
       //! \complexity
       //! Constant.
-      [[nodiscard]] size_t max_pending_rules() const noexcept {
-        return _settings.max_pending_rules;
+      //!
+      //! \deprecated_warning{function} Use
+      //! `rewriting_system().settings().reduction_threshold` instead.
+      [[deprecated]] [[nodiscard]] size_t max_pending_rules() const noexcept {
+        return rewriting_system().settings().reduction_threshold;
       }
 
       //! \ingroup knuth_bendix_class_settings_group

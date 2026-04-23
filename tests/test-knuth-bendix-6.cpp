@@ -55,10 +55,12 @@ namespace libsemigroups {
 
   using literals::operator""_w;
 
-  using Trie = detail::RewritingSystemTrie<ShortLexCompare>;
-  using Set  = detail::RewritingSystemSet<ShortLexCompare>;
+  using LenLexTrie = detail::RewritingSystemTrie<ShortLexCompare>;
+  using LenLexSet  = detail::RewritingSystemSet<ShortLexCompare>;
+  using RPOTrie    = detail::RewritingSystemTrie<RecursivePathCompare>;
+  using RPOSet     = detail::RewritingSystemSet<RecursivePathCompare>;
 
-#define REWRITING_SYSTEM_TYPES Trie, Set
+#define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "129",
@@ -318,19 +320,20 @@ namespace libsemigroups {
                "rules>");
   }
 
-  // Takes about 1 minute
+  // Takes about 6s for len-lex + trie / 26s for len-lex + set / 450ms for rpo
+  // + trie
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "139",
                                    "partial_transformation_monoid5",
                                    "[extreme][knuth-bendix]",
-                                   REWRITING_SYSTEM_TYPES) {
+                                   REWRITING_SYSTEM_TYPES,
+                                   RPOTrie) {
     auto rg = ReportGuard(true);
 
     size_t n = 5;
     auto   p = presentation::examples::partial_transformation_monoid_Shu60(n);
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    kb.max_pending_rules(100'000);
     REQUIRE(!is_obviously_infinite(kb));
     REQUIRE(kb.number_of_classes() == 7'776);
   }
@@ -447,7 +450,7 @@ namespace libsemigroups {
                                    "118",
                                    "process pending rules x1",
                                    "[extreme][knuth-bendix]",
-                                   Trie) {
+                                   LenLexTrie) {
     auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
     p.alphabet(2);
@@ -490,7 +493,7 @@ namespace libsemigroups {
                                    "144",
                                    "process pending rules x3",
                                    "[extreme][knuth-bendix]",
-                                   Trie) {
+                                   LenLexTrie) {
     auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
     p.alphabet(2);

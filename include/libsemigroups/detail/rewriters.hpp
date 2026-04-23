@@ -53,18 +53,16 @@ namespace libsemigroups {
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;
 
+      struct Settings {
+        size_t reduction_threshold = 128;
+      } _settings;
+
      protected:
       enum class State : uint8_t {
         none,
         reducing_pending_rules,  // TODO is this name good?
         checking_confluence
       };
-      // TODO private
-      // TODO remove max_pending_rules from KnuthBendixImpl::Settings, but let
-      // the setter define the value here
-      struct Settings {
-        size_t max_pending_rules = 128;
-      } _settings;
 
       State _state;
       bool  _ticker_running;
@@ -132,6 +130,14 @@ namespace libsemigroups {
       // tril here instead of bool.
       [[nodiscard]] tril is_reduced() const noexcept {
         return Rules::pending_rules().empty() ? tril::TRUE : tril::unknown;
+      }
+
+      [[nodiscard]] Settings& settings() noexcept {
+        return _settings;
+      }
+
+      [[nodiscard]] Settings const& settings() const noexcept {
+        return _settings;
       }
 
      protected:
