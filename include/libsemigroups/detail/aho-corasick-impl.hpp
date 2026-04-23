@@ -176,7 +176,6 @@ namespace libsemigroups {
       AhoCorasickImpl();
       AhoCorasickImpl& init();
 
-      // TODO rm replace with AhoCorasickImpl().increase_alphabet_size_by
       explicit AhoCorasickImpl(size_t num_letters);
       AhoCorasickImpl& init(size_t num_letters);
 
