@@ -1372,17 +1372,16 @@ namespace libsemigroups {
     auto rg = ReportGuard(false);
 
     Presentation<std::string> p;
-    p.alphabet("yYdDcCbBaA").contains_empty_word(true);
+    p.alphabet("eEdDcCbBaA").contains_empty_word(true);
 
-    presentation::add_inverse_rules(p, "YyDdCcBbAa");
-    // TODO add inverse rules
+    presentation::add_inverse_rules(p, "EeDdCcBbAa");
     presentation::add_rule(p, "BAba", "c");
     presentation::add_rule(p, "CAca", "d");
-    presentation::add_rule(p, "CBcb", "y");
+    presentation::add_rule(p, "CBcb", "e");
     presentation::add_rule(p, "da", "ad");
-    presentation::add_rule(p, "ya", "ay");
+    presentation::add_rule(p, "ea", "ae");
     presentation::add_rule(p, "db", "bd");
-    presentation::add_rule(p, "yb", "by");
+    presentation::add_rule(p, "eb", "be");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
 
@@ -1393,20 +1392,32 @@ namespace libsemigroups {
 
     REQUIRE(knuth_bendix::contains(kb, "BAba", "c"));
     REQUIRE(knuth_bendix::contains(kb, "CAca", "d"));
-    REQUIRE(knuth_bendix::contains(kb, "CBcb", "y"));
+    REQUIRE(knuth_bendix::contains(kb, "CBcb", "e"));
     REQUIRE(knuth_bendix::contains(kb, "da", "ad"));
-    REQUIRE(knuth_bendix::contains(kb, "ya", "ay"));
+    REQUIRE(knuth_bendix::contains(kb, "ea", "ae"));
     REQUIRE(knuth_bendix::contains(kb, "db", "bd"));
-    REQUIRE(knuth_bendix::contains(kb, "yb", "by"));
-    REQUIRE(
-        (kb.active_rules() | rx::to_vector())
-        == std::vector<std::pair<std::string, std::string>>({{"yb", "by"},
-                                                             {"ya", "ay"},
-                                                             {"db", "bd"},
-                                                             {"da", "ad"},
-                                                             {"CBcb", "y"},
-                                                             {"CAca", "d"},
-                                                             {"BAba", "c"}}));
+    REQUIRE(knuth_bendix::contains(kb, "eb", "be"));
+
+    auto found = (kb.active_rules() | rx::to_vector());
+    std::sort(found.begin(), found.end());
+    // the following is from KBMAG
+    std::vector<std::pair<std::string, std::string>> expected
+        = {{"eE", ""},     {"Ee", ""},     {"dD", ""},    {"Dd", ""},
+           {"cC", ""},     {"Cc", ""},     {"bB", ""},    {"Bb", ""},
+           {"aA", ""},     {"Aa", ""},     {"da", "ad"},  {"ea", "ae"},
+           {"db", "bd"},   {"eb", "be"},   {"ba", "abc"}, {"BA", "ABcDE"},
+           {"ca", "acd"},  {"CA", "ACd"},  {"cb", "bce"}, {"CB", "BCe"},
+           {"Da", "aD"},   {"dA", "Ad"},   {"Ea", "aE"},  {"eA", "Ae"},
+           {"Db", "bD"},   {"dB", "Bd"},   {"Eb", "bE"},  {"eB", "Be"},
+           {"DA", "AD"},   {"EA", "AE"},   {"DB", "BD"},  {"EB", "BE"},
+           {"Ba", "aBCe"}, {"Ca", "aCD"},  {"cA", "AcD"}, {"Cb", "bCE"},
+           {"cB", "BcE"},  {"ed", "de"},   {"ED", "DE"},  {"eD", "De"},
+           {"Ed", "dE"},   {"bA", "AbCd"}, {"dc", "cd"},  {"Dc", "cD"},
+           {"dC", "Cd"},   {"DC", "CD"},   {"ec", "ce"},  {"Ec", "cE"},
+           {"eC", "Ce"},   {"EC", "CE"}};
+    std::sort(expected.begin(), expected.end());
+
+    REQUIRE(found == expected);
   }
 
   // Free nilpotent group of rank 2 and class 2
