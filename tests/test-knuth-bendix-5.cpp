@@ -155,8 +155,7 @@ namespace libsemigroups {
 
     auto                             p = to<Presentation<word_type>>(S);
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    // TODO uncomment?
-    // kb.process_pending_rules();
+    kb.rewriting_system().reduce();
     REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.rewriting_system().number_of_rules() == 18);
     REQUIRE(kb.number_of_classes() == 88);
