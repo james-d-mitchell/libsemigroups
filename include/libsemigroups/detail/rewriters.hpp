@@ -59,6 +59,12 @@ namespace libsemigroups {
         reducing_pending_rules,  // TODO is this name good?
         checking_confluence
       };
+      // TODO private
+      // TODO remove max_pending_rules from KnuthBendixImpl::Settings, but let
+      // the setter define the value here
+      struct Settings {
+        size_t max_pending_rules = 128;
+      } _settings;
 
       State _state;
       bool  _ticker_running;

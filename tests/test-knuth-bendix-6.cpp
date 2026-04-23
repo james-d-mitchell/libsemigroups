@@ -479,8 +479,8 @@ namespace libsemigroups {
     }
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    REQUIRE(kb.rewriting_system().number_of_rules() == 524'286);
-    kb.active_rules();  // trigger processing of pending rules
+    REQUIRE(kb.rewriting_system().number_of_rules() == 32);
+    kb.rewriting_system().reduce();
     REQUIRE(kb.rewriting_system().number_of_rules() == 2);
   }
 

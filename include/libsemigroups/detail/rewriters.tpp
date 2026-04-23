@@ -20,7 +20,6 @@
 // classes that can be used to rewrite strings relative to a collection of
 // rules.
 
-#include "libsemigroups/detail/rewriters.hpp"
 namespace libsemigroups::detail {
 
   ////////////////////////////////////////////////////////////////////////
@@ -69,6 +68,9 @@ namespace libsemigroups::detail {
       set_cached_confluent(tril::unknown);
       Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
       reorder<ReductionOrder>(rule);
+      if (pending_rules().size() > _settings.max_pending_rules) {
+        reduce();
+      }
     }
     return *this;
   }
@@ -352,6 +354,7 @@ namespace libsemigroups::detail {
   // Public member functions - alphabetical order
   ////////////////////////////////////////////////////////////////////////
 
+  // TODO this is identical in RewritingSystemTrie/Set maybe should be in Base?
   template <typename ReductionOrder>
   template <typename Iterator>
   RewritingSystemTrie<ReductionOrder>&
@@ -363,6 +366,9 @@ namespace libsemigroups::detail {
       Rule* rule = Rules::add_pending_rule(first1, last1, first2, last2);
       reorder<ReductionOrder>(rule);
       set_cached_confluent(tril::unknown);
+      if (pending_rules().size() > _settings.max_pending_rules) {
+        reduce();
+      }
     }
     return *this;
   }
