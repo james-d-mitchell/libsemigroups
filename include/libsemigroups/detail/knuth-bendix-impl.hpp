@@ -222,7 +222,7 @@ namespace libsemigroups {
       std::vector<native_word_type>   _gilman_graph_node_labels;
       std::unique_ptr<OverlapMeasure> _overlap_measure;
       Presentation<native_word_type>  _presentation;
-      mutable RewritingSystem         _rewriter;
+      mutable RewritingSystem         _rewriting_system;
       Settings                        _settings;
       mutable Stats                   _stats;
       bool                            _ticker_running;
@@ -714,7 +714,7 @@ namespace libsemigroups {
 
       // TODO doc
       RewritingSystem& rewriting_system() noexcept {
-        return _rewriter;
+        return _rewriting_system;
       }
 
      private:

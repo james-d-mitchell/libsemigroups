@@ -151,7 +151,7 @@ namespace libsemigroups {
           _gilman_graph_node_labels(),
           _overlap_measure(nullptr),
           _presentation(),
-          _rewriter(),
+          _rewriting_system(),
           _settings(),
           _stats(),
           _ticker_running(false),
@@ -170,7 +170,7 @@ namespace libsemigroups {
       _gilman_graph_node_labels.clear();
       _overlap_measure = nullptr;  // TODO don't we leak here?
       _presentation.init();
-      _rewriter.init();
+      _rewriting_system.init();
       _settings.init();
       _stats.init();
       _ticker_running = false;
@@ -190,7 +190,7 @@ namespace libsemigroups {
       _gilman_graph_node_labels = that._gilman_graph_node_labels;
       _overlap_measure          = nullptr;  // TODO don't we leak here
       _presentation             = that._presentation;
-      _rewriter                 = that._rewriter;
+      _rewriting_system         = that._rewriting_system;
       _settings                 = that._settings;
       _stats                    = that._stats;
       _ticker_running           = that._ticker_running;
@@ -211,7 +211,7 @@ namespace libsemigroups {
       _gilman_graph_node_labels = std::move(that._gilman_graph_node_labels);
       _overlap_measure          = std::move(that._overlap_measure);
       _presentation             = std::move(that._presentation);
-      _rewriter                 = std::move(that._rewriter);
+      _rewriting_system         = std::move(that._rewriting_system);
       _settings                 = std::move(that._settings);
       _stats                    = std::move(that._stats);
       _ticker_running           = std::move(that._ticker_running);
@@ -355,7 +355,7 @@ namespace libsemigroups {
       // object to pass to it (and possibly because of some cyclic dependency
       // that this would introduce).
       size_t min = POSITIVE_INFINITY, max = 0, len = 0;
-      for (auto const& rule : _rewriter.rules()) {
+      for (auto const& rule : _rewriting_system.rules()) {
         auto rule_len = rule.first.size() + rule.second.size();
         len += rule_len;
         min = (rule_len < min ? rule_len : min);
@@ -368,7 +368,7 @@ namespace libsemigroups {
       report_default("KnuthBendix: |A| = {}, |R| = {}, "
                      "|u| + |v| \u2208 [{}, {}], \u2211(|u| + |v|) = {}\n",
                      internal_presentation().alphabet().size(),
-                     group_digits(_rewriter.number_of_rules()),
+                     group_digits(_rewriting_system.number_of_rules()),
                      group_digits(min),
                      group_digits(max),
                      group_digits(len));
@@ -390,8 +390,8 @@ namespace libsemigroups {
       using std::chrono::duration_cast;
       using std::chrono::high_resolution_clock;
 
-      auto active  = _rewriter.number_of_rules();
-      auto defined = _rewriter.stats().total_rules;
+      auto active  = _rewriting_system.number_of_rules();
+      auto defined = _rewriting_system.stats().total_rules;
 
       int64_t const active_diff  = active - _stats.prev_active_rules;
       int64_t const defined_diff = defined - _stats.prev_total_rules;
@@ -429,9 +429,9 @@ namespace libsemigroups {
           rc.min_width(12);
           rc("KnuthBendix: RUN STATISTICS\n");
           rc("KnuthBendix: max number of pending rules {}\n",
-             group_digits(_rewriter.stats().max_pending_rules));
+             group_digits(_rewriting_system.stats().max_pending_rules));
           rc("KnuthBendix: max length lhs rule         {}\n",
-             group_digits(_rewriter.stats().max_length_lhs_rule));
+             group_digits(_rewriting_system.stats().max_length_lhs_rule));
         }
 
         report_no_prefix("{:-<95}\n", "");
@@ -463,7 +463,7 @@ namespace libsemigroups {
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::rewrite_inplace(
         native_word_type& w) {
       add_octo(w);
-      _rewriter.rewrite(w);
+      _rewriting_system.rewrite(w);
       rm_octo(w);
     }
 
@@ -474,8 +474,8 @@ namespace libsemigroups {
     // TODO move to Stats
     template <typename RewritingSystem, typename ReductionOrder>
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::stats_check_point() {
-      _stats.prev_active_rules = _rewriter.number_of_rules();
-      _stats.prev_total_rules  = _rewriter.stats().total_rules;
+      _stats.prev_active_rules = _rewriting_system.number_of_rules();
+      _stats.prev_total_rules  = _rewriting_system.stats().total_rules;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -485,13 +485,15 @@ namespace libsemigroups {
     template <typename RewritingSystem, typename ReductionOrder>
     bool
     KnuthBendixImpl<RewritingSystem, ReductionOrder>::finished_impl() const {
-      return _rewriter.confluent_known() && _rewriter.confluent();
+      return _rewriting_system.confluent_known()
+             && _rewriting_system.confluent();
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
     bool
     KnuthBendixImpl<RewritingSystem, ReductionOrder>::stop_running() const {
-      return stopped() || _rewriter.number_of_rules() > _settings.max_rules;
+      return stopped()
+             || _rewriting_system.number_of_rules() > _settings.max_rules;
     }
 
     template <typename RewritingSystem, typename ReductionOrder>
@@ -514,7 +516,7 @@ namespace libsemigroups {
         p.alphabet(p.alphabet()
                    + static_cast<typename native_word_type::value_type>(
                        p.alphabet().size()));
-        _rewriter.increase_alphabet_size_by(1);
+        _rewriting_system.increase_alphabet_size_by(1);
       }
 
       for (auto it = pairs.cbegin(); it != pairs.cend(); ++it) {
@@ -526,7 +528,7 @@ namespace libsemigroups {
         p.rules.emplace_back(it->cbegin(), it->cend());
         add_octo(p.rules.back());
         rewriting_system::add_rule(
-            _rewriter, p.rules.cend()[-2], p.rules.cend()[-1]);
+            _rewriting_system, p.rules.cend()[-2], p.rules.cend()[-1]);
       }
     }
 
@@ -539,17 +541,17 @@ namespace libsemigroups {
       reset_start_time();
 
       init_from_generating_pairs();
-      if (_rewriter.confluent() && !stop_running()) {
-        // _rewriter._pending_rules can be non-empty if non-reduced rules were
-        // used to define the KnuthBendixImpl.  If _rewriter._pending_rules is
-        // non-empty, then it means that the rules in _rewriter might not
-        // define the system.
+      if (_rewriting_system.confluent() && !stop_running()) {
+        // _rewriting_system._pending_rules can be non-empty if non-reduced
+        // rules were used to define the KnuthBendixImpl.  If
+        // _rewriting_system._pending_rules is non-empty, then it means that the
+        // rules in _rewriting_system might not define the system.
         report_default("KnuthBendix: the system is confluent already!\n");
         return;
-      } else if (_rewriter.number_of_rules() >= max_rules()) {
+      } else if (_rewriting_system.number_of_rules() >= max_rules()) {
         report_default(
             "KnuthBendix: too many rules, found {}, max_rules() is {}\n",
-            _rewriter.number_of_rules(),
+            _rewriting_system.number_of_rules(),
             max_rules());
         return;
       }
@@ -567,28 +569,30 @@ namespace libsemigroups {
       report_before_run();
 
       // TODO re-add overlap iterator stuff
-      _rewriter.reduce();
+      _rewriting_system.reduce();
 
       // TODO write comment about what is going on here
       do {
-        auto& first  = _rewriter.cursor(0);
-        auto& second = _rewriter.cursor(1);
-        first        = _rewriter.active_rules().begin();
+        auto& first  = _rewriting_system.cursor(0);
+        auto& second = _rewriting_system.cursor(1);
+        first        = _rewriting_system.active_rules().begin();
 
-        for (; first != _rewriter.active_rules().end() && !stop_running();
+        for (;
+             first != _rewriting_system.active_rules().end() && !stop_running();
              ++first) {
           overlap(*first, *first);
-          for (second = first; second != _rewriter.active_rules().begin();) {
+          for (second = first;
+               second != _rewriting_system.active_rules().begin();) {
             --second;
             overlap(*first, *second);
             overlap(*second, *first);
           }
         }
-      } while (!stop_running() && _rewriter.reduce());
+      } while (!stop_running() && _rewriting_system.reduce());
 
       if (_settings.max_overlap == POSITIVE_INFINITY
           && _settings.max_rules == POSITIVE_INFINITY && !stop_running()) {
-        _rewriter.set_cached_confluent(tril::TRUE);
+        _rewriting_system.set_cached_confluent(tril::TRUE);
       }
 
       report_after_run();
@@ -604,11 +608,11 @@ namespace libsemigroups {
         max_rules(POSITIVE_INFINITY);
         run();
         LIBSEMIGROUPS_ASSERT(finished());
-        LIBSEMIGROUPS_ASSERT(_rewriter.confluent());
+        LIBSEMIGROUPS_ASSERT(_rewriting_system.confluent());
         std::unordered_map<Rule::native_word_type, size_t> prefixes;
         prefixes.emplace(Rule::native_word_type(), 0);
         size_t n = 1;
-        for (auto const& rule : _rewriter.rules()) {
+        for (auto const& rule : _rewriting_system.rules()) {
           prefixes_string(prefixes, rule.first, n);
         }
 
@@ -630,7 +634,7 @@ namespace libsemigroups {
               _gilman_graph.target(p.second, i, it->second);
             } else {
               auto t = s;
-              _rewriter.rewrite(t);
+              _rewriting_system.rewrite(t);
               if (t == s) {
                 while (!s.empty()) {
                   s  = native_word_type(s.begin() + 1, s.end());
@@ -707,13 +711,14 @@ namespace libsemigroups {
                          ReductionOrder>::init_from_internal_presentation() {
       auto const& p = _presentation;
 
-      _rewriter.increase_alphabet_size_by(p.alphabet().size());
+      _rewriting_system.increase_alphabet_size_by(p.alphabet().size());
 
       auto const first = p.rules.cbegin();
       auto const last  = p.rules.cend();
       for (auto it = first; it != last; it += 2) {
         auto lhs = *it, rhs = *(it + 1);
-        _rewriter.add_rule(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+        _rewriting_system.add_rule(
+            lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
       }
     }
 
@@ -744,13 +749,13 @@ namespace libsemigroups {
         // Check if B = [it, ulhs.cend()) is a prefix of v.first
         if (is_prefix(vlhs.cbegin(), vlhs.cend(), it, ulhs.cend())) {
           // u = P_i = AB -> Q_i and v = P_j = BC -> Q_j This version of
-          // new_rule does not reorder _rewriter.add_rule(AQ_j, Q_iC);
+          // new_rule does not reorder _rewriting_system.add_rule(AQ_j, Q_iC);
           MultiView<native_word_type> x(ulhs.cbegin(), it);
           x.append(vrhs.cbegin(), vrhs.cend());
           MultiView<native_word_type> y(urhs.cbegin(), urhs.cend());
           y.append(vlhs.cbegin() + (ulhs.cend() - it),
                    vlhs.cend());  // rule = AQ_j -> Q_iC
-          _rewriter.add_rule(x.begin(), x.end(), y.begin(), y.end());
+          _rewriting_system.add_rule(x.begin(), x.end(), y.begin(), y.end());
         }
       }
     }
