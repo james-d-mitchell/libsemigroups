@@ -1482,10 +1482,9 @@ namespace libsemigroups {
   // presentation here was derived by first applying the NQA to find the
   // maximal nilpotent quotient, and then introducing new generators for
   // the PCP generators.
-  // TODO this test case is adversely impacted by the changes to run_real in
-  // KnuthBendixImpl. I can't get this to terminate after running for 10
-  // minutes, not sure if it ever ran, have to do a bisect on the presquash
-  // branch.
+  // Takes about 15s with RPOSet, seems to run forever with RPOTrie, probably
+  // because knuth_bendix::by_overlap_length(kb); is more or less ignored at
+  // present TODO
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "932",
                                    "kbmag/heinnilp",
@@ -1515,32 +1514,28 @@ namespace libsemigroups {
     REQUIRE(kb.rewriting_system().number_of_rules() == 72);
     REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);
     auto rules1 = (kb.active_rules() | rx::to_vector());
-    REQUIRE(rules1
-            == std::vector<std::pair<std::string, std::string>>(
-                {{"fF", ""},     {"Ff", ""},      {"yY", ""},
-                 {"Yy", ""},     {"dD", ""},      {"Dd", ""},
-                 {"cC", ""},     {"Cc", ""},      {"bB", ""},
-                 {"Bb", ""},     {"aA", ""},      {"Aa", ""},
-                 {"db", "bdf"},  {"cb", "bcy"},   {"ca", "acd"},
-                 {"ba", "abc"},  {"YB", "BY"},    {"cB", "BcY"},
-                 {"Yb", "bY"},   {"yb", "by"},    {"yB", "By"},
-                 {"yc", "cy"},   {"Yc", "cY"},    {"yC", "Cy"},
-                 {"CB", "BCy"},  {"Ba", "aBCy"},  {"Cb", "bCY"},
-                 {"YC", "CY"},   {"fy", "yf"},    {"YA", "AYf"},
-                 {"DB", "BDf"},  {"Ca", "aCD"},   {"DC", "CD"},
-                 {"fa", "af"},   {"fC", "Cf"},    {"yD", "Dy"},
-                 {"fB", "Bf"},   {"fc", "cf"},    {"fd", "df"},
-                 {"dC", "Cd"},   {"ya", "ayf"},   {"yd", "dy"},
-                 {"Dc", "cD"},   {"YD", "DY"},    {"dB", "BdF"},
-                 {"fD", "Df"},   {"fA", "Af"},    {"fb", "bf"},
-                 {"FB", "BF"},   {"CA", "ACdff"}, {"bA", "AbCdff"},
-                 {"Da", "aDff"}, {"FC", "CF"},    {"FY", "YF"},
-                 {"dA", "Adff"}, {"dc", "cd"},    {"Ya", "aYF"},
-                 {"Fc", "cF"},   {"yA", "AyF"},   {"Yd", "dY"},
-                 {"FD", "DF"},   {"cA", "AcDFF"}, {"Fa", "aF"},
-                 {"FA", "AF"},   {"Fb", "bF"},    {"BA", "ABcDYF"},
-                 {"Db", "bDF"},  {"fY", "Yf"},    {"Fy", "yF"},
-                 {"DA", "ADFF"}, {"Fd", "dF"},    {"da", "adFF"}}));
+    std::sort(rules1.begin(), rules1.end());
+    REQUIRE(
+        rules1
+        == std::vector<std::pair<std::string, std::string>>(
+            {{"Aa", ""},      {"BA", "ABcDYF"}, {"Ba", "aBCy"}, {"Bb", ""},
+             {"CA", "ACdff"}, {"CB", "BCy"},    {"Ca", "aCD"},  {"Cb", "bCY"},
+             {"Cc", ""},      {"DA", "ADFF"},   {"DB", "BDf"},  {"DC", "CD"},
+             {"Da", "aDff"},  {"Db", "bDF"},    {"Dc", "cD"},   {"Dd", ""},
+             {"FA", "AF"},    {"FB", "BF"},     {"FC", "CF"},   {"FD", "DF"},
+             {"FY", "YF"},    {"Fa", "aF"},     {"Fb", "bF"},   {"Fc", "cF"},
+             {"Fd", "dF"},    {"Ff", ""},       {"Fy", "yF"},   {"YA", "AYf"},
+             {"YB", "BY"},    {"YC", "CY"},     {"YD", "DY"},   {"Ya", "aYF"},
+             {"Yb", "bY"},    {"Yc", "cY"},     {"Yd", "dY"},   {"Yy", ""},
+             {"aA", ""},      {"bA", "AbCdff"}, {"bB", ""},     {"ba", "abc"},
+             {"cA", "AcDFF"}, {"cB", "BcY"},    {"cC", ""},     {"ca", "acd"},
+             {"cb", "bcy"},   {"dA", "Adff"},   {"dB", "BdF"},  {"dC", "Cd"},
+             {"dD", ""},      {"da", "adFF"},   {"db", "bdf"},  {"dc", "cd"},
+             {"fA", "Af"},    {"fB", "Bf"},     {"fC", "Cf"},   {"fD", "Df"},
+             {"fF", ""},      {"fY", "Yf"},     {"fa", "af"},   {"fb", "bf"},
+             {"fc", "cf"},    {"fd", "df"},     {"fy", "yf"},   {"yA", "AyF"},
+             {"yB", "By"},    {"yC", "Cy"},     {"yD", "Dy"},   {"yY", ""},
+             {"ya", "ayf"},   {"yb", "by"},     {"yc", "cy"},   {"yd", "dy"}}));
 
     // NOTE: recursive_path_compare (and all the other orders) use the numerical
     // value of the letters in the alphabet as the order on the alphabet, in
