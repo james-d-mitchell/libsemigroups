@@ -535,20 +535,17 @@ namespace libsemigroups {
         auto& first  = _rewriter.cursor(0);
         auto& second = _rewriter.cursor(1);
         first        = _rewriter.active_rules().begin();
-        overlap(*first, *first);
-        ++first;
 
         for (; first != _rewriter.active_rules().end() && !stop_running();
              ++first) {
           overlap(*first, *first);
-          second = first;
-          do {
+          for (second = first; second != _rewriter.active_rules().begin();) {
             --second;
             overlap(*first, *second);
             overlap(*second, *first);
-          } while (second != _rewriter.active_rules().begin());
+          }
         }
-      } while (_rewriter.reduce());
+      } while (!stop_running() && _rewriter.reduce());
 
       if (_settings.max_overlap == POSITIVE_INFINITY
           && _settings.max_rules == POSITIVE_INFINITY && !stop_running()) {

@@ -1012,7 +1012,11 @@ namespace libsemigroups {
     KnuthBendix<std::string, TestType> kb(twosided, p);
     REQUIRE(kb.rewriting_system().number_of_rules() == 5);
     REQUIRE(!kb.rewriting_system().confluent());
+    kb.run();
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 40);
 
+    kb.init(twosided, p);
     kb.max_rules(10);
     kb.run();
     REQUIRE(kb.rewriting_system().number_of_rules() > 10);
