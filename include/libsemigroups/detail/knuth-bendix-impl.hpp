@@ -226,6 +226,7 @@ namespace libsemigroups {
       mutable RewritingSystem         _rewriter;
       Settings                        _settings;
       mutable Stats                   _stats;
+      bool                            _ticker_running;
       mutable native_word_type        _tmp_element1;
 
      public:
@@ -785,7 +786,6 @@ namespace libsemigroups {
       // TODO move to RewritingSystemSet
       void overlap(Rule const* u, Rule const* v);
 
-      void               run_real();
       [[nodiscard]] bool stop_running() const;
 
       //////////////////////////////////////////////////////////////////////////

@@ -154,6 +154,7 @@ namespace libsemigroups {
           _rewriter(),
           _settings(),
           _stats(),
+          _ticker_running(false),
           _tmp_element1() {
       init();
     }
@@ -167,11 +168,12 @@ namespace libsemigroups {
       _gen_pairs_initted = false;
       _gilman_graph.init(0, 0);
       _gilman_graph_node_labels.clear();
-      _overlap_measure = nullptr;
+      _overlap_measure = nullptr;  // TODO don't we leak here?
       _presentation.init();
       _rewriter.init();
       _settings.init();
       _stats.init();
+      _ticker_running = false;
 
       // The next line sets _overlap_measure to be something sensible.
       overlap_policy(_settings.overlap_policy);
@@ -186,11 +188,12 @@ namespace libsemigroups {
       _gen_pairs_initted        = that._gen_pairs_initted;
       _gilman_graph             = that._gilman_graph;
       _gilman_graph_node_labels = that._gilman_graph_node_labels;
-      _overlap_measure          = nullptr;
+      _overlap_measure          = nullptr;  // TODO don't we leak here
       _presentation             = that._presentation;
       _rewriter                 = that._rewriter;
       _settings                 = that._settings;
       _stats                    = that._stats;
+      _ticker_running           = that._ticker_running;
 
       // The next line sets _overlap_measure to be something sensible.
       overlap_policy(_settings.overlap_policy);
@@ -211,6 +214,7 @@ namespace libsemigroups {
       _rewriter                 = std::move(that._rewriter);
       _settings                 = std::move(that._settings);
       _stats                    = std::move(that._stats);
+      _ticker_running           = std::move(that._ticker_running);
       return *this;
     }
 
@@ -526,9 +530,42 @@ namespace libsemigroups {
       }
     }
 
-    // TODO make this more similar to ToddCoxeterImpl::run_impl
     template <typename RewritingSystem, typename ReductionOrder>
-    void KnuthBendixImpl<RewritingSystem, ReductionOrder>::run_real() {
+    void KnuthBendixImpl<RewritingSystem, ReductionOrder>::run_impl() {
+      using std::chrono::duration_cast;
+      using std::chrono::seconds;
+
+      stats_check_point();
+      reset_start_time();
+
+      init_from_generating_pairs();
+      if (_rewriter.confluent() && !stop_running()) {
+        // _rewriter._pending_rules can be non-empty if non-reduced rules were
+        // used to define the KnuthBendixImpl.  If _rewriter._pending_rules is
+        // non-empty, then it means that the rules in _rewriter might not
+        // define the system.
+        report_default("KnuthBendix: the system is confluent already!\n");
+        return;
+      } else if (_rewriter.number_of_rules() >= max_rules()) {
+        report_default(
+            "KnuthBendix: too many rules, found {}, max_rules() is {}\n",
+            _rewriter.number_of_rules(),
+            max_rules());
+        return;
+      }
+
+      Ticker     ticker;
+      ValueGuard tg(_ticker_running);
+      if (!_ticker_running && reporting_enabled()
+          && (!running_for()
+              || duration_cast<seconds>(running_for_how_long())
+                     >= seconds(1))) {
+        _ticker_running = true;
+        ticker([this]() { report_progress_from_thread(); });
+      }
+
+      report_before_run();
+
       // TODO re-add overlap iterator stuff
       _rewriter.reduce();
 
@@ -552,37 +589,6 @@ namespace libsemigroups {
       if (_settings.max_overlap == POSITIVE_INFINITY
           && _settings.max_rules == POSITIVE_INFINITY && !stop_running()) {
         _rewriter.set_cached_confluent(tril::TRUE);
-      }
-    }
-
-    template <typename RewritingSystem, typename ReductionOrder>
-    void KnuthBendixImpl<RewritingSystem, ReductionOrder>::run_impl() {
-      stats_check_point();
-      reset_start_time();
-
-      init_from_generating_pairs();
-      if (_rewriter.confluent() && !stop_running()) {
-        // _rewriter._pending_rules can be non-empty if non-reduced rules were
-        // used to define the KnuthBendixImpl.  If _rewriter._pending_rules is
-        // non-empty, then it means that the rules in _rewriter might not
-        // define the system.
-        report_default("KnuthBendix: the system is confluent already!\n");
-        return;
-      } else if (_rewriter.number_of_rules() >= max_rules()) {
-        report_default(
-            "KnuthBendix: too many rules, found {}, max_rules() is {}\n",
-            _rewriter.number_of_rules(),
-            max_rules());
-        return;
-      }
-
-      report_before_run();
-      if (reporting_enabled()) {
-        Ticker t([&]() { report_progress_from_thread(); },
-                 std::chrono::seconds(1));
-        run_real();
-      } else {
-        run_real();
       }
 
       report_after_run();

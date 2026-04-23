@@ -764,6 +764,7 @@ namespace libsemigroups {
                                    "example with undecidable word problem",
                                    "[knuth-bendix][extreme]",
                                    REWRITING_SYSTEM_TYPES) {
+    auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("ab");
@@ -773,7 +774,7 @@ namespace libsemigroups {
     presentation::add_rule(p, "bbbaabbaaba", "bbbaabbaaaa");
     presentation::add_rule(p, "aaaabbaaba", "bbaaaa");
     KnuthBendix<std::string, TestType> k(twosided, p);
-    k.run_for(std::chrono::seconds(1));
+    k.run_for(std::chrono::seconds(10));
     REQUIRE(!k.finished());
   }
 
