@@ -1606,11 +1606,12 @@ namespace libsemigroups {
   // Takes about 15s with RPOSet, seems to run forever with RPOTrie, probably
   // because knuth_bendix::by_overlap_length(kb); is more or less ignored at
   // present TODO
+  // It seems (at least from the reporting) that we get stuck in an infinite
+  // loop inside "reduce"
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "932",
                                    "kbmag/heinnilp",
                                    "[extreme][knuth-bendix][kbmag][recursive]",
-                                   RPOSet,
                                    RPOTrie) {
     auto rg = ReportGuard(true);
 
@@ -1629,7 +1630,8 @@ namespace libsemigroups {
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
-    knuth_bendix::by_overlap_length(kb);
+    kb.rewriting_system().settings().reduction_threshold = 1024;
+    // knuth_bendix::by_overlap_length(kb);
     kb.run();
     REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.rewriting_system().number_of_rules() == 72);

@@ -739,13 +739,10 @@ namespace libsemigroups {
       auto const lower_limit = ulhs.cend() - std::min(ulhs.size(), vlhs.size());
 
       for (auto it = ulhs.cend() - 1;
-           it > lower_limit && it < ulhs.cend() && !stop_running();
+           it > lower_limit && it < ulhs.cend() && !stop_running()
+           && (_settings.max_overlap == POSITIVE_INFINITY
+               || (*_overlap_measure)(u, v, it) <= _settings.max_overlap);
            --it) {
-        // TODO uncomment or delete the next lines of code
-        //           && (_settings.max_overlap == POSITIVE_INFINITY
-        //               || (*_overlap_measure)(u, v, it) <=
-        //               _settings.max_overlap);
-
         // Check if B = [it, ulhs.cend()) is a prefix of v.first
         if (is_prefix(vlhs.cbegin(), vlhs.cend(), it, ulhs.cend())) {
           // u = P_i = AB -> Q_i and v = P_j = BC -> Q_j This version of
