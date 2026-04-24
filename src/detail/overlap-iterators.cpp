@@ -128,9 +128,8 @@ namespace libsemigroups::detail {
   }
 
   bool OverlapIteratorTrie::should_check_descendants(size_t index) {
-    return _trie->node_no_checks(_word_index).last_checked()
+    return _trie->node_no_checks(_word_index).generation()
                == _trie->generation()
-           || _trie->node_no_checks(index).last_checked()
-                  == _trie->generation();
+           || _trie->node_no_checks(index).generation() == _trie->generation();
   }
 }  // namespace libsemigroups::detail

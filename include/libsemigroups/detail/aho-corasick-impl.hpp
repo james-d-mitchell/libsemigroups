@@ -65,7 +65,7 @@ namespace libsemigroups {
         // Private data
         ////////////////////////////////////////////////////////////////////////
        private:
-        mutable size_t                 _last_checked;
+        mutable size_t                 _generation;
         uint32_t                       _height;
         index_type                     _link;
         index_type                     _parent;
@@ -98,8 +98,8 @@ namespace libsemigroups {
         // Getters - public
         ////////////////////////////////////////////////////////////////////////
 
-        [[nodiscard]] size_t last_checked() const noexcept {
-          return _last_checked;
+        [[nodiscard]] size_t generation() const noexcept {
+          return _generation;
         }
 
         [[nodiscard]] size_t height() const noexcept {
@@ -135,8 +135,8 @@ namespace libsemigroups {
         // Setters - public
         ////////////////////////////////////////////////////////////////////////
 
-        Node const& last_checked(size_t val) const noexcept {
-          _last_checked = val;
+        Node const& generation(size_t val) const noexcept {
+          _generation = val;
           return *this;
         }
 

@@ -39,7 +39,7 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
 
     AhoCorasickImpl::Node::Node(index_type parent, letter_type a)
-        : _last_checked(0),
+        : _generation(0),
           _height(),
           _link(),
           _parent(),
@@ -51,8 +51,8 @@ namespace libsemigroups {
 
     typename AhoCorasickImpl::Node&
     AhoCorasickImpl::Node::init(index_type parent, letter_type a) noexcept {
-      _height       = parent == UNDEFINED ? 0 : UNDEFINED;
-      _last_checked = 0;
+      _height     = parent == UNDEFINED ? 0 : UNDEFINED;
+      _generation = 0;
       if (_parent == root || _parent == UNDEFINED) {
         _link = root;
       } else {

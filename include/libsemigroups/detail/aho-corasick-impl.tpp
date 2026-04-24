@@ -29,7 +29,7 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(val != nullptr);
       index_type current = root;
       for (auto it = first; it != last; ++it) {
-        _all_nodes[current].last_checked(generation());
+        _all_nodes[current].generation(generation());
         index_type next = _children.get(current, *it);
         if (next == UNDEFINED) {
           // index of next node added
@@ -41,7 +41,7 @@ namespace libsemigroups {
       if (inserted) {
         _all_nodes[current].value(val);
       }
-      _all_nodes[current].last_checked(generation());
+      _all_nodes[current].generation(generation());
       return {current, inserted};
     }
 

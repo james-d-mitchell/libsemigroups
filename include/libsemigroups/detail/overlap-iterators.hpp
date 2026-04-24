@@ -113,6 +113,24 @@ namespace libsemigroups::detail {
 
     // Returns true if any descendent, and hence critical pair, is found.
     bool find_next_descendent();
+
+    // A trie is initialised with generation = 0. Each time a batch of nodes is
+    // added to the trie, the generation of the trie may be incremented. When a
+    // node, n, is added to a trie, the generation of every node from the root
+    // to n is set to be the generation of the trie. As a result, the sequence
+    // of generations along a path from the root to any node is non-strictly
+    // decreasing.
+    //
+    // When trying to find critical pairs of nodes, we only want to consider
+    // pairs where at least one of the nodes is in the most recent generation
+    // (i.e. the generation of the trie). This function returns true if:
+    // - the generation of the node corresponding to the left-hand side of the
+    //   critical pair is equal to the generation of the trie; or
+    // - the generation of the node with index <index> is equal to the
+    //   generation of the trie.
+    // In the latter case, this means that descendants of the node with index
+    // <index> may also have the generation equal to that of the trie.
+    bool should_check_descendants(size_t index);
   };  // class OverlapIteratorTrie
 }  // namespace libsemigroups::detail
 
