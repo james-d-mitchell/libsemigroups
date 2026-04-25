@@ -515,7 +515,55 @@ namespace libsemigroups::detail {
     if (v.size() < Rules::stats().min_length_lhs_rule) {
       return;
     }
+    // OLD VERSION; Assumes length reducing!!
 
+    //     _trie_nodes_visited_indices.clear();
+    //     index_type current = _rule_trie.root;
+    //     _trie_nodes_visited_indices.push_back(current);
+    //
+    // #ifdef LIBSEMIGROUPS_DEBUG
+    //     iterator v_begin = u.begin();
+    // #endif
+    //     auto v_end   = v.begin();
+    //     auto w_begin = v_end;
+    //     auto w_end   = v.end();
+    //
+    //     while (w_begin != w_end) {
+    //       // Read first letter of w and traverse trie
+    //       auto x = *w_begin;
+    //       ++w_begin;
+    //       current
+    //           = _rule_trie.traverse_no_checks(current,
+    //           static_cast<letter_type>(x));
+    //
+    //       if (!_rule_trie.node_no_checks(current).terminal()) {
+    //         _trie_nodes_visited_indices.push_back(current);
+    //         *v_end = x;
+    //         ++v_end;
+    //       } else {
+    //         // Find rule that corresponds to terminal node
+    //         Rule const* rule     =
+    //         _rule_trie.node_no_checks(current).value(); auto        lhs_size
+    //         = rule->lhs().size(); LIBSEMIGROUPS_ASSERT(lhs_size != 0);
+    //
+    //         // Check the lhs is smaller than the portion of the word that has
+    //         // been read
+    //         LIBSEMIGROUPS_ASSERT(lhs_size
+    //                              <= static_cast<size_t>(v_end - v_begin) +
+    //                              1);
+    //         v_end -= lhs_size - 1;
+    //         w_begin -= rule->rhs().size();
+    //         // Replace lhs with rhs in-place
+    //         std::copy(rule->rhs().cbegin(), rule->rhs().cend(), w_begin);
+    //         _trie_nodes_visited_indices.erase(_trie_nodes_visited_indices.end()
+    //                                               - lhs_size + 1,
+    //                                           _trie_nodes_visited_indices.end());
+    //         current = _trie_nodes_visited_indices.back();
+    //       }
+    //     }
+    //     v.erase(v_end - v.cbegin());
+
+    // ALTERNATE NEW VERSION, NOT GOOD
     // NOTE: although this works, I think it's strictly worse than what was
     // here before, because here we repeatedly retraverse the trie, whereas
     // previously we just walked back to where we left off reading it before.
@@ -536,6 +584,7 @@ namespace libsemigroups::detail {
     //      match = _rule_trie.subword_no_checks(v.begin(), v.end());
     //    }
 
+    // NEW VERSION
     _trie_nodes_visited_indices.clear();
     index_type current = _rule_trie.root;
     _trie_nodes_visited_indices.push_back(current);

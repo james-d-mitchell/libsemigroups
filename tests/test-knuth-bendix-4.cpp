@@ -101,6 +101,7 @@ namespace libsemigroups {
 
     // In Sims it says to use 44 here, but that doesn't seem to work.
     kb.max_overlap(45);
+    kb.rewriting_system().settings().reduction_threshold = 4;
 
     kb.run();
     REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);

@@ -580,12 +580,19 @@ namespace libsemigroups {
         for (;
              first != _rewriting_system.active_rules().end() && !stop_running();
              ++first) {
+          auto first_orig = first;
           overlap(*first, *first);
+          LIBSEMIGROUPS_ASSERT(first_orig == first);
           for (second = first;
                second != _rewriting_system.active_rules().begin();) {
             --second;
+            auto second_orig = second;
+            LIBSEMIGROUPS_ASSERT(first_orig == first);
             overlap(*first, *second);
+            LIBSEMIGROUPS_ASSERT(second_orig == second);
             overlap(*second, *first);
+            LIBSEMIGROUPS_ASSERT(first_orig == first);
+            LIBSEMIGROUPS_ASSERT(second_orig == second);
           }
         }
       } while (!stop_running() && _rewriting_system.reduce());
