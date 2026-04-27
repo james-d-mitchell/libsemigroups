@@ -754,8 +754,8 @@ namespace libsemigroups {
       auto const lower_limit = ulhs.cend() - std::min(ulhs.size(), vlhs.size());
 
       for (auto it = ulhs.cend() - 1;
-           it > lower_limit && it < ulhs.cend() && u->state() == active
-           && v->state() == active && !stop_running()
+           it > lower_limit && u->state() == active && v->state() == active
+           && !stop_running()
            && (_settings.max_overlap == POSITIVE_INFINITY
                || (*_overlap_measure)(u, v, it) <= _settings.max_overlap);
            --it) {
