@@ -145,6 +145,13 @@ namespace libsemigroups {
       rule->state(Rule::State::active);
       _active_rules.push_back(rule);
       _stats.update_after_active_rule_added(*this);
+      // In a std::list like _active_rules, end() points at a dummy object,
+      // which does not change when push_back is called. The cursors are like
+      // "persistent iterators" meaning that they always point at a valid entry
+      // of _active_rules. They are intended to be used in loops, if any of them
+      // point at end(), then in any loop we'd consider the loop finished, but
+      // now we have just added a new element at the end of _active_rules, and
+      // so we should have our cursor point at that new element instead.
       for (auto& it : _cursors) {
         if (it == _active_rules.end()) {
           --it;
@@ -160,22 +167,19 @@ namespace libsemigroups {
     }
 
     Rules::iterator Rules::make_active_rule_pending(iterator it) {
-      Rule* rule = *it;
-      LIBSEMIGROUPS_ASSERT(rule->state() == Rule::State::active);
-      add_pending_rule(rule);
+      LIBSEMIGROUPS_ASSERT((*it)->state() == Rule::State::active);
+      LIBSEMIGROUPS_ASSERT((*it)->state() == Rule::State::active);
+      LIBSEMIGROUPS_ASSERT(it != _active_rules.end());
+      add_pending_rule(*it);
 
-      if (it != _cursors[0] && it != _cursors[1]) {
-        it = _active_rules.erase(it);
-      } else if (it == _cursors[0] && it != _cursors[1]) {
-        _cursors[0] = _active_rules.erase(it);
-        it          = _cursors[0];
-      } else if (it != _cursors[0] && it == _cursors[1]) {
-        _cursors[1] = _active_rules.erase(it);
-        it          = _cursors[1];
-      } else {
-        _cursors[0] = _active_rules.erase(it);
-        _cursors[1] = _cursors[0];
-        it          = _cursors[0];
+      auto const old_it = it;
+      // std::list::erase returns an iterator point one beyond the erased
+      // element
+      it = _active_rules.erase(it);
+      for (auto& cursor : _cursors) {
+        if (cursor == old_it) {
+          cursor = it;
+        }
       }
       return it;
     }
