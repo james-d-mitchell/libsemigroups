@@ -121,8 +121,8 @@ namespace libsemigroups {
                                    "101",
                                    "kbmag/standalone/kb_data/funny3",
                                    "[standard][knuth-bendix][kbmag][shortlex]",
-                                   LenLexTrie) {
-    auto                      rg = ReportGuard(true);
+                                   REWRITING_SYSTEM_TYPES) {
+    auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("aAbBcC");
@@ -145,7 +145,7 @@ namespace libsemigroups {
 
     // FIXME setting the reduction_threshold to 1 makes this seemingly run
     // forever
-    // kb.rewriting_system().settings().reduction_threshold = 200;
+    kb.rewriting_system().settings().reduction_threshold = 200;
 
     knuth_bendix::by_overlap_length(kb);
     // kb.run() // also works, but is slower

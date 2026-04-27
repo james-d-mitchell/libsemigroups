@@ -142,9 +142,7 @@ namespace libsemigroups {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
       // Don't assert that rule isn't active, because it could be if we are
       // calling this in one of the copy constructors.
-#ifdef LIBSEMIGROUPS_DEBUG
       rule->state(Rule::State::active);
-#endif
       _active_rules.push_back(rule);
       _stats.update_after_active_rule_added(*this);
       for (auto& it : _cursors) {
@@ -199,9 +197,7 @@ namespace libsemigroups {
 
     Rule* Rules::add_pending_rule(Rule* rule) {
       LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
-#ifdef LIBSEMIGROUPS_DEBUG
       rule->state(Rule::State::pending);
-#endif
       _pending_rules.push_back(rule);
       _stats.max_pending_rules
           = std::max(_stats.max_pending_rules, _pending_rules.size());

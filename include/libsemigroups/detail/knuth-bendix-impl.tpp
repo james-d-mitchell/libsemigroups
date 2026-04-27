@@ -727,8 +727,10 @@ namespace libsemigroups {
     void
     KnuthBendixImpl<RewritingSystem, ReductionOrder>::overlap(Rule const* u,
                                                               Rule const* v) {
-      LIBSEMIGROUPS_ASSERT(u->state() == Rule::State::active);
-      LIBSEMIGROUPS_ASSERT(v->state() == Rule::State::active);
+      constexpr const auto active = Rule::State::active;
+
+      LIBSEMIGROUPS_ASSERT(u->state() == active);
+      LIBSEMIGROUPS_ASSERT(v->state() == active);
 
       native_word_type const& ulhs = u->lhs();
       native_word_type const& vlhs = v->lhs();
@@ -738,14 +740,16 @@ namespace libsemigroups {
       auto const lower_limit = ulhs.cend() - std::min(ulhs.size(), vlhs.size());
 
       for (auto it = ulhs.cend() - 1;
-           it > lower_limit && it < ulhs.cend() && !stop_running()
+           it > lower_limit && it < ulhs.cend() && u->state() == active
+           && v->state() == active && !stop_running()
            && (_settings.max_overlap == POSITIVE_INFINITY
                || (*_overlap_measure)(u, v, it) <= _settings.max_overlap);
            --it) {
         // Check if B = [it, ulhs.cend()) is a prefix of v.first
         if (is_prefix(vlhs.cbegin(), vlhs.cend(), it, ulhs.cend())) {
           // u = P_i = AB -> Q_i and v = P_j = BC -> Q_j This version of
-          // new_rule does not reorder _rewriting_system.add_rule(AQ_j, Q_iC);
+          // new_rule does not reorder _rewriting_system.add_rule(AQ_j,
+          // Q_iC);
           MultiView<native_word_type> x(ulhs.cbegin(), it);
           x.append(vrhs.cbegin(), vrhs.cend());
           MultiView<native_word_type> y(urhs.cbegin(), urhs.cend());
