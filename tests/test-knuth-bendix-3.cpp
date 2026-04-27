@@ -64,10 +64,10 @@ namespace libsemigroups {
 
   struct LibsemigroupsException;
 
-  using Trie = detail::RewritingSystemTrie<ShortLexCompare>;
-  using Set  = detail::RewritingSystemSet<ShortLexCompare>;
+  using LenLexTrie = detail::RewritingSystemTrie<ShortLexCompare>;
+  using LenLexSet  = detail::RewritingSystemSet<ShortLexCompare>;
 
-#define REWRITING_SYSTEM_TYPES Trie, Set
+#define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet
 
   namespace {
     struct weird_cmp {

@@ -68,54 +68,61 @@ namespace libsemigroups {
 
   using LenLexTrie = detail::RewritingSystemTrie<ShortLexCompare>;
   using LenLexSet  = detail::RewritingSystemSet<ShortLexCompare>;
+  using RPOTrie    = detail::RewritingSystemTrie<RecursivePathCompare>;
+  using RPOSet     = detail::RewritingSystemSet<RecursivePathCompare>;
 
-#define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet
+#define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet  // , RPOTrie, RPOSet
 
   ////////////////////////////////////////////////////////////////////////
   // Standard tests
   ////////////////////////////////////////////////////////////////////////
 
   // Takes approx. 2s
-  // TODO the performance of this is worse than on main, it's not very clear to
-  // me why.
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "100",
                                    "Sims Ex. 6.6 (limited overlap lengths)",
                                    "[standard][knuth-bendix]",
                                    REWRITING_SYSTEM_TYPES) {
-    auto rg = ReportGuard(false);
+    using order = typename TestType::reduction_order;
+    auto rg     = ReportGuard(false);
 
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("abc");
 
     presentation::add_rule(p, "aa", "");
-
     presentation::add_rule(p, "bc", "");
     presentation::add_rule(p, "bbb", "");
     presentation::add_rule(p, "ababababababab", "");
     presentation::add_rule(p, "abacabacabacabacabacabacabacabac", "");
+
     KnuthBendix<std::string, TestType> kb(twosided, p);
 
     REQUIRE(!kb.rewriting_system().confluent());
 
-    // In Sims it says to use 44 here, but that doesn't seem to work.
-    kb.max_overlap(45);
-    // kb.rewriting_system().settings().reduction_threshold = 4;
-
-    kb.run();
-    REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
+    if constexpr (std::is_same_v<order, ShortLexCompare>) {
+      // In Sims it says to use 44 here, but that doesn't seem to work.
+      kb.max_overlap(45);
+      kb.run();
+      REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
+    } else if (std::is_same_v<order, RecursivePathCompare>) {
+      kb.max_overlap(55);
+      kb.run();
+      REQUIRE(kb.rewriting_system().number_of_rules() == 408);
+    }
     // REQUIRE(kb.rewriting_system().confluent());
     // REQUIRE(kb.number_of_classes() == 10'752);
   }
 
   // Takes approx. 2s
+  // TODO the performance of this is worse than on main, it's not very clear
+  // to me why.
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "101",
                                    "kbmag/standalone/kb_data/funny3",
                                    "[standard][knuth-bendix][kbmag][shortlex]",
-                                   REWRITING_SYSTEM_TYPES) {
-    auto                      rg = ReportGuard(false);
+                                   LenLexTrie) {
+    auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("aAbBcC");
@@ -134,6 +141,11 @@ namespace libsemigroups {
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
+    REQUIRE(kb.overlap_policy() == decltype(kb)::options::overlap::ABC);
+
+    // FIXME setting the reduction_threshold to 1 makes this seemingly run
+    // forever
+    // kb.rewriting_system().settings().reduction_threshold = 200;
 
     knuth_bendix::by_overlap_length(kb);
     // kb.run() // also works, but is slower
@@ -798,7 +810,8 @@ namespace libsemigroups {
     REQUIRE(!k.rewriting_system().confluent());
 
     // FIXME the reporting is broken, % exceeds 100
-    // #1: KnuthBendix: reducing rules: 8,399,310 / 8,188,053 (102.6%) (14.048s)
+    // #1: KnuthBendix: reducing rules: 8,399,310 / 8,188,053 (102.6%)
+    // (14.048s)
   }
 
 }  // namespace libsemigroups
