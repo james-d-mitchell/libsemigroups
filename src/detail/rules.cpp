@@ -176,9 +176,13 @@ namespace libsemigroups {
       // std::list::erase returns an iterator point one beyond the erased
       // element
       it = _active_rules.erase(it);
-      for (auto& cursor : _cursors) {
-        if (cursor == old_it) {
-          cursor = it;
+      if (_cursors[1] == old_it) {
+        _cursors[1] = it;
+      }
+      if (_cursors[0] == old_it) {
+        _cursors[0] = it;
+        if (it != _active_rules.begin()) {
+          --_cursors[0];
         }
       }
       return it;
