@@ -28,9 +28,10 @@
 namespace libsemigroups::detail {
 
   struct OverlapMeasure {
-    [[nodiscard]] virtual size_t operator()(Rule const*,
-                                            Rule const*,
-                                            std::string::const_iterator const&)
+    [[nodiscard]] virtual size_t
+    operator()(Rule const*,
+               Rule const*,
+               std::string::const_iterator const&) const
         = 0;
     virtual ~OverlapMeasure() {}
   };
@@ -40,7 +41,7 @@ namespace libsemigroups::detail {
     [[nodiscard]] size_t
     operator()(Rule const*                        AB,
                Rule const*                        BC,
-               std::string::const_iterator const& it) override {
+               std::string::const_iterator const& it) const override {
       LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
                            && BC->state() == Rule::State::active);
       LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
@@ -55,7 +56,7 @@ namespace libsemigroups::detail {
     [[nodiscard]] size_t
     operator()(Rule const*                        AB,
                Rule const*                        BC,
-               std::string::const_iterator const& it) override {
+               std::string::const_iterator const& it) const override {
       LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
                            && BC->state() == Rule::State::active);
       LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
@@ -71,7 +72,7 @@ namespace libsemigroups::detail {
     [[nodiscard]] size_t
     operator()(Rule const*                        AB,
                Rule const*                        BC,
-               std::string::const_iterator const& it) override {
+               std::string::const_iterator const& it) const override {
       LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
                            && BC->state() == Rule::State::active);
       LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
@@ -190,7 +191,6 @@ namespace libsemigroups::detail {
   // OverlapIteratorRules
   ////////////////////////////////////////////////////////////////////////
 
-  template <typename Measure>
   class OverlapIteratorRules {
    public:
     using iterator_category = std::forward_iterator_tag;
@@ -200,15 +200,21 @@ namespace libsemigroups::detail {
     using reference         = value_type const&;
 
    private:
-    Rules::iterator* _first;
-    size_t           _max_overlap_length;
-    value_type       _overlap;
-    Measure*         _overlap_measure;
-    Rules*           _rules;
-    Rules::iterator* _second;
+    Rules::iterator*      _first;
+    size_t                _max_overlap_length;
+    value_type            _overlap;
+    OverlapMeasure const* _overlap_measure;
+    Rules*                _rules;
+    Rules::iterator*      _second;
 
    public:
-    OverlapIteratorRules() = default;
+    OverlapIteratorRules()
+        : _first(nullptr),
+          _max_overlap_length(),
+          _overlap(),
+          _overlap_measure(nullptr),
+          _rules(nullptr),
+          _second(nullptr) {}
 
     OverlapIteratorRules(OverlapIteratorRules const&)            = default;
     OverlapIteratorRules(OverlapIteratorRules&&)                 = default;
@@ -219,7 +225,7 @@ namespace libsemigroups::detail {
 
     // TODO(1) init?
 
-    OverlapIteratorRules(Rules& rules, Measure const& measure)
+    OverlapIteratorRules(Rules& rules, OverlapMeasure const& measure)
         : _first(&rules.cursor(0)),
           _max_overlap_length(POSITIVE_INFINITY),
           _overlap(),
@@ -228,7 +234,11 @@ namespace libsemigroups::detail {
           _second(&rules.cursor(1)) {
       // _first being _rules->active_rules().end() means that this iterator is
       // at the end
-      *_first = _rules->active_rules().end();
+      *_first         = _rules->active_rules().begin();
+      _overlap.lhs    = **_first;
+      _overlap.rhs    = **_first;
+      _overlap.length = 0;
+      operator++();
     }
 
     [[nodiscard]] pointer operator->() const {
@@ -259,6 +269,13 @@ namespace libsemigroups::detail {
     // TODO(1) This is definitely insufficient for proper comparison, but is
     // enough to tell whether or not we are at the end.
     [[nodiscard]] bool operator==(OverlapIteratorRules const& that) const {
+      if (that._first == nullptr && _first == nullptr) {
+        return true;
+      } else if (that._first == nullptr) {
+        return *_first == _rules->active_rules().end();
+      } else if (_first == nullptr) {
+        return *that._first == that._rules->active_rules().end();
+      }
       return _first == that._first;
     }
 
@@ -309,8 +326,8 @@ namespace libsemigroups::detail {
       auto& second = *_second;
       // TODO write comment about what is going on here
       while (first != _rules->active_rules().end()) {
-        --second;
         while (second != _rules->active_rules().begin()) {
+          --second;
           _overlap.rhs = *second;
           if (find_next_overlap_current_rules()) {
             return;
@@ -319,14 +336,15 @@ namespace libsemigroups::detail {
           if (find_next_overlap_current_rules()) {
             return;
           }
-          --second;
         }
         first++;
-        second       = first;
-        _overlap.lhs = *first;
-        _overlap.rhs = *second;
-        if (find_next_overlap_current_rules()) {
-          return;
+        if (first != _rules->active_rules().end()) {
+          second       = first;
+          _overlap.lhs = *first;
+          _overlap.rhs = *second;
+          if (find_next_overlap_current_rules()) {
+            return;
+          }
         }
       }
     }

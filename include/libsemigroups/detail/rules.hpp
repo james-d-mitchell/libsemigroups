@@ -218,6 +218,11 @@ namespace libsemigroups {
         return _cursors[index];
       }
 
+      // [[nodiscard]] iterator const& const_cursor(size_t index) const {
+      //   LIBSEMIGROUPS_ASSERT(index < _cursors.size());
+      //   return _cursors[index];
+      // }
+
       ////////////////////////////////////////////////////////////////////////
       // Numbers of rules
       ////////////////////////////////////////////////////////////////////////

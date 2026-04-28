@@ -156,23 +156,28 @@ namespace libsemigroups::detail {
     rewriting_system::add_rule(rws, "abab"_w, "bbb"_w);
     rws.reduce();
 
-    auto start = OverlapIteratorRules(rws);
-    auto end   = OverlapIteratorRules(rws);
+    REQUIRE((rws.rules() | rx::to_vector())
+            == std::vector<std::pair<std::string const&, std::string const&>>(
+                {{{0, 1, 0, 1}, {1, 1, 1}}, {{0, 1, 1, 0}, {0, 0, 0}}}));
 
-    // REQUIRE(start->lhs->lhs() == std::string({0, 1, 1, 0}));
-    // REQUIRE(start->lhs->rhs() == std::string({0, 0, 0}));
-    // REQUIRE(start->rhs->lhs() == std::string({0, 1, 1, 0}));
-    // REQUIRE(start->rhs->rhs() == std::string({0, 0, 0}));
-    // REQUIRE(start->length == 1);
+    AB_BC measure;
 
-    //++start;
-    // REQUIRE(start->lhs->lhs() == std::string({0, 1, 1, 0}));
-    // REQUIRE(start->lhs->rhs() == std::string({0, 0, 0}));
-    // REQUIRE(start->rhs->lhs() == std::string({0, 1, 0, 1}));
-    // REQUIRE(start->rhs->rhs() == std::string({1, 1, 1}));
-    // REQUIRE(start->length == 1);
+    auto start = OverlapIteratorRules(rws, measure);
+    auto end   = OverlapIteratorRules();
 
-    //++start;
+    REQUIRE(to_printable(start->lhs->lhs())
+            == to_printable(std::string({0, 1, 0, 1})));
+    REQUIRE(start->rhs->lhs() == std::string({0, 1, 0, 1}));
+    REQUIRE(start->length == 2);
+
+    ++start;
+    REQUIRE(to_printable(start->lhs->lhs())
+            == to_printable(std::string({0, 1, 0, 1})));
+    REQUIRE(to_printable(start->rhs->lhs())
+            == to_printable(std::string({0, 1, 1, 0})));
+    REQUIRE(start->length == 2);
+
+    ++start;
     // REQUIRE(start->lhs->lhs() == std::string({0, 1, 0, 1}));
     // REQUIRE(start->lhs->rhs() == std::string({1, 1, 1}));
     // REQUIRE(start->rhs->lhs() == std::string({0, 1, 1, 0}));
