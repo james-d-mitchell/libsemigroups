@@ -23,60 +23,6 @@ namespace libsemigroups {
                          Rule::native_word_type const&                       x,
                          size_t&                                             n);
 
-    ////////////////////////////////////////////////////////////////////////
-    // Overlap measures --- KnuthBendixImpl nested classes
-    ////////////////////////////////////////////////////////////////////////
-
-    template <typename RewritingSystem, typename ReductionOrder>
-    struct KnuthBendixImpl<RewritingSystem, ReductionOrder>::ABC
-        : KnuthBendixImpl<RewritingSystem, ReductionOrder>::OverlapMeasure {
-      size_t
-      operator()(Rule const*                                      AB,
-                 Rule const*                                      BC,
-                 typename native_word_type::const_iterator const& it) override {
-        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
-                             && BC->state() == Rule::State::active);
-        LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
-        LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
-        // |A| + |BC|
-        return (it - AB->lhs().cbegin()) + BC->lhs().size();
-      }
-    };
-
-    template <typename RewritingSystem, typename ReductionOrder>
-    struct KnuthBendixImpl<RewritingSystem, ReductionOrder>::AB_BC
-        : KnuthBendixImpl<RewritingSystem, ReductionOrder>::OverlapMeasure {
-      size_t
-      operator()(Rule const*                                      AB,
-                 Rule const*                                      BC,
-                 typename native_word_type::const_iterator const& it) override {
-        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
-                             && BC->state() == Rule::State::active);
-        LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
-        LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
-        (void) it;
-        // |AB| + |BC|
-        return AB->lhs().size() + BC->lhs().size();
-      }
-    };
-
-    template <typename RewritingSystem, typename ReductionOrder>
-    struct KnuthBendixImpl<RewritingSystem, ReductionOrder>::MAX_AB_BC
-        : KnuthBendixImpl<RewritingSystem, ReductionOrder>::OverlapMeasure {
-      size_t
-      operator()(Rule const*                                      AB,
-                 Rule const*                                      BC,
-                 typename native_word_type::const_iterator const& it) override {
-        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
-                             && BC->state() == Rule::State::active);
-        LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
-        LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
-        (void) it;
-        // max(|AB|, |BC|)
-        return std::max(AB->lhs().size(), BC->lhs().size());
-      }
-    };
-
     //////////////////////////////////////////////////////////////////////////
     // KnuthBendix::Settings - constructor - public
     //////////////////////////////////////////////////////////////////////////

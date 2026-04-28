@@ -171,19 +171,6 @@ namespace libsemigroups {
       // Nested classes - private
       ////////////////////////////////////////////////////////////////////////
 
-      struct OverlapMeasure {
-        [[nodiscard]] virtual size_t
-        operator()(detail::Rule const*,
-                   detail::Rule const*,
-                   typename native_word_type::const_iterator const&)
-            = 0;
-        virtual ~OverlapMeasure() {}
-      };
-
-      struct ABC;
-      struct AB_BC;
-      struct MAX_AB_BC;
-
       struct Settings {
         Settings() noexcept;
         Settings& init() noexcept;
