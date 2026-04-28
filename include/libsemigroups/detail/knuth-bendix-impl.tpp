@@ -579,26 +579,13 @@ namespace libsemigroups {
         for (;
              first != _rewriting_system.active_rules().end() && !stop_running();
              ++first) {
-          auto first_orig = first;
           overlap(*first, *first);
-          if (first_orig != first) {
-            continue;
-          }
 
           for (second = first;
                second != _rewriting_system.active_rules().begin();) {
             --second;
-            auto second_orig = second;
             overlap(*first, *second);
-            if (first_orig != first) {
-              break;
-            } else if (second_orig != second) {
-              continue;
-            }
             overlap(*second, *first);
-            if (first_orig != first) {
-              break;
-            }
           }
         }
       } while (!stop_running() && _rewriting_system.reduce());

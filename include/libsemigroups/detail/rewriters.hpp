@@ -48,7 +48,7 @@ namespace libsemigroups {
     // RewritingSystemBase
     ////////////////////////////////////////////////////////////////////////
 
-    class RewritingSystemBase : protected Rules {
+    class RewritingSystemBase : public Rules {
      private:
       mutable std::atomic<bool> _cached_confluent;
       mutable std::atomic<bool> _confluence_known;

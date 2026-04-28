@@ -172,7 +172,7 @@ namespace libsemigroups {
       ////////////////////////////////////////////////////////////////////////
 
       struct OverlapMeasure {
-        virtual size_t
+        [[nodiscard]] virtual size_t
         operator()(detail::Rule const*,
                    detail::Rule const*,
                    typename native_word_type::const_iterator const&)
@@ -812,7 +812,7 @@ namespace libsemigroups {
 
       bool finished_impl() const override;
     };  // class KnuthBendixImpl
-  }     // namespace detail
+  }  // namespace detail
 
   ////////////////////////////////////////////////////////////////////////
   // global functions - to_human_readable_repr

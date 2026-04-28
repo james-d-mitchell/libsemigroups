@@ -1192,6 +1192,7 @@ EXTRA_PROGRAMS += test_matrix
 EXTRA_PROGRAMS += test_multi_view
 EXTRA_PROGRAMS += test_obvinf
 EXTRA_PROGRAMS += test_order
+EXTRA_PROGRAMS += test_overlap_iterators
 EXTRA_PROGRAMS += test_paths
 EXTRA_PROGRAMS += test_pbr
 EXTRA_PROGRAMS += test_pool
@@ -1298,6 +1299,7 @@ test_all_SOURCES += tests/test-matrix.cpp
 test_all_SOURCES += tests/test-multi-view.cpp
 test_all_SOURCES += tests/test-obvinf.cpp
 test_all_SOURCES += tests/test-order.cpp
+test_all_SOURCES += tests/test-overlap-iterators.cpp
 test_all_SOURCES += tests/test-paths.cpp
 test_all_SOURCES += tests/test-pbr.cpp
 test_all_SOURCES += tests/test-pool.cpp
@@ -1524,6 +1526,10 @@ test_obvinf_SOURCES += third_party/Catch2-3.14.0/catch_amalgamated_patch.cpp
 test_order_SOURCES =  tests/test-order.cpp
 test_order_SOURCES += tests/test-main.cpp
 test_order_SOURCES += third_party/Catch2-3.14.0/catch_amalgamated_patch.cpp
+
+test_overlap_iterators_SOURCES =  tests/test-overlap-iterators.cpp
+test_overlap_iterators_SOURCES += tests/test-main.cpp
+test_overlap_iterators_SOURCES += third_party/Catch2-3.14.0/catch_amalgamated_patch.cpp
 
 test_paths_SOURCES =  tests/test-paths.cpp
 test_paths_SOURCES += tests/test-main.cpp

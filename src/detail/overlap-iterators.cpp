@@ -25,6 +25,10 @@
 
 namespace libsemigroups::detail {
 
+  ////////////////////////////////////////////////////////////////////////
+  // OverlapIteratorTrie
+  ////////////////////////////////////////////////////////////////////////
+
   OverlapIteratorTrie::OverlapIteratorTrie()
       : _current_word_iterator(),
         _last_word_iterator(),
@@ -132,4 +136,5 @@ namespace libsemigroups::detail {
                == _trie->generation()
            || _trie->node_no_checks(index).generation() == _trie->generation();
   }
+
 }  // namespace libsemigroups::detail

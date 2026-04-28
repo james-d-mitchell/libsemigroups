@@ -23,11 +23,32 @@
 #include <vector>    // for vector
 
 #include "aho-corasick-impl.hpp"  // for AhoCorasickImpl
+#include "rules.hpp"              // for Rules
 
 namespace libsemigroups::detail {
 
-  // Forward decl
-  class Rule;
+  struct ABC {
+    size_t operator()(Rule const*                        AB,
+                      Rule const*                        BC,
+                      std::string::const_iterator const& it) {
+      LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
+                           && BC->state() == Rule::State::active);
+      LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
+      LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
+      // |A| + |BC|
+      return (it - AB->lhs().cbegin()) + BC->lhs().size();
+    }
+  };
+
+  struct Overlap {
+    Rule const* lhs;
+    Rule const* rhs;
+    size_t      length;
+
+    bool operator==(Overlap const& that) const {
+      return lhs == that.lhs && rhs == that.rhs && length == that.length;
+    }
+  };
 
   ////////////////////////////////////////////////////////////////////////
   // OverlapIteratorTrie
@@ -35,16 +56,6 @@ namespace libsemigroups::detail {
 
   class OverlapIteratorTrie {
    public:
-    struct Overlap {
-      Rule const* lhs;
-      Rule const* rhs;
-      size_t      length;
-
-      bool operator==(Overlap const& that) const {
-        return lhs == that.lhs && rhs == that.rhs && length == that.length;
-      }
-    };
-
     using iterator_category = std::forward_iterator_tag;
     using value_type        = Overlap;
     using difference_type   = std::ptrdiff_t;
@@ -131,6 +142,152 @@ namespace libsemigroups::detail {
     // In the latter case, this means that descendants of the node with index
     // <index> may also have the generation equal to that of the trie.
     bool should_check_descendants(size_t index);
+  };  // class OverlapIteratorTrie
+
+  ////////////////////////////////////////////////////////////////////////
+  // OverlapIteratorRules
+  ////////////////////////////////////////////////////////////////////////
+
+  template <typename Measure>
+  class OverlapIteratorRules {
+   public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type        = Overlap;
+    using difference_type   = std::ptrdiff_t;
+    using pointer           = value_type const*;
+    using reference         = value_type const&;
+
+   private:
+    Rules::iterator* _first;
+    size_t           _max_overlap_length;
+    value_type       _overlap;
+    Measure*         _overlap_measure;
+    Rules*           _rules;
+    Rules::iterator* _second;
+
+   public:
+    OverlapIteratorRules() = default;
+
+    OverlapIteratorRules(OverlapIteratorRules const&)            = default;
+    OverlapIteratorRules(OverlapIteratorRules&&)                 = default;
+    OverlapIteratorRules& operator=(OverlapIteratorRules const&) = default;
+    OverlapIteratorRules& operator=(OverlapIteratorRules&&)      = default;
+
+    ~OverlapIteratorRules() = default;
+
+    // TODO(1) init?
+
+    OverlapIteratorRules(Rules& rules, Measure const& measure)
+        : _first(&rules.cursor(0)),
+          _max_overlap_length(POSITIVE_INFINITY),
+          _overlap(),
+          _overlap_measure(&measure),
+          _rules(&rules),
+          _second(&rules.cursor(1)) {
+      // _first being _rules->active_rules().end() means that this iterator is
+      // at the end
+      *_first = _rules->active_rules().end();
+    }
+
+    [[nodiscard]] pointer operator->() const {
+      return &_overlap;
+    }
+
+    [[nodiscard]] reference operator*() const {
+      return _overlap;
+    }
+
+    // Pre-increment
+    OverlapIteratorRules& operator++() {
+      if (*_first != _rules->active_rules().end()) {
+        if (!find_next_overlap_current_rules()) {
+          find_next_pair_of_rules_overlap();
+        }
+      }
+      return *this;
+    }
+
+    // Post-increment
+    OverlapIteratorRules operator++(int) {
+      OverlapIteratorRules tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+    // TODO(1) This is definitely insufficient for proper comparison, but is
+    // enough to tell whether or not we are at the end.
+    [[nodiscard]] bool operator==(OverlapIteratorRules const& that) const {
+      return _first == that._first;
+    }
+
+    [[nodiscard]] bool operator!=(OverlapIteratorRules const& that) const {
+      return !(*this == that);
+    }
+
+   private:
+    [[nodiscard]] bool check_overlap_length(Rule const*                 u,
+                                            Rule const*                 v,
+                                            std::string::const_iterator it) {
+      // TODO add asserts
+      return _max_overlap_length == POSITIVE_INFINITY
+             || (*_overlap_measure)(u, v, it) <= _max_overlap_length;
+    }
+
+    [[nodiscard]] bool find_next_overlap_current_rules() {
+      constexpr const auto active = Rule::State::active;
+
+      LIBSEMIGROUPS_ASSERT(u->state() == active);
+      LIBSEMIGROUPS_ASSERT(v->state() == active);
+
+      auto const& u     = _overlap.lhs;
+      auto const& v     = _overlap.rhs;
+      auto const& u_lhs = u->lhs();
+      auto const& v_lhs = v->lhs();
+
+      auto const lower_limit
+          = u_lhs.cend() - std::min(u_lhs.size(), v_lhs.size());
+
+      // TODO check correct
+      auto it = _overlap.lhs->lhs().cend() - _overlap.length - 1;
+
+      while (it > lower_limit && u->state() == active && v->state() == active
+             && check_overlap_length(u, v, it)) {
+        if (is_prefix(v_lhs.cbegin(), v_lhs.cend(), it, u_lhs.cend())) {
+          _overlap.length
+              = static_cast<size_t>(std::distance(it, u_lhs.cend()));
+          return true;
+        }
+        --it;
+      }
+      return false;
+    }
+
+    void find_next_pair_of_rules_overlap() {
+      auto& first  = *_first;
+      auto& second = *_second;
+      // TODO write comment about what is going on here
+      while (first != _rules->active_rules().end()) {
+        --second;
+        while (second != _rules->active_rules().begin()) {
+          _overlap.rhs = *second;
+          if (find_next_overlap_current_rules()) {
+            return;
+          }
+          std::swap(_overlap.lhs, _overlap.rhs);
+          if (find_next_overlap_current_rules()) {
+            return;
+          }
+          --second;
+        }
+        first++;
+        second       = first;
+        _overlap.lhs = *first;
+        _overlap.rhs = *second;
+        if (find_next_overlap_current_rules()) {
+          return;
+        }
+      }
+    }
   };  // class OverlapIteratorTrie
 }  // namespace libsemigroups::detail
 
