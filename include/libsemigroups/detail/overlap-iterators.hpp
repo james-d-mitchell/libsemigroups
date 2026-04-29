@@ -201,20 +201,26 @@ namespace libsemigroups::detail {
 
    private:
     Rules::iterator*      _first;
-    size_t                _max_overlap_length;
+    size_t                _max_overlap_measure;
     value_type            _overlap;
     OverlapMeasure const* _overlap_measure;
     Rules*                _rules;
     Rules::iterator*      _second;
+    bool                  _swap_current_pair_of_rules;
 
    public:
+    ////////////////////////////////////////////////////////////////////////
+    // Constructors
+    ////////////////////////////////////////////////////////////////////////
+
     OverlapIteratorRules()
         : _first(nullptr),
-          _max_overlap_length(),
+          _max_overlap_measure(),
           _overlap(),
           _overlap_measure(nullptr),
           _rules(nullptr),
-          _second(nullptr) {}
+          _second(nullptr),
+          _swap_current_pair_of_rules() {}
 
     OverlapIteratorRules(OverlapIteratorRules const&)            = default;
     OverlapIteratorRules(OverlapIteratorRules&&)                 = default;
@@ -223,15 +229,14 @@ namespace libsemigroups::detail {
 
     ~OverlapIteratorRules() = default;
 
-    // TODO(1) init?
-
     OverlapIteratorRules(Rules& rules, OverlapMeasure const& measure)
         : _first(&rules.cursor(0)),
-          _max_overlap_length(POSITIVE_INFINITY),
+          _max_overlap_measure(POSITIVE_INFINITY),
           _overlap(),
           _overlap_measure(&measure),
           _rules(&rules),
-          _second(&rules.cursor(1)) {
+          _second(&rules.cursor(1)),
+          _swap_current_pair_of_rules(false) {
       // _first being _rules->active_rules().end() means that this iterator is
       // at the end
       *_first         = _rules->active_rules().begin();
@@ -240,6 +245,10 @@ namespace libsemigroups::detail {
       _overlap.length = 0;
       operator++();
     }
+
+    ////////////////////////////////////////////////////////////////////////
+    // Iterator stuff
+    ////////////////////////////////////////////////////////////////////////
 
     [[nodiscard]] pointer operator->() const {
       return &_overlap;
@@ -283,23 +292,62 @@ namespace libsemigroups::detail {
       return !(*this == that);
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    // Settings
+    ////////////////////////////////////////////////////////////////////////
+
+    [[nodiscard]] Rules const& rules() const noexcept {
+      return *_rules;
+    }
+
+    OverlapIteratorRules& rules(Rules& rules) {
+      _rules = &rules;
+
+      _first                      = &rules.cursor(0);
+      _overlap.lhs                = **_first;
+      _overlap.rhs                = **_first;
+      _overlap.length             = 0;
+      _second                     = &rules.cursor(1);
+      _swap_current_pair_of_rules = false;
+      return *this;
+    }
+
+    [[nodiscard]] OverlapMeasure const& measure() const noexcept {
+      return *_overlap_measure;
+    }
+
+    OverlapIteratorRules& measure(OverlapMeasure& measure) {
+      _overlap_measure = &measure;
+      return *this;
+    }
+
+    [[nodiscard]] size_t max_measure() const noexcept {
+      return _max_overlap_measure;
+    }
+
+    OverlapIteratorRules& max_measure(size_t val) {
+      _max_overlap_measure = val;
+      return *this;
+    }
+
    private:
     [[nodiscard]] bool check_overlap_length(Rule const*                 u,
                                             Rule const*                 v,
                                             std::string::const_iterator it) {
       // TODO add asserts
-      return _max_overlap_length == POSITIVE_INFINITY
-             || (*_overlap_measure)(u, v, it) <= _max_overlap_length;
+      return _max_overlap_measure == POSITIVE_INFINITY
+             || (*_overlap_measure)(u, v, it) <= _max_overlap_measure;
     }
 
     [[nodiscard]] bool find_next_overlap_current_rules() {
       constexpr const auto active = Rule::State::active;
 
+      auto const& u = _overlap.lhs;
+      auto const& v = _overlap.rhs;
+
       LIBSEMIGROUPS_ASSERT(u->state() == active);
       LIBSEMIGROUPS_ASSERT(v->state() == active);
 
-      auto const& u     = _overlap.lhs;
-      auto const& v     = _overlap.rhs;
       auto const& u_lhs = u->lhs();
       auto const& v_lhs = v->lhs();
 
@@ -324,24 +372,34 @@ namespace libsemigroups::detail {
     void find_next_pair_of_rules_overlap() {
       auto& first  = *_first;
       auto& second = *_second;
+      if (_swap_current_pair_of_rules) {
+        _swap_current_pair_of_rules = false;
+        goto swap;
+      }
+
       // TODO write comment about what is going on here
       while (first != _rules->active_rules().end()) {
         while (second != _rules->active_rules().begin()) {
           --second;
-          _overlap.rhs = *second;
+          _overlap.rhs    = *second;
+          _overlap.length = 0;
           if (find_next_overlap_current_rules()) {
+            _swap_current_pair_of_rules = true;
             return;
           }
+        swap:
           std::swap(_overlap.lhs, _overlap.rhs);
+          _overlap.length = 0;
           if (find_next_overlap_current_rules()) {
             return;
           }
         }
         first++;
         if (first != _rules->active_rules().end()) {
-          second       = first;
-          _overlap.lhs = *first;
-          _overlap.rhs = *second;
+          second          = first;
+          _overlap.lhs    = *first;
+          _overlap.rhs    = *second;
+          _overlap.length = 0;
           if (find_next_overlap_current_rules()) {
             return;
           }

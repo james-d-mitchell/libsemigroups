@@ -147,28 +147,47 @@ namespace libsemigroups::detail {
 
   LIBSEMIGROUPS_TEST_CASE("OverlapIteratorRules",
                           "002",
-                          "basic tests",
+                          "basic functionality tests x1",
                           "[quick]") {
     auto                                rg = ReportGuard(false);
     RewritingSystemSet<ShortLexCompare> rws;
     rws.increase_alphabet_size_by(2);
     rewriting_system::add_rule(rws, "abba"_w, "aaa"_w);
     rewriting_system::add_rule(rws, "abab"_w, "bbb"_w);
-    rws.reduce();
+    rws.reduce();  // Oddity #2
 
     REQUIRE((rws.rules() | rx::to_vector())
             == std::vector<std::pair<std::string const&, std::string const&>>(
                 {{{0, 1, 0, 1}, {1, 1, 1}}, {{0, 1, 1, 0}, {0, 0, 0}}}));
 
     AB_BC measure;
-
+    // TODO put this into RewritingSystemBase::next_overlap
+    // and RewritingSystemBase::reset_next_overlap
     auto start = OverlapIteratorRules(rws, measure);
     auto end   = OverlapIteratorRules();
+    // FIXME the following line causes the tests below to fail which shouldn't
+    // be possible
+    REQUIRE(std::distance(start, end) == 4);
+    REQUIRE(start == end);
 
     REQUIRE(to_printable(start->lhs->lhs())
             == to_printable(std::string({0, 1, 0, 1})));
     REQUIRE(start->rhs->lhs() == std::string({0, 1, 0, 1}));
     REQUIRE(start->length == 2);
+
+    ++start;
+    REQUIRE(to_printable(start->lhs->lhs())
+            == to_printable(std::string({0, 1, 1, 0})));
+    REQUIRE(to_printable(start->rhs->lhs())
+            == to_printable(std::string({0, 1, 1, 0})));
+    REQUIRE(start->length == 1);
+
+    ++start;
+    REQUIRE(to_printable(start->lhs->lhs())
+            == to_printable(std::string({0, 1, 1, 0})));
+    REQUIRE(to_printable(start->rhs->lhs())
+            == to_printable(std::string({0, 1, 0, 1})));
+    REQUIRE(start->length == 1);
 
     ++start;
     REQUIRE(to_printable(start->lhs->lhs())
@@ -178,20 +197,89 @@ namespace libsemigroups::detail {
     REQUIRE(start->length == 2);
 
     ++start;
-    // REQUIRE(start->lhs->lhs() == std::string({0, 1, 0, 1}));
-    // REQUIRE(start->lhs->rhs() == std::string({1, 1, 1}));
-    // REQUIRE(start->rhs->lhs() == std::string({0, 1, 1, 0}));
-    // REQUIRE(start->rhs->rhs() == std::string({0, 0, 0}));
-    // REQUIRE(start->length == 2);
+    REQUIRE(start == end);
+  }
 
-    //++start;
-    // REQUIRE(start->lhs->lhs() == std::string({0, 1, 0, 1}));
-    // REQUIRE(start->lhs->rhs() == std::string({1, 1, 1}));
-    // REQUIRE(start->rhs->lhs() == std::string({0, 1, 0, 1}));
-    // REQUIRE(start->rhs->rhs() == std::string({1, 1, 1}));
-    // REQUIRE(start->length == 2);
+  LIBSEMIGROUPS_TEST_CASE("OverlapIteratorRules",
+                          "003",
+                          "basic functionality tests x2",
+                          "[quick]") {
+    auto                                rg = ReportGuard(false);
+    RewritingSystemSet<ShortLexCompare> rws;
+    rws.increase_alphabet_size_by(2);
+    rewriting_system::add_rule(rws, "aaaaaaaaaa"_w, "aaa"_w);
+    rewriting_system::add_rule(rws, "aaabaaa"_w, "bbb"_w);
+    rws.reduce();
+    // The iterator only works if the system is reduced (o/w the
+    // rules are just pending)
 
-    //++start;
-    // REQUIRE(start == end);
+    AB_BC measure;
+
+    auto                     start = OverlapIteratorRules(rws, measure);
+    auto                     end   = OverlapIteratorRules();
+    std::vector<std::string> found;
+    for (auto it = start; it != end; ++it) {
+      found.push_back(to_printable(it->lhs->lhs()));
+      found.push_back(to_printable(it->rhs->lhs()));
+      found.push_back(fmt::format("{}", it->length));
+    }
+
+    REQUIRE(found
+            == std::vector<std::string>(
+                {"(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "1",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "2",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "3",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "4",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "5",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "6",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "7",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "8",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "9",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "1",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "2",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "3",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "1",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "2",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "3",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "1",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "2",
+                 "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                 "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                 "3"}));
+    REQUIRE(start == end);
   }
 }  // namespace libsemigroups::detail
