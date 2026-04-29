@@ -105,7 +105,7 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemSet<ShortLexCompare>",
-                            "010",
+                            "002",
                             "simple test",
                             "[quick]") {
       using rule_type = std::pair<std::string, std::string>;
@@ -158,7 +158,7 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
-                            "002",
+                            "003",
                             "confluent",
                             "[quick]") {
       using rule_type = std::pair<std::string, std::string>;
@@ -191,7 +191,7 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
-                            "003",
+                            "004",
                             "non-confluent",
                             "[quick]") {
       auto                                 rg = ReportGuard(false);
@@ -204,7 +204,7 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
-                            "004",
+                            "005",
                             "Example 5.1 in Sims (infinite)",
                             "[quick]") {
       auto                                 rg = ReportGuard(false);
@@ -220,7 +220,7 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
-                            "005",
+                            "006",
                             "non-confluent",
                             "[quick]") {
       auto                                 rg = ReportGuard(false);
@@ -237,7 +237,7 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
-                            "006",
+                            "007",
                             "Example 5.3 in Sims",
                             "[quick]") {
       auto                                 rg = ReportGuard(false);
@@ -251,7 +251,7 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
-                            "007",
+                            "008",
                             "Example 5.4 in Sims",
                             "[quick]") {
       auto                                 rg = ReportGuard(false);
@@ -267,7 +267,7 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
-                            "008",
+                            "009",
                             "Example 6.4 in Sims (size 168)",
                             "[quick]") {
       auto                                 rg = ReportGuard(false);
@@ -284,7 +284,7 @@ namespace libsemigroups {
     }
 
     LIBSEMIGROUPS_TEST_CASE("RewritingSystemTrie<ShortLexCompare>",
-                            "009",
+                            "010",
                             "random example",
                             "[quick]") {
       auto                                 rg = ReportGuard(false);
@@ -570,5 +570,144 @@ namespace libsemigroups {
       // No overlaps where at least one word is in generation 2
       REQUIRE(OverlapIteratorTrie(rt.trie()) == OverlapIteratorTrie());
     }
+
+    LIBSEMIGROUPS_TEST_CASE("Rules::Overlaps",
+                            "019",
+                            "basic functionality tests x1",
+                            "[quick]") {
+      auto                                rg = ReportGuard(false);
+      RewritingSystemSet<ShortLexCompare> rws;
+      rws.increase_alphabet_size_by(2);
+      rewriting_system::add_rule(rws, "abba"_w, "aaa"_w);
+      rewriting_system::add_rule(rws, "abab"_w, "bbb"_w);
+      rws.reduce();
+
+      REQUIRE((rws.rules() | rx::to_vector())
+              == std::vector<std::pair<std::string const&, std::string const&>>(
+                  {{{0, 1, 0, 1}, {1, 1, 1}}, {{0, 1, 1, 0}, {0, 0, 0}}}));
+
+      AB_BC measure;
+
+      auto& overlaps = rws.overlaps();
+
+      // REQUIRE(std::distance(start, end) == 4);
+      // REQUIRE(start == end);
+
+      REQUIRE(!overlaps.at_end());
+
+      REQUIRE(to_printable(overlaps.get().lhs->lhs())
+              == to_printable(std::string({0, 1, 0, 1})));
+      REQUIRE(overlaps.get().rhs->lhs() == std::string({0, 1, 0, 1}));
+      REQUIRE(overlaps.get().length == 2);
+
+      overlaps.next();
+      REQUIRE(to_printable(overlaps.get().lhs->lhs())
+              == to_printable(std::string({0, 1, 1, 0})));
+      REQUIRE(to_printable(overlaps.get().rhs->lhs())
+              == to_printable(std::string({0, 1, 1, 0})));
+      REQUIRE(overlaps.get().length == 1);
+
+      overlaps.next();
+      REQUIRE(to_printable(overlaps.get().lhs->lhs())
+              == to_printable(std::string({0, 1, 1, 0})));
+      REQUIRE(to_printable(overlaps.get().rhs->lhs())
+              == to_printable(std::string({0, 1, 0, 1})));
+      REQUIRE(overlaps.get().length == 1);
+
+      overlaps.next();
+      REQUIRE(to_printable(overlaps.get().lhs->lhs())
+              == to_printable(std::string({0, 1, 0, 1})));
+      REQUIRE(to_printable(overlaps.get().rhs->lhs())
+              == to_printable(std::string({0, 1, 1, 0})));
+      REQUIRE(overlaps.get().length == 2);
+
+      overlaps.next();
+      REQUIRE(overlaps.at_end());
+    }
+
+    LIBSEMIGROUPS_TEST_CASE("Rules::Overlaps",
+                            "020",
+                            "basic functionality tests x2",
+                            "[quick]") {
+      auto                                rg = ReportGuard(false);
+      RewritingSystemSet<ShortLexCompare> rws;
+      rws.increase_alphabet_size_by(2);
+      rewriting_system::add_rule(rws, "aaaaaaaaaa"_w, "aaa"_w);
+      rewriting_system::add_rule(rws, "aaabaaa"_w, "bbb"_w);
+      rws.reduce();
+      // The iterator only works if the system is reduced (o/w the
+      // rules are just pending)
+
+      AB_BC measure;
+
+      auto& overlaps = rws.overlaps();
+
+      std::vector<std::string> found;
+      while (!overlaps.at_end()) {
+        found.push_back(to_printable(overlaps.get().lhs->lhs()));
+        found.push_back(to_printable(overlaps.get().rhs->lhs()));
+        found.push_back(fmt::format("{}", overlaps.get().length));
+        overlaps.next();
+      }
+      REQUIRE(overlaps.at_end());
+
+      REQUIRE(found
+              == std::vector<std::string>(
+                  {"(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "1",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "2",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "3",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "4",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "5",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "6",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "7",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "8",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "9",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "1",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "2",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "3",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "1",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "2",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "3",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "1",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "2",
+                   "(char values) [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+                   "(char values) [0, 0, 0, 1, 0, 0, 0]",
+                   "3"}));
+    }
+
   }  // namespace detail
 }  // namespace libsemigroups

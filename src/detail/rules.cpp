@@ -54,7 +54,7 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
     // Rules - private
     ////////////////////////////////////////////////////////////////////////
-
+    // TODO I think this will be redundant so rm
     void Rules::init_cursors() {
       for (auto& it : _overlaps._cursors) {
         it = _active_rules.end();
@@ -120,7 +120,6 @@ namespace libsemigroups {
       // It seems to be too hard to keep the cursors alive across move
       // construction, so we don't try.
       init_cursors();
-      // Similarly, there's no point in doing anything for _overlaps
       _stats = std::move(that._stats);
       return *this;
     }

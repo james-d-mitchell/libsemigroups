@@ -245,7 +245,7 @@ namespace libsemigroups {
 
         // TODO to cpp
         Overlaps& next() {
-          if (at_end()) {
+          if (!at_end()) {
             if (!find_next_overlap_current_rules()) {
               find_next_pair_of_rules_overlap();
             }
