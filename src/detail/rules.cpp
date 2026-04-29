@@ -56,7 +56,7 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
 
     void Rules::init_cursors() {
-      for (auto& it : _cursors) {
+      for (auto& it : _overlaps._cursors) {
         it = _active_rules.end();
       }
     }
@@ -67,14 +67,15 @@ namespace libsemigroups {
 
     Rules::Rules()
         : _active_rules(),
-          _cursors(),
           _inactive_rules(),
+          _overlaps(this),
           _pending_rules(),
           _stats() {
       init_cursors();
     }
 
     Rules& Rules::init() {
+      // Leave _overlaps as is, will be reset when next required
       _stats.init();
 
       for (Rule* rule : _active_rules) {
@@ -86,7 +87,7 @@ namespace libsemigroups {
         add_inactive_rule(rule);
       }
       _pending_rules.clear();
-      init_cursors();
+      init_cursors();  // TODO rm?
 
       return *this;
     }
@@ -107,6 +108,7 @@ namespace libsemigroups {
       // It seems to be too hard to keep the cursors alive across copy
       // construction, so we don't try.
       init_cursors();
+      // Similarly, there's no point in doing anything for _overlaps
       return *this;
     }
 
@@ -118,6 +120,7 @@ namespace libsemigroups {
       // It seems to be too hard to keep the cursors alive across move
       // construction, so we don't try.
       init_cursors();
+      // Similarly, there's no point in doing anything for _overlaps
       _stats = std::move(that._stats);
       return *this;
     }
@@ -152,7 +155,7 @@ namespace libsemigroups {
       // point at end(), then in any loop we'd consider the loop finished, but
       // now we have just added a new element at the end of _active_rules, and
       // so we should have our cursor point at that new element instead.
-      for (auto& it : _cursors) {
+      for (auto& it : _overlaps._cursors) {
         if (it == _active_rules.end()) {
           --it;
         }
@@ -169,13 +172,13 @@ namespace libsemigroups {
       // std::list::erase returns an iterator point one beyond the erased
       // element
       it = _active_rules.erase(it);
-      if (_cursors[1] == old_it) {
-        _cursors[1] = it;
+      if (_overlaps._cursors[1] == old_it) {
+        _overlaps._cursors[1] = it;
       }
-      if (_cursors[0] == old_it) {
-        _cursors[0] = it;
+      if (_overlaps._cursors[0] == old_it) {
+        _overlaps._cursors[0] = it;
         if (it != _active_rules.begin()) {
-          --_cursors[0];
+          --_overlaps._cursors[0];
         }
       }
       return it;
