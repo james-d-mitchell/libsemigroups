@@ -31,10 +31,15 @@
 #include <utility>    // for move
 #include <vector>     // for vector
 
+// TODO move these headers to the cpp file, when out of lining Overlaps
+#include "libsemigroups/constants.hpp"  // for LIBSEMIGROUPS_ASSERT
+#include "string.hpp"
+
 #include "libsemigroups/debug.hpp"  // for LIBSEMIGROUPS_ASSERT
 
 namespace libsemigroups {
   namespace detail {
+
     ////////////////////////////////////////////////////////////////////////
     // Rule
     ////////////////////////////////////////////////////////////////////////
@@ -94,6 +99,80 @@ namespace libsemigroups {
     }
 
     ////////////////////////////////////////////////////////////////////////
+    // OverlapMeasure
+    ////////////////////////////////////////////////////////////////////////
+
+    struct OverlapMeasure {
+      [[nodiscard]] virtual size_t
+      operator()(Rule const*,
+                 Rule const*,
+                 std::string::const_iterator const&) const
+          = 0;
+      virtual ~OverlapMeasure() {}
+    };
+
+    struct ABC : OverlapMeasure {
+      // TODO to cpp
+      [[nodiscard]] size_t
+      operator()(Rule const*                        AB,
+                 Rule const*                        BC,
+                 std::string::const_iterator const& it) const override {
+        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
+                             && BC->state() == Rule::State::active);
+        LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
+        LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
+        // |A| + |BC|
+        return (it - AB->lhs().cbegin()) + BC->lhs().size();
+      }
+    };
+
+    struct AB_BC : OverlapMeasure {
+      // TODO to cpp
+      [[nodiscard]] size_t
+      operator()(Rule const*                        AB,
+                 Rule const*                        BC,
+                 std::string::const_iterator const& it) const override {
+        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
+                             && BC->state() == Rule::State::active);
+        LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
+        LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
+        (void) it;
+        // |AB| + |BC|
+        return AB->lhs().size() + BC->lhs().size();
+      }
+    };
+
+    struct MAX_AB_BC : OverlapMeasure {
+      // TODO to cpp
+      [[nodiscard]] size_t
+      operator()(Rule const*                        AB,
+                 Rule const*                        BC,
+                 std::string::const_iterator const& it) const override {
+        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
+                             && BC->state() == Rule::State::active);
+        LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
+        LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
+        (void) it;
+        // max(|AB|, |BC|)
+        return std::max(AB->lhs().size(), BC->lhs().size());
+      }
+    };
+
+    ////////////////////////////////////////////////////////////////////////
+    // Overlap
+    ////////////////////////////////////////////////////////////////////////
+
+    struct Overlap {
+      Rule const* lhs;
+      Rule const* rhs;
+      size_t      length;
+
+      bool operator==(Overlap const& that) const {
+        return lhs == that.lhs && rhs == that.rhs && length == that.length;
+      }
+    };
+
+    ////////////////////////////////////////////////////////////////////////
     // Rules
     ////////////////////////////////////////////////////////////////////////
 
@@ -122,9 +201,115 @@ namespace libsemigroups {
         void update_after_active_rule_added(Rules const&);
       };
 
+      class Overlaps {
+       private:
+        std::array<iterator, 2> _cursors;
+        size_t                  _max_overlap_measure;
+        Overlap                 _overlap;
+        // TODO this should probably be the only original OverlapMeasure
+        OverlapMeasure const* _overlap_measure;
+        Rules*                _rules;
+        bool                  _swap_current_pair_of_rules;
+
+        [[nodiscard]] bool
+        check_overlap_length(Rule const* u,
+
+                             Rule const*                 v,
+                             std::string::const_iterator it) {
+          // TODO add asserts
+          return _max_overlap_measure == POSITIVE_INFINITY
+                 || (*_overlap_measure)(u, v, it) <= _max_overlap_measure;
+        }
+
+        [[nodiscard]] bool find_next_overlap_current_rules() {
+          constexpr const auto active = Rule::State::active;
+
+          auto const& u = _overlap.lhs;
+          auto const& v = _overlap.rhs;
+
+          LIBSEMIGROUPS_ASSERT(u->state() == active);
+          LIBSEMIGROUPS_ASSERT(v->state() == active);
+
+          auto const& u_lhs = u->lhs();
+          auto const& v_lhs = v->lhs();
+
+          auto const lower_limit
+              = u_lhs.cend() - std::min(u_lhs.size(), v_lhs.size());
+
+          // TODO check correct
+          auto it = _overlap.lhs->lhs().cend() - _overlap.length - 1;
+
+          while (it > lower_limit && u->state() == active
+                 && v->state() == active && check_overlap_length(u, v, it)) {
+            if (is_prefix(v_lhs.cbegin(), v_lhs.cend(), it, u_lhs.cend())) {
+              _overlap.length
+                  = static_cast<size_t>(std::distance(it, u_lhs.cend()));
+              return true;
+            }
+            --it;
+          }
+          return false;
+        }
+
+        void find_next_pair_of_rules_overlap() {
+          auto& first  = _cursors[0];
+          auto& second = _cursors[1];
+          if (_swap_current_pair_of_rules) {
+            _swap_current_pair_of_rules = false;
+            goto swap;
+          }
+
+          // TODO write comment about what is going on here
+          while (first != _rules->active_rules().end()) {
+            while (second != _rules->active_rules().begin()) {
+              --second;
+              _overlap.rhs    = *second;
+              _overlap.length = 0;
+              if (find_next_overlap_current_rules()) {
+                _swap_current_pair_of_rules = true;
+                return;
+              }
+            swap:
+              std::swap(_overlap.lhs, _overlap.rhs);
+              _overlap.length = 0;
+              if (find_next_overlap_current_rules()) {
+                return;
+              }
+            }
+            first++;
+            if (first != _rules->active_rules().end()) {
+              second          = first;
+              _overlap.lhs    = *first;
+              _overlap.rhs    = *second;
+              _overlap.length = 0;
+              if (find_next_overlap_current_rules()) {
+                return;
+              }
+            }
+          }
+        }
+
+       public:
+        // Uses the Range interface but should not be used as a Range
+        Overlap const& get() const noexcept {
+          return _overlap;
+        }
+
+        Overlaps& next() {
+          if (_cursors[0] != _rules->active_rules().end()) {
+            if (!find_next_overlap_current_rules()) {
+              find_next_pair_of_rules_overlap();
+            }
+          }
+          return *this;
+        }
+        // TODO check for the other mem fns of Range objects
+      };
+
       std::list<Rule*>        _active_rules;
-      std::array<iterator, 2> _cursors;
+      std::array<iterator, 2> _cursors;  // TODO rm
       std::vector<Rule*>      _inactive_rules;
+      Overlaps                _overlaps;
       std::vector<Rule*>      _pending_rules;
       mutable Stats           _stats;
 
@@ -213,6 +398,7 @@ namespace libsemigroups {
 
       [[nodiscard]] Rule* pop_pending_rule();
 
+      // TODO delete
       [[nodiscard]] iterator& cursor(size_t index) {
         LIBSEMIGROUPS_ASSERT(index < _cursors.size());
         return _cursors[index];
@@ -235,6 +421,14 @@ namespace libsemigroups {
         return _stats;
       }
 
+      ////////////////////////////////////////////////////////////////////////
+      // Overlaps
+      ////////////////////////////////////////////////////////////////////////
+
+      [[nodiscard]] Overlaps& overlaps() {
+        return _overlaps;
+      }
+
      private:
       Rule* add_pending_rule(Rule* rule);
 
@@ -246,6 +440,7 @@ namespace libsemigroups {
                                    Iterator last1,
                                    Iterator first2,
                                    Iterator last2);
+
     };  // class Rules
 
     template <typename Iterator>
