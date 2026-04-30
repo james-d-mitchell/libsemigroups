@@ -71,7 +71,7 @@ namespace libsemigroups {
   using RPOTrie    = detail::RewritingSystemTrie<RecursivePathCompare>;
   using RPOSet     = detail::RewritingSystemSet<RecursivePathCompare>;
 
-#define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet  // , RPOTrie, RPOSet
+#define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet, RPOTrie, RPOSet
 
   ////////////////////////////////////////////////////////////////////////
   // Standard tests
@@ -97,6 +97,7 @@ namespace libsemigroups {
     presentation::add_rule(p, "abacabacabacabacabacabacabacabac", "");
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
+    REQUIRE(kb.overlap_policy() == decltype(kb)::options::overlap::ABC);
 
     REQUIRE(!kb.rewriting_system().confluent());
 
@@ -105,21 +106,23 @@ namespace libsemigroups {
       kb.max_overlap(45);
       kb.run();
       REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
+      // REQUIRE(kb.rewriting_system().confluent());
+      // REQUIRE(kb.number_of_classes() == 10'752);
     } else if (std::is_same_v<order, RecursivePathCompare>) {
       kb.max_overlap(55);
       kb.run();
+      // FIXME something wrong here
       REQUIRE(kb.rewriting_system().number_of_rules() == 408);
     }
-    // REQUIRE(kb.rewriting_system().confluent());
-    // REQUIRE(kb.number_of_classes() == 10'752);
   }
 
-  // Takes approx. 2s
+  // Takes approx. 2s, is very slow with RPO
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "101",
                                    "kbmag/standalone/kb_data/funny3",
                                    "[standard][knuth-bendix][kbmag][shortlex]",
-                                   REWRITING_SYSTEM_TYPES) {
+                                   LenLexSet,
+                                   LenLexTrie) {
     auto                      rg = ReportGuard(false);
     Presentation<std::string> p;
     p.contains_empty_word(true);

@@ -683,6 +683,7 @@ namespace libsemigroups {
     }
 
     // OVERLAP_2 from Sims, p77
+    // TODO(1) move to elsewhere
     template <typename RewritingSystem, typename ReductionOrder>
     void
     KnuthBendixImpl<RewritingSystem, ReductionOrder>::overlap(Rule const* u,
@@ -706,6 +707,7 @@ namespace libsemigroups {
                || (*_overlap_measure)(u, v, it) <= _settings.max_overlap);
            --it) {
         // Check if B = [it, ulhs.cend()) is a prefix of v.first
+        // TODO(1) use std::mismatch instead
         if (is_prefix(vlhs.cbegin(), vlhs.cend(), it, ulhs.cend())) {
           // u = P_i = AB -> Q_i and v = P_j = BC -> Q_j This version of
           // new_rule does not reorder _rewriting_system.add_rule(AQ_j,
