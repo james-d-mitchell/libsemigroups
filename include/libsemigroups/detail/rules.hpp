@@ -22,13 +22,14 @@
 #ifndef LIBSEMIGROUPS_DETAIL_RULES_HPP_
 #define LIBSEMIGROUPS_DETAIL_RULES_HPP_
 
-#include <array>    // for array
-#include <cstddef>  // for size_t
-#include <cstdint>  // for uint64_t
-#include <list>     // for list
-#include <string>   // for std::string
-#include <utility>  // for move
-#include <vector>   // for vector
+#include <algorithm>  // for std::sort
+#include <array>      // for array
+#include <cstddef>    // for size_t
+#include <cstdint>    // for uint64_t
+#include <list>       // for list
+#include <string>     // for std::string
+#include <utility>    // for move
+#include <vector>     // for vector
 
 #include "libsemigroups/debug.hpp"  // for LIBSEMIGROUPS_ASSERT
 
@@ -179,7 +180,14 @@ namespace libsemigroups {
         _inactive_rules.push_back(rule);
       }
 
-      void sort_pending_rules();
+      template <typename Order>
+      void sort_pending_rules() {
+        std::sort(_pending_rules.begin(),
+                  _pending_rules.end(),
+                  [](Rule const* x, Rule const* y) {
+                    return Order()(x->lhs(), y->lhs());
+                  });
+      }
 
       [[nodiscard]] iterator make_active_rule_pending(iterator it);
 

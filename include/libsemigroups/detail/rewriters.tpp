@@ -78,7 +78,7 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder>
   bool RewritingSystemSet<ReductionOrder>::reduce() {
-    Rules::sort_pending_rules();
+    Rules::sort_pending_rules<ReductionOrder>();
 
     auto   start_time = std::chrono::high_resolution_clock::now();
     Ticker ticker;
@@ -387,7 +387,7 @@ namespace libsemigroups::detail {
     ValueGuard           guard(_ticker_running);
     std::atomic_uint64_t seen = 0;
 
-    Rules::sort_pending_rules();
+    Rules::sort_pending_rules<ReductionOrder>();
 
     bool rules_added = false;
     // TODO(1) could make this a setting, or use a different condition (such
