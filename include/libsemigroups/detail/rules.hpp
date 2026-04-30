@@ -248,7 +248,6 @@ namespace libsemigroups {
 
       [[nodiscard]] Rule* pop_pending_rule();
 
-      // TODO delete
       [[nodiscard]] iterator& cursor(size_t index) {
         LIBSEMIGROUPS_ASSERT(index < _cursors.size());
         return _cursors[index];
