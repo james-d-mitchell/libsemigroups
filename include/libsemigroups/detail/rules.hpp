@@ -108,50 +108,24 @@ namespace libsemigroups {
     };
 
     struct ABC : OverlapMeasure {
-      // TODO to cpp
       [[nodiscard]] size_t
       operator()(Rule const*                        AB,
                  Rule const*                        BC,
-                 std::string::const_iterator const& it) const override {
-        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
-                             && BC->state() == Rule::State::active);
-        LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
-        LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
-        // |A| + |BC|
-        return (it - AB->lhs().cbegin()) + BC->lhs().size();
-      }
+                 std::string::const_iterator const& it) const override;
     };
 
     struct AB_BC : OverlapMeasure {
-      // TODO to cpp
       [[nodiscard]] size_t
       operator()(Rule const*                        AB,
                  Rule const*                        BC,
-                 std::string::const_iterator const& it) const override {
-        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
-                             && BC->state() == Rule::State::active);
-        LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
-        LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
-        (void) it;
-        // |AB| + |BC|
-        return AB->lhs().size() + BC->lhs().size();
-      }
+                 std::string::const_iterator const& it) const override;
     };
 
     struct MAX_AB_BC : OverlapMeasure {
-      // TODO to cpp
       [[nodiscard]] size_t
       operator()(Rule const*                        AB,
                  Rule const*                        BC,
-                 std::string::const_iterator const& it) const override {
-        LIBSEMIGROUPS_ASSERT(AB->state() == Rule::State::active
-                             && BC->state() == Rule::State::active);
-        LIBSEMIGROUPS_ASSERT(AB->lhs().cbegin() <= it);
-        LIBSEMIGROUPS_ASSERT(it < AB->lhs().cend());
-        (void) it;
-        // max(|AB|, |BC|)
-        return std::max(AB->lhs().size(), BC->lhs().size());
-      }
+                 std::string::const_iterator const& it) const override;
     };
 
     ////////////////////////////////////////////////////////////////////////
