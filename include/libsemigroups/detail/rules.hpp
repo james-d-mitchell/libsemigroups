@@ -129,22 +129,6 @@ namespace libsemigroups {
     };
 
     ////////////////////////////////////////////////////////////////////////
-    // Overlap
-    ////////////////////////////////////////////////////////////////////////
-
-    struct Overlap {
-      // TODO make lhs + rhs actually be the cursors, meaning their type would
-      // change to iterator (ask JE if this is okay).
-      Rule const* lhs;
-      Rule const* rhs;
-      size_t      length;
-
-      bool operator==(Overlap const& that) const {
-        return lhs == that.lhs && rhs == that.rhs && length == that.length;
-      }
-    };
-
-    ////////////////////////////////////////////////////////////////////////
     // Rules
     ////////////////////////////////////////////////////////////////////////
 
