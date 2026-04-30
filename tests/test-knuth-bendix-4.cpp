@@ -115,8 +115,6 @@ namespace libsemigroups {
   }
 
   // Takes approx. 2s
-  // TODO the performance of this is worse than on main, it's not very clear
-  // to me why.
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "101",
                                    "kbmag/standalone/kb_data/funny3",
