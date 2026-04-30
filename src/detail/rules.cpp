@@ -54,9 +54,9 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
     // Rules - private
     ////////////////////////////////////////////////////////////////////////
-    // TODO I think this will be redundant so rm
+
     void Rules::init_cursors() {
-      for (auto& it : _overlaps._cursors) {
+      for (auto& it : _cursors) {
         it = _active_rules.end();
       }
     }
@@ -67,8 +67,8 @@ namespace libsemigroups {
 
     Rules::Rules()
         : _active_rules(),
+          _cursors(),
           _inactive_rules(),
-          _overlaps(this),
           _pending_rules(),
           _stats() {
       init_cursors();
@@ -87,7 +87,7 @@ namespace libsemigroups {
         add_inactive_rule(rule);
       }
       _pending_rules.clear();
-      init_cursors();  // TODO rm?
+      init_cursors();
 
       return *this;
     }
@@ -154,7 +154,7 @@ namespace libsemigroups {
       // point at end(), then in any loop we'd consider the loop finished, but
       // now we have just added a new element at the end of _active_rules, and
       // so we should have our cursor point at that new element instead.
-      for (auto& it : _overlaps._cursors) {
+      for (auto& it : _cursors) {
         if (it == _active_rules.end()) {
           --it;
         }
@@ -171,13 +171,13 @@ namespace libsemigroups {
       // std::list::erase returns an iterator point one beyond the erased
       // element
       it = _active_rules.erase(it);
-      if (_overlaps._cursors[1] == old_it) {
-        _overlaps._cursors[1] = it;
+      if (_cursors[1] == old_it) {
+        _cursors[1] = it;
       }
-      if (_overlaps._cursors[0] == old_it) {
-        _overlaps._cursors[0] = it;
+      if (_cursors[0] == old_it) {
+        _cursors[0] = it;
         if (it != _active_rules.begin()) {
-          --_overlaps._cursors[0];
+          --_cursors[0];
         }
       }
       return it;
