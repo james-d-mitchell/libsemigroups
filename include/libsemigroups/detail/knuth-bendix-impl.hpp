@@ -133,7 +133,7 @@ namespace libsemigroups {
     //! Those functions with the prefix `current_` do not perform any
     //! further enumeration.
 
-    // TODO Make overlap measure a template param?
+    // TODO(1) Make overlap measure a template param?
     // TODO(v4) 2nd template parameter no longer used, remove
     template <
         typename RewritingSystem = detail::RewritingSystemTrie<ShortLexCompare>,
@@ -161,7 +161,7 @@ namespace libsemigroups {
       //////////////////////////////////////////////////////////////////////////
 
       struct options {
-        // TODO -> overlap_policy
+        // TODO(v4) -> overlap_policy
         enum class overlap { ABC = 0, AB_BC = 1, MAX_AB_BC = 2 };
       };
 
@@ -723,10 +723,10 @@ namespace libsemigroups {
       }
 
      private:
-      // TODO remove this or what?
+      // TODO(1) expose in public interface
       void rewrite_inplace(native_word_type& w);
 
-      // TODO remove this or what?
+      // TODO(1) expose in public interface
       [[nodiscard]] native_word_type rewrite(native_word_type w) {
         rewrite_inplace(w);
         return w;
