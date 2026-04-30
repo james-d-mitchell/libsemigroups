@@ -141,10 +141,7 @@ namespace libsemigroups {
     REQUIRE(!kb.rewriting_system().confluent());
     REQUIRE(kb.overlap_policy() == decltype(kb)::options::overlap::ABC);
 
-    // FIXME setting the reduction_threshold to 1 makes this seemingly run
-    // forever
     kb.rewriting_system().settings().reduction_threshold = 200;
-
     knuth_bendix::by_overlap_length(kb);
     // kb.run() // also works, but is slower
     REQUIRE(kb.rewriting_system().confluent());
