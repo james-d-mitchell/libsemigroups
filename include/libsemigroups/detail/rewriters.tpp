@@ -355,7 +355,8 @@ namespace libsemigroups::detail {
   // Public member functions - alphabetical order
   ////////////////////////////////////////////////////////////////////////
 
-  // TODO this is identical in RewritingSystemTrie/Set maybe should be in Base?
+  // TODO(1) this is identical in RewritingSystemTrie/Set maybe should be in
+  // Base?
   template <typename ReductionOrder>
   template <typename Iterator>
   RewritingSystemTrie<ReductionOrder>&

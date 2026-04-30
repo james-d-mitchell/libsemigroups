@@ -256,7 +256,8 @@ namespace libsemigroups {
       if (std::equal(first1, last1, first2, last2)) {
         return tril::TRUE;
       }
-      // TODO remove allocations here
+      // TODO(1) remove allocations here, can't use _tmp_element1 here because
+      // it's used in reduce
       native_word_type w1, w2;
       reduce_no_run_no_checks(std::back_inserter(w1), first1, last1);
       reduce_no_run_no_checks(std::back_inserter(w2), first2, last2);
@@ -417,7 +418,7 @@ namespace libsemigroups {
     // KnuthBendixImpl - other methods - private
     //////////////////////////////////////////////////////////////////////////
 
-    // TODO move to Stats
+    // TODO(1) move to Stats
     template <typename RewritingSystem, typename ReductionOrder>
     void KnuthBendixImpl<RewritingSystem, ReductionOrder>::stats_check_point() {
       _stats.prev_active_rules = _rewriting_system.number_of_rules();
@@ -514,7 +515,7 @@ namespace libsemigroups {
 
       report_before_run();
 
-      // TODO re-add overlap iterator stuff
+      // TODO(1) re-add overlap iterator stuff
       _rewriting_system.reduce();
       auto& first  = _rewriting_system.cursor(0);
       auto& second = _rewriting_system.cursor(1);
@@ -682,7 +683,6 @@ namespace libsemigroups {
     }
 
     // OVERLAP_2 from Sims, p77
-    // TODO move to RewritingSystemSet as an iterator??
     template <typename RewritingSystem, typename ReductionOrder>
     void
     KnuthBendixImpl<RewritingSystem, ReductionOrder>::overlap(Rule const* u,

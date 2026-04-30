@@ -60,7 +60,7 @@ namespace libsemigroups {
      protected:
       enum class State : uint8_t {
         none,
-        reducing_pending_rules,  // TODO is this name good?
+        reducing_pending_rules,  // TODO(1) is this name good?
         checking_confluence
       };
 
