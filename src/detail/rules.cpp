@@ -159,13 +159,6 @@ namespace libsemigroups {
       }
     }
 
-    void Rules::sort_pending_rules() {
-      std::sort(
-          _pending_rules.begin(),
-          _pending_rules.end(),
-          [](Rule const* x, Rule const* y) { return x->lhs() > y->lhs(); });
-    }
-
     Rules::iterator Rules::make_active_rule_pending(iterator it) {
       LIBSEMIGROUPS_ASSERT((*it)->state() == Rule::State::active);
       LIBSEMIGROUPS_ASSERT((*it)->state() == Rule::State::active);
