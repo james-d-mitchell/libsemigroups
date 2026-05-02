@@ -26,6 +26,7 @@
 #include <chrono>         // for time_point
 #include <list>           // for list
 #include <set>            // for set
+#include <stack>          // for stack
 #include <string>         // for basic_string, operator==
 #include <unordered_map>  // for unordered_map
 

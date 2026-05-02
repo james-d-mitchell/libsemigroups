@@ -393,8 +393,8 @@ namespace libsemigroups::detail {
     bool rules_added = false;
     // TODO(1) could make this a setting, or use a different condition (such
     // as Rules::active_rules().size() / 2 or something)
-    bool use_separate_trie
-        = Rules::pending_rules().size() < Rules::active_rules().size();
+    bool use_separate_trie = false;
+    //  = Rules::pending_rules().size() < Rules::active_rules().size();
 
     while (!Rules::pending_rules().empty()) {
       if (use_separate_trie) {
@@ -443,9 +443,8 @@ namespace libsemigroups::detail {
 
         Trie* new_rule_trie = use_separate_trie ? &_new_rule_trie : &_rule_trie;
 
-        auto const first = Rules::active_rules().begin();
-        auto const last  = Rules::active_rules().end();
-        for (auto it = first; it != last;) {
+        for (auto it = Rules::active_rules().begin();
+             it != Rules::active_rules().end();) {
           ++seen;
           Rule* rule = *it;
           // Check whether any rule contains the left-hand-side of the "new"
@@ -512,8 +511,10 @@ namespace libsemigroups::detail {
   template <typename ReductionOrder>
   void RewritingSystemTrie<ReductionOrder>::rewrite_no_reduce(
       native_word_type& v) const {
+    // fmt::print("Rewriting {} -> ", to_printable(v));
     // Check if v is rewriteable
     if (v.size() < Rules::stats().min_length_lhs_rule) {
+      // fmt::print("{}\n", to_printable(v));
       return;
     }
     // OLD VERSION; Assumes length reducing!!
@@ -615,6 +616,7 @@ namespace libsemigroups::detail {
         current = _trie_nodes_visited_indices.back();
       }
     }
+    // fmt::print("{}\n", to_printable(v));
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -661,44 +663,48 @@ namespace libsemigroups::detail {
       Rule const* rule1,
       index_type  current_node,
       size_t      overlap_length) const {
-    LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::active);
-    if (_rule_trie.node_no_checks(current_node).terminal()) {
-      Rule const* rule2 = _rule_trie.node_no_checks(current_node).value();
-      // Process overlap
-      // Word looks like ABC where the LHS of rule1 corresponds to AB,
-      // the LHS of rule2 corresponds to BC, and |C|=nodes.size() - 1.
-      // AB -> X, BC -> Y
-      // ABC gets rewritten to XC and AY
-      // TODO(1) remove allocation, use a MultiView, and check equality,
-      // then copy inside the if-condition
-      native_word_type word1;
-      native_word_type word2;
+    std::stack<index_type, std::vector<index_type>> stack;
+    stack.push(current_node);
 
-      word1.assign(rule1->rhs());  // X
-      word1.append(rule2->lhs().cbegin() + overlap_length,
-                   rule2->lhs().cend());  // C
+    while (!stack.empty()) {
+      current_node = stack.top();
+      stack.pop();
+      LIBSEMIGROUPS_ASSERT(rule1->state() == Rule::State::active);
+      if (_rule_trie.node_no_checks(current_node).terminal()) {
+        Rule const* rule2 = _rule_trie.node_no_checks(current_node).value();
+        // Process overlap
+        // Word looks like ABC where the LHS of rule1 corresponds to AB,
+        // the LHS of rule2 corresponds to BC, and |C|=nodes.size() - 1.
+        // AB -> X, BC -> Y
+        // ABC gets rewritten to XC and AY
+        // TODO(1) remove allocation, use a MultiView, and check equality,
+        // then copy inside the if-condition
+        native_word_type word1;
+        native_word_type word2;
 
-      word2.assign(rule1->lhs().cbegin(),
-                   rule1->lhs().cend() - overlap_length);  // A
-      word2.append(rule2->rhs());                          // Y
+        word1.assign(rule1->rhs());  // X
+        word1.append(rule2->lhs().cbegin() + overlap_length,
+                     rule2->lhs().cend());  // C
 
-      if (word1 != word2) {
-        rewrite_no_reduce(word1);
-        rewrite_no_reduce(word2);
+        word2.assign(rule1->lhs().cbegin(),
+                     rule1->lhs().cend() - overlap_length);  // A
+        word2.append(rule2->rhs());                          // Y
+
         if (word1 != word2) {
-          set_cached_confluent(tril::FALSE);
-          return false;
+          rewrite_no_reduce(word1);
+          rewrite_no_reduce(word2);
+          if (word1 != word2) {
+            set_cached_confluent(tril::FALSE);
+            return false;
+          }
         }
       }
-      return true;
-    }
 
-    // Read each possible letter and traverse down the trie
-    for (letter_type x = 0; x != _rule_trie.alphabet_size(); ++x) {
-      auto child = _rule_trie.child_no_checks(current_node, x);
-      if (child != UNDEFINED) {
-        if (!descendants_confluent(rule1, child, overlap_length)) {
-          return false;
+      // Read each possible letter and traverse down the trie
+      for (letter_type x = 0; x != _rule_trie.alphabet_size(); ++x) {
+        auto child = _rule_trie.child_no_checks(current_node, x);
+        if (child != UNDEFINED) {
+          stack.push(child);
         }
       }
     }

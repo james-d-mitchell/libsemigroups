@@ -215,12 +215,15 @@ namespace libsemigroups {
         _inactive_rules.push_back(rule);
       }
 
+      // TODO to tpp
       template <typename Order>
       void sort_pending_rules() {
         std::sort(_pending_rules.begin(),
                   _pending_rules.end(),
                   [](Rule const* x, Rule const* y) {
-                    return Order()(x->lhs(), y->lhs());
+                    return Order()(x->lhs(), y->lhs())
+                           || (x->lhs() == y->lhs()
+                               && Order()(x->rhs(), y->rhs()));
                   });
       }
 
