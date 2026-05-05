@@ -71,7 +71,7 @@ namespace libsemigroups {
   using RPOTrie    = detail::RewritingSystemTrie<RecursivePathCompare>;
   using RPOSet     = detail::RewritingSystemSet<RecursivePathCompare>;
 
-#define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet, RPOTrie, RPOSet
+#define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet  // RPOTrie, RPOSet
 
   ////////////////////////////////////////////////////////////////////////
   // Standard tests

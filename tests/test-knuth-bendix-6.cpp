@@ -361,7 +361,7 @@ namespace libsemigroups {
                                    "[quick][knuth-bendix]",
                                    REWRITING_SYSTEM_TYPES) {
     using literals::operator""_w;
-    auto            rg = ReportGuard(false);
+    auto rg = ReportGuard(false);
 
     Presentation<word_type> p1;
     p1.contains_empty_word(true);
@@ -472,7 +472,7 @@ namespace libsemigroups {
                                    "process pending rules x2",
                                    "[quick][knuth-bendix][no-valgrind]",
                                    REWRITING_SYSTEM_TYPES) {
-    auto                    rg = ReportGuard(false);
+    auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
     p.alphabet(2);
     p.contains_empty_word(true);

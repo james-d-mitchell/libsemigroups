@@ -523,6 +523,7 @@ namespace libsemigroups {
 
       // TODO write comment about what is going on here
       do {
+        // TODO try sorting active_rules?
         for (;
              first != _rewriting_system.active_rules().end() && !stop_running();
              ++first) {

@@ -94,6 +94,10 @@ namespace libsemigroups {
       }
     }
 
+    [[nodiscard]] static inline size_t length(Rule* rule) {
+      return rule->lhs().size() + rule->rhs().size();
+    }
+
     ////////////////////////////////////////////////////////////////////////
     // OverlapMeasure
     ////////////////////////////////////////////////////////////////////////
