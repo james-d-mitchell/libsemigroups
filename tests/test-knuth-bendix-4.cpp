@@ -32,6 +32,8 @@
 //
 // 6: contains tests for KnuthBendix.
 
+#define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
+
 #include <algorithm>      // for next_permutation
 #include <chrono>         // for milliseconds, seconds
 #include <cmath>          // for pow
@@ -44,6 +46,7 @@
 #include <vector>         // for vector, operator==
 
 #include "Catch2-3.14.0/catch_amalgamated.hpp"  // for AssertionHandler, oper...
+#include "libsemigroups/detail/rules.hpp"
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEMPLATE_TEST_CASE
 
 #include "libsemigroups/constants.hpp"              // for operator==, operat...
@@ -185,7 +188,6 @@ namespace libsemigroups {
     REQUIRE(!kb.rewriting_system().confluent());
 
     kb.run();
-    // knuth_bendix::by_overlap_length(kb);
     REQUIRE(kb.finished());
     REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.rewriting_system().number_of_rules() == 194);
@@ -374,12 +376,11 @@ namespace libsemigroups {
 
   // Fibonacci group F(2,7) - without inverses
   // Takes approx. 13s
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "108",
-      "kbmag/standalone/kb_data/f27) (infinite) (1 / 2",
-      "[extreme][knuth-bendix][kbmag][shortlex]",
-      REWRITING_SYSTEM_TYPES) {
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "108",
+                                   "kbmag/standalone/kb_data/f27",
+                                   "[extreme][knuth-bendix][kbmag][shortlex]",
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.alphabet("aAbBcCdDyYfFgG");
@@ -792,20 +793,45 @@ namespace libsemigroups {
                                    "146",
                                    "process millions of pending rules",
                                    "[knuth-bendix][extreme]",
+                                   // RPOTrie,
                                    LenLexTrie) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.contains_empty_word(true);
     p.alphabet("abAB");
 
-    auto rules = StringRange().alphabet(p.alphabet()).min(12).max(13);
+    auto rules = StringRange().alphabet(p.alphabet()).min(11).max(12);
     p.rules    = rules | rx::to_vector();
-    presentation::add_rule(p, "aaaabbbb", "aabb");
+    presentation::add_rule(p, "aaabbb", "aabb");
     KnuthBendix<std::string, TestType> k(twosided, p);
-    REQUIRE(k.rewriting_system().number_of_rules() == 8'388'609);
-    k.rewriting_system().reduce();
-    REQUIRE(k.rewriting_system().number_of_rules() == 8'158'817);
-    REQUIRE(!k.rewriting_system().confluent());
+    REQUIRE(k.rewriting_system().number_of_rules() == 2'097'153);
+
+    SECTION("sorted by lhs_rev_lex_cmp") {
+      k.rewriting_system().sort_pending_rules_by(detail::lhs_rev_lex_cmp);
+      k.rewriting_system().reduce();
+      REQUIRE(k.rewriting_system().number_of_rules() == 2'041'465);
+    }
+    SECTION("sorted by lhs_lex_cmp") {
+      k.rewriting_system().sort_pending_rules_by(detail::lhs_lex_cmp);
+      k.rewriting_system().reduce();
+      REQUIRE(k.rewriting_system().number_of_rules() == 2'045'649);
+    }
+    SECTION("sorted by rpo_cmp") {
+      k.rewriting_system().sort_pending_rules_by(detail::rpo_cmp);
+      k.rewriting_system().reduce();
+      REQUIRE(k.rewriting_system().number_of_rules() == 2'041'466);
+    }
+    REQUIRE(k.rewriting_system().pending_rules().size() == 0);
+
+    for (auto const& [i, rule] : rx::enumerate(k.active_rules())) {
+      REQUIRE(std::pair(i, knuth_bendix::reduce_no_run(k, rule.first))
+              == std::pair(i, rule.second));
+      REQUIRE(std::pair(i, knuth_bendix::reduce_no_run(k, rule.second))
+              == std::pair(i, rule.second));
+    }
+
+    // NOTE: in this example if we sort the pending rules in RPOTrie by
+    // rpo_cmp, then the number of rules in the reduced system is different ?!
 
     // FIXME the reporting is broken, % exceeds 100
     // #1: KnuthBendix: reducing rules: 8,399,310 / 8,188,053 (102.6%)
