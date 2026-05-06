@@ -99,9 +99,20 @@ namespace libsemigroups {
       return rule->lhs().size() + rule->rhs().size();
     }
 
-    [[nodiscard]] static inline bool lhs_lex(Rule const* rule1,
-                                             Rule const* rule2) {
+    ////////////////////////////////////////////////////////////////////////
+    // Rule comparison functions
+    ////////////////////////////////////////////////////////////////////////
+
+    [[nodiscard]] static inline bool lhs_lex_cmp(Rule const* rule1,
+                                                 Rule const* rule2) {
       return rule1->lhs() < rule2->lhs();
+    }
+
+    [[nodiscard]] static inline bool rpo_cmp(Rule const* rule1,
+                                             Rule const* rule2) {
+      return recursive_path_compare(rule1->lhs(), rule2->lhs())
+             || (rule1->lhs() == rule2->lhs()
+                 && recursive_path_compare(rule1->rhs(), rule2->rhs()));
     }
 
     ////////////////////////////////////////////////////////////////////////

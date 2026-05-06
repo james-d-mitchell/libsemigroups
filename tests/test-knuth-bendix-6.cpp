@@ -484,7 +484,6 @@ namespace libsemigroups {
     }
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
-    kb.rewriting_system().sort_pending_rules_by(Order::lex);
     REQUIRE(kb.rewriting_system().number_of_rules() == 524'286);
     kb.rewriting_system().reduce();
     REQUIRE(kb.rewriting_system().number_of_rules() == 2);

@@ -1627,7 +1627,7 @@ namespace libsemigroups {
     KnuthBendix<std::string, TestType> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
     kb.rewriting_system().settings().reduction_threshold = 1024;
-    kb.rewriting_system().sort_pending_rules_by(Order::recursive);
+    kb.rewriting_system().sort_pending_rules_by(detail::rpo_cmp);
     // TODO set kb so that it does not use a separate trie for adding new rules
     kb.run();
     REQUIRE(kb.rewriting_system().confluent());

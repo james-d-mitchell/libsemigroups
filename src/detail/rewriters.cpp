@@ -53,7 +53,7 @@ namespace libsemigroups {
     RewritingSystemBase::RewritingSystemBase()
         : _cached_confluent(false),
           _confluence_known(false),
-          _pending_rules_comparator(lhs_lex),
+          _pending_rules_comparator(lhs_lex_cmp),
           _state(State::none),
           _ticker_running(false) {}
 
@@ -61,7 +61,7 @@ namespace libsemigroups {
       Rules::init();
       _cached_confluent         = false;
       _confluence_known         = false;
-      _pending_rules_comparator = lhs_lex;
+      _pending_rules_comparator = lhs_lex_cmp;
       _state                    = State::none;
       _ticker_running           = false;
       return *this;
