@@ -480,10 +480,11 @@ namespace libsemigroups {
     WordRange wr;
     wr.alphabet_size(2).min(0).max(19);
     for (auto const& word : wr) {
-      presentation::add_rule(p, word, ""_w);
+      presentation::add_rule_no_checks(p, word, ""_w);
     }
 
     KnuthBendix<word_type, TestType> kb(twosided, p);
+    kb.rewriting_system().sort_pending_rules_by(Order::lex);
     REQUIRE(kb.rewriting_system().number_of_rules() == 524'286);
     kb.rewriting_system().reduce();
     REQUIRE(kb.rewriting_system().number_of_rules() == 2);

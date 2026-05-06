@@ -1439,16 +1439,16 @@ namespace libsemigroups {
     REQUIRE(knuth_bendix::contains(kb, "cb", "bc"));
     REQUIRE(knuth_bendix::contains(kb, "ya", "ay"));
     REQUIRE(
-        (kb.active_rules() | rx::to_vector())
-        == std::vector<std::pair<std::string, std::string>>({{"ga", "ag"},
-                                                             {"GBgb", "h"},
-                                                             {"FAfa", "g"},
-                                                             {"ya", "ay"},
-                                                             {"YByb", "f"},
-                                                             {"DAda", "y"},
-                                                             {"cb", "bc"},
+        (kb.active_rules() | rx::sort() | rx::to_vector())
+        == std::vector<std::pair<std::string, std::string>>({{"BAba", "c"},
                                                              {"CAca", "d"},
-                                                             {"BAba", "c"}}));
+                                                             {"DAda", "y"},
+                                                             {"FAfa", "g"},
+                                                             {"GBgb", "h"},
+                                                             {"YByb", "f"},
+                                                             {"cb", "bc"},
+                                                             {"ga", "ag"},
+                                                             {"ya", "ay"}}));
   }
 
   // //  A nonhopfian group
@@ -1473,15 +1473,15 @@ namespace libsemigroups {
 
     REQUIRE(knuth_bendix::contains(kb, "Baab", "aaa"));
     REQUIRE(
-        (kb.active_rules() | rx::to_vector())
-        == std::vector<std::pair<std::string, std::string>>({{"aA", ""},
+        (kb.active_rules() | rx::sort() | rx::to_vector())
+        == std::vector<std::pair<std::string, std::string>>({{"AB", "aaBAA"},
                                                              {"Aa", ""},
-                                                             {"bB", ""},
+                                                             {"Ab", "abAAA"},
                                                              {"Bb", ""},
+                                                             {"aA", ""},
                                                              {"aaaB", "Baa"},
                                                              {"aab", "baaa"},
-                                                             {"AB", "aaBAA"},
-                                                             {"Ab", "abAAA"}}));
+                                                             {"bB", ""}}));
   }
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
@@ -1603,11 +1603,7 @@ namespace libsemigroups {
   // presentation here was derived by first applying the NQA to find the
   // maximal nilpotent quotient, and then introducing new generators for
   // the PCP generators.
-  // Takes about 15s with RPOSet, seems to run forever with RPOTrie, probably
-  // because knuth_bendix::by_overlap_length(kb); is more or less ignored at
-  // present TODO
-  // It seems (at least from the reporting) that we get stuck in an infinite
-  // loop inside "reduce"
+  // Takes about 15s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "932",
                                    "kbmag/heinnilp",
@@ -1631,7 +1627,8 @@ namespace libsemigroups {
     KnuthBendix<std::string, TestType> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
     kb.rewriting_system().settings().reduction_threshold = 1024;
-    // knuth_bendix::by_overlap_length(kb);
+    kb.rewriting_system().sort_pending_rules_by(Order::recursive);
+    // TODO set kb so that it does not use a separate trie for adding new rules
     kb.run();
     REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.rewriting_system().number_of_rules() == 72);

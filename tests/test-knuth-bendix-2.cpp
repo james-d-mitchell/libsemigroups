@@ -1600,8 +1600,11 @@ namespace libsemigroups {
     REQUIRE((kb.active_rules() | sort(weird_cmp()) | to_vector())
             == std::vector<std::pair<word_type, word_type>>(
                 {{00_w, 0_w}, {11_w, 1_w}, {010_w, 10_w}, {101_w, 10_w}}));
-    REQUIRE(kb.gilman_graph_node_labels()
-            == std::vector({{}, 0_w, 01_w, 1_w, 10_w}));
+    auto expected = std::vector({{}, 0_w, 01_w, 1_w, 10_w});
+    auto found    = kb.gilman_graph_node_labels();
+    std::sort(found.begin(), found.end());
+
+    REQUIRE(found == expected);
     // The gilman_graph generated is isomorphic to the word_graph given, but not
     // identical. Since the normal forms are correct (see above) the below check
     // is omitted.
@@ -1794,7 +1797,7 @@ namespace libsemigroups {
     p.alphabet(2);
     presentation::add_idempotent_rules_no_checks(p, 01_w);
     using words::operator+;
-    WordRange    words;
+    WordRange words;
     words.alphabet_size(2).min(0).max(6);
     size_t n = 2;
     for (size_t a = 0; a < n - 1; ++a) {

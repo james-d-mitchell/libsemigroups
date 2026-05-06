@@ -51,12 +51,14 @@ namespace libsemigroups {
 
     class RewritingSystemBase : public Rules {
      private:
-      mutable std::atomic<bool> _cached_confluent;
-      mutable std::atomic<bool> _confluence_known;
-
       struct Settings {
         size_t reduction_threshold = 128;
-      } _settings;
+      };
+
+      mutable std::atomic<bool> _cached_confluent;
+      mutable std::atomic<bool> _confluence_known;
+      Settings                  _settings;
+      Order                     _sort_pending_rules_order;
 
      protected:
       enum class State : uint8_t {
@@ -95,6 +97,19 @@ namespace libsemigroups {
       virtual ~RewritingSystemBase();
 
       using Rules::stats;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Settings
+      ////////////////////////////////////////////////////////////////////////
+
+      RewritingSystemBase& sort_pending_rules_by(Order order) noexcept {
+        _sort_pending_rules_order = order;
+        return *this;
+      }
+
+      [[nodiscard]] Order sort_pending_rules_by() const noexcept {
+        return _sort_pending_rules_order;
+      }
 
       ////////////////////////////////////////////////////////////////////////
       // Public mem fns
@@ -142,6 +157,27 @@ namespace libsemigroups {
       }
 
      protected:
+      // TODO to cpp
+      void sort_pending_rules() {
+        switch (_sort_pending_rules_order) {
+          case Order::lex: {
+            Rules::sort_pending_rules(LexicographicalCompare{});
+            break;
+          }
+          case Order::shortlex: {
+            Rules::sort_pending_rules(ShortLexCompare{});
+            break;
+          }
+          case Order::recursive: {
+            Rules::sort_pending_rules(RecursivePathCompare{});
+            break;
+          }
+          case Order::none: {
+            // Do nothing
+          }
+        }
+      }
+
       template <typename RewritingSystem, typename ReductionOrder>
       friend class KnuthBendixImpl;
 

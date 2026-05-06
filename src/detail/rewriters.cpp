@@ -53,25 +53,28 @@ namespace libsemigroups {
     RewritingSystemBase::RewritingSystemBase()
         : _cached_confluent(false),
           _confluence_known(false),
+          _sort_pending_rules_order(Order::lex),
           _state(State::none),
           _ticker_running(false) {}
 
     RewritingSystemBase& RewritingSystemBase::init() {
       Rules::init();
-      _cached_confluent = false;
-      _confluence_known = false;
-      _state            = State::none;
-      _ticker_running   = false;
+      _cached_confluent         = false;
+      _confluence_known         = false;
+      _sort_pending_rules_order = Order::lex;
+      _state                    = State::none;
+      _ticker_running           = false;
       return *this;
     }
 
     RewritingSystemBase&
     RewritingSystemBase::operator=(RewritingSystemBase const& that) {
       Rules::operator=(that);
-      _cached_confluent = that._cached_confluent.load();
-      _confluence_known = that._confluence_known.load();
-      _state            = that._state;
-      _ticker_running   = that._ticker_running;
+      _cached_confluent         = that._cached_confluent.load();
+      _confluence_known         = that._confluence_known.load();
+      _sort_pending_rules_order = that._sort_pending_rules_order;
+      _state                    = that._state;
+      _ticker_running           = that._ticker_running;
 
       return *this;
     }
@@ -79,10 +82,11 @@ namespace libsemigroups {
     RewritingSystemBase&
     RewritingSystemBase::operator=(RewritingSystemBase&& that) {
       Rules::operator=(std::move(that));
-      _cached_confluent = that._cached_confluent.load();
-      _confluence_known = that._confluence_known.load();
-      _state            = that._state;
-      _ticker_running   = std::move(that._ticker_running);
+      _cached_confluent         = that._cached_confluent.load();
+      _confluence_known         = that._confluence_known.load();
+      _sort_pending_rules_order = std::move(that._sort_pending_rules_order);
+      _state                    = that._state;
+      _ticker_running           = std::move(that._ticker_running);
       return *this;
     }
 

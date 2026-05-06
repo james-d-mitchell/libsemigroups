@@ -32,6 +32,7 @@
 #include <vector>     // for vector
 
 #include "libsemigroups/debug.hpp"  // for LIBSEMIGROUPS_ASSERT
+#include "libsemigroups/order.hpp"
 
 namespace libsemigroups {
   namespace detail {
@@ -220,14 +221,13 @@ namespace libsemigroups {
       }
 
       // TODO to tpp
-      template <typename Order>
-      void sort_pending_rules() {
+      template <typename Functor>
+      void sort_pending_rules(Functor&& cmp) {
         std::sort(_pending_rules.begin(),
                   _pending_rules.end(),
-                  [](Rule const* x, Rule const* y) {
-                    return Order()(x->lhs(), y->lhs())
-                           || (x->lhs() == y->lhs()
-                               && Order()(x->rhs(), y->rhs()));
+                  [&cmp](Rule const* x, Rule const* y) {
+                    return cmp(x->lhs(), y->lhs());
+                    //   || (x->lhs() == y->lhs() && cmp(x->rhs(), y->rhs()));
                   });
       }
 

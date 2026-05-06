@@ -15,11 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// This file contains the implementation of a Rule<ReductionOrder> object
-// containers for Rule<ReductionOrder> objects. It also includes rewriter
-// classes that can be used to rewrite strings relative to a collection of
-// rules.
-
 namespace libsemigroups::detail {
 
   ////////////////////////////////////////////////////////////////////////
@@ -78,7 +73,7 @@ namespace libsemigroups::detail {
 
   template <typename ReductionOrder>
   bool RewritingSystemSet<ReductionOrder>::reduce() {
-    Rules::sort_pending_rules<ReductionOrder>();
+    RewritingSystemBase::sort_pending_rules();
 
     auto   start_time = std::chrono::high_resolution_clock::now();
     Ticker ticker;
@@ -388,13 +383,13 @@ namespace libsemigroups::detail {
     ValueGuard           guard(_ticker_running);
     std::atomic_uint64_t seen = 0;
 
-    Rules::sort_pending_rules<ReductionOrder>();
+    RewritingSystemBase::sort_pending_rules();
 
     bool rules_added = false;
     // TODO(1) could make this a setting, or use a different condition (such
     // as Rules::active_rules().size() / 2 or something)
-    bool use_separate_trie = false;
-    //  = Rules::pending_rules().size() < Rules::active_rules().size();
+    bool use_separate_trie
+        = Rules::pending_rules().size() < Rules::active_rules().size();
 
     while (!Rules::pending_rules().empty()) {
       if (use_separate_trie) {
