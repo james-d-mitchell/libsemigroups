@@ -53,7 +53,7 @@ namespace libsemigroups {
     RewritingSystemBase::RewritingSystemBase()
         : _cached_confluent(false),
           _confluence_known(false),
-          _sort_pending_rules_order(Order::lex),
+          _pending_rules_comparator(lhs_lex),
           _state(State::none),
           _ticker_running(false) {}
 
@@ -61,7 +61,7 @@ namespace libsemigroups {
       Rules::init();
       _cached_confluent         = false;
       _confluence_known         = false;
-      _sort_pending_rules_order = Order::lex;
+      _pending_rules_comparator = lhs_lex;
       _state                    = State::none;
       _ticker_running           = false;
       return *this;
@@ -72,7 +72,7 @@ namespace libsemigroups {
       Rules::operator=(that);
       _cached_confluent         = that._cached_confluent.load();
       _confluence_known         = that._confluence_known.load();
-      _sort_pending_rules_order = that._sort_pending_rules_order;
+      _pending_rules_comparator = that._pending_rules_comparator;
       _state                    = that._state;
       _ticker_running           = that._ticker_running;
 
@@ -84,7 +84,7 @@ namespace libsemigroups {
       Rules::operator=(std::move(that));
       _cached_confluent         = that._cached_confluent.load();
       _confluence_known         = that._confluence_known.load();
-      _sort_pending_rules_order = std::move(that._sort_pending_rules_order);
+      _pending_rules_comparator = std::move(that._pending_rules_comparator);
       _state                    = that._state;
       _ticker_running           = std::move(that._ticker_running);
       return *this;

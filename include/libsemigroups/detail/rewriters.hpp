@@ -50,15 +50,20 @@ namespace libsemigroups {
     ////////////////////////////////////////////////////////////////////////
 
     class RewritingSystemBase : public Rules {
+     public:
+      using native_word_type = Rule::native_word_type;
+      using rule_const_reference
+          = std::pair<native_word_type const&, native_word_type const&>;
+
      private:
       struct Settings {
         size_t reduction_threshold = 128;
       };
 
-      mutable std::atomic<bool> _cached_confluent;
-      mutable std::atomic<bool> _confluence_known;
-      Settings                  _settings;
-      Order                     _sort_pending_rules_order;
+      mutable std::atomic<bool>                     _cached_confluent;
+      mutable std::atomic<bool>                     _confluence_known;
+      Settings                                      _settings;
+      std::function<bool(Rule const*, Rule const*)> _pending_rules_comparator;
 
      protected:
       enum class State : uint8_t {
@@ -71,10 +76,6 @@ namespace libsemigroups {
       bool  _ticker_running;
 
      public:
-      using native_word_type = Rule::native_word_type;
-      using rule_const_reference
-          = std::pair<native_word_type const&, native_word_type const&>;
-
       ////////////////////////////////////////////////////////////////////////
       // Constructors + inits
       ////////////////////////////////////////////////////////////////////////
@@ -102,13 +103,10 @@ namespace libsemigroups {
       // Settings
       ////////////////////////////////////////////////////////////////////////
 
-      RewritingSystemBase& sort_pending_rules_by(Order order) noexcept {
-        _sort_pending_rules_order = order;
+      template <typename Compare>
+      RewritingSystemBase& sort_pending_rules_by(Compare&& cmp) noexcept {
+        _pending_rules_comparator = std::forward<Compare>(cmp);
         return *this;
-      }
-
-      [[nodiscard]] Order sort_pending_rules_by() const noexcept {
-        return _sort_pending_rules_order;
       }
 
       ////////////////////////////////////////////////////////////////////////
@@ -159,23 +157,10 @@ namespace libsemigroups {
      protected:
       // TODO to cpp
       void sort_pending_rules() {
-        switch (_sort_pending_rules_order) {
-          case Order::lex: {
-            Rules::sort_pending_rules(LexicographicalCompare{});
-            break;
-          }
-          case Order::shortlex: {
-            Rules::sort_pending_rules(ShortLexCompare{});
-            break;
-          }
-          case Order::recursive: {
-            Rules::sort_pending_rules(RecursivePathCompare{});
-            break;
-          }
-          case Order::none: {
-            // Do nothing
-          }
+        if (_pending_rules_comparator == nullptr) {
+          return;
         }
+        Rules::sort_pending_rules(_pending_rules_comparator);
       }
 
       template <typename RewritingSystem, typename ReductionOrder>

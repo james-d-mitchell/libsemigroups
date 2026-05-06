@@ -95,8 +95,13 @@ namespace libsemigroups {
       }
     }
 
-    [[nodiscard]] static inline size_t length(Rule* rule) {
+    [[nodiscard]] static inline size_t length(Rule const* rule) {
       return rule->lhs().size() + rule->rhs().size();
+    }
+
+    [[nodiscard]] static inline bool lhs_lex(Rule const* rule1,
+                                             Rule const* rule2) {
+      return rule1->lhs() < rule2->lhs();
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -221,14 +226,9 @@ namespace libsemigroups {
       }
 
       // TODO to tpp
-      template <typename Functor>
-      void sort_pending_rules(Functor&& cmp) {
-        std::sort(_pending_rules.begin(),
-                  _pending_rules.end(),
-                  [&cmp](Rule const* x, Rule const* y) {
-                    return cmp(x->lhs(), y->lhs());
-                    //   || (x->lhs() == y->lhs() && cmp(x->rhs(), y->rhs()));
-                  });
+      template <typename Compare>
+      void sort_pending_rules(Compare&& cmp) {
+        std::sort(_pending_rules.begin(), _pending_rules.end(), cmp);
       }
 
       [[nodiscard]] iterator make_active_rule_pending(iterator it);
