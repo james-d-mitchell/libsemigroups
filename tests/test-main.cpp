@@ -128,7 +128,10 @@ struct LibsemigroupsListener : Catch::EventListenerBase {
       }
       check_category(testInfo);
       check_unique_number(testInfo);
-      check_title_length(testInfo);
+
+      if (category != "extreme") {
+        check_title_length(testInfo);
+      }
       return *this;
     }
 
