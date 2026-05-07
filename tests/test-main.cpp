@@ -231,8 +231,7 @@ struct LibsemigroupsListener : Catch::EventListenerBase {
     std::string_view suffix_sep = suffix.empty() ? "" : " - ";
 
     auto msg = fmt::format(_extreme_test_case,
-                           "[{}]: {}(\"{}\"{}) - {}{}{}\n",
-                           current_test_case_info().number,
+                           "{}(\"{}\"{}) - {}{}{}\n",
                            test_case_type,
                            name,
                            test_type,
@@ -263,8 +262,7 @@ struct LibsemigroupsListener : Catch::EventListenerBase {
     std::string_view suffix_sep = suffix.empty() ? "" : " - ";
 
     auto msg = fmt::format(_extreme_section,
-                           "[{}]: SECTION(\"{}\"){} - {}{}{}\n",
-                           current_test_case_info().number,
+                           "SECTION(\"{}\"){} - {}{}{}\n",
                            section_name,
                            test_type,
                            start_or_stop,
@@ -395,7 +393,7 @@ struct LibsemigroupsListener : Catch::EventListenerBase {
 
     if (!_test_run_extreme_summary.empty()) {
       fmt::print("{:*<32}\n", "");
-      fmt::print("*  extreme test cases summary  *\n");
+      fmt::print("*  Extreme test cases summary  *\n");
       fmt::print("{:*<32}\n", "");
       fmt::print(_test_run_extreme_summary);
     }
