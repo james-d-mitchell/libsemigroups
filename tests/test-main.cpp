@@ -62,11 +62,6 @@ CATCH_REGISTER_ENUM(libsemigroups::Runner::state,
 
 namespace {
 
-  std::string const START_TEST_CASE_DIVIDER = fmt::format("{:><32}\n", "");
-  std::string const STOP_TEST_CASE_DIVIDER  = fmt::format("{:<<32}\n", "");
-  std::string const START_SECTION_DIVIDER   = fmt::format("{:><24}\n", "");
-  std::string const STOP_SECTION_DIVIDER    = fmt::format("{:<<24}\n", "");
-
   bool find_tag(Catch::TestCaseInfo const& testInfo, std::string tag) {
     std::transform(tag.begin(), tag.end(), tag.begin(), ::tolower);
 
@@ -244,10 +239,11 @@ struct LibsemigroupsListener : Catch::EventListenerBase {
                            suffix_sep,
                            suffix);
     if (start_or_stop == "START") {
-      fmt::print(fmt::format(_extreme_test_case, START_TEST_CASE_DIVIDER)
+      fmt::print(fmt::format(_extreme_test_case, fmt::format("{:><32}\n", ""))
                  + msg);
     } else {
-      fmt::print(msg + fmt::format(_extreme_test_case, STOP_TEST_CASE_DIVIDER));
+      fmt::print(
+          msg + fmt::format(_extreme_test_case, fmt::format("{:<<32}\n", "")));
     }
   }
 
@@ -274,9 +270,11 @@ struct LibsemigroupsListener : Catch::EventListenerBase {
                            suffix_sep,
                            suffix);
     if (start_or_stop == "START") {
-      fmt::print(fmt::format(_extreme_section, START_SECTION_DIVIDER) + msg);
+      fmt::print(fmt::format(_extreme_section, fmt::format("{:><24}\n", ""))
+                 + msg);
     } else {
-      fmt::print(msg + fmt::format(_extreme_section, STOP_SECTION_DIVIDER));
+      fmt::print(msg
+                 + fmt::format(_extreme_section, fmt::format("{:<<24}\n", "")));
     }
   }
 
