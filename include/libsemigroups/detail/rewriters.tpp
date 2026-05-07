@@ -438,6 +438,8 @@ namespace libsemigroups::detail {
 
         Trie* new_rule_trie = use_separate_trie ? &_new_rule_trie : &_rule_trie;
 
+        seen = 0;
+
         for (auto it = Rules::active_rules().begin();
              it != Rules::active_rules().end();) {
           ++seen;

@@ -829,13 +829,6 @@ namespace libsemigroups {
       REQUIRE(std::pair(i, knuth_bendix::reduce_no_run(k, rule.second))
               == std::pair(i, rule.second));
     }
-
-    // NOTE: in this example if we sort the pending rules in RPOTrie by
-    // rpo_cmp, then the number of rules in the reduced system is different ?!
-
-    // FIXME the reporting is broken, % exceeds 100
-    // #1: KnuthBendix: reducing rules: 8,399,310 / 8,188,053 (102.6%)
-    // (14.048s)
   }
 
 }  // namespace libsemigroups
