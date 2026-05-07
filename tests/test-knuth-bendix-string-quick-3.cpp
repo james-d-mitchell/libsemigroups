@@ -15,23 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-// This file is the third of six that contains tests for the KnuthBendix
-// classes. In a mostly vain attempt to speed up compilation the tests are
-// split across 6 files as follows:
-//
-// 1: contains quick tests for KnuthBendix created from rules and all commented
-//    out tests.
-//
-// 2: contains more quick tests for KnuthBendix created from rules
-//
-// 3: contains yet more quick tests for KnuthBendix created from rules
-//
-// 4: contains standard and extreme test for KnuthBendix created from rules
-//
-// 5: contains tests for KnuthBendix created from FroidurePin instances
-//
-// 6: contains tests for KnuthBendix using word_type presentations
-
 #include <cstddef>  // for size_t
 #include <iosfwd>   // for string
 #include <string>   // for allocator, basic_string

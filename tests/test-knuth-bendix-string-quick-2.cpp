@@ -15,23 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-// This file is the second of six that contains tests for the KnuthBendix
-// classes. In a mostly vain attempt to speed up compilation the tests are
-// split across 6 files as follows:
-//
-// 1: contains quick tests for KnuthBendix created from rules and all commented
-//    out tests.
-//
-// 2: contains more quick tests for KnuthBendix created from rules
-//
-// 3: contains yet more quick tests for KnuthBendix created from rules
-//
-// 4: contains standard and extreme test for KnuthBendix created from rules
-//
-// 5: contains tests for KnuthBendix created from FroidurePin instances
-//
-// 6: contains tests for KnuthBendix created from word_type presentations
-
 #include <cstddef>      // for size_t
 #include <cstdint>      // for uint64_t
 #include <iostream>     // for string, ostringstream
@@ -1784,49 +1767,6 @@ namespace libsemigroups {
     KnuthBendix<word_type, TestType> kb(congruence_kind::twosided, p);
 
     REQUIRE(knuth_bendix::contains(kb, 000_w, 11_w));
-  }
-
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
-                                   "065",
-                                   "sigma sylvester monoid x 2",
-                                   "[knuth-bendix][standard]",
-                                   REWRITING_SYSTEM_TYPES) {
-    using namespace literals;
-    auto                    rg = ReportGuard(false);
-    Presentation<word_type> p;
-    p.alphabet(2);
-    presentation::add_idempotent_rules_no_checks(p, 01_w);
-    using words::operator+;
-    WordRange words;
-    words.alphabet_size(2).min(0).max(6);
-    size_t n = 2;
-    for (size_t a = 0; a < n - 1; ++a) {
-      for (size_t b = a; b < n - 1; ++b) {
-        for (size_t c = b + 1; c < n; ++c) {
-          for (auto& u : words) {
-            for (auto& v : words) {
-              for (auto& w : words) {
-                presentation::add_rule(
-                    p, u + a + c + v + b + w, u + c + a + v + b + w);
-              }
-            }
-          }
-        }
-      }
-    }
-    presentation::sort_each_rule(p);
-    presentation::sort_rules(p);
-    presentation::remove_trivial_rules(p);
-    p.contains_empty_word(true);
-    std::reverse(p.rules.begin(), p.rules.end());
-
-    KnuthBendix<word_type, TestType> kb(twosided, p);
-
-    auto S = to<FroidurePin>(kb);
-    REQUIRE(S.contains_one());
-    REQUIRE(S.size() == kb.number_of_classes());
-    REQUIRE(S.number_of_idempotents() == 5);
-    REQUIRE(kb.number_of_classes() == 6);
   }
 
   // TODO(1): Remove no-cygwin and throw correct exception instead

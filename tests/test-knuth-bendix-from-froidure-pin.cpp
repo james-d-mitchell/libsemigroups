@@ -15,23 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-// This file is the fifth of six that contains tests for the KnuthBendix
-// classes. In a mostly vain attempt to speed up compilation the tests are
-// split across 6 files as follows:
-//
-// 1: contains quick tests for KnuthBendix created from rules and all commented
-//    out tests.
-//
-// 2: contains more quick tests for KnuthBendix created from rules
-//
-// 3: contains yet more quick tests for KnuthBendix created from rules
-//
-// 4: contains standard and extreme test for KnuthBendix created from rules
-//
-// 5: contains tests for KnuthBendix created from FroidurePin instances
-//
-// 6: contains tests for KnuthBendix.
-
 #define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
 
 #include <iostream>  // for what?? TODO
@@ -270,11 +253,10 @@ namespace libsemigroups {
     auto ntc = (iterator_range(pp.begin(), pp.end())
                 | filter([](auto const& val) { return val.size() > 1; })
                 | transform([](auto& val) {
-                    std::for_each(
-                        val.begin(), val.end(), [](auto& w) -> auto& {
-                          w.erase(w.begin());
-                          return w;
-                        });
+                    std::for_each(val.begin(), val.end(), [](auto& w) -> auto& {
+                      w.erase(w.begin());
+                      return w;
+                    });
                     return val;
                   }));
 
