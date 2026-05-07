@@ -52,29 +52,6 @@ namespace libsemigroups {
 
   congruence_kind constexpr twosided = congruence_kind::twosided;
 
-  namespace {
-    // Generate the 'normal forms' defined by an arbitrary WordGraph.
-    // If `wg` corresponds to the Gilman graph of some KnuthBendix instance,
-    // then the words returned are the normal forms of that KnuthBendix
-    // instance. Since the node labels returned by gilman_graph() are
-    // implementation dependent, the below function can be used to check that
-    // `gilman_graph()` returns something that generates the correct normal
-    // forms.
-    template <typename RewritingSystem,
-              typename ReductionOrder,
-              typename WordType>
-    [[nodiscard]] inline auto normal_forms_from_word_graph(
-        KnuthBendix<RewritingSystem, ReductionOrder>& kb,
-        WordGraph<WordType>&                          wg) {
-      Paths paths(wg);
-      paths.source(0);
-      if (!kb.presentation().contains_empty_word()) {
-        paths.next();
-      }
-      return paths;
-    }
-  }  // namespace
-
   using LenLexTrie = detail::RewritingSystemTrie<ShortLexCompare>;
   using LenLexSet  = detail::RewritingSystemSet<ShortLexCompare>;
 
@@ -665,7 +642,6 @@ namespace libsemigroups {
     REQUIRE(*(it + 1) == "baa");
   }
 
-
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "015",
                                    "constructors/init for finished",
@@ -943,7 +919,6 @@ namespace libsemigroups {
     }
   }
 
-
   // This example verifies the nilpotence of the group using the Sims
   // algorithm. The original presentation was <a,b| [b,a,b], [b,a,a,a,a],
   // [b,a,a,a,b,a,a] >. (where [] mean left-normed commutators). The
@@ -1148,6 +1123,125 @@ namespace libsemigroups {
               == std::vector<std::pair<std::string, std::string>>(
                   {{"aca", ""}, {"bacc", ""}, {"bbac", ""}}));
     }
+  }
+
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "112",
+                                   "Sorouhesh",
+                                   "[quick][knuth-bendix][kbmag]",
+                                   LenLexSet,
+                                   LenLexTrie) {
+    using words::pow;
+    using order     = typename TestType::reduction_order;
+    auto         rg = ReportGuard(false);
+    size_t const n  = 2;
+    size_t const q  = 11;
+
+    Presentation<std::string> p;
+    p.alphabet("ab");
+    presentation::add_rule(p, pow("a", std::pow(5, n)), "a");
+    presentation::add_rule(p, "aba", "b");
+    presentation::add_rule(p, "ab", pow("b", q) + "a");
+
+    KnuthBendix<std::string, TestType> kb(twosided, p);
+    REQUIRE(!kb.rewriting_system().confluent());
+
+    kb.run();
+    if constexpr (std::is_same_v<order, ShortLexCompare>) {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 7);
+    } else {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 4);
+    }
+    REQUIRE(kb.number_of_classes() == size_t(std::pow(5, n)) + 4 * q - 5);
+    REQUIRE(knuth_bendix::reduce(kb, "aabb") == "aabb");
+    REQUIRE(knuth_bendix::reduce(kb, "aabbaabb") == "bbbb");
+    REQUIRE(knuth_bendix::reduce(kb, "aabbaabbaabb") == "aabbbbbb");
+    REQUIRE(knuth_bendix::reduce(kb, "aabbaabbaabbaabb") == "bbbbbbbb");
+    REQUIRE(knuth_bendix::reduce(kb, "aabbaabbaabbaabbaabb") == "aabbbbbbbbbb");
+    auto nf = knuth_bendix::normal_forms(kb).min(1);
+    REQUIRE((nf | to_vector())
+            == std::vector<std::string>({"a",
+                                         "b",
+                                         "aa",
+                                         "ab",
+                                         "ba",
+                                         "bb",
+                                         "aaa",
+                                         "aab",
+                                         "abb",
+                                         "bab",
+                                         "bbb",
+                                         "aaaa",
+                                         "aabb",
+                                         "abbb",
+                                         "babb",
+                                         "bbbb",
+                                         "aaaaa",
+                                         "aabbb",
+                                         "abbbb",
+                                         "babbb",
+                                         "bbbbb",
+                                         "aaaaaa",
+                                         "aabbbb",
+                                         "abbbbb",
+                                         "babbbb",
+                                         "bbbbbb",
+                                         "aaaaaaa",
+                                         "aabbbbb",
+                                         "abbbbbb",
+                                         "babbbbb",
+                                         "bbbbbbb",
+                                         "aaaaaaaa",
+                                         "aabbbbbb",
+                                         "abbbbbbb",
+                                         "babbbbbb",
+                                         "bbbbbbbb",
+                                         "aaaaaaaaa",
+                                         "aabbbbbbb",
+                                         "abbbbbbbb",
+                                         "babbbbbbb",
+                                         "bbbbbbbbb",
+                                         "aaaaaaaaaa",
+                                         "aabbbbbbbb",
+                                         "abbbbbbbbb",
+                                         "babbbbbbbb",
+                                         "bbbbbbbbbb",
+                                         "aaaaaaaaaaa",
+                                         "aabbbbbbbbb",
+                                         "abbbbbbbbbb",
+                                         "babbbbbbbbb",
+                                         "aaaaaaaaaaaa",
+                                         "aabbbbbbbbbb",
+                                         "aaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaaaaaaaaaa",
+                                         "aaaaaaaaaaaaaaaaaaaaaaaa"}));
+  }
+
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "115",
+                                   "Konovalov",
+                                   "[quick][knuth-bendix]",
+                                   LenLexSet,
+                                   LenLexTrie) {
+    auto                      rg = ReportGuard(false);
+    Presentation<std::string> p;
+    p.contains_empty_word(true);
+    p.alphabet("abAB");
+    presentation::add_rule(p, "Abba", "BB");
+    presentation::add_rule(p, "Baab", "AA");
+
+    KnuthBendix<std::string, TestType> k(twosided, p);
+    k.run();
+    REQUIRE(k.number_of_classes() == POSITIVE_INFINITY);
   }
 
 }  // namespace libsemigroups

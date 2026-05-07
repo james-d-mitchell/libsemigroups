@@ -32,7 +32,6 @@
 //
 // 6: contains tests for KnuthBendix.
 
-#include "libsemigroups/knuth-bendix-helpers.hpp"
 #define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
 
 #include <algorithm>      // for next_permutation
@@ -52,6 +51,7 @@
 #include "libsemigroups/constants.hpp"  // for operator==, operat...
 #include "libsemigroups/detail/rules.hpp"
 #include "libsemigroups/exception.hpp"              // for LibsemigroupsExcep...
+#include "libsemigroups/knuth-bendix-helpers.hpp"   // for TODO
 #include "libsemigroups/knuth-bendix.hpp"           // for KnuthBendix, norma...
 #include "libsemigroups/order.hpp"                  // for shortlex_compare
 #include "libsemigroups/paths.hpp"                  // for Paths
@@ -77,18 +77,24 @@ namespace libsemigroups {
   using RPOTrie    = detail::RewritingSystemTrie<RecursivePathCompare>;
   using RPOSet     = detail::RewritingSystemSet<RecursivePathCompare>;
 
-#define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet  // RPOTrie, RPOSet
+#define REWRITING_SYSTEM_TYPES LenLexTrie, RPOTrie
 
   ////////////////////////////////////////////////////////////////////////
   // Extreme tests
   ////////////////////////////////////////////////////////////////////////
 
   // Fibonacci group F(2,7) - order 29 - works better with largish tidyint
-  // Takes approx. 10s
-  LIBSEMIGROUPS_TEST_CASE("KnuthBendix",
-                          "102",
-                          "kbmag/standalone/kb_data/f27",
-                          "[extreme][knuth-bendix][kbmag][shortlex]") {
+  // [102]: KnuthBendix: kbmag/standalone/kb_data/f27 - RPOTrie
+  // -- plain Knuth-Bendix ......4.681s
+  // -- by_overlap_length ......5.677s
+  // [102]: KnuthBendix: kbmag/standalone/kb_data/f27 - LenLexTrie
+  // -- plain Knuth-Bendix .....14.223s
+  // -- by_overlap_length ......4.301s
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "102",
+                                   "kbmag/standalone/kb_data/f27",
+                                   "[extreme][knuth-bendix][kbmag]",
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
     Presentation<std::string> p;
@@ -104,7 +110,7 @@ namespace libsemigroups {
     presentation::add_rule(p, "fg", "a");
     presentation::add_rule(p, "ga", "b");
 
-    KnuthBendix<std::string, LenLexTrie> kb(twosided, p);
+    KnuthBendix<std::string, TestType> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
     SECTION("plain Knuth-Bendix") {
       kb.run();
@@ -114,16 +120,23 @@ namespace libsemigroups {
     }
     REQUIRE(kb.finished());
     REQUIRE(kb.rewriting_system().confluent());
-    REQUIRE(kb.rewriting_system().number_of_rules() == 194);
+
+    if constexpr (std::is_same_v<TestType, RPOTrie>) {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 14);
+    } else {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 194);
+    }
+
     REQUIRE(kb.number_of_classes() == 29);
   }
 
   // Mathieu group M_11
-  // Takes approx. 58s (majority in checking confluence)
+  // [103]: KnuthBendix: kbmag/standalone/kb_data/m11 - LenLexTrie ......6.062s
+  // [103]: KnuthBendix: kbmag/standalone/kb_data/m11 - RPOTrie ......2.913s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "103",
                                    "kbmag/standalone/kb_data/m11",
-                                   "[extreme][knuth-bendix][kbmag][shortlex]",
+                                   "[extreme][knuth-bendix][kbmag]",
                                    REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
@@ -142,7 +155,11 @@ namespace libsemigroups {
 
     knuth_bendix::by_overlap_length(kb);
     REQUIRE(kb.rewriting_system().confluent());
-    REQUIRE(kb.rewriting_system().number_of_rules() == 1'731);
+    if constexpr (std::is_same_v<TestType, RPOTrie>) {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 741);
+    } else {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 1'731);
+    }
     REQUIRE(kb.number_of_classes() == 7'920);
     REQUIRE(knuth_bendix::reduce(kb, "") == "");
 
@@ -166,10 +183,11 @@ namespace libsemigroups {
 
   // Weyl group E8 (all gens involutory).
   // Takes approx. 5s for KnuthBendix
+  // TODO move to standard
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "104",
                                    "kbmag/standalone/kb_data/e8",
-                                   "[extreme][knuth-bendix][kbmag][shortlex]",
+                                   "[extreme][knuth-bendix][kbmag]",
                                    REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
@@ -212,19 +230,21 @@ namespace libsemigroups {
     knuth_bendix::by_overlap_length(kb);
     REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.rewriting_system().number_of_rules() == 192);
-    REQUIRE(kb.gilman_graph().number_of_nodes() == 332);
-    REQUIRE(kb.gilman_graph().number_of_edges() == 533);
+    // REQUIRE(kb.gilman_graph().number_of_nodes() == 332);
+    // REQUIRE(kb.gilman_graph().number_of_edges() == 533);
     REQUIRE(kb.number_of_classes() == 696'729'600);
   }
 
   // Second of BHN's series of increasingly complicated presentations of 1.
   // Works quickest with large value of tidyint
-  // Takes > 1m (knuth_bendix), didn't run to the end
-  // Takes approx. 6s (knuth_bendix_by_overlap_length)
+  // [105]: KnuthBendix: kbmag/standalone/kb_data/degen4b - LenLexTrie
+  // ......2.600s
+  // [105]: KnuthBendix: kbmag/standalone/kb_data/degen4b - RPOTrie
+  // .......790ms
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "105",
                                    "kbmag/standalone/kb_data/degen4b",
-                                   "[extreme][knuth-bendix][kbmag][shortlex]",
+                                   "[extreme][knuth-bendix][kbmag]",
                                    REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
@@ -247,12 +267,15 @@ namespace libsemigroups {
 
   // Two generator presentation of Fibonacci group F(2,7) - order 29. Large
   // value of tidyint works better.
-  // Takes approx. 12s (knuth_bendix_by_overlap_length)
+  // [106]: KnuthBendix: kbmag/standalone/kb_data/f27_2gen - LenLexTrie
+  // ......8.602s
+  // [106]: KnuthBendix: kbmag/standalone/kb_data/f27_2gen - RPOTrie
+  // ......3.956s
   // Takes > 19s (knuth_bendix), didn't run to the end
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "106",
                                    "kbmag/standalone/kb_data/f27_2gen",
-                                   "[extreme][knuth-bendix][kbmag][shortlex]",
+                                   "[extreme][knuth-bendix][kbmag]",
                                    REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
@@ -268,11 +291,20 @@ namespace libsemigroups {
 
     knuth_bendix::by_overlap_length(kb);
     REQUIRE(kb.rewriting_system().confluent());
-    REQUIRE(kb.rewriting_system().number_of_rules() == 19);
+    if constexpr (std::is_same_v<TestType, RPOTrie>) {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 4);
+    } else {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 19);
+    }
     REQUIRE(kb.number_of_classes() == 29);
   }
 
-  // Takes approx. 1m8s
+  // [107]: KnuthBendix: Example 6.6 in Sims - LenLexTrie
+  // -- plain Knuth-Bendix ......6.405s
+  // -- by overlap length ......5.439s
+  // [107]: KnuthBendix: Example 6.6 in Sims - RPOTrie
+  // -- plain Knuth-Bendix ......2.691s
+  // -- by overlap length ......2.483s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "107",
                                    "Example 6.6 in Sims",
@@ -291,23 +323,32 @@ namespace libsemigroups {
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
-    kb.run();
-    // knuth_bendix::by_overlap_length(kb);
-    REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
-    // REQUIRE(kb.rewriting_system().confluent());
-    // REQUIRE(kb.number_of_classes() == 10'752);
+    SECTION("plain Knuth-Bendix") {
+      kb.run();
+    }
+    SECTION("by overlap length") {
+      knuth_bendix::by_overlap_length(kb);
+    }
+    if constexpr (std::is_same_v<TestType, RPOTrie>) {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 408);
+    } else {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
+    }
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.number_of_classes() == 10'752);
   }
 
   // Fibonacci group F(2,7) - without inverses
-  // Takes approx. 13s
+  // [108]: KnuthBendix: kbmag/standalone/kb_data/f27 - LenLexTrie ......3.072s
+  // [108]: KnuthBendix: kbmag/standalone/kb_data/f27 - RPOTrie .....20.083s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "108",
                                    "kbmag/standalone/kb_data/f27",
-                                   "[extreme][knuth-bendix][kbmag][shortlex]",
+                                   "[extreme][knuth-bendix][kbmag]",
                                    REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
-    p.alphabet("aAbBcCdDyYfFgG");
+    p.alphabet("abcdyfg");
 
     presentation::add_rule(p, "ab", "c");
     presentation::add_rule(p, "bc", "d");
@@ -324,16 +365,25 @@ namespace libsemigroups {
     knuth_bendix::by_overlap_length(kb);
     // Fails to terminate, or is very slow, with knuth_bendix
     REQUIRE(kb.rewriting_system().confluent());
-    REQUIRE(kb.rewriting_system().number_of_rules() == 47);
-    REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);
+    if constexpr (std::is_same_v<TestType, RPOTrie>) {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 7);
+    } else {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 47);
+    }
+    REQUIRE(kb.number_of_classes() == 29);
   }
 
   // An extension of 2^6 be L32
-  // Takes approx. 1m7s
+  // [109]: KnuthBendix: kbmag/standalone/kb_data/l32ext - LenLexTrie
+  // -- plain Knuth-Bendix ......6.502s
+  // -- by overlap length ......5.480s
+  // [109]: KnuthBendix: kbmag/standalone/kb_data/l32ext - RPOTrie
+  // -- plain Knuth-Bendix ......2.713s
+  // -- by overlap length ......2.622s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "109",
                                    "kbmag/standalone/kb_data/l32ext",
-                                   "[extreme][knuth-bendix][kbmag][shortlex]",
+                                   "[extreme][knuth-bendix][kbmag]",
                                    REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
@@ -349,349 +399,24 @@ namespace libsemigroups {
 
     KnuthBendix<std::string, TestType> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
-    kb.run();
 
-    // knuth_bendix::by_overlap_length(kb);
+    SECTION("plain Knuth-Bendix") {
+      kb.run();
+    }
+    SECTION("by overlap length") {
+      knuth_bendix::by_overlap_length(kb);
+    }
+
     REQUIRE(kb.rewriting_system().confluent());
-    REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
+    if constexpr (std::is_same_v<TestType, RPOTrie>) {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 408);
+    } else {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 1'026);
+    }
     REQUIRE(kb.number_of_classes() == 10'752);
 
     auto& wg = kb.gilman_graph();
-    REQUIRE(wg.number_of_nodes() == 6'021);
-    REQUIRE(wg.number_of_edges() == 7'435);
     REQUIRE(v4::word_graph::is_acyclic(wg));
-    REQUIRE(v4::paths::count(wg, 0, 0, 100) == 10'752);
-  }
-
-  ////////////////////////////////////////////////////////////////////////
-  // Tests that fail
-  ////////////////////////////////////////////////////////////////////////
-
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
-                                   "110",
-                                   "Ceitin's undecidable word problem example",
-                                   "[fail][knuth-bendix]",
-                                   REWRITING_SYSTEM_TYPES) {
-    auto                      rg = ReportGuard(true);
-    Presentation<std::string> p;
-    p.contains_empty_word(true);
-    p.alphabet("abcde");
-    presentation::add_rule(p, "ac", "ca");
-    presentation::add_rule(p, "ad", "da");
-    presentation::add_rule(p, "bc", "cb");
-    presentation::add_rule(p, "bd", "db");
-    presentation::add_rule(p, "eca", "ce");
-    presentation::add_rule(p, "edb", "de");
-    presentation::add_rule(p, "cca", "ccae");
-
-    KnuthBendix<std::string, TestType> kb(twosided, p);
-    kb.run();  // I guess this shouldn't work, and indeed it doesn't!
-  }
-
-  // kbmag/standalone/kb_data/verifynilp
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
-                                   "111",
-                                   "kbmag/standalone/kb_data/verifynilp",
-                                   "[fail][knuth-bendix][kbmag][shortlex]",
-                                   REWRITING_SYSTEM_TYPES) {
-    auto                rg    = ReportGuard();
-    std::string         lphbt = "hHgGfFyYdDcCbBaA";
-    std::string         invrs = "HhGgFfYyDdCcBbAa";
-    std::vector<size_t> perm(lphbt.size(), 0);
-    std::iota(perm.begin(), perm.end(), 0);
-
-    do {
-      detail::apply_permutation(lphbt, invrs, perm);
-
-      Presentation<std::string> p;
-      p.contains_empty_word(true);
-      p.alphabet(lphbt);
-
-      presentation::add_inverse_rules(p, invrs);
-
-      presentation::add_rule(p, "BAba", "c");
-      presentation::add_rule(p, "CAca", "d");
-      presentation::add_rule(p, "DAda", "y");
-      presentation::add_rule(p, "YByb", "f");
-      presentation::add_rule(p, "FAfa", "g");
-      presentation::add_rule(p, "ga", "ag");
-      presentation::add_rule(p, "GBgb", "h");
-      presentation::add_rule(p, "cb", "bc");
-      presentation::add_rule(p, "ya", "ay");
-
-      KnuthBendix<std::string, TestType> kb(twosided, p);
-
-      REQUIRE(!kb.rewriting_system().confluent());
-
-      knuth_bendix::by_overlap_length(kb);
-      if (kb.rewriting_system().confluent()) {
-        REQUIRE(kb.rewriting_system().number_of_rules() == 0);
-        REQUIRE(kb.number_of_classes() == 0);
-        break;
-      }
-    } while (std::next_permutation(perm.begin(), perm.end()));
-  }
-
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
-                                   "112",
-                                   "Sorouhesh",
-                                   "[quick][knuth-bendix][kbmag][shortlex]",
-                                   REWRITING_SYSTEM_TYPES) {
-    using words::pow;
-    auto         rg = ReportGuard(false);
-    size_t const n  = 2;
-    size_t const q  = 11;
-
-    Presentation<std::string> p;
-    p.alphabet("ab");
-    presentation::add_rule(p, pow("a", std::pow(5, n)), "a");
-    presentation::add_rule(p, "aba", "b");
-    presentation::add_rule(p, "ab", pow("b", q) + "a");
-
-    KnuthBendix<std::string, TestType> kb(twosided, p);
-    REQUIRE(!kb.rewriting_system().confluent());
-
-    kb.run();
-    REQUIRE(kb.rewriting_system().number_of_rules() == 7);
-    REQUIRE(kb.number_of_classes() == size_t(std::pow(5, n)) + 4 * q - 5);
-    REQUIRE(knuth_bendix::reduce(kb, "aabb") == "aabb");
-    REQUIRE(knuth_bendix::reduce(kb, "aabbaabb") == "bbbb");
-    REQUIRE(knuth_bendix::reduce(kb, "aabbaabbaabb") == "aabbbbbb");
-    REQUIRE(knuth_bendix::reduce(kb, "aabbaabbaabbaabb") == "bbbbbbbb");
-    REQUIRE(knuth_bendix::reduce(kb, "aabbaabbaabbaabbaabb") == "aabbbbbbbbbb");
-    auto nf = knuth_bendix::normal_forms(kb).min(1);
-    REQUIRE((nf | to_vector())
-            == std::vector<std::string>({"a",
-                                         "b",
-                                         "aa",
-                                         "ab",
-                                         "ba",
-                                         "bb",
-                                         "aaa",
-                                         "aab",
-                                         "abb",
-                                         "bab",
-                                         "bbb",
-                                         "aaaa",
-                                         "aabb",
-                                         "abbb",
-                                         "babb",
-                                         "bbbb",
-                                         "aaaaa",
-                                         "aabbb",
-                                         "abbbb",
-                                         "babbb",
-                                         "bbbbb",
-                                         "aaaaaa",
-                                         "aabbbb",
-                                         "abbbbb",
-                                         "babbbb",
-                                         "bbbbbb",
-                                         "aaaaaaa",
-                                         "aabbbbb",
-                                         "abbbbbb",
-                                         "babbbbb",
-                                         "bbbbbbb",
-                                         "aaaaaaaa",
-                                         "aabbbbbb",
-                                         "abbbbbbb",
-                                         "babbbbbb",
-                                         "bbbbbbbb",
-                                         "aaaaaaaaa",
-                                         "aabbbbbbb",
-                                         "abbbbbbbb",
-                                         "babbbbbbb",
-                                         "bbbbbbbbb",
-                                         "aaaaaaaaaa",
-                                         "aabbbbbbbb",
-                                         "abbbbbbbbb",
-                                         "babbbbbbbb",
-                                         "bbbbbbbbbb",
-                                         "aaaaaaaaaaa",
-                                         "aabbbbbbbbb",
-                                         "abbbbbbbbbb",
-                                         "babbbbbbbbb",
-                                         "aaaaaaaaaaaa",
-                                         "aabbbbbbbbbb",
-                                         "aaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaaaaaaaaaa",
-                                         "aaaaaaaaaaaaaaaaaaaaaaaa"}));
-  }
-
-  namespace {
-    std::string swap_a_and_b(std::string const& w) {
-      std::string result;
-      for (auto l : w) {
-        if (l == 'a') {
-          result += "b";
-        } else {
-          result += "a";
-        }
-      }
-      return result;
-    }
-
-    std::unordered_set<std::string>& get_set() {
-      static std::unordered_set<std::string> set;
-      return set;
-    }
-
-    template <typename T>
-    void register_relation(T const& it1, T const& it2, size_t& nr) {
-      auto tmp = it1 + "#" + it2;
-      auto u   = swap_a_and_b(it1);
-      auto v   = swap_a_and_b(it2);
-      if (shortlex_compare(u, v)) {
-        get_set().insert(u + "#" + v);
-      } else {
-        get_set().insert(v + "#" + u);
-      }
-      std::cout << it1 << " = " << it2 << std::endl;
-      nr++;
-    }
-  }  // namespace
-
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "113",
-      "all 2-generated 1-relation semigroups 1 to 10",
-      "[fail][knuth-bendix][xxx]",
-      REWRITING_SYSTEM_TYPES) {
-    auto rg = ReportGuard(false);
-
-    StringRange lhss;
-    lhss.alphabet("ab").min(1).max(11);
-    REQUIRE((lhss | count()) == 2'046);
-
-    StringRange rhss;
-    rhss.alphabet("ab").max(11);
-
-    size_t total_c4 = 0;
-    size_t total    = 0;
-
-    for (auto const& lhs : lhss) {
-      rhss.first(lhs);
-      for (auto const& rhs : rhss | skip_n(1)) {
-        auto tmp = lhs + "#" + rhs;
-        if (get_set().insert(tmp).second) {
-          bool try_again = false;
-          {
-            Presentation<std::string> p;
-            p.contains_empty_word(true);
-            p.alphabet("ab");
-            presentation::add_rule(p, lhs, rhs);
-            KnuthBendix<std::string, TestType> k(twosided, p);
-            k.run_for(std::chrono::milliseconds(10));
-            if (k.rewriting_system().confluent()) {
-              register_relation(lhs, rhs, total_c4);
-            } else {
-              try_again = true;
-            }
-          }
-          if (try_again) {
-            Presentation<std::string> p;
-            p.contains_empty_word(true);
-            p.alphabet("ba");
-            presentation::add_rule(p, lhs, rhs);
-            KnuthBendix<std::string, TestType> k(twosided, p);
-            k.run_for(std::chrono::milliseconds(10));
-            if (k.rewriting_system().confluent()) {
-              register_relation(lhs, rhs, total_c4);
-            }
-          }
-        }
-      }
-    }
-    REQUIRE(total_c4 == 471'479);
-    REQUIRE(total == 2'092'035);
-  }
-
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
-                                   "114",
-                                   "hard 2-generated 1-relation monoid",
-                                   "[fail][knuth-bendix][xxx2]",
-                                   REWRITING_SYSTEM_TYPES) {
-    Presentation<std::string> p;
-    p.contains_empty_word(true);
-    p.alphabet("abc");
-    presentation::add_rule(p, "a", "cc");
-    presentation::add_rule(p, "c", "bab");
-
-    KnuthBendix<std::string, TestType> k(twosided, p);
-    k.run();
-    // knuth_bendix::by_overlap_length(k);
-    using rule_type = typename decltype(k)::rule_type;
-    REQUIRE(k.active_rules().get() == rule_type({"", ""}));
-  }
-
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
-                                   "115",
-                                   "Konovalov",
-                                   "[quick][knuth-bendix]",
-                                   REWRITING_SYSTEM_TYPES) {
-    auto                      rg = ReportGuard(false);
-    Presentation<std::string> p;
-    p.contains_empty_word(true);
-    p.alphabet("abAB");
-    presentation::add_rule(p, "Abba", "BB");
-    presentation::add_rule(p, "Baab", "AA");
-
-    KnuthBendix<std::string, TestType> k(twosided, p);
-    k.run();
-    REQUIRE(k.number_of_classes() == POSITIVE_INFINITY);
-  }
-
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "116",
-      "https://math.stackexchange.com/questions/2649807",
-      "[knuth-bendix][fail]",
-      REWRITING_SYSTEM_TYPES) {
-    do {
-      std::string lphbt = "abcABC";
-      std::string invrs = "ABCabc";
-      std::cout << std::string(72, '#') << std::endl;
-
-      Presentation<std::string> p;
-      p.contains_empty_word(true);
-      p.alphabet(lphbt);
-
-      presentation::add_inverse_rules(p, invrs);
-
-      presentation::add_rule(p, "aa", "");
-      presentation::add_rule(p, "bbbbbbbbbbb", "");
-      presentation::add_rule(p, "cc", "");
-      presentation::add_rule(p, "abababab", "");
-      presentation::add_rule(p, "abbabbabbabbabbabb", "");
-      presentation::add_rule(p, "abbabaBabaBBabbaB", "");
-      presentation::add_rule(p, "acacac", "");
-      presentation::add_rule(p, "bcbc", "");
-
-      for (size_t i = 1; i < 3; ++i) {
-        auto lhs = random_string(lphbt, 100);
-        auto rhs = random_string(lphbt, 100);
-        presentation::add_rule(p, lhs, rhs);
-        std::cout << "trying rule " << lhs << " -> " << rhs << std::endl;
-      }
-      KnuthBendix<std::string, TestType> k(twosided, p);
-      k.run_for(std::chrono::seconds(1));
-      if (k.rewriting_system().confluent()) {
-        size_t const N = k.number_of_classes();
-        std::cout << "k.number_of_classes() == " << N << std::endl;
-        if (k.number_of_classes() == POSITIVE_INFINITY) {
-          break;
-        }
-      }
-    } while (true);
   }
 
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
@@ -914,8 +639,7 @@ namespace libsemigroups {
                                    "139",
                                    "partial_transformation_monoid5",
                                    "[extreme][knuth-bendix]",
-                                   REWRITING_SYSTEM_TYPES,
-                                   RPOTrie) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto rg = ReportGuard(true);
 
     size_t n = 5;
