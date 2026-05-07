@@ -15,23 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-// This file is one of six that contains tests for the KnuthBendix classes. In
-// a mostly vain attempt to speed up compilation the tests are split across 6
-// files as follows:
-//
-// 1: contains quick tests for KnuthBendix created from rules and all commented
-//    out tests.
-//
-// 2: contains more quick tests for KnuthBendix created from rules
-//
-// 3: contains yet more quick tests for KnuthBendix created from rules
-//
-// 4: contains standard and extreme test for KnuthBendix created from rules
-//
-// 5: contains tests for KnuthBendix created from FroidurePin instances
-//
-// 6: contains tests for KnuthBendix using word_type presentations
-
 // TODO(later)
 // * The other examples from Sims' book (Chap.s 5 and 6) which use
 //   reduction orderings different from shortlex
@@ -987,7 +970,6 @@ namespace libsemigroups {
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "020",
                                    "non-trivial classes x 4",
-
                                    "[quick][knuth-bendix]",
                                    REWRITING_SYSTEM_TYPES) {
     using order = typename TestType::reduction_order;
