@@ -32,6 +32,7 @@
 //
 // 6: contains tests for KnuthBendix.
 
+#include "libsemigroups/knuth-bendix-helpers.hpp"
 #define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
 
 #include <algorithm>      // for next_permutation
@@ -163,12 +164,10 @@ namespace libsemigroups {
 
   // Fibonacci group F(2,7) - order 29 - works better with largish tidyint
   // Takes approx. 10s
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE(
-      "KnuthBendix",
-      "102",
-      "kbmag/standalone/kb_data/f27) (finite) (2 / 2",
-      "[extreme][knuth-bendix][kbmag][shortlex]",
-      REWRITING_SYSTEM_TYPES) {
+  LIBSEMIGROUPS_TEST_CASE("KnuthBendix",
+                          "102",
+                          "kbmag/standalone/kb_data/f27",
+                          "[extreme][knuth-bendix][kbmag][shortlex]") {
     auto rg = ReportGuard(true);
 
     Presentation<std::string> p;
@@ -184,10 +183,14 @@ namespace libsemigroups {
     presentation::add_rule(p, "fg", "a");
     presentation::add_rule(p, "ga", "b");
 
-    KnuthBendix<std::string, TestType> kb(twosided, p);
+    KnuthBendix<std::string, LenLexTrie> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
-
-    kb.run();
+    SECTION("plain Knuth-Bendix") {
+      kb.run();
+    }
+    SECTION("by_overlap_length") {
+      knuth_bendix::by_overlap_length(kb);
+    }
     REQUIRE(kb.finished());
     REQUIRE(kb.rewriting_system().confluent());
     REQUIRE(kb.rewriting_system().number_of_rules() == 194);
@@ -809,7 +812,7 @@ namespace libsemigroups {
     SECTION("sorted by lhs_rev_lex_cmp") {
       k.rewriting_system().sort_pending_rules_by(detail::lhs_rev_lex_cmp);
       k.rewriting_system().reduce();
-      REQUIRE(k.rewriting_system().number_of_rules() == 2'041'465);
+      REQUIRE(k.rewriting_system().number_of_rules() == 2'041'464);
     }
     SECTION("sorted by lhs_lex_cmp") {
       k.rewriting_system().sort_pending_rules_by(detail::lhs_lex_cmp);

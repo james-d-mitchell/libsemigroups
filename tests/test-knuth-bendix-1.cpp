@@ -1572,11 +1572,10 @@ namespace libsemigroups {
   //
   // KBMAG does not terminate when SHORTLEX order is used.
   // About 2 minutes on M4 Pro with 48gb of memory
-  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
-                                   "999",
-                                   "kbmag/f27monoid",
-                                   "[extreme][knuth-bendix][kbmag][recursive]",
-                                   RPOTrie) {
+  LIBSEMIGROUPS_TEST_CASE("KnuthBendix",
+                          "999",
+                          "kbmag/f27monoid",
+                          "[extreme][knuth-bendix][kbmag][recursive]") {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.alphabet("abcdefg");
@@ -1588,7 +1587,7 @@ namespace libsemigroups {
     presentation::add_rule_no_checks(p, "fg", "a");
     presentation::add_rule_no_checks(p, "ga", "b");
 
-    KnuthBendix<std::string, TestType> kb(twosided, p);
+    KnuthBendix<std::string, RPOTrie> kb(twosided, p);
     REQUIRE(!kb.rewriting_system().confluent());
 
     kb.run();
