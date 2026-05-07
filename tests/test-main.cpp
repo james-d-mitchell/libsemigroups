@@ -169,23 +169,21 @@ struct LibsemigroupsListener : Catch::EventListenerBase {
     }
 
     void check_title_length(Catch::TestCaseInfo const& testInfo) const {
-      auto const   prefix = fmt::format("[{}]: ", number);
       size_t const N
           = ::libsemigroups::detail::unicode_string_length(testInfo.name);
-      if (prefix.size() + N + _time_cols > _line_cols) {
-        Catch::cerr() << fmt::format(
-            _warn_emph,
-            "WARNING - Test case name too long:\n"
-            "  {}:{}\n"
-            "  \"{}\"\n"
-            "  OMITTING {: <{}}{:^<{}}\n",
-            testInfo.lineInfo.file,
-            testInfo.lineInfo.line,
-            testInfo.name,
-            "",
-            _line_cols - prefix.size() - _time_cols - 9,
-            "",
-            N - _line_cols + prefix.size() + _time_cols + 1);
+      if (N + _time_cols > _line_cols) {
+        Catch::cerr() << fmt::format(_warn_emph,
+                                     "WARNING - Test case name too long:\n"
+                                     "  {}:{}\n"
+                                     "  \"{}\"\n"
+                                     "  OMITTING {: <{}}{:^<{}}\n",
+                                     testInfo.lineInfo.file,
+                                     testInfo.lineInfo.line,
+                                     testInfo.name,
+                                     "",
+                                     _line_cols - _time_cols - 9,
+                                     "",
+                                     N - _line_cols + _time_cols + 1);
       }
     }
   };
@@ -299,15 +297,12 @@ struct LibsemigroupsListener : Catch::EventListenerBase {
   }
 
   static std::string to_string(TestCaseInfo const& testCaseInfo) {
-    auto const prefix     = fmt::format("[{}]: ", testCaseInfo.number);
-    auto const prefix_pad = _prefix_cols - prefix.size() - 1;
-
-    std::string const trunc_name(
-        testCaseInfo.name.begin(),
-        testCaseInfo.name.begin()
-            + std::min(prefix_pad, testCaseInfo.name.size()));
-    // This is the prefix of length (_line_cols - _time_cols)
-    return fmt::format("{}{:<{}} ", prefix, trunc_name, prefix_pad);
+    auto const        pad = _prefix_cols - 1;
+    std::string const trunc_name(testCaseInfo.name.begin(),
+                                 testCaseInfo.name.begin()
+                                     + std::min(pad, testCaseInfo.name.size()));
+    auto              result = fmt::format("{:<{}} ", trunc_name, pad);
+    return result;
   }
 
   void testCaseStarting(Catch::TestCaseInfo const& testInfo) override {

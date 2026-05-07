@@ -1125,6 +1125,7 @@ EXTRA_DIST += etc/version-number.sh
 EXTRA_DIST += hpcombi.mk.in
 EXTRA_DIST += tests/bmat-data.hpp
 EXTRA_DIST += tests/test-main.hpp
+EXTRA_DIST += tests/test-knuth-bendix.hpp
 EXTRA_DIST += tests/word-graph-test-common.hpp
 EXTRA_DIST += third_party/Catch2-3.14.0/catch_amalgamated.cpp
 EXTRA_DIST += third_party/Catch2-3.14.0/catch_amalgamated.hpp

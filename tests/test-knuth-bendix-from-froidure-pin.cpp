@@ -66,17 +66,6 @@ namespace libsemigroups {
 
 #define REWRITING_SYSTEM_TYPES LenLexTrie, LenLexSet
 
-  namespace {
-    using rule_type = std::pair<std::string, std::string>;
-
-    struct weird_cmp {
-      bool operator()(rule_type const& x, rule_type const& y) const noexcept {
-        return shortlex_compare(x.first, y.first)
-               || (x.first == y.first && shortlex_compare(x.second, y.second));
-      }
-    };
-  }  // namespace
-
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "119",
                                    "transformation semigroup (size 4)",
