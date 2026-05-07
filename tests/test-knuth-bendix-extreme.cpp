@@ -47,10 +47,10 @@
 #include <vector>         // for vector, operator==
 
 #include "Catch2-3.14.0/catch_amalgamated.hpp"  // for AssertionHandler, oper...
-#include "libsemigroups/detail/rules.hpp"
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEMPLATE_TEST_CASE
 
-#include "libsemigroups/constants.hpp"              // for operator==, operat...
+#include "libsemigroups/constants.hpp"  // for operator==, operat...
+#include "libsemigroups/detail/rules.hpp"
 #include "libsemigroups/exception.hpp"              // for LibsemigroupsExcep...
 #include "libsemigroups/knuth-bendix.hpp"           // for KnuthBendix, norma...
 #include "libsemigroups/order.hpp"                  // for shortlex_compare
@@ -66,6 +66,8 @@
 #include "libsemigroups/detail/string.hpp"  // for random_string, operator<<
 
 namespace libsemigroups {
+  using literals::operator""_w;
+
   congruence_kind constexpr twosided = congruence_kind::twosided;
 
   using namespace rx;
@@ -834,4 +836,191 @@ namespace libsemigroups {
     }
   }
 
+  // monoid presentation of F(2,7) - should produce a monoid of length 30
+  // which is the same as the group, together with the empty word. This
+  // is a very difficult calculation indeed, however.
+  //
+  // KBMAG does not terminate when SHORTLEX order is used.
+  // About 2 minutes on M4 Pro with 48gb of memory
+  LIBSEMIGROUPS_TEST_CASE("KnuthBendix",
+                          "999",
+                          "kbmag/f27monoid",
+                          "[extreme][knuth-bendix][kbmag][recursive]") {
+    auto                      rg = ReportGuard(true);
+    Presentation<std::string> p;
+    p.alphabet("abcdefg");
+    presentation::add_rule_no_checks(p, "ab", "c");
+    presentation::add_rule_no_checks(p, "bc", "d");
+    presentation::add_rule_no_checks(p, "cd", "e");
+    presentation::add_rule_no_checks(p, "de", "f");
+    presentation::add_rule_no_checks(p, "ef", "g");
+    presentation::add_rule_no_checks(p, "fg", "a");
+    presentation::add_rule_no_checks(p, "ga", "b");
+
+    KnuthBendix<std::string, RPOTrie> kb(twosided, p);
+    REQUIRE(!kb.rewriting_system().confluent());
+
+    kb.run();
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 7);
+  }
+
+  // This example verifies the nilpotence of the group using the Sims
+  // algorithm. The original presentation was <a,b| [b,a,a,a],
+  // [b^-1,a,a,a], [a,b,b,b], [a^-1,b,b,b], [a,a*b,a*b,a*b],
+  // [a^-1,a*b,a*b,a*b] >. (where [] mean left-normed commutators. The
+  // presentation here was derived by first applying the NQA to find the
+  // maximal nilpotent quotient, and then introducing new generators for
+  // the PCP generators.
+  // Takes about 15s
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "932",
+                                   "kbmag/heinnilp",
+                                   "[extreme][knuth-bendix][kbmag][recursive]",
+                                   RPOTrie) {
+    auto rg = ReportGuard(true);
+
+    Presentation<std::string> p;
+    p.alphabet("fFyYdDcCbBaA");
+    p.contains_empty_word(true);
+    presentation::add_inverse_rules(p, "FfYyDdCcBbAa");
+    presentation::add_rule(p, "BAba", "c");
+    presentation::add_rule(p, "CAca", "d");
+    presentation::add_rule(p, "CBcb", "y");
+    presentation::add_rule(p, "DBdb", "f");
+    presentation::add_rule(p, "cBCb", "bcBC");
+    presentation::add_rule(p, "babABaBA", "abABaBAb");
+    presentation::add_rule(p, "cBACab", "abcBAC");
+    presentation::add_rule(p, "BabABBAbab", "aabABBAb");
+
+    KnuthBendix<std::string, TestType> kb(twosided, p);
+    REQUIRE(!kb.rewriting_system().confluent());
+    kb.rewriting_system().settings().reduction_threshold = 1024;
+    kb.rewriting_system().sort_pending_rules_by(detail::rpo_cmp);
+    // TODO set kb so that it does not use a separate trie for adding new rules
+    kb.run();
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 72);
+    REQUIRE(kb.number_of_classes() == POSITIVE_INFINITY);
+    auto rules1 = (kb.active_rules() | rx::to_vector());
+    std::sort(rules1.begin(), rules1.end());
+    REQUIRE(
+        rules1
+        == std::vector<std::pair<std::string, std::string>>(
+            {{"Aa", ""},      {"BA", "ABcDYF"}, {"Ba", "aBCy"}, {"Bb", ""},
+             {"CA", "ACdff"}, {"CB", "BCy"},    {"Ca", "aCD"},  {"Cb", "bCY"},
+             {"Cc", ""},      {"DA", "ADFF"},   {"DB", "BDf"},  {"DC", "CD"},
+             {"Da", "aDff"},  {"Db", "bDF"},    {"Dc", "cD"},   {"Dd", ""},
+             {"FA", "AF"},    {"FB", "BF"},     {"FC", "CF"},   {"FD", "DF"},
+             {"FY", "YF"},    {"Fa", "aF"},     {"Fb", "bF"},   {"Fc", "cF"},
+             {"Fd", "dF"},    {"Ff", ""},       {"Fy", "yF"},   {"YA", "AYf"},
+             {"YB", "BY"},    {"YC", "CY"},     {"YD", "DY"},   {"Ya", "aYF"},
+             {"Yb", "bY"},    {"Yc", "cY"},     {"Yd", "dY"},   {"Yy", ""},
+             {"aA", ""},      {"bA", "AbCdff"}, {"bB", ""},     {"ba", "abc"},
+             {"cA", "AcDFF"}, {"cB", "BcY"},    {"cC", ""},     {"ca", "acd"},
+             {"cb", "bcy"},   {"dA", "Adff"},   {"dB", "BdF"},  {"dC", "Cd"},
+             {"dD", ""},      {"da", "adFF"},   {"db", "bdf"},  {"dc", "cd"},
+             {"fA", "Af"},    {"fB", "Bf"},     {"fC", "Cf"},   {"fD", "Df"},
+             {"fF", ""},      {"fY", "Yf"},     {"fa", "af"},   {"fb", "bf"},
+             {"fc", "cf"},    {"fd", "df"},     {"fy", "yf"},   {"yA", "AyF"},
+             {"yB", "By"},    {"yC", "Cy"},     {"yD", "Dy"},   {"yY", ""},
+             {"ya", "ayf"},   {"yb", "by"},     {"yc", "cy"},   {"yd", "dy"}}));
+
+    // NOTE: recursive_path_compare (and all the other orders) use the numerical
+    // value of the letters in the alphabet as the order on the alphabet, in
+    // this example, the order on the alphabet is "fFyYdDcCbBaA" which is
+    // not numerical order, hence the contorsions below.
+    // TODO: make it so that we don't have the contortions below, using the yet
+    // to be implemented Alphabet objects
+
+    v4::ToWord to_word(p.alphabet());
+    auto       rules2
+        = (rx::iterator_range(rules1.begin(), rules1.end())
+           | rx::transform([&to_word](auto const& rule) {
+               return std::pair(to_word(rule.first), to_word(rule.second));
+             })
+           | rx::to_vector());
+    REQUIRE(std::all_of(rules2.begin(), rules2.end(), [](auto const& rule) {
+      return recursive_path_compare(rule.second, rule.first);
+    }));
+  }
+
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "144",
+                                   "process pending rules x3",
+                                   "[extreme][knuth-bendix]",
+                                   LenLexTrie) {
+    auto                    rg = ReportGuard(true);
+    Presentation<word_type> p;
+    p.alphabet(2);
+    p.contains_empty_word(true);
+
+    WordRange wr;
+    wr.alphabet_size(2).min(23).max(24);
+    REQUIRE(wr.count() == 8'388'608);
+    for (auto const& word : wr) {
+      presentation::add_rule_no_checks(p, word, ""_w);
+    }
+    REQUIRE(presentation::length(p) == 192'937'984);
+
+    KnuthBendix<word_type, TestType> kb(twosided, p);
+    kb.rewriting_system().reduce();
+    REQUIRE(kb.rewriting_system().number_of_rules() == wr.count());
+  }
+
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "118",
+                                   "process pending rules x1",
+                                   "[extreme][knuth-bendix]",
+                                   LenLexTrie) {
+    auto                    rg = ReportGuard(true);
+    Presentation<word_type> p;
+    p.alphabet(2);
+    p.contains_empty_word(true);
+
+    WordRange wr;
+    wr.alphabet_size(2).min(23).max(24);
+    for (auto const& word : wr) {
+      presentation::add_rule(p, word, ""_w);
+    }
+
+    KnuthBendix<word_type, TestType> kb(twosided, p);
+    kb.rewriting_system().reduce();
+    REQUIRE(kb.rewriting_system().number_of_rules() == wr.count());
+  }
+
+  // Takes about 6s for len-lex + trie / 26s for len-lex + set / 450ms for rpo
+  // + trie
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "139",
+                                   "partial_transformation_monoid5",
+                                   "[extreme][knuth-bendix]",
+                                   REWRITING_SYSTEM_TYPES,
+                                   RPOTrie) {
+    auto rg = ReportGuard(true);
+
+    size_t n = 5;
+    auto   p = presentation::examples::partial_transformation_monoid_Shu60(n);
+
+    KnuthBendix<word_type, TestType> kb(twosided, p);
+    REQUIRE(!is_obviously_infinite(kb));
+    REQUIRE(kb.number_of_classes() == 7'776);
+  }
+
+  // Takes about 5 seconds
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "140",
+                                   "full_transformation_monoid Iwahori",
+                                   "[extreme][knuth-bendix]",
+                                   REWRITING_SYSTEM_TYPES) {
+    auto rg = ReportGuard(true);
+
+    size_t n = 5;
+    auto   p = presentation::examples::full_transformation_monoid_II74(n);
+    KnuthBendix<word_type, TestType> kb(twosided, p);
+    REQUIRE(!is_obviously_infinite(kb));
+    kb.run();
+    REQUIRE(kb.rewriting_system().number_of_rules() == 1'162);
+    REQUIRE(kb.number_of_classes() == 3'125);
+  }
 }  // namespace libsemigroups
