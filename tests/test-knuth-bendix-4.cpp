@@ -793,7 +793,7 @@ namespace libsemigroups {
                                    "146",
                                    "process millions of pending rules",
                                    "[knuth-bendix][extreme]",
-                                   // RPOTrie,
+                                   RPOTrie,
                                    LenLexTrie) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;

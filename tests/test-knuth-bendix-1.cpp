@@ -1676,4 +1676,38 @@ namespace libsemigroups {
     }));
   }
 
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "048",
+                                   "order of pending rules is important",
+                                   "[quick][knuth-bendix][kbmag]",
+                                   LenLexSet,
+                                   LenLexTrie) {
+    auto                      rg = ReportGuard(true);
+    Presentation<std::string> p;
+    p.alphabet("abc").contains_empty_word(true);
+
+    SECTION("order #1") {
+      presentation::add_rule(p, "bbac", "");
+      presentation::add_rule(p, "abbacca", "");
+      presentation::add_rule(p, "bacc", "");
+
+      KnuthBendix<std::string, TestType> kb(twosided, p);
+      kb.rewriting_system().sort_pending_rules_by(nullptr);
+      REQUIRE((kb.active_rules() | rx::sort() | rx::to_vector())
+              == std::vector<std::pair<std::string, std::string>>(
+                  {{"aba", ""}, {"bacc", ""}, {"bbac", ""}}));
+    }
+    SECTION("order #2") {
+      presentation::add_rule(p, "bacc", "");
+      presentation::add_rule(p, "abbacca", "");
+      presentation::add_rule(p, "bbac", "");
+
+      KnuthBendix<std::string, TestType> kb(twosided, p);
+      kb.rewriting_system().sort_pending_rules_by(nullptr);
+      REQUIRE((kb.active_rules() | rx::sort() | rx::to_vector())
+              == std::vector<std::pair<std::string, std::string>>(
+                  {{"aca", ""}, {"bacc", ""}, {"bbac", ""}}));
+    }
+  }
+
 }  // namespace libsemigroups
