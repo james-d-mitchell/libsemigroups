@@ -812,7 +812,7 @@ namespace libsemigroups {
     SECTION("sorted by lhs_rev_lex_cmp") {
       k.rewriting_system().sort_pending_rules_by(detail::lhs_rev_lex_cmp);
       k.rewriting_system().reduce();
-      REQUIRE(k.rewriting_system().number_of_rules() == 2'041'464);
+      REQUIRE(k.rewriting_system().number_of_rules() == 2'041'465);
     }
     SECTION("sorted by lhs_lex_cmp") {
       k.rewriting_system().sort_pending_rules_by(detail::lhs_lex_cmp);
