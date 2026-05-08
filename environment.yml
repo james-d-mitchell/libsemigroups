@@ -9,3 +9,4 @@ dependencies:
   - fmt
   - backward-cpp
   - magic_enum
+  - catch2
