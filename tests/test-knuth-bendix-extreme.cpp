@@ -34,36 +34,53 @@
 
 #define CATCH_CONFIG_ENABLE_ALL_STRINGMAKERS
 
-#include <algorithm>      // for next_permutation
-#include <chrono>         // for milliseconds, seconds
-#include <cmath>          // for pow
-#include <cstddef>        // for size_t
-#include <iostream>       // for string, operator<<, endl
-#include <numeric>        // for iota
-#include <string>         // for basic_string, char_traits
-#include <unordered_set>  // for unordered_set
-#include <utility>        // for move, operator==, pair
-#include <vector>         // for vector, operator==
+#include <algorithm>    // for find, all_of
+#include <chrono>       // for seconds
+#include <complex>      // for operator*, ope...
+#include <cstddef>      // for size_t
+#include <iterator>     // for back_inserter
+#include <list>         // for operator!=
+#include <numeric>      // for accumulate, iota
+#include <string>       // for basic_string
+#include <tuple>        // for get
+#include <type_traits>  // for is_same_v
+#include <utility>      // for pair, forward
+#include <vector>       // for vector, operat...
 
 #include "Catch2-3.14.0/catch_amalgamated.hpp"  // for AssertionHandler, oper...
 #include "test-main.hpp"  // for LIBSEMIGROUPS_TEMPLATE_TEST_CASE
 
-#include "libsemigroups/constants.hpp"  // for operator==, operat...
-#include "libsemigroups/detail/rules.hpp"
-#include "libsemigroups/exception.hpp"              // for LibsemigroupsExcep...
-#include "libsemigroups/knuth-bendix-helpers.hpp"   // for TODO
-#include "libsemigroups/knuth-bendix.hpp"           // for KnuthBendix, norma...
-#include "libsemigroups/order.hpp"                  // for shortlex_compare
-#include "libsemigroups/paths.hpp"                  // for Paths
-#include "libsemigroups/presentation-examples.hpp"  // for partition_mo
-#include "libsemigroups/presentation.hpp"           // for add_rule, Presenta...
-#include "libsemigroups/word-graph-helpers.hpp"     // for word_graph
-#include "libsemigroups/word-graph.hpp"             // for WordGraph
-#include "libsemigroups/word-range.hpp"             // for Inner, StringRange...
+#include "libsemigroups/cong-common-helpers.hpp"    // for reduce
+#include "libsemigroups/constants.hpp"              // for operator==
+#include "libsemigroups/knuth-bendix-class.hpp"     // for KnuthBendix
+#include "libsemigroups/knuth-bendix-helpers.hpp"   // for normal_forms
+#include "libsemigroups/obvinf.hpp"                 // for is_obviously_i...
+#include "libsemigroups/order.hpp"                  // for ShortLexCompare
+#include "libsemigroups/paths-count.hpp"            // for count
+#include "libsemigroups/paths.hpp"                  // for cbegin_pilo
+#include "libsemigroups/presentation-examples.hpp"  // for full_transform...
+#include "libsemigroups/presentation.hpp"           // for add_rule
+#include "libsemigroups/ranges.hpp"                 // for operator|
+#include "libsemigroups/todd-coxeter-helpers.hpp"   // for normal_forms
+#include "libsemigroups/types.hpp"                  // for word_type, con...
+#include "libsemigroups/word-graph-helpers.hpp"     // for is_acyclic
+#include "libsemigroups/word-graph-view.hpp"        // for WordGraphView:...
+#include "libsemigroups/word-graph.hpp"             // for WordGraph::target
+#include "libsemigroups/word-range.hpp"             // for StringRange
 
-#include "libsemigroups/detail/report.hpp"  // for ReportGuard
-#include "libsemigroups/detail/stl.hpp"     // for apply_permutation
-#include "libsemigroups/detail/string.hpp"  // for random_string, operator<<
+#include "libsemigroups/detail/cong-common-class.hpp"  // for CongruenceComm...
+#include "libsemigroups/detail/eigen.hpp"              // for eigen
+#include "libsemigroups/detail/fmt.hpp"                // for fmt
+#include "libsemigroups/detail/iterator.hpp"           // for operator+
+#include "libsemigroups/detail/knuth-bendix-impl.hpp"  // for KnuthBendixImp...
+#include "libsemigroups/detail/path-iterators.hpp"     // for const_pilo_ite...
+#include "libsemigroups/detail/print.hpp"              // for to_printable
+#include "libsemigroups/detail/report.hpp"             // for report_default
+#include "libsemigroups/detail/rewriters.hpp"          // for RewritingSyste...
+#include "libsemigroups/detail/rules.hpp"              // for reorder, rpo_cmp
+#include "libsemigroups/detail/string.hpp"             // for group_digits
+#include "libsemigroups/detail/timer.hpp"              // for string_time
+#include "libsemigroups/detail/value-guard.hpp"        // for ValueGuard::Va...
 
 namespace libsemigroups {
   using literals::operator""_w;
@@ -338,12 +355,11 @@ namespace libsemigroups {
     REQUIRE(kb.number_of_classes() == 10'752);
   }
 
-  // Fibonacci group F(2,7) - without inverses
   // [108]: KnuthBendix: kbmag/standalone/kb_data/f27 - LenLexTrie ......3.072s
   // [108]: KnuthBendix: kbmag/standalone/kb_data/f27 - RPOTrie .....20.083s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "108",
-                                   "kbmag/standalone/kb_data/f27",
+                                   "kbmag/standalone/kb_data/f27monoid",
                                    "[extreme][knuth-bendix][kbmag]",
                                    REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
@@ -371,6 +387,37 @@ namespace libsemigroups {
       REQUIRE(kb.rewriting_system().number_of_rules() == 47);
     }
     REQUIRE(kb.number_of_classes() == 29);
+  }
+
+  // monoid presentation of F(2,7) - should produce a monoid of length 30
+  // which is the same as the group, together with the empty word. This
+  // is a very difficult calculation indeed, however.
+  //
+  // KBMAG does not seem to terminate when SHORTLEX order is used.
+  //
+  // [999]: KnuthBendix: kbmag/f27monoid - RPOTrie .....29.123s
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "999",
+                                   "kbmag/f27monoid",
+                                   "[extreme][knuth-bendix][kbmag]",
+                                   RPOTrie) {
+    auto                      rg = ReportGuard(true);
+    Presentation<std::string> p;
+    p.alphabet("abcdefg");
+    presentation::add_rule_no_checks(p, "ab", "c");
+    presentation::add_rule_no_checks(p, "bc", "d");
+    presentation::add_rule_no_checks(p, "cd", "e");
+    presentation::add_rule_no_checks(p, "de", "f");
+    presentation::add_rule_no_checks(p, "ef", "g");
+    presentation::add_rule_no_checks(p, "fg", "a");
+    presentation::add_rule_no_checks(p, "ga", "b");
+
+    KnuthBendix<std::string, TestType> kb(twosided, p);
+    REQUIRE(!kb.rewriting_system().confluent());
+
+    kb.run();
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 7);
   }
 
   // An extension of 2^6 be L32
@@ -419,6 +466,10 @@ namespace libsemigroups {
     REQUIRE(v4::word_graph::is_acyclic(wg));
   }
 
+  // [117]: KnuthBendix: example with undecidable word problem - LenLexTrie
+  // .....10.056s
+  //  [117]: KnuthBendix: example with undecidable word problem - RPOTrie
+  //  .....10.052s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "117",
                                    "example with undecidable word problem",
@@ -438,12 +489,19 @@ namespace libsemigroups {
     REQUIRE(!k.finished());
   }
 
+  // [146]: KnuthBendix: process millions of pending rules - LenLexTrie
+  // -- sorted by lhs_rev_lex_cmp ......5.979s
+  // -- sorted by lhs_lex_cmp ......6.223s
+  // -- sorted by rpo_cmp ......6.279s
+  // [146]: KnuthBendix: process millions of pending rules - RPOTrie
+  // -- sorted by lhs_rev_lex_cmp ......5.810s
+  // -- sorted by lhs_lex_cmp ......6.241s
+  // -- sorted by rpo_cmp ......6.300s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "146",
                                    "process millions of pending rules",
                                    "[knuth-bendix][extreme]",
-                                   RPOTrie,
-                                   LenLexTrie) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                      rg = ReportGuard(true);
     Presentation<std::string> p;
     p.contains_empty_word(true);
@@ -480,35 +538,6 @@ namespace libsemigroups {
     }
   }
 
-  // monoid presentation of F(2,7) - should produce a monoid of length 30
-  // which is the same as the group, together with the empty word. This
-  // is a very difficult calculation indeed, however.
-  //
-  // KBMAG does not terminate when SHORTLEX order is used.
-  // About 2 minutes on M4 Pro with 48gb of memory
-  LIBSEMIGROUPS_TEST_CASE("KnuthBendix",
-                          "999",
-                          "kbmag/f27monoid",
-                          "[extreme][knuth-bendix][kbmag][recursive]") {
-    auto                      rg = ReportGuard(true);
-    Presentation<std::string> p;
-    p.alphabet("abcdefg");
-    presentation::add_rule_no_checks(p, "ab", "c");
-    presentation::add_rule_no_checks(p, "bc", "d");
-    presentation::add_rule_no_checks(p, "cd", "e");
-    presentation::add_rule_no_checks(p, "de", "f");
-    presentation::add_rule_no_checks(p, "ef", "g");
-    presentation::add_rule_no_checks(p, "fg", "a");
-    presentation::add_rule_no_checks(p, "ga", "b");
-
-    KnuthBendix<std::string, RPOTrie> kb(twosided, p);
-    REQUIRE(!kb.rewriting_system().confluent());
-
-    kb.run();
-    REQUIRE(kb.rewriting_system().confluent());
-    REQUIRE(kb.rewriting_system().number_of_rules() == 7);
-  }
-
   // This example verifies the nilpotence of the group using the Sims
   // algorithm. The original presentation was <a,b| [b,a,a,a],
   // [b^-1,a,a,a], [a,b,b,b], [a^-1,b,b,b], [a,a*b,a*b,a*b],
@@ -516,7 +545,7 @@ namespace libsemigroups {
   // presentation here was derived by first applying the NQA to find the
   // maximal nilpotent quotient, and then introducing new generators for
   // the PCP generators.
-  // Takes about 15s
+  // [932]: KnuthBendix: kbmag/heinnilp - RPOTrie .....15.031s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "932",
                                    "kbmag/heinnilp",
@@ -589,11 +618,13 @@ namespace libsemigroups {
     }));
   }
 
+  // [144]: KnuthBendix: process pending rules x3 - LenLexTrie .....25.231s
+  // [144]: KnuthBendix: process pending rules x3 - RPOTrie .....25.169s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "144",
                                    "process pending rules x3",
                                    "[extreme][knuth-bendix]",
-                                   LenLexTrie) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
     p.alphabet(2);
@@ -612,11 +643,13 @@ namespace libsemigroups {
     REQUIRE(kb.rewriting_system().number_of_rules() == wr.count());
   }
 
+  // [118]: KnuthBendix: process pending rules x1 - LenLexTrie .....22.597s
+  // [118]: KnuthBendix: process pending rules x1 - RPOTrie .....22.983s
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "118",
                                    "process pending rules x1",
                                    "[extreme][knuth-bendix]",
-                                   LenLexTrie) {
+                                   REWRITING_SYSTEM_TYPES) {
     auto                    rg = ReportGuard(true);
     Presentation<word_type> p;
     p.alphabet(2);
@@ -633,8 +666,10 @@ namespace libsemigroups {
     REQUIRE(kb.rewriting_system().number_of_rules() == wr.count());
   }
 
-  // Takes about 6s for len-lex + trie / 26s for len-lex + set / 450ms for rpo
-  // + trie
+  // [139]: KnuthBendix: partial_transformation_monoid5 - LenLexTrie
+  // ......6.295s
+  // [139]: KnuthBendix: partial_transformation_monoid5 - RPOTrie
+  // .......262ms
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "139",
                                    "partial_transformation_monoid5",
@@ -650,7 +685,7 @@ namespace libsemigroups {
     REQUIRE(kb.number_of_classes() == 7'776);
   }
 
-  // Takes about 5 seconds
+  // TODO move to standard
   LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
                                    "140",
                                    "full_transformation_monoid Iwahori",
@@ -663,7 +698,11 @@ namespace libsemigroups {
     KnuthBendix<word_type, TestType> kb(twosided, p);
     REQUIRE(!is_obviously_infinite(kb));
     kb.run();
-    REQUIRE(kb.rewriting_system().number_of_rules() == 1'162);
+    if constexpr (std::is_same_v<TestType, RPOTrie>) {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 230);
+    } else {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 1'162);
+    }
     REQUIRE(kb.number_of_classes() == 3'125);
   }
 }  // namespace libsemigroups

@@ -182,4 +182,78 @@ namespace libsemigroups {
     REQUIRE((nf | to_vector()) == std::vector<std::string>({"", "a", "A"}));
   }
 
+  // Weyl group E8 (all gens involutory).
+  // Takes approx. 5s for KnuthBendix
+  // TODO move to standard
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "104",
+                                   "kbmag/standalone/kb_data/e8",
+                                   "[standard][knuth-bendix][kbmag]",
+                                   LenLexTrie,
+                                   RPOTrie) {
+    auto rg = ReportGuard(false);
+
+    Presentation<std::string> p;
+    p.contains_empty_word(true);
+    p.alphabet("abcdefgh");
+
+    presentation::add_inverse_rules(p, "abcdefgh");
+    presentation::add_rule(p, "bab", "aba");
+    presentation::add_rule(p, "ca", "ac");
+    presentation::add_rule(p, "da", "ad");
+    presentation::add_rule(p, "ea", "ae");
+    presentation::add_rule(p, "fa", "af");
+    presentation::add_rule(p, "ga", "ag");
+    presentation::add_rule(p, "ha", "ah");
+    presentation::add_rule(p, "cbc", "bcb");
+    presentation::add_rule(p, "db", "bd");
+    presentation::add_rule(p, "eb", "be");
+    presentation::add_rule(p, "fb", "bf");
+    presentation::add_rule(p, "gb", "bg");
+    presentation::add_rule(p, "hb", "bh");
+    presentation::add_rule(p, "dcd", "cdc");
+    presentation::add_rule(p, "ece", "cec");
+    presentation::add_rule(p, "fc", "cf");
+    presentation::add_rule(p, "gc", "cg");
+    presentation::add_rule(p, "hc", "ch");
+    presentation::add_rule(p, "ed", "de");
+    presentation::add_rule(p, "fd", "df");
+    presentation::add_rule(p, "gd", "dg");
+    presentation::add_rule(p, "hd", "dh");
+    presentation::add_rule(p, "fef", "efe");
+    presentation::add_rule(p, "ge", "eg");
+    presentation::add_rule(p, "he", "eh");
+    presentation::add_rule(p, "gfg", "fgf");
+    presentation::add_rule(p, "hf", "fh");
+    presentation::add_rule(p, "hgh", "ghg");
+
+    KnuthBendix<std::string, TestType> kb(twosided, p);
+    REQUIRE(!kb.rewriting_system().confluent());
+    knuth_bendix::by_overlap_length(kb);
+    REQUIRE(kb.rewriting_system().confluent());
+    REQUIRE(kb.rewriting_system().number_of_rules() == 192);
+    REQUIRE(kb.number_of_classes() == 696'729'600);
+  }
+
+  LIBSEMIGROUPS_TEMPLATE_TEST_CASE("KnuthBendix",
+                                   "140",
+                                   "full_transformation_monoid Iwahori",
+                                   "[standard][knuth-bendix]",
+                                   LenLexTrie,
+                                   RPOTrie) {
+    auto rg = ReportGuard(false);
+
+    size_t n = 5;
+    auto   p = presentation::examples::full_transformation_monoid_II74(n);
+    KnuthBendix<word_type, TestType> kb(twosided, p);
+    REQUIRE(!is_obviously_infinite(kb));
+    kb.run();
+    if constexpr (std::is_same_v<TestType, RPOTrie>) {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 230);
+    } else {
+      REQUIRE(kb.rewriting_system().number_of_rules() == 1'162);
+    }
+    REQUIRE(kb.number_of_classes() == 3'125);
+  }
+
 }  // namespace libsemigroups
