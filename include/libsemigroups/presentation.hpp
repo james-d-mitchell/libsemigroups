@@ -3830,6 +3830,24 @@ namespace libsemigroups {
     //! odd.
     template <typename Word>
     void remove_redundant_generators(InversePresentation<Word>& p);
+
+    //! \brief Replace the empty word with a new identity generator.
+    //!
+    //! Adds a new self-inverse generator and replaces every empty relation word
+    //! by this generator. Identity rules are added for every generator.
+    //!
+    //! \tparam Word the type of the words in the presentation.
+    //! \param p the inverse presentation.
+    //!
+    //! \returns The new identity generator, or \ref UNDEFINED if
+    //! `p.contains_empty_word()` is \c false.
+    //!
+    //! \throws LibsemigroupsException if
+    //! \ref InversePresentation::throw_if_bad_alphabet_rules_or_inverses
+    //! throws.
+    template <typename Word>
+    typename InversePresentation<Word>::letter_type
+    make_semigroup(InversePresentation<Word>& p);
   }  // namespace presentation
 
   //! \ingroup presentations_group

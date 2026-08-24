@@ -3265,6 +3265,27 @@ namespace libsemigroups {
     REQUIRE_NOTHROW(p.throw_if_bad_alphabet_rules_or_inverses());
   }
 
+  LIBSEMIGROUPS_TEST_CASE("InversePresentation",
+                          "071",
+                          "make_semigroup",
+                          "[quick][presentation]") {
+    auto                             rg = ReportGuard(false);
+    InversePresentation<std::string> p;
+    p.alphabet("aA");
+    p.inverses("Aa");
+    p.contains_empty_word(true);
+    presentation::add_rule(p, "aA", "");
+
+    auto const e = presentation::make_semigroup(p);
+
+    REQUIRE(e == 'b');
+    REQUIRE(p.alphabet() == "aAb");
+    REQUIRE(p.inverses() == "Aab");
+    REQUIRE(p.inverse(e) == e);
+    REQUIRE_FALSE(p.contains_empty_word());
+    REQUIRE_NOTHROW(p.throw_if_bad_alphabet_rules_or_inverses());
+  }
+
   LIBSEMIGROUPS_TEST_CASE("Presentation",
                           "067",
                           "longest_subword_reducing_length #01",

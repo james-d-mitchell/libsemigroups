@@ -1387,6 +1387,25 @@ namespace libsemigroups {
       p.throw_if_bad_alphabet_rules_or_inverses();
 #endif
     }
+
+    template <typename Word>
+    typename InversePresentation<Word>::letter_type
+    make_semigroup(InversePresentation<Word>& p) {
+      p.throw_if_bad_alphabet_rules_or_inverses();
+      if (!p.contains_empty_word()) {
+        return UNDEFINED;
+      }
+
+      Word new_inverses(p.inverses());
+      auto e = make_semigroup(static_cast<Presentation<Word>&>(p));
+      new_inverses.push_back(e);
+      p.inverses_no_checks(new_inverses);
+
+#ifdef LIBSEMIGROUPS_DEBUG
+      p.throw_if_bad_alphabet_rules_or_inverses();
+#endif
+      return e;
+    }
   }  // namespace presentation
 
   namespace v4 {
