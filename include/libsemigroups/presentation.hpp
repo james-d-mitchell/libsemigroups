@@ -81,7 +81,7 @@ namespace libsemigroups {
   //! * `to<Presentation>` functions \ref to_presentation_group "here".
 
   struct [[deprecated("Use is_specialization_of_v<Thing, Presentation> "
-                      "instead")]] PresentationBase{};
+                      "instead")]] PresentationBase {};
 
   //! \ingroup presentations_group
   //!
@@ -3848,6 +3848,20 @@ namespace libsemigroups {
     template <typename Word>
     typename InversePresentation<Word>::letter_type
     make_semigroup(InversePresentation<Word>& p);
+
+    //! \brief Greedily reduce the total rule length.
+    //!
+    //! Repeatedly replaces a common subword by a new generator and its inverse
+    //! while this decreases the total length of the rules.
+    //!
+    //! \tparam Word the type of the words in the presentation.
+    //! \param p the inverse presentation.
+    //!
+    //! \throws LibsemigroupsException if
+    //! \ref InversePresentation::throw_if_bad_alphabet_rules_or_inverses
+    //! throws, or if adding a new generator fails.
+    template <typename Word>
+    void greedy_reduce_length(InversePresentation<Word>& p);
   }  // namespace presentation
 
   //! \ingroup presentations_group

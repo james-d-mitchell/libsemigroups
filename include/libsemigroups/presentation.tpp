@@ -852,8 +852,8 @@ namespace libsemigroups {
                                       Word const&         letters1,
                                       Word const&         letters2) {
       using words::operator+;
-      size_t       m = letters1.size(), n = letters2.size();
-      Word const * shorter = &letters1, *longer = &letters2;
+      size_t      m = letters1.size(), n = letters2.size();
+      Word const *shorter = &letters1, *longer = &letters2;
       if (m > n) {
         std::swap(shorter, longer);
         std::swap(m, n);
@@ -1405,6 +1405,25 @@ namespace libsemigroups {
       p.throw_if_bad_alphabet_rules_or_inverses();
 #endif
       return e;
+    }
+
+    template <typename Word>
+    void greedy_reduce_length(InversePresentation<Word>& p) {
+      p.throw_if_bad_alphabet_rules_or_inverses();
+      auto word = longest_subword_reducing_length(p);
+      while (!word.empty()) {
+        auto copy = p;
+        replace_word_with_new_generator(p, word);
+        if (presentation::length(p) >= presentation::length(copy)) {
+          p = std::move(copy);
+          break;
+        }
+        word = longest_subword_reducing_length(p);
+      }
+
+#ifdef LIBSEMIGROUPS_DEBUG
+      p.throw_if_bad_alphabet_rules_or_inverses();
+#endif
     }
   }  // namespace presentation
 
