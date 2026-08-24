@@ -1249,6 +1249,36 @@ namespace libsemigroups {
     return _inverses[Presentation<Word>::index(x)];
   }
 
+  namespace presentation {
+    template <typename Word>
+    void change_alphabet(InversePresentation<Word>& p,
+                         Word const&                new_alphabet) {
+      p.throw_if_bad_alphabet_rules_or_inverses();
+
+      if (new_alphabet.size() != p.alphabet().size()) {
+        LIBSEMIGROUPS_EXCEPTION("expected an alphabet of size {}, found {}",
+                                p.alphabet().size(),
+                                new_alphabet.size());
+      } else if (p.alphabet() == new_alphabet) {
+        return;
+      }
+
+      Word new_inverses(p.inverses());
+      std::for_each(new_inverses.begin(),
+                    new_inverses.end(),
+                    [&p, &new_alphabet](auto& letter) {
+                      letter = new_alphabet[p.index_no_checks(letter)];
+                    });
+
+      change_alphabet(static_cast<Presentation<Word>&>(p), new_alphabet);
+      p.inverses_no_checks(new_inverses);
+
+#ifdef LIBSEMIGROUPS_DEBUG
+      p.throw_if_bad_alphabet_rules_or_inverses();
+#endif
+    }
+  }  // namespace presentation
+
   namespace v4 {
     ////////////////////////////////////////////////////////////////////////
     // Presentation + function -> Presentation

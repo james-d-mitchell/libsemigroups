@@ -3753,6 +3753,26 @@ namespace libsemigroups {
     }
   };  // class InversePresentation
 
+  namespace presentation {
+    //! \brief Change or re-order the alphabet.
+    //!
+    //! This function replaces `p.alphabet()` with \p new_alphabet, where
+    //! possible, and re-writes the rules and inverses in the presentation using
+    //! the new alphabet.
+    //!
+    //! \tparam Word the type of the words in the presentation.
+    //! \param p the inverse presentation.
+    //! \param new_alphabet the replacement alphabet.
+    //!
+    //! \throws LibsemigroupsException if
+    //! \ref InversePresentation::throw_if_bad_alphabet_rules_or_inverses throws
+    //! on the initial presentation, or if the size of `p.alphabet()` and
+    //! \p new_alphabet do not agree.
+    template <typename Word>
+    void change_alphabet(InversePresentation<Word>& p,
+                         Word const&                new_alphabet);
+  }  // namespace presentation
+
   //! \ingroup presentations_group
   //!
   //! \brief Compare for equality.

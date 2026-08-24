@@ -3201,6 +3201,31 @@ namespace libsemigroups {
     REQUIRE(q.rules == std::vector<word_type>({lhs, rhs, lhs, rhs}));
   }
 
+  LIBSEMIGROUPS_TEST_CASE("InversePresentation",
+                          "068",
+                          "change_alphabet",
+                          "[quick][presentation]") {
+    auto                             rg = ReportGuard(false);
+    InversePresentation<std::string> p;
+    p.alphabet("102345");
+    p.inverses("013254");
+    presentation::add_rule(p, "102", "345");
+
+    presentation::change_alphabet(p, "012345"s);
+
+    REQUIRE(p.alphabet() == "012345");
+    REQUIRE(p.rules == std::vector<std::string>({"012", "345"}));
+    REQUIRE(p.inverses() == "103254");
+    REQUIRE_NOTHROW(p.throw_if_bad_alphabet_rules_or_inverses());
+
+    presentation::change_alphabet(p, "abcdef"s);
+
+    REQUIRE(p.alphabet() == "abcdef");
+    REQUIRE(p.rules == std::vector<std::string>({"abc", "def"}));
+    REQUIRE(p.inverses() == "badcfe");
+    REQUIRE_NOTHROW(p.throw_if_bad_alphabet_rules_or_inverses());
+  }
+
   LIBSEMIGROUPS_TEST_CASE("Presentation",
                           "067",
                           "longest_subword_reducing_length #01",
