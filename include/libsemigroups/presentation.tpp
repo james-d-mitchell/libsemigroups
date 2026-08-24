@@ -1425,6 +1425,26 @@ namespace libsemigroups {
       p.throw_if_bad_alphabet_rules_or_inverses();
 #endif
     }
+
+    template <typename Word>
+    void greedy_reduce_length_and_number_of_gens(InversePresentation<Word>& p) {
+      p.throw_if_bad_alphabet_rules_or_inverses();
+      auto word = longest_subword_reducing_length(p);
+      while (!word.empty()) {
+        auto copy = p;
+        replace_word_with_new_generator(p, word);
+        word = longest_subword_reducing_length(p);
+        if (presentation::length(p) + p.alphabet().size()
+            >= presentation::length(copy) + copy.alphabet().size()) {
+          p = std::move(copy);
+          break;
+        }
+      }
+
+#ifdef LIBSEMIGROUPS_DEBUG
+      p.throw_if_bad_alphabet_rules_or_inverses();
+#endif
+    }
   }  // namespace presentation
 
   namespace v4 {

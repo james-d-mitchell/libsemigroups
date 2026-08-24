@@ -3862,6 +3862,22 @@ namespace libsemigroups {
     //! throws, or if adding a new generator fails.
     template <typename Word>
     void greedy_reduce_length(InversePresentation<Word>& p);
+
+    //! \brief Greedily reduce the total rule length and number of generators.
+    //!
+    //! Repeatedly replaces a common subword by a new generator and its inverse
+    //! while this decreases the sum of the total rule length and the number of
+    //! generators. If a replacement does not decrease this sum, the inverse
+    //! presentation is restored to its state before the replacement.
+    //!
+    //! \tparam Word the type of the words in the presentation.
+    //! \param p the inverse presentation.
+    //!
+    //! \throws LibsemigroupsException if
+    //! \ref InversePresentation::throw_if_bad_alphabet_rules_or_inverses
+    //! throws, or if adding a new generator fails.
+    template <typename Word>
+    void greedy_reduce_length_and_number_of_gens(InversePresentation<Word>& p);
   }  // namespace presentation
 
   //! \ingroup presentations_group
