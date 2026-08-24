@@ -3226,6 +3226,25 @@ namespace libsemigroups {
     REQUIRE_NOTHROW(p.throw_if_bad_alphabet_rules_or_inverses());
   }
 
+  LIBSEMIGROUPS_TEST_CASE("InversePresentation",
+                          "069",
+                          "remove_redundant_generators",
+                          "[quick][presentation]") {
+    auto                             rg = ReportGuard(false);
+    InversePresentation<std::string> p;
+    p.alphabet("abAB");
+    p.inverses("ABab");
+    presentation::add_rule(p, "b", "aa");
+    presentation::add_rule(p, "Ba", "aB");
+
+    presentation::remove_redundant_generators(p);
+
+    REQUIRE(p.alphabet() == "aA");
+    REQUIRE(p.rules == std::vector<std::string>({"AAa", "aAA"}));
+    REQUIRE(p.inverses() == "Aa");
+    REQUIRE_NOTHROW(p.throw_if_bad_alphabet_rules_or_inverses());
+  }
+
   LIBSEMIGROUPS_TEST_CASE("Presentation",
                           "067",
                           "longest_subword_reducing_length #01",

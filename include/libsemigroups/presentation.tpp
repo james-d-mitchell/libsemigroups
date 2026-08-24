@@ -1277,6 +1277,76 @@ namespace libsemigroups {
       p.throw_if_bad_alphabet_rules_or_inverses();
 #endif
     }
+
+    template <typename Word>
+    void remove_redundant_generators(InversePresentation<Word>& p) {
+      using letter_type = typename InversePresentation<Word>::letter_type;
+
+      p.throw_if_bad_alphabet_rules_or_inverses();
+      remove_trivial_rules(p);
+
+      auto remove_generator_and_inverse = [&p](Word const& generator,
+                                               Word const& replacement) {
+        letter_type const x     = generator[0];
+        letter_type const x_inv = p.inverse(x);
+
+        if (x != x_inv
+            && std::find(replacement.cbegin(), replacement.cend(), x_inv)
+                   != replacement.cend()) {
+          return;
+        }
+
+        Word inverse_replacement;
+        std::transform(replacement.crbegin(),
+                       replacement.crend(),
+                       std::back_inserter(inverse_replacement),
+                       [&p](letter_type letter) { return p.inverse(letter); });
+
+        Word new_inverses;
+        for (size_t i = 0; i < p.alphabet().size(); ++i) {
+          if (p.letter_no_checks(i) != x && p.letter_no_checks(i) != x_inv) {
+            new_inverses.push_back(p.inverses()[i]);
+          }
+        }
+
+        replace_subword(p, generator, replacement);
+        if (x != x_inv) {
+          replace_subword(p, Word({x_inv}), inverse_replacement);
+        }
+        p.remove_generator_no_checks(x);
+        if (x != x_inv) {
+          p.remove_generator_no_checks(x_inv);
+        }
+        p.inverses_no_checks(new_inverses);
+      };
+
+      for (size_t i = 0; i != p.rules.size(); i += 2) {
+        auto lhs = p.rules[i];
+        auto rhs = p.rules[i + 1];
+        if (lhs.size() == 1
+            && std::none_of(
+                rhs.cbegin(), rhs.cend(), [&lhs](letter_type const& letter) {
+                  return letter == lhs[0];
+                })) {
+          if (rhs.size() == 1 && lhs[0] < rhs[0]) {
+            std::swap(lhs, rhs);
+          }
+          remove_generator_and_inverse(lhs, rhs);
+        } else if (rhs.size() == 1
+                   && std::none_of(lhs.cbegin(),
+                                   lhs.cend(),
+                                   [&rhs](letter_type const& letter) {
+                                     return letter == rhs[0];
+                                   })) {
+          remove_generator_and_inverse(rhs, lhs);
+        }
+      }
+      remove_trivial_rules(p);
+
+#ifdef LIBSEMIGROUPS_DEBUG
+      p.throw_if_bad_alphabet_rules_or_inverses();
+#endif
+    }
   }  // namespace presentation
 
   namespace v4 {
