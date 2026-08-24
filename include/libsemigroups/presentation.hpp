@@ -3754,6 +3754,48 @@ namespace libsemigroups {
   };  // class InversePresentation
 
   namespace presentation {
+    //! \brief Replace non-overlapping instances of a subword via iterators.
+    //!
+    //! Replaces every non-overlapping instance of `[first, last)` in every
+    //! rule, adds a new generator representing this word, and adds an inverse
+    //! generator when the word is not self-inverse.
+    //!
+    //! \tparam Word the type of the words in the presentation.
+    //! \tparam Iterator the type of the 2nd and 3rd parameters.
+    //! \param p the inverse presentation.
+    //! \param first the start of the subword to replace.
+    //! \param last one beyond the end of the subword to replace.
+    //!
+    //! \returns The new generator representing `[first, last)`.
+    //!
+    //! \throws LibsemigroupsException if
+    //! \ref InversePresentation::throw_if_bad_alphabet_rules_or_inverses
+    //! throws,
+    //! `[first, last)` contains a letter not in the alphabet, or `first ==
+    //! last`.
+    template <typename Word, typename Iterator>
+    typename InversePresentation<Word>::letter_type
+    replace_word_with_new_generator(InversePresentation<Word>& p,
+                                    Iterator                   first,
+                                    Iterator                   last);
+
+    //! \brief Replace non-overlapping instances of a word.
+    //!
+    //! \tparam Word the type of the words in the presentation.
+    //! \param p the inverse presentation.
+    //! \param w the subword to replace.
+    //!
+    //! \returns The new generator representing \p w.
+    //!
+    //! \throws LibsemigroupsException if
+    //! `replace_word_with_new_generator(p, w.cbegin(), w.cend())` throws.
+    template <typename Word>
+    typename InversePresentation<Word>::letter_type
+    replace_word_with_new_generator(InversePresentation<Word>& p,
+                                    Word const&                w) {
+      return replace_word_with_new_generator(p, w.cbegin(), w.cend());
+    }
+
     //! \brief Change or re-order the alphabet.
     //!
     //! This function replaces `p.alphabet()` with \p new_alphabet, where

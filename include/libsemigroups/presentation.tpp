@@ -1250,6 +1250,46 @@ namespace libsemigroups {
   }
 
   namespace presentation {
+    template <typename Word, typename Iterator>
+    typename InversePresentation<Word>::letter_type
+    replace_word_with_new_generator(InversePresentation<Word>& p,
+                                    Iterator                   first,
+                                    Iterator                   last) {
+      using letter_type = typename InversePresentation<Word>::letter_type;
+
+      p.throw_if_bad_alphabet_rules_or_inverses();
+      if (first == last) {
+        LIBSEMIGROUPS_EXCEPTION("the 2nd and 3rd arguments must not be equal");
+      }
+      p.throw_if_letter_not_in_alphabet(first, last);
+
+      Word word(first, last);
+      Word inverse_word;
+      std::transform(word.crbegin(),
+                     word.crend(),
+                     std::back_inserter(inverse_word),
+                     [&p](letter_type letter) { return p.inverse(letter); });
+
+      Word new_inverses(p.inverses());
+      auto x = p.add_generator();
+      if (word == inverse_word) {
+        new_inverses.push_back(x);
+      } else {
+        auto x_inv = p.add_generator();
+        new_inverses.push_back(x_inv);
+        new_inverses.push_back(x);
+        add_rule_no_checks(p, Word({x_inv}), inverse_word);
+      }
+      p.inverses_no_checks(new_inverses);
+      replace_subword(p, word, Word({x}));
+      add_rule_no_checks(p, Word({x}), word);
+
+#ifdef LIBSEMIGROUPS_DEBUG
+      p.throw_if_bad_alphabet_rules_or_inverses();
+#endif
+      return x;
+    }
+
     template <typename Word>
     void change_alphabet(InversePresentation<Word>& p,
                          Word const&                new_alphabet) {
