@@ -2622,7 +2622,7 @@ namespace libsemigroups {
                           "meaningful exception messages",
                           "[quick][presentation]") {
     using literals::operator""_w;
-    auto rg = ReportGuard(false);
+    auto            rg = ReportGuard(false);
 
     {
       Presentation<std::string> p;
@@ -2773,7 +2773,7 @@ namespace libsemigroups {
                           "055",
                           "add_generator (std::string)",
                           "[quick][presentation]") {
-    auto rg = ReportGuard(false);
+    auto            rg = ReportGuard(false);
     using literals::operator""_w;
 
     {
@@ -3330,8 +3330,8 @@ namespace libsemigroups {
                           "067",
                           "longest_subword_reducing_length #01",
                           "[quick][presentation]") {
-    auto rg = ReportGuard(false);
-    using literals::operator""_w;
+    auto                    rg = ReportGuard(false);
+    using literals::        operator""_w;
     Presentation<word_type> p;
     p.alphabet(4);
     presentation::add_rule(p, 1212_w, 0_w);
@@ -3369,8 +3369,8 @@ namespace libsemigroups {
                           "070",
                           "longest_subword_reducing_length #04",
                           "[quick][presentation]") {
-    auto rg = ReportGuard(false);
-    using literals::operator""_w;
+    auto                    rg = ReportGuard(false);
+    using literals::        operator""_w;
     Presentation<word_type> p;
     p.alphabet(4);
     presentation::add_rule(p, 00_w, 10_w);
@@ -3387,8 +3387,8 @@ namespace libsemigroups {
                           "071",
                           "longest_subword_reducing_length #05",
                           "[quick][presentation]") {
-    auto rg = ReportGuard(false);
-    using literals::operator""_w;
+    auto                    rg = ReportGuard(false);
+    using literals::        operator""_w;
     Presentation<word_type> p;
     p.alphabet(5).contains_empty_word(true);
     presentation::add_rule(p, 00_w, 10_w);
@@ -3406,8 +3406,8 @@ namespace libsemigroups {
                           "072",
                           "longest_subword_reducing_length #06",
                           "[quick][presentation]") {
-    auto rg = ReportGuard(false);
-    using literals::operator""_w;
+    auto                    rg = ReportGuard(false);
+    using literals::        operator""_w;
     Presentation<word_type> p;
     p.alphabet(6).contains_empty_word(true);
     presentation::add_rule(p, 00_w, 10_w);
